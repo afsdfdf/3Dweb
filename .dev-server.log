@@ -1,0 +1,946 @@
+▲ Next.js 16.2.3 (webpack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.1.65:3000
+- Environments: .env
+✓ Ready in 1694ms
+
+○ Compiling / ...
+[02:54:37] [33mWARN[39m: [36mNo email adapter provided. Email will be written to console. More info at https://payloadcms.com/docs/email/overview.[39m
+ GET / 200 in 16.1s (next.js: 8.7s, application-code: 7.4s)
+ GET / 200 in 299ms (next.js: 17ms, application-code: 282ms)
+[browser] THREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+○ Compiling /dashboard/tasks ...
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+ GET /dashboard 200 in 7.2s (next.js: 5.8s, application-code: 1352ms)
+ GET /dashboard/tasks 200 in 6.6s (next.js: 5.2s, application-code: 1354ms)
+ GET /dashboard/library 200 in 5.9s (next.js: 4.6s, application-code: 1354ms)
+ GET /dashboard/orders 200 in 5.5s (next.js: 4.1s, application-code: 1354ms)
+ GET /solutions 200 in 4.4s (next.js: 3.0s, application-code: 1367ms)
+ GET /generate 200 in 9.1s (next.js: 7.7s, application-code: 1361ms)
+ GET /generate 200 in 2.4s (next.js: 1776ms, application-code: 666ms)
+ GET /pricing 200 in 3.5s (next.js: 2.9s, application-code: 665ms)
+ GET /generate 200 in 3.5s (next.js: 2.8s, application-code: 663ms)
+ GET /developers 200 in 3.5s (next.js: 2.8s, application-code: 672ms)
+ GET /login 200 in 2.7s (next.js: 2.5s, application-code: 184ms)
+ GET /register 200 in 2.5s (next.js: 2.0s, application-code: 413ms)
+○ Compiling /api/[...slug] ...
+ GET /login 200 in 3.4s (next.js: 3.1s, application-code: 284ms)
+ GET /login 200 in 5.8s (next.js: 5.5s, application-code: 286ms)
+[02:55:59] [32mINFO[39m: [36mThe following field is invalid: email[39m
+ POST /api/users 400 in 15.8s (next.js: 15.6s, application-code: 198ms)
+ POST /api/users 400 in 21.0s (next.js: 20.8s, application-code: 198ms)
+ POST /api/users 400 in 18.7s (next.js: 18.5s, application-code: 200ms)
+[02:55:59] [32mINFO[39m: [36mThe following field is invalid: email[39m
+[02:55:59] [32mINFO[39m: [36mThe following field is invalid: email[39m
+ GET /developers 200 in 237ms (next.js: 30ms, application-code: 207ms)
+ GET /generate 200 in 121ms (next.js: 26ms, application-code: 95ms)
+ GET /login 200 in 101ms (next.js: 7ms, application-code: 94ms)
+[02:56:31] [31mERROR[39m: [36m提供的电子邮件或密码不正确。[39m
+    err: {
+      "type": "AuthenticationError",
+      "message": "提供的电子邮件或密码不正确。",
+      "stack":
+          AuthenticationError: 提供的电子邮件或密码不正确。
+              at loginOperation (file:///D:/web/payload-local-demo/node_modules/.pnpm/payload@3.82.1_graphql@16.13.2_typescript@5.7.3/node_modules/payload/dist/auth/operations/login.js:182:15)
+              at async loginHandler (file:///D:/web/payload-local-demo/node_modules/.pnpm/payload@3.82.1_graphql@16.13.2_typescript@5.7.3/node_modules/payload/dist/auth/endpoints/login.js:19:20)
+              at async handleEndpoints (file:///D:/web/payload-local-demo/node_modules/.pnpm/payload@3.82.1_graphql@16.13.2_typescript@5.7.3/node_modules/payload/dist/utilities/handleEndpoints.js:198:26)
+              at async eval (webpack-internal:///(rsc)/./node_modules/.pnpm/@payloadcms+next@3.82.1_@ty_0b37c474e34329ca3c5fa0f368d9dc03/node_modules/@payloadcms/next/dist/routes/rest/index.js:32:20)
+              at async AppRouteRouteModule.do (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:5:40115)
+              at async AppRouteRouteModule.handle (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:5:47321)
+              at async responseGenerator (webpack-internal:///(rsc)/./node_modules/.pnpm/next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1/node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2F(payload)%2Fapi%2F%5B...slug%5D%2Froute&page=%2F(payload)%2Fapi%2F%5B...slug%5D%2Froute&appPaths=&allNormalizedAppPaths=&pagePath=private-next-app-dir%2F(payload)%2Fapi%2F%5B...slug%5D%2Froute.ts&appDir=D%3A%5Cweb%5Cpayload-local-demo%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=D%3A%5Cweb%5Cpayload-local-demo&isDev=true&tsconfigPath=&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:253:38)
+              at async AppRouteRouteModule.handleResponse (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:1:227141)
+              at async handleResponse (webpack-internal:///(rsc)/./node_modules/.pnpm/next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1/node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2F(payload)%2Fapi%2F%5B...slug%5D%2Froute&page=%2F(payload)%2Fapi%2F%5B...slug%5D%2Froute&appPaths=&allNormalizedAppPaths=&pagePath=private-next-app-dir%2F(payload)%2Fapi%2F%5B...slug%5D%2Froute.ts&appDir=D%3A%5Cweb%5Cpayload-local-demo%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=D%3A%5Cweb%5Cpayload-local-demo&isDev=true&tsconfigPath=&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:316:32)
+              at async Module.handler (webpack-internal:///(rsc)/./node_modules/.pnpm/next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1/node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2F(payload)%2Fapi%2F%5B...slug%5D%2Froute&page=%2F(payload)%2Fapi%2F%5B...slug%5D%2Froute&appPaths=&allNormalizedAppPaths=&pagePath=private-next-app-dir%2F(payload)%2Fapi%2F%5B...slug%5D%2Froute.ts&appDir=D%3A%5Cweb%5Cpayload-local-demo%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=D%3A%5Cweb%5Cpayload-local-demo&isDev=true&tsconfigPath=&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:371:13)
+              at async DevServer.renderToResponseWithComponentsImpl (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\base-server.js:1454:9)
+              at async DevServer.renderPageComponent (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\base-server.js:1506:24)
+              at async DevServer.renderToResponseImpl (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\base-server.js:1556:32)
+              at async DevServer.pipeImpl (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\base-server.js:1043:25)
+              at async NextNodeServer.handleCatchallRenderRequest (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\next-server.js:338:17)
+              at async DevServer.handleRequestImpl (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\base-server.js:934:17)
+              at async D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\dev\next-dev-server.js:394:20
+              at async Span.traceAsyncFn (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\trace\trace.js:164:20)
+              at async DevServer.handleRequest (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\dev\next-dev-server.js:390:24)
+              at async invokeRender (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\lib\router-server.js:266:21)
+              at async handleRequest (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\lib\router-server.js:465:24)
+              at async requestHandlerImpl (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\lib\router-server.js:514:13)
+              at async Server.requestListener (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\lib\start-server.js:225:13)
+      "data": null,
+      "isOperational": true,
+      "isPublic": true,
+      "status": 401,
+      "name": "AuthenticationError"
+    }
+ POST /api/users/login 401 in 221ms (next.js: 20ms, application-code: 201ms)
+[02:57:32] [31mERROR[39m: [36m提供的电子邮件或密码不正确。[39m
+    err: {
+      "type": "AuthenticationError",
+      "message": "提供的电子邮件或密码不正确。",
+      "stack":
+          AuthenticationError: 提供的电子邮件或密码不正确。
+              at loginOperation (file:///D:/web/payload-local-demo/node_modules/.pnpm/payload@3.82.1_graphql@16.13.2_typescript@5.7.3/node_modules/payload/dist/auth/operations/login.js:182:15)
+              at async loginHandler (file:///D:/web/payload-local-demo/node_modules/.pnpm/payload@3.82.1_graphql@16.13.2_typescript@5.7.3/node_modules/payload/dist/auth/endpoints/login.js:19:20)
+              at async handleEndpoints (file:///D:/web/payload-local-demo/node_modules/.pnpm/payload@3.82.1_graphql@16.13.2_typescript@5.7.3/node_modules/payload/dist/utilities/handleEndpoints.js:198:26)
+              at async eval (webpack-internal:///(rsc)/./node_modules/.pnpm/@payloadcms+next@3.82.1_@ty_0b37c474e34329ca3c5fa0f368d9dc03/node_modules/@payloadcms/next/dist/routes/rest/index.js:32:20)
+              at async AppRouteRouteModule.do (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:5:40115)
+              at async AppRouteRouteModule.handle (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:5:47321)
+              at async responseGenerator (webpack-internal:///(rsc)/./node_modules/.pnpm/next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1/node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2F(payload)%2Fapi%2F%5B...slug%5D%2Froute&page=%2F(payload)%2Fapi%2F%5B...slug%5D%2Froute&appPaths=&allNormalizedAppPaths=&pagePath=private-next-app-dir%2F(payload)%2Fapi%2F%5B...slug%5D%2Froute.ts&appDir=D%3A%5Cweb%5Cpayload-local-demo%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=D%3A%5Cweb%5Cpayload-local-demo&isDev=true&tsconfigPath=&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:253:38)
+              at async AppRouteRouteModule.handleResponse (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:1:227141)
+              at async handleResponse (webpack-internal:///(rsc)/./node_modules/.pnpm/next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1/node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2F(payload)%2Fapi%2F%5B...slug%5D%2Froute&page=%2F(payload)%2Fapi%2F%5B...slug%5D%2Froute&appPaths=&allNormalizedAppPaths=&pagePath=private-next-app-dir%2F(payload)%2Fapi%2F%5B...slug%5D%2Froute.ts&appDir=D%3A%5Cweb%5Cpayload-local-demo%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=D%3A%5Cweb%5Cpayload-local-demo&isDev=true&tsconfigPath=&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:316:32)
+              at async Module.handler (webpack-internal:///(rsc)/./node_modules/.pnpm/next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1/node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2F(payload)%2Fapi%2F%5B...slug%5D%2Froute&page=%2F(payload)%2Fapi%2F%5B...slug%5D%2Froute&appPaths=&allNormalizedAppPaths=&pagePath=private-next-app-dir%2F(payload)%2Fapi%2F%5B...slug%5D%2Froute.ts&appDir=D%3A%5Cweb%5Cpayload-local-demo%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=D%3A%5Cweb%5Cpayload-local-demo&isDev=true&tsconfigPath=&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:371:13)
+              at async DevServer.renderToResponseWithComponentsImpl (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\base-server.js:1454:9)
+              at async DevServer.renderPageComponent (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\base-server.js:1506:24)
+              at async DevServer.renderToResponseImpl (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\base-server.js:1556:32)
+              at async DevServer.pipeImpl (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\base-server.js:1043:25)
+              at async NextNodeServer.handleCatchallRenderRequest (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\next-server.js:338:17)
+              at async DevServer.handleRequestImpl (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\base-server.js:934:17)
+              at async D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\dev\next-dev-server.js:394:20
+              at async Span.traceAsyncFn (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\trace\trace.js:164:20)
+              at async DevServer.handleRequest (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\dev\next-dev-server.js:390:24)
+              at async invokeRender (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\lib\router-server.js:266:21)
+              at async handleRequest (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\lib\router-server.js:465:24)
+              at async requestHandlerImpl (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\lib\router-server.js:514:13)
+              at async Server.requestListener (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\lib\start-server.js:225:13)
+      "data": null,
+      "isOperational": true,
+      "isPublic": true,
+      "status": 401,
+      "name": "AuthenticationError"
+    }
+ POST /api/users/login 401 in 255ms (next.js: 27ms, application-code: 227ms)
+ POST /api/users/login 200 in 277ms (next.js: 21ms, application-code: 256ms)
+ GET /generate 200 in 298ms (next.js: 7ms, application-code: 292ms)
+ GET /generate 200 in 145ms (next.js: 6ms, application-code: 139ms)
+[browser] THREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+ POST /api/studio/ai/tasks 200 in 106ms (next.js: 21ms, application-code: 85ms)
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+○ Compiling /results/[taskCode] ...
+ GET /results/TASK-20260413025755-PB83 200 in 12.9s (next.js: 12.0s, application-code: 879ms)
+ GET /results/TASK-20260413025755-PB83 200 in 316ms (next.js: 23ms, application-code: 294ms)
+[browser] THREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+ POST /api/studio/ai/tasks/6/sync 200 in 210ms (next.js: 83ms, application-code: 126ms)
+ GET /results/TASK-20260413025755-PB83 200 in 285ms (next.js: 6ms, application-code: 279ms)
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+○ Compiling /admin/[[...segments]] ...
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+ POST /api/studio/ai/tasks/6/sync 200 in 20.2s (next.js: 19.9s, application-code: 331ms)
+ POST /api/studio/ai/tasks/6/sync 200 in 17.5s (next.js: 17.1s, application-code: 331ms)
+ POST /api/studio/ai/tasks/6/sync 200 in 15.6s (next.js: 15.2s, application-code: 331ms)
+ POST /api/studio/ai/tasks/6/sync 200 in 22.9s (next.js: 22.6s, application-code: 331ms)
+ GET /features 200 in 14.2s (next.js: 13.7s, application-code: 558ms)
+○ Compiling /showcase ...
+ GET /admin 200 in 33.5s (next.js: 31.8s, application-code: 1678ms)
+ GET /api/users/me 200 in 24ms (next.js: 3ms, application-code: 20ms)
+ GET /api/payload-preferences/nav 200 in 19ms (next.js: 3ms, application-code: 15ms)
+ GET /admin/collections/users 200 in 1064ms (next.js: 50ms, application-code: 1014ms)
+ GET /admin/collections/media 200 in 314ms (next.js: 5ms, application-code: 308ms)
+[02:59:03] [31mERROR[39m: [36mFailed query: select "id", "site_name", "site_description", "support_email", "announcement", "footer_about_eyebrow", "footer_about_title", "footer_about_text", "footer_direction_eyebrow", "footer_direction_title", "footer_direction_text", "generation_pricing_image_credits", "generation_pricing_text_credits", "generation_pricing_hybrid_credits", "generation_pricing_download_credits", "updated_at", "created_at", (select coalesce(json_group_array(json_array("_order", "id", "label", "href")), json_array()) as "data" from (select * from "site_settings_header_nav" "site_settings_headerNav" where "site_settings_headerNav"."_parent_id" = "site_settings"."id" order by "site_settings_headerNav"."_order" asc) "site_settings_headerNav") as "headerNav", (select coalesce(json_group_array(json_array("_order", "id", "title", "shopify_variant_id", "credits", "price", "currency")), json_array()) as "data" from (select * from "site_settings_credit_packages" "site_settings_creditPackages" where "site_settings_creditPackages"."_parent_id" = "site_settings"."id" order by "site_settings_creditPackages"."_order" asc) "site_settings_creditPackages") as "creditPackages" from "site_settings" "site_settings" order by "site_settings"."created_at" desc limit ?
+params: 1[39m
+    err: {
+      "type": "DrizzleQueryError",
+      "message": "Failed query: select \"id\", \"site_name\", \"site_description\", \"support_email\", \"announcement\", \"footer_about_eyebrow\", \"footer_about_title\", \"footer_about_text\", \"footer_direction_eyebrow\", \"footer_direction_title\", \"footer_direction_text\", \"generation_pricing_image_credits\", \"generation_pricing_text_credits\", \"generation_pricing_hybrid_credits\", \"generation_pricing_download_credits\", \"updated_at\", \"created_at\", (select coalesce(json_group_array(json_array(\"_order\", \"id\", \"label\", \"href\")), json_array()) as \"data\" from (select * from \"site_settings_header_nav\" \"site_settings_headerNav\" where \"site_settings_headerNav\".\"_parent_id\" = \"site_settings\".\"id\" order by \"site_settings_headerNav\".\"_order\" asc) \"site_settings_headerNav\") as \"headerNav\", (select coalesce(json_group_array(json_array(\"_order\", \"id\", \"title\", \"shopify_variant_id\", \"credits\", \"price\", \"currency\")), json_array()) as \"data\" from (select * from \"site_settings_credit_packages\" \"site_settings_creditPackages\" where \"site_settings_creditPackages\".\"_parent_id\" = \"site_settings\".\"id\" order by \"site_settings_creditPackages\".\"_order\" asc) \"site_settings_creditPackages\") as \"creditPackages\" from \"site_settings\" \"site_settings\" order by \"site_settings\".\"created_at\" desc limit ?\nparams: 1: SQLITE_ERROR: no such table: site_settings_header_nav: no such table: site_settings_header_nav",
+      "stack":
+          Error: Failed query: select "id", "site_name", "site_description", "support_email", "announcement", "footer_about_eyebrow", "footer_about_title", "footer_about_text", "footer_direction_eyebrow", "footer_direction_title", "footer_direction_text", "generation_pricing_image_credits", "generation_pricing_text_credits", "generation_pricing_hybrid_credits", "generation_pricing_download_credits", "updated_at", "created_at", (select coalesce(json_group_array(json_array("_order", "id", "label", "href")), json_array()) as "data" from (select * from "site_settings_header_nav" "site_settings_headerNav" where "site_settings_headerNav"."_parent_id" = "site_settings"."id" order by "site_settings_headerNav"."_order" asc) "site_settings_headerNav") as "headerNav", (select coalesce(json_group_array(json_array("_order", "id", "title", "shopify_variant_id", "credits", "price", "currency")), json_array()) as "data" from (select * from "site_settings_credit_packages" "site_settings_creditPackages" where "site_settings_creditPackages"."_parent_id" = "site_settings"."id" order by "site_settings_creditPackages"."_order" asc) "site_settings_creditPackages") as "creditPackages" from "site_settings" "site_settings" order by "site_settings"."created_at" desc limit ?
+          params: 1
+              at LibSQLPreparedQuery.queryWithCache (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/sqlite-core/session.js:43:15)
+              at runNextTicks (node:internal/process/task_queues:65:5)
+              at process.processImmediate (node:internal/timers:472:9)
+              at process.callbackTrampoline (node:internal/async_hooks:130:17)
+              at async LibSQLPreparedQuery.values (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/libsql/session.js:193:12)
+              at async LibSQLPreparedQuery.all (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/libsql/session.js:136:18)
+              at async find (file:///D:/web/payload-local-demo/node_modules/.pnpm/@payloadcms+drizzle@3.82.1__3043ef34b8b3df8581a47a17f7211df5/node_modules/@payloadcms/drizzle/dist/find/findMany.js:137:21)
+              at async Object.findGlobal (file:///D:/web/payload-local-demo/node_modules/.pnpm/@payloadcms+drizzle@3.82.1__3043ef34b8b3df8581a47a17f7211df5/node_modules/@payloadcms/drizzle/dist/findGlobal.js:6:29)
+              at async findOneOperation (file:///D:/web/payload-local-demo/node_modules/.pnpm/payload@3.82.1_graphql@16.13.2_typescript@5.7.3/node_modules/payload/dist/globals/operations/findOne.js:61:27)
+              at async getDocumentData (webpack-internal:///(rsc)/./node_modules/.pnpm/@payloadcms+next@3.82.1_@ty_0b37c474e34329ca3c5fa0f368d9dc03/node_modules/@payloadcms/next/dist/views/Document/getDocumentData.js:48:22)
+              at async renderDocument (webpack-internal:///(rsc)/./node_modules/.pnpm/@payloadcms+next@3.82.1_@ty_0b37c474e34329ca3c5fa0f368d9dc03/node_modules/@payloadcms/next/dist/views/Document/index.js:109:64)
+              at async DocumentView (webpack-internal:///(rsc)/./node_modules/.pnpm/@payloadcms+next@3.82.1_@ty_0b37c474e34329ca3c5fa0f368d9dc03/node_modules/@payloadcms/next/dist/views/Document/index.js:410:9)
+          caused by: LibsqlError: SQLITE_ERROR: no such table: site_settings_header_nav
+              at mapSqliteError (file:///D:/web/payload-local-demo/node_modules/.pnpm/@libsql+client@0.14.0/node_modules/@libsql/client/lib-esm/sqlite3.js:372:16)
+              at executeStmt (file:///D:/web/payload-local-demo/node_modules/.pnpm/@libsql+client@0.14.0/node_modules/@libsql/client/lib-esm/sqlite3.js:277:15)
+              at Sqlite3Client.execute (file:///D:/web/payload-local-demo/node_modules/.pnpm/@libsql+client@0.14.0/node_modules/@libsql/client/lib-esm/sqlite3.js:79:16)
+              at file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/libsql/session.js:195:61
+              at LibSQLPreparedQuery.queryWithCache (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/sqlite-core/session.js:41:22)
+              at LibSQLPreparedQuery.values (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/libsql/session.js:193:23)
+              at LibSQLPreparedQuery.all (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/libsql/session.js:136:29)
+              at QueryPromise.executeRaw (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/sqlite-core/query-builders/query.js:136:33)
+              at QueryPromise.execute (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/sqlite-core/query-builders/query.js:139:17)
+              at QueryPromise.then (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/query-promise.js:21:17)
+              at runNextTicks (node:internal/process/task_queues:65:5)
+              at process.processImmediate (node:internal/timers:472:9)
+              at process.callbackTrampoline (node:internal/async_hooks:130:17)
+          caused by: SqliteError: no such table: site_settings_header_nav
+              at convertError (D:\web\payload-local-demo\node_modules\.pnpm\libsql@0.4.7\node_modules\libsql\index.js:51:12)
+              at Database.prepare (D:\web\payload-local-demo\node_modules\.pnpm\libsql@0.4.7\node_modules\libsql\index.js:119:13)
+              at executeStmt (file:///D:/web/payload-local-demo/node_modules/.pnpm/@libsql+client@0.14.0/node_modules/@libsql/client/lib-esm/sqlite3.js:248:28)
+              at Sqlite3Client.execute (file:///D:/web/payload-local-demo/node_modules/.pnpm/@libsql+client@0.14.0/node_modules/@libsql/client/lib-esm/sqlite3.js:79:16)
+              at file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/libsql/session.js:195:61
+              at LibSQLPreparedQuery.queryWithCache (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/sqlite-core/session.js:41:22)
+              at LibSQLPreparedQuery.values (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/libsql/session.js:193:23)
+              at LibSQLPreparedQuery.all (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/libsql/session.js:136:29)
+              at QueryPromise.executeRaw (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/sqlite-core/query-builders/query.js:136:33)
+              at QueryPromise.execute (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/sqlite-core/query-builders/query.js:139:17)
+              at QueryPromise.then (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/query-promise.js:21:17)
+              at runNextTicks (node:internal/process/task_queues:65:5)
+              at process.processImmediate (node:internal/timers:472:9)
+              at process.callbackTrampoline (node:internal/async_hooks:130:17)
+      "query": "select \"id\", \"site_name\", \"site_description\", \"support_email\", \"announcement\", \"footer_about_eyebrow\", \"footer_about_title\", \"footer_about_text\", \"footer_direction_eyebrow\", \"footer_direction_title\", \"footer_direction_text\", \"generation_pricing_image_credits\", \"generation_pricing_text_credits\", \"generation_pricing_hybrid_credits\", \"generation_pricing_download_credits\", \"updated_at\", \"created_at\", (select coalesce(json_group_array(json_array(\"_order\", \"id\", \"label\", \"href\")), json_array()) as \"data\" from (select * from \"site_settings_header_nav\" \"site_settings_headerNav\" where \"site_settings_headerNav\".\"_parent_id\" = \"site_settings\".\"id\" order by \"site_settings_headerNav\".\"_order\" asc) \"site_settings_headerNav\") as \"headerNav\", (select coalesce(json_group_array(json_array(\"_order\", \"id\", \"title\", \"shopify_variant_id\", \"credits\", \"price\", \"currency\")), json_array()) as \"data\" from (select * from \"site_settings_credit_packages\" \"site_settings_creditPackages\" where \"site_settings_creditPackages\".\"_parent_id\" = \"site_settings\".\"id\" order by \"site_settings_creditPackages\".\"_order\" asc) \"site_settings_creditPackages\") as \"creditPackages\" from \"site_settings\" \"site_settings\" order by \"site_settings\".\"created_at\" desc limit ?",
+      "params": [
+        1
+      ]
+    }
+[02:59:03] [31mERROR[39m: [36mnot-found[39m
+    err: {
+      "type": "Error",
+      "message": "not-found",
+      "stack":
+          Error: not-found
+              at renderDocument (webpack-internal:///(rsc)/./node_modules/.pnpm/@payloadcms+next@3.82.1_@ty_0b37c474e34329ca3c5fa0f368d9dc03/node_modules/@payloadcms/next/dist/views/Document/index.js:129:13)
+              at runNextTicks (node:internal/process/task_queues:65:5)
+              at process.processImmediate (node:internal/timers:472:9)
+              at process.callbackTrampoline (node:internal/async_hooks:130:17)
+              at async DocumentView (webpack-internal:///(rsc)/./node_modules/.pnpm/@payloadcms+next@3.82.1_@ty_0b37c474e34329ca3c5fa0f368d9dc03/node_modules/@payloadcms/next/dist/views/Document/index.js:410:9)
+    }
+ GET /admin/globals/site-settings 200 in 304ms (next.js: 7ms, application-code: 297ms)
+ GET /admin/collections/shopify-payments 200 in 400ms (next.js: 5ms, application-code: 395ms)
+[02:59:06] [31mERROR[39m: [36mFailed query: select "id", "hero_eyebrow", "hero_title", "hero_subtitle", "hero_primary_c_t_a_label", "hero_primary_c_t_a_href", "hero_secondary_c_t_a_label", "hero_secondary_c_t_a_href", "intro_band_eyebrow", "intro_band_title", "intro_band_text", "service_intro_eyebrow", "service_intro_title", "service_intro_text", "process_section_eyebrow", "process_section_title", "entry_section_eyebrow", "entry_section_title", "entry_section_text", "faq_section_eyebrow", "faq_section_title", "updated_at", "created_at", (select coalesce(json_group_array(json_array("_order", "id", "category", "title", "summary", "tone")), json_array()) as "data" from (select * from "homepage_content_featured_works" "homepage_content_featuredWorks" where "homepage_content_featuredWorks"."_parent_id" = "homepage_content"."id" order by "homepage_content_featuredWorks"."_order" asc) "homepage_content_featuredWorks") as "featuredWorks", (select coalesce(json_group_array(json_array("_order", "id", "title", "text")), json_array()) as "data" from (select * from "homepage_content_service_blocks" "homepage_content_serviceBlocks" where "homepage_content_serviceBlocks"."_parent_id" = "homepage_content"."id" order by "homepage_content_serviceBlocks"."_order" asc) "homepage_content_serviceBlocks") as "serviceBlocks", (select coalesce(json_group_array(json_array("_order", "id", "label")), json_array()) as "data" from (select * from "homepage_content_use_cases" "homepage_content_useCases" where "homepage_content_useCases"."_parent_id" = "homepage_content"."id" order by "homepage_content_useCases"."_order" asc) "homepage_content_useCases") as "useCases", (select coalesce(json_group_array(json_array("_order", "id", "step", "title", "text")), json_array()) as "data" from (select * from "homepage_content_process_steps" "homepage_content_processSteps" where "homepage_content_processSteps"."_parent_id" = "homepage_content"."id" order by "homepage_content_processSteps"."_order" asc) "homepage_content_processSteps") as "processSteps", (select coalesce(json_group_array(json_array("_order", "id", "question", "answer")), json_array()) as "data" from (select * from "homepage_content_faq" "homepage_content_faq" where "homepage_content_faq"."_parent_id" = "homepage_content"."id" order by "homepage_content_faq"."_order" asc) "homepage_content_faq") as "faq" from "homepage_content" "homepage_content" order by "homepage_content"."created_at" desc limit ?
+params: 1[39m
+    err: {
+      "type": "DrizzleQueryError",
+      "message": "Failed query: select \"id\", \"hero_eyebrow\", \"hero_title\", \"hero_subtitle\", \"hero_primary_c_t_a_label\", \"hero_primary_c_t_a_href\", \"hero_secondary_c_t_a_label\", \"hero_secondary_c_t_a_href\", \"intro_band_eyebrow\", \"intro_band_title\", \"intro_band_text\", \"service_intro_eyebrow\", \"service_intro_title\", \"service_intro_text\", \"process_section_eyebrow\", \"process_section_title\", \"entry_section_eyebrow\", \"entry_section_title\", \"entry_section_text\", \"faq_section_eyebrow\", \"faq_section_title\", \"updated_at\", \"created_at\", (select coalesce(json_group_array(json_array(\"_order\", \"id\", \"category\", \"title\", \"summary\", \"tone\")), json_array()) as \"data\" from (select * from \"homepage_content_featured_works\" \"homepage_content_featuredWorks\" where \"homepage_content_featuredWorks\".\"_parent_id\" = \"homepage_content\".\"id\" order by \"homepage_content_featuredWorks\".\"_order\" asc) \"homepage_content_featuredWorks\") as \"featuredWorks\", (select coalesce(json_group_array(json_array(\"_order\", \"id\", \"title\", \"text\")), json_array()) as \"data\" from (select * from \"homepage_content_service_blocks\" \"homepage_content_serviceBlocks\" where \"homepage_content_serviceBlocks\".\"_parent_id\" = \"homepage_content\".\"id\" order by \"homepage_content_serviceBlocks\".\"_order\" asc) \"homepage_content_serviceBlocks\") as \"serviceBlocks\", (select coalesce(json_group_array(json_array(\"_order\", \"id\", \"label\")), json_array()) as \"data\" from (select * from \"homepage_content_use_cases\" \"homepage_content_useCases\" where \"homepage_content_useCases\".\"_parent_id\" = \"homepage_content\".\"id\" order by \"homepage_content_useCases\".\"_order\" asc) \"homepage_content_useCases\") as \"useCases\", (select coalesce(json_group_array(json_array(\"_order\", \"id\", \"step\", \"title\", \"text\")), json_array()) as \"data\" from (select * from \"homepage_content_process_steps\" \"homepage_content_processSteps\" where \"homepage_content_processSteps\".\"_parent_id\" = \"homepage_content\".\"id\" order by \"homepage_content_processSteps\".\"_order\" asc) \"homepage_content_processSteps\") as \"processSteps\", (select coalesce(json_group_array(json_array(\"_order\", \"id\", \"question\", \"answer\")), json_array()) as \"data\" from (select * from \"homepage_content_faq\" \"homepage_content_faq\" where \"homepage_content_faq\".\"_parent_id\" = \"homepage_content\".\"id\" order by \"homepage_content_faq\".\"_order\" asc) \"homepage_content_faq\") as \"faq\" from \"homepage_content\" \"homepage_content\" order by \"homepage_content\".\"created_at\" desc limit ?\nparams: 1: SQLITE_ERROR: no such table: homepage_content_featured_works: no such table: homepage_content_featured_works",
+      "stack":
+          Error: Failed query: select "id", "hero_eyebrow", "hero_title", "hero_subtitle", "hero_primary_c_t_a_label", "hero_primary_c_t_a_href", "hero_secondary_c_t_a_label", "hero_secondary_c_t_a_href", "intro_band_eyebrow", "intro_band_title", "intro_band_text", "service_intro_eyebrow", "service_intro_title", "service_intro_text", "process_section_eyebrow", "process_section_title", "entry_section_eyebrow", "entry_section_title", "entry_section_text", "faq_section_eyebrow", "faq_section_title", "updated_at", "created_at", (select coalesce(json_group_array(json_array("_order", "id", "category", "title", "summary", "tone")), json_array()) as "data" from (select * from "homepage_content_featured_works" "homepage_content_featuredWorks" where "homepage_content_featuredWorks"."_parent_id" = "homepage_content"."id" order by "homepage_content_featuredWorks"."_order" asc) "homepage_content_featuredWorks") as "featuredWorks", (select coalesce(json_group_array(json_array("_order", "id", "title", "text")), json_array()) as "data" from (select * from "homepage_content_service_blocks" "homepage_content_serviceBlocks" where "homepage_content_serviceBlocks"."_parent_id" = "homepage_content"."id" order by "homepage_content_serviceBlocks"."_order" asc) "homepage_content_serviceBlocks") as "serviceBlocks", (select coalesce(json_group_array(json_array("_order", "id", "label")), json_array()) as "data" from (select * from "homepage_content_use_cases" "homepage_content_useCases" where "homepage_content_useCases"."_parent_id" = "homepage_content"."id" order by "homepage_content_useCases"."_order" asc) "homepage_content_useCases") as "useCases", (select coalesce(json_group_array(json_array("_order", "id", "step", "title", "text")), json_array()) as "data" from (select * from "homepage_content_process_steps" "homepage_content_processSteps" where "homepage_content_processSteps"."_parent_id" = "homepage_content"."id" order by "homepage_content_processSteps"."_order" asc) "homepage_content_processSteps") as "processSteps", (select coalesce(json_group_array(json_array("_order", "id", "question", "answer")), json_array()) as "data" from (select * from "homepage_content_faq" "homepage_content_faq" where "homepage_content_faq"."_parent_id" = "homepage_content"."id" order by "homepage_content_faq"."_order" asc) "homepage_content_faq") as "faq" from "homepage_content" "homepage_content" order by "homepage_content"."created_at" desc limit ?
+          params: 1
+              at LibSQLPreparedQuery.queryWithCache (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/sqlite-core/session.js:43:15)
+              at runNextTicks (node:internal/process/task_queues:65:5)
+              at process.processImmediate (node:internal/timers:472:9)
+              at process.callbackTrampoline (node:internal/async_hooks:130:17)
+              at async LibSQLPreparedQuery.values (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/libsql/session.js:193:12)
+              at async LibSQLPreparedQuery.all (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/libsql/session.js:136:18)
+              at async find (file:///D:/web/payload-local-demo/node_modules/.pnpm/@payloadcms+drizzle@3.82.1__3043ef34b8b3df8581a47a17f7211df5/node_modules/@payloadcms/drizzle/dist/find/findMany.js:137:21)
+              at async Object.findGlobal (file:///D:/web/payload-local-demo/node_modules/.pnpm/@payloadcms+drizzle@3.82.1__3043ef34b8b3df8581a47a17f7211df5/node_modules/@payloadcms/drizzle/dist/findGlobal.js:6:29)
+              at async findOneOperation (file:///D:/web/payload-local-demo/node_modules/.pnpm/payload@3.82.1_graphql@16.13.2_typescript@5.7.3/node_modules/payload/dist/globals/operations/findOne.js:61:27)
+              at async getDocumentData (webpack-internal:///(rsc)/./node_modules/.pnpm/@payloadcms+next@3.82.1_@ty_0b37c474e34329ca3c5fa0f368d9dc03/node_modules/@payloadcms/next/dist/views/Document/getDocumentData.js:48:22)
+              at async renderDocument (webpack-internal:///(rsc)/./node_modules/.pnpm/@payloadcms+next@3.82.1_@ty_0b37c474e34329ca3c5fa0f368d9dc03/node_modules/@payloadcms/next/dist/views/Document/index.js:109:64)
+              at async DocumentView (webpack-internal:///(rsc)/./node_modules/.pnpm/@payloadcms+next@3.82.1_@ty_0b37c474e34329ca3c5fa0f368d9dc03/node_modules/@payloadcms/next/dist/views/Document/index.js:410:9)
+          caused by: LibsqlError: SQLITE_ERROR: no such table: homepage_content_featured_works
+              at mapSqliteError (file:///D:/web/payload-local-demo/node_modules/.pnpm/@libsql+client@0.14.0/node_modules/@libsql/client/lib-esm/sqlite3.js:372:16)
+              at executeStmt (file:///D:/web/payload-local-demo/node_modules/.pnpm/@libsql+client@0.14.0/node_modules/@libsql/client/lib-esm/sqlite3.js:277:15)
+              at Sqlite3Client.execute (file:///D:/web/payload-local-demo/node_modules/.pnpm/@libsql+client@0.14.0/node_modules/@libsql/client/lib-esm/sqlite3.js:79:16)
+              at file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/libsql/session.js:195:61
+              at LibSQLPreparedQuery.queryWithCache (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/sqlite-core/session.js:41:22)
+              at LibSQLPreparedQuery.values (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/libsql/session.js:193:23)
+              at LibSQLPreparedQuery.all (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/libsql/session.js:136:29)
+              at QueryPromise.executeRaw (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/sqlite-core/query-builders/query.js:136:33)
+              at QueryPromise.execute (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/sqlite-core/query-builders/query.js:139:17)
+              at QueryPromise.then (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/query-promise.js:21:17)
+              at runNextTicks (node:internal/process/task_queues:65:5)
+              at process.processImmediate (node:internal/timers:472:9)
+              at process.callbackTrampoline (node:internal/async_hooks:130:17)
+          caused by: SqliteError: no such table: homepage_content_featured_works
+              at convertError (D:\web\payload-local-demo\node_modules\.pnpm\libsql@0.4.7\node_modules\libsql\index.js:51:12)
+              at Database.prepare (D:\web\payload-local-demo\node_modules\.pnpm\libsql@0.4.7\node_modules\libsql\index.js:119:13)
+              at executeStmt (file:///D:/web/payload-local-demo/node_modules/.pnpm/@libsql+client@0.14.0/node_modules/@libsql/client/lib-esm/sqlite3.js:248:28)
+              at Sqlite3Client.execute (file:///D:/web/payload-local-demo/node_modules/.pnpm/@libsql+client@0.14.0/node_modules/@libsql/client/lib-esm/sqlite3.js:79:16)
+              at file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/libsql/session.js:195:61
+              at LibSQLPreparedQuery.queryWithCache (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/sqlite-core/session.js:41:22)
+              at LibSQLPreparedQuery.values (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/libsql/session.js:193:23)
+              at LibSQLPreparedQuery.all (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/libsql/session.js:136:29)
+              at QueryPromise.executeRaw (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/sqlite-core/query-builders/query.js:136:33)
+              at QueryPromise.execute (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/sqlite-core/query-builders/query.js:139:17)
+              at QueryPromise.then (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/query-promise.js:21:17)
+              at runNextTicks (node:internal/process/task_queues:65:5)
+              at process.processImmediate (node:internal/timers:472:9)
+              at process.callbackTrampoline (node:internal/async_hooks:130:17)
+      "query": "select \"id\", \"hero_eyebrow\", \"hero_title\", \"hero_subtitle\", \"hero_primary_c_t_a_label\", \"hero_primary_c_t_a_href\", \"hero_secondary_c_t_a_label\", \"hero_secondary_c_t_a_href\", \"intro_band_eyebrow\", \"intro_band_title\", \"intro_band_text\", \"service_intro_eyebrow\", \"service_intro_title\", \"service_intro_text\", \"process_section_eyebrow\", \"process_section_title\", \"entry_section_eyebrow\", \"entry_section_title\", \"entry_section_text\", \"faq_section_eyebrow\", \"faq_section_title\", \"updated_at\", \"created_at\", (select coalesce(json_group_array(json_array(\"_order\", \"id\", \"category\", \"title\", \"summary\", \"tone\")), json_array()) as \"data\" from (select * from \"homepage_content_featured_works\" \"homepage_content_featuredWorks\" where \"homepage_content_featuredWorks\".\"_parent_id\" = \"homepage_content\".\"id\" order by \"homepage_content_featuredWorks\".\"_order\" asc) \"homepage_content_featuredWorks\") as \"featuredWorks\", (select coalesce(json_group_array(json_array(\"_order\", \"id\", \"title\", \"text\")), json_array()) as \"data\" from (select * from \"homepage_content_service_blocks\" \"homepage_content_serviceBlocks\" where \"homepage_content_serviceBlocks\".\"_parent_id\" = \"homepage_content\".\"id\" order by \"homepage_content_serviceBlocks\".\"_order\" asc) \"homepage_content_serviceBlocks\") as \"serviceBlocks\", (select coalesce(json_group_array(json_array(\"_order\", \"id\", \"label\")), json_array()) as \"data\" from (select * from \"homepage_content_use_cases\" \"homepage_content_useCases\" where \"homepage_content_useCases\".\"_parent_id\" = \"homepage_content\".\"id\" order by \"homepage_content_useCases\".\"_order\" asc) \"homepage_content_useCases\") as \"useCases\", (select coalesce(json_group_array(json_array(\"_order\", \"id\", \"step\", \"title\", \"text\")), json_array()) as \"data\" from (select * from \"homepage_content_process_steps\" \"homepage_content_processSteps\" where \"homepage_content_processSteps\".\"_parent_id\" = \"homepage_content\".\"id\" order by \"homepage_content_processSteps\".\"_order\" asc) \"homepage_content_processSteps\") as \"processSteps\", (select coalesce(json_group_array(json_array(\"_order\", \"id\", \"question\", \"answer\")), json_array()) as \"data\" from (select * from \"homepage_content_faq\" \"homepage_content_faq\" where \"homepage_content_faq\".\"_parent_id\" = \"homepage_content\".\"id\" order by \"homepage_content_faq\".\"_order\" asc) \"homepage_content_faq\") as \"faq\" from \"homepage_content\" \"homepage_content\" order by \"homepage_content\".\"created_at\" desc limit ?",
+      "params": [
+        1
+      ]
+    }
+[02:59:06] [31mERROR[39m: [36mnot-found[39m
+    err: {
+      "type": "Error",
+      "message": "not-found",
+      "stack":
+          Error: not-found
+              at renderDocument (webpack-internal:///(rsc)/./node_modules/.pnpm/@payloadcms+next@3.82.1_@ty_0b37c474e34329ca3c5fa0f368d9dc03/node_modules/@payloadcms/next/dist/views/Document/index.js:129:13)
+              at runNextTicks (node:internal/process/task_queues:65:5)
+              at process.processImmediate (node:internal/timers:472:9)
+              at process.callbackTrampoline (node:internal/async_hooks:130:17)
+              at async DocumentView (webpack-internal:///(rsc)/./node_modules/.pnpm/@payloadcms+next@3.82.1_@ty_0b37c474e34329ca3c5fa0f368d9dc03/node_modules/@payloadcms/next/dist/views/Document/index.js:410:9)
+    }
+ GET /admin/globals/homepage-content 200 in 303ms (next.js: 24ms, application-code: 279ms)
+ GET /admin 200 in 557ms (next.js: 5ms, application-code: 552ms)
+ GET /admin/collections/shopify-payments 200 in 386ms (next.js: 26ms, application-code: 361ms)
+ GET /admin/collections/shopify-payments/create 200 in 386ms (next.js: 31ms, application-code: 355ms)
+ GET /api/payload-preferences/collection-shopify-payments 200 in 56ms (next.js: 23ms, application-code: 33ms)
+ POST /api/users 200 in 37ms (next.js: 5ms, application-code: 31ms)
+ GET /api/payload-preferences/undefined 200 in 25ms (next.js: 4ms, application-code: 21ms)
+ POST /admin/collections/shopify-payments/create 200 in 48ms (next.js: 4ms, application-code: 43ms)
+  └─ ƒ <inline action>({"args":{"collectionSlug":"shopify-payments","docPermissions":"[Object]","docPreferences":null,"...":"8 items not stringified"},"name":"form-state"}) in 14ms ..//src/app/(payload)/layout.tsx
+ POST /admin/collections/shopify-payments/create 200 in 55ms (next.js: 25ms, application-code: 30ms)
+  └─ ƒ <inline action>({"args":{"collectionSlug":"shopify-payments","docPermissions":"[Object]","docPreferences":null,"...":"8 items not stringified"},"name":"form-state"}) in 9ms ..//src/app/(payload)/layout.tsx
+[03:05:04] [31mERROR[39m: [36mFailed query: select "id", "hero_eyebrow", "hero_title", "hero_subtitle", "hero_primary_c_t_a_label", "hero_primary_c_t_a_href", "hero_secondary_c_t_a_label", "hero_secondary_c_t_a_href", "intro_band_eyebrow", "intro_band_title", "intro_band_text", "service_intro_eyebrow", "service_intro_title", "service_intro_text", "process_section_eyebrow", "process_section_title", "entry_section_eyebrow", "entry_section_title", "entry_section_text", "faq_section_eyebrow", "faq_section_title", "updated_at", "created_at", (select coalesce(json_group_array(json_array("_order", "id", "category", "title", "summary", "tone")), json_array()) as "data" from (select * from "homepage_content_featured_works" "homepage_content_featuredWorks" where "homepage_content_featuredWorks"."_parent_id" = "homepage_content"."id" order by "homepage_content_featuredWorks"."_order" asc) "homepage_content_featuredWorks") as "featuredWorks", (select coalesce(json_group_array(json_array("_order", "id", "title", "text")), json_array()) as "data" from (select * from "homepage_content_service_blocks" "homepage_content_serviceBlocks" where "homepage_content_serviceBlocks"."_parent_id" = "homepage_content"."id" order by "homepage_content_serviceBlocks"."_order" asc) "homepage_content_serviceBlocks") as "serviceBlocks", (select coalesce(json_group_array(json_array("_order", "id", "label")), json_array()) as "data" from (select * from "homepage_content_use_cases" "homepage_content_useCases" where "homepage_content_useCases"."_parent_id" = "homepage_content"."id" order by "homepage_content_useCases"."_order" asc) "homepage_content_useCases") as "useCases", (select coalesce(json_group_array(json_array("_order", "id", "step", "title", "text")), json_array()) as "data" from (select * from "homepage_content_process_steps" "homepage_content_processSteps" where "homepage_content_processSteps"."_parent_id" = "homepage_content"."id" order by "homepage_content_processSteps"."_order" asc) "homepage_content_processSteps") as "processSteps", (select coalesce(json_group_array(json_array("_order", "id", "question", "answer")), json_array()) as "data" from (select * from "homepage_content_faq" "homepage_content_faq" where "homepage_content_faq"."_parent_id" = "homepage_content"."id" order by "homepage_content_faq"."_order" asc) "homepage_content_faq") as "faq" from "homepage_content" "homepage_content" order by "homepage_content"."created_at" desc limit ?
+params: 1[39m
+    err: {
+      "type": "DrizzleQueryError",
+      "message": "Failed query: select \"id\", \"hero_eyebrow\", \"hero_title\", \"hero_subtitle\", \"hero_primary_c_t_a_label\", \"hero_primary_c_t_a_href\", \"hero_secondary_c_t_a_label\", \"hero_secondary_c_t_a_href\", \"intro_band_eyebrow\", \"intro_band_title\", \"intro_band_text\", \"service_intro_eyebrow\", \"service_intro_title\", \"service_intro_text\", \"process_section_eyebrow\", \"process_section_title\", \"entry_section_eyebrow\", \"entry_section_title\", \"entry_section_text\", \"faq_section_eyebrow\", \"faq_section_title\", \"updated_at\", \"created_at\", (select coalesce(json_group_array(json_array(\"_order\", \"id\", \"category\", \"title\", \"summary\", \"tone\")), json_array()) as \"data\" from (select * from \"homepage_content_featured_works\" \"homepage_content_featuredWorks\" where \"homepage_content_featuredWorks\".\"_parent_id\" = \"homepage_content\".\"id\" order by \"homepage_content_featuredWorks\".\"_order\" asc) \"homepage_content_featuredWorks\") as \"featuredWorks\", (select coalesce(json_group_array(json_array(\"_order\", \"id\", \"title\", \"text\")), json_array()) as \"data\" from (select * from \"homepage_content_service_blocks\" \"homepage_content_serviceBlocks\" where \"homepage_content_serviceBlocks\".\"_parent_id\" = \"homepage_content\".\"id\" order by \"homepage_content_serviceBlocks\".\"_order\" asc) \"homepage_content_serviceBlocks\") as \"serviceBlocks\", (select coalesce(json_group_array(json_array(\"_order\", \"id\", \"label\")), json_array()) as \"data\" from (select * from \"homepage_content_use_cases\" \"homepage_content_useCases\" where \"homepage_content_useCases\".\"_parent_id\" = \"homepage_content\".\"id\" order by \"homepage_content_useCases\".\"_order\" asc) \"homepage_content_useCases\") as \"useCases\", (select coalesce(json_group_array(json_array(\"_order\", \"id\", \"step\", \"title\", \"text\")), json_array()) as \"data\" from (select * from \"homepage_content_process_steps\" \"homepage_content_processSteps\" where \"homepage_content_processSteps\".\"_parent_id\" = \"homepage_content\".\"id\" order by \"homepage_content_processSteps\".\"_order\" asc) \"homepage_content_processSteps\") as \"processSteps\", (select coalesce(json_group_array(json_array(\"_order\", \"id\", \"question\", \"answer\")), json_array()) as \"data\" from (select * from \"homepage_content_faq\" \"homepage_content_faq\" where \"homepage_content_faq\".\"_parent_id\" = \"homepage_content\".\"id\" order by \"homepage_content_faq\".\"_order\" asc) \"homepage_content_faq\") as \"faq\" from \"homepage_content\" \"homepage_content\" order by \"homepage_content\".\"created_at\" desc limit ?\nparams: 1: SQLITE_ERROR: no such table: homepage_content_featured_works: no such table: homepage_content_featured_works",
+      "stack":
+          Error: Failed query: select "id", "hero_eyebrow", "hero_title", "hero_subtitle", "hero_primary_c_t_a_label", "hero_primary_c_t_a_href", "hero_secondary_c_t_a_label", "hero_secondary_c_t_a_href", "intro_band_eyebrow", "intro_band_title", "intro_band_text", "service_intro_eyebrow", "service_intro_title", "service_intro_text", "process_section_eyebrow", "process_section_title", "entry_section_eyebrow", "entry_section_title", "entry_section_text", "faq_section_eyebrow", "faq_section_title", "updated_at", "created_at", (select coalesce(json_group_array(json_array("_order", "id", "category", "title", "summary", "tone")), json_array()) as "data" from (select * from "homepage_content_featured_works" "homepage_content_featuredWorks" where "homepage_content_featuredWorks"."_parent_id" = "homepage_content"."id" order by "homepage_content_featuredWorks"."_order" asc) "homepage_content_featuredWorks") as "featuredWorks", (select coalesce(json_group_array(json_array("_order", "id", "title", "text")), json_array()) as "data" from (select * from "homepage_content_service_blocks" "homepage_content_serviceBlocks" where "homepage_content_serviceBlocks"."_parent_id" = "homepage_content"."id" order by "homepage_content_serviceBlocks"."_order" asc) "homepage_content_serviceBlocks") as "serviceBlocks", (select coalesce(json_group_array(json_array("_order", "id", "label")), json_array()) as "data" from (select * from "homepage_content_use_cases" "homepage_content_useCases" where "homepage_content_useCases"."_parent_id" = "homepage_content"."id" order by "homepage_content_useCases"."_order" asc) "homepage_content_useCases") as "useCases", (select coalesce(json_group_array(json_array("_order", "id", "step", "title", "text")), json_array()) as "data" from (select * from "homepage_content_process_steps" "homepage_content_processSteps" where "homepage_content_processSteps"."_parent_id" = "homepage_content"."id" order by "homepage_content_processSteps"."_order" asc) "homepage_content_processSteps") as "processSteps", (select coalesce(json_group_array(json_array("_order", "id", "question", "answer")), json_array()) as "data" from (select * from "homepage_content_faq" "homepage_content_faq" where "homepage_content_faq"."_parent_id" = "homepage_content"."id" order by "homepage_content_faq"."_order" asc) "homepage_content_faq") as "faq" from "homepage_content" "homepage_content" order by "homepage_content"."created_at" desc limit ?
+          params: 1
+              at LibSQLPreparedQuery.queryWithCache (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/sqlite-core/session.js:43:15)
+              at runNextTicks (node:internal/process/task_queues:65:5)
+              at process.processImmediate (node:internal/timers:472:9)
+              at process.callbackTrampoline (node:internal/async_hooks:130:17)
+              at async LibSQLPreparedQuery.values (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/libsql/session.js:193:12)
+              at async LibSQLPreparedQuery.all (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/libsql/session.js:136:18)
+              at async find (file:///D:/web/payload-local-demo/node_modules/.pnpm/@payloadcms+drizzle@3.82.1__3043ef34b8b3df8581a47a17f7211df5/node_modules/@payloadcms/drizzle/dist/find/findMany.js:137:21)
+              at async Object.findGlobal (file:///D:/web/payload-local-demo/node_modules/.pnpm/@payloadcms+drizzle@3.82.1__3043ef34b8b3df8581a47a17f7211df5/node_modules/@payloadcms/drizzle/dist/findGlobal.js:6:29)
+              at async findOneOperation (file:///D:/web/payload-local-demo/node_modules/.pnpm/payload@3.82.1_graphql@16.13.2_typescript@5.7.3/node_modules/payload/dist/globals/operations/findOne.js:61:27)
+              at async getDocumentData (webpack-internal:///(rsc)/./node_modules/.pnpm/@payloadcms+next@3.82.1_@ty_0b37c474e34329ca3c5fa0f368d9dc03/node_modules/@payloadcms/next/dist/views/Document/getDocumentData.js:48:22)
+              at async renderDocument (webpack-internal:///(rsc)/./node_modules/.pnpm/@payloadcms+next@3.82.1_@ty_0b37c474e34329ca3c5fa0f368d9dc03/node_modules/@payloadcms/next/dist/views/Document/index.js:109:64)
+              at async DocumentView (webpack-internal:///(rsc)/./node_modules/.pnpm/@payloadcms+next@3.82.1_@ty_0b37c474e34329ca3c5fa0f368d9dc03/node_modules/@payloadcms/next/dist/views/Document/index.js:410:9)
+          caused by: LibsqlError: SQLITE_ERROR: no such table: homepage_content_featured_works
+              at mapSqliteError (file:///D:/web/payload-local-demo/node_modules/.pnpm/@libsql+client@0.14.0/node_modules/@libsql/client/lib-esm/sqlite3.js:372:16)
+              at executeStmt (file:///D:/web/payload-local-demo/node_modules/.pnpm/@libsql+client@0.14.0/node_modules/@libsql/client/lib-esm/sqlite3.js:277:15)
+              at Sqlite3Client.execute (file:///D:/web/payload-local-demo/node_modules/.pnpm/@libsql+client@0.14.0/node_modules/@libsql/client/lib-esm/sqlite3.js:79:16)
+              at file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/libsql/session.js:195:61
+              at LibSQLPreparedQuery.queryWithCache (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/sqlite-core/session.js:41:22)
+              at LibSQLPreparedQuery.values (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/libsql/session.js:193:23)
+              at LibSQLPreparedQuery.all (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/libsql/session.js:136:29)
+              at QueryPromise.executeRaw (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/sqlite-core/query-builders/query.js:136:33)
+              at QueryPromise.execute (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/sqlite-core/query-builders/query.js:139:17)
+              at QueryPromise.then (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/query-promise.js:21:17)
+              at runNextTicks (node:internal/process/task_queues:65:5)
+              at process.processImmediate (node:internal/timers:472:9)
+              at process.callbackTrampoline (node:internal/async_hooks:130:17)
+          caused by: SqliteError: no such table: homepage_content_featured_works
+              at convertError (D:\web\payload-local-demo\node_modules\.pnpm\libsql@0.4.7\node_modules\libsql\index.js:51:12)
+              at Database.prepare (D:\web\payload-local-demo\node_modules\.pnpm\libsql@0.4.7\node_modules\libsql\index.js:119:13)
+              at executeStmt (file:///D:/web/payload-local-demo/node_modules/.pnpm/@libsql+client@0.14.0/node_modules/@libsql/client/lib-esm/sqlite3.js:248:28)
+              at Sqlite3Client.execute (file:///D:/web/payload-local-demo/node_modules/.pnpm/@libsql+client@0.14.0/node_modules/@libsql/client/lib-esm/sqlite3.js:79:16)
+              at file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/libsql/session.js:195:61
+              at LibSQLPreparedQuery.queryWithCache (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/sqlite-core/session.js:41:22)
+              at LibSQLPreparedQuery.values (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/libsql/session.js:193:23)
+              at LibSQLPreparedQuery.all (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/libsql/session.js:136:29)
+              at QueryPromise.executeRaw (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/sqlite-core/query-builders/query.js:136:33)
+              at QueryPromise.execute (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/sqlite-core/query-builders/query.js:139:17)
+              at QueryPromise.then (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/query-promise.js:21:17)
+              at runNextTicks (node:internal/process/task_queues:65:5)
+              at process.processImmediate (node:internal/timers:472:9)
+              at process.callbackTrampoline (node:internal/async_hooks:130:17)
+      "query": "select \"id\", \"hero_eyebrow\", \"hero_title\", \"hero_subtitle\", \"hero_primary_c_t_a_label\", \"hero_primary_c_t_a_href\", \"hero_secondary_c_t_a_label\", \"hero_secondary_c_t_a_href\", \"intro_band_eyebrow\", \"intro_band_title\", \"intro_band_text\", \"service_intro_eyebrow\", \"service_intro_title\", \"service_intro_text\", \"process_section_eyebrow\", \"process_section_title\", \"entry_section_eyebrow\", \"entry_section_title\", \"entry_section_text\", \"faq_section_eyebrow\", \"faq_section_title\", \"updated_at\", \"created_at\", (select coalesce(json_group_array(json_array(\"_order\", \"id\", \"category\", \"title\", \"summary\", \"tone\")), json_array()) as \"data\" from (select * from \"homepage_content_featured_works\" \"homepage_content_featuredWorks\" where \"homepage_content_featuredWorks\".\"_parent_id\" = \"homepage_content\".\"id\" order by \"homepage_content_featuredWorks\".\"_order\" asc) \"homepage_content_featuredWorks\") as \"featuredWorks\", (select coalesce(json_group_array(json_array(\"_order\", \"id\", \"title\", \"text\")), json_array()) as \"data\" from (select * from \"homepage_content_service_blocks\" \"homepage_content_serviceBlocks\" where \"homepage_content_serviceBlocks\".\"_parent_id\" = \"homepage_content\".\"id\" order by \"homepage_content_serviceBlocks\".\"_order\" asc) \"homepage_content_serviceBlocks\") as \"serviceBlocks\", (select coalesce(json_group_array(json_array(\"_order\", \"id\", \"label\")), json_array()) as \"data\" from (select * from \"homepage_content_use_cases\" \"homepage_content_useCases\" where \"homepage_content_useCases\".\"_parent_id\" = \"homepage_content\".\"id\" order by \"homepage_content_useCases\".\"_order\" asc) \"homepage_content_useCases\") as \"useCases\", (select coalesce(json_group_array(json_array(\"_order\", \"id\", \"step\", \"title\", \"text\")), json_array()) as \"data\" from (select * from \"homepage_content_process_steps\" \"homepage_content_processSteps\" where \"homepage_content_processSteps\".\"_parent_id\" = \"homepage_content\".\"id\" order by \"homepage_content_processSteps\".\"_order\" asc) \"homepage_content_processSteps\") as \"processSteps\", (select coalesce(json_group_array(json_array(\"_order\", \"id\", \"question\", \"answer\")), json_array()) as \"data\" from (select * from \"homepage_content_faq\" \"homepage_content_faq\" where \"homepage_content_faq\".\"_parent_id\" = \"homepage_content\".\"id\" order by \"homepage_content_faq\".\"_order\" asc) \"homepage_content_faq\") as \"faq\" from \"homepage_content\" \"homepage_content\" order by \"homepage_content\".\"created_at\" desc limit ?",
+      "params": [
+        1
+      ]
+    }
+[03:05:04] [31mERROR[39m: [36mnot-found[39m
+    err: {
+      "type": "Error",
+      "message": "not-found",
+      "stack":
+          Error: not-found
+              at renderDocument (webpack-internal:///(rsc)/./node_modules/.pnpm/@payloadcms+next@3.82.1_@ty_0b37c474e34329ca3c5fa0f368d9dc03/node_modules/@payloadcms/next/dist/views/Document/index.js:129:13)
+              at runNextTicks (node:internal/process/task_queues:65:5)
+              at process.processImmediate (node:internal/timers:472:9)
+              at process.callbackTrampoline (node:internal/async_hooks:130:17)
+              at async DocumentView (webpack-internal:///(rsc)/./node_modules/.pnpm/@payloadcms+next@3.82.1_@ty_0b37c474e34329ca3c5fa0f368d9dc03/node_modules/@payloadcms/next/dist/views/Document/index.js:410:9)
+    }
+ GET /admin/globals/homepage-content 200 in 463ms (next.js: 7ms, application-code: 456ms)
+[03:05:08] [31mERROR[39m: [36mFailed query: select "id", "site_name", "site_description", "support_email", "announcement", "footer_about_eyebrow", "footer_about_title", "footer_about_text", "footer_direction_eyebrow", "footer_direction_title", "footer_direction_text", "generation_pricing_image_credits", "generation_pricing_text_credits", "generation_pricing_hybrid_credits", "generation_pricing_download_credits", "updated_at", "created_at", (select coalesce(json_group_array(json_array("_order", "id", "label", "href")), json_array()) as "data" from (select * from "site_settings_header_nav" "site_settings_headerNav" where "site_settings_headerNav"."_parent_id" = "site_settings"."id" order by "site_settings_headerNav"."_order" asc) "site_settings_headerNav") as "headerNav", (select coalesce(json_group_array(json_array("_order", "id", "title", "shopify_variant_id", "credits", "price", "currency")), json_array()) as "data" from (select * from "site_settings_credit_packages" "site_settings_creditPackages" where "site_settings_creditPackages"."_parent_id" = "site_settings"."id" order by "site_settings_creditPackages"."_order" asc) "site_settings_creditPackages") as "creditPackages" from "site_settings" "site_settings" order by "site_settings"."created_at" desc limit ?
+params: 1[39m
+    err: {
+      "type": "DrizzleQueryError",
+      "message": "Failed query: select \"id\", \"site_name\", \"site_description\", \"support_email\", \"announcement\", \"footer_about_eyebrow\", \"footer_about_title\", \"footer_about_text\", \"footer_direction_eyebrow\", \"footer_direction_title\", \"footer_direction_text\", \"generation_pricing_image_credits\", \"generation_pricing_text_credits\", \"generation_pricing_hybrid_credits\", \"generation_pricing_download_credits\", \"updated_at\", \"created_at\", (select coalesce(json_group_array(json_array(\"_order\", \"id\", \"label\", \"href\")), json_array()) as \"data\" from (select * from \"site_settings_header_nav\" \"site_settings_headerNav\" where \"site_settings_headerNav\".\"_parent_id\" = \"site_settings\".\"id\" order by \"site_settings_headerNav\".\"_order\" asc) \"site_settings_headerNav\") as \"headerNav\", (select coalesce(json_group_array(json_array(\"_order\", \"id\", \"title\", \"shopify_variant_id\", \"credits\", \"price\", \"currency\")), json_array()) as \"data\" from (select * from \"site_settings_credit_packages\" \"site_settings_creditPackages\" where \"site_settings_creditPackages\".\"_parent_id\" = \"site_settings\".\"id\" order by \"site_settings_creditPackages\".\"_order\" asc) \"site_settings_creditPackages\") as \"creditPackages\" from \"site_settings\" \"site_settings\" order by \"site_settings\".\"created_at\" desc limit ?\nparams: 1: SQLITE_ERROR: no such table: site_settings_header_nav: no such table: site_settings_header_nav",
+      "stack":
+          Error: Failed query: select "id", "site_name", "site_description", "support_email", "announcement", "footer_about_eyebrow", "footer_about_title", "footer_about_text", "footer_direction_eyebrow", "footer_direction_title", "footer_direction_text", "generation_pricing_image_credits", "generation_pricing_text_credits", "generation_pricing_hybrid_credits", "generation_pricing_download_credits", "updated_at", "created_at", (select coalesce(json_group_array(json_array("_order", "id", "label", "href")), json_array()) as "data" from (select * from "site_settings_header_nav" "site_settings_headerNav" where "site_settings_headerNav"."_parent_id" = "site_settings"."id" order by "site_settings_headerNav"."_order" asc) "site_settings_headerNav") as "headerNav", (select coalesce(json_group_array(json_array("_order", "id", "title", "shopify_variant_id", "credits", "price", "currency")), json_array()) as "data" from (select * from "site_settings_credit_packages" "site_settings_creditPackages" where "site_settings_creditPackages"."_parent_id" = "site_settings"."id" order by "site_settings_creditPackages"."_order" asc) "site_settings_creditPackages") as "creditPackages" from "site_settings" "site_settings" order by "site_settings"."created_at" desc limit ?
+          params: 1
+              at LibSQLPreparedQuery.queryWithCache (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/sqlite-core/session.js:43:15)
+              at runNextTicks (node:internal/process/task_queues:65:5)
+              at process.processImmediate (node:internal/timers:472:9)
+              at process.callbackTrampoline (node:internal/async_hooks:130:17)
+              at async LibSQLPreparedQuery.values (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/libsql/session.js:193:12)
+              at async LibSQLPreparedQuery.all (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/libsql/session.js:136:18)
+              at async find (file:///D:/web/payload-local-demo/node_modules/.pnpm/@payloadcms+drizzle@3.82.1__3043ef34b8b3df8581a47a17f7211df5/node_modules/@payloadcms/drizzle/dist/find/findMany.js:137:21)
+              at async Object.findGlobal (file:///D:/web/payload-local-demo/node_modules/.pnpm/@payloadcms+drizzle@3.82.1__3043ef34b8b3df8581a47a17f7211df5/node_modules/@payloadcms/drizzle/dist/findGlobal.js:6:29)
+              at async findOneOperation (file:///D:/web/payload-local-demo/node_modules/.pnpm/payload@3.82.1_graphql@16.13.2_typescript@5.7.3/node_modules/payload/dist/globals/operations/findOne.js:61:27)
+              at async getDocumentData (webpack-internal:///(rsc)/./node_modules/.pnpm/@payloadcms+next@3.82.1_@ty_0b37c474e34329ca3c5fa0f368d9dc03/node_modules/@payloadcms/next/dist/views/Document/getDocumentData.js:48:22)
+              at async renderDocument (webpack-internal:///(rsc)/./node_modules/.pnpm/@payloadcms+next@3.82.1_@ty_0b37c474e34329ca3c5fa0f368d9dc03/node_modules/@payloadcms/next/dist/views/Document/index.js:109:64)
+              at async DocumentView (webpack-internal:///(rsc)/./node_modules/.pnpm/@payloadcms+next@3.82.1_@ty_0b37c474e34329ca3c5fa0f368d9dc03/node_modules/@payloadcms/next/dist/views/Document/index.js:410:9)
+          caused by: LibsqlError: SQLITE_ERROR: no such table: site_settings_header_nav
+              at mapSqliteError (file:///D:/web/payload-local-demo/node_modules/.pnpm/@libsql+client@0.14.0/node_modules/@libsql/client/lib-esm/sqlite3.js:372:16)
+              at executeStmt (file:///D:/web/payload-local-demo/node_modules/.pnpm/@libsql+client@0.14.0/node_modules/@libsql/client/lib-esm/sqlite3.js:277:15)
+              at Sqlite3Client.execute (file:///D:/web/payload-local-demo/node_modules/.pnpm/@libsql+client@0.14.0/node_modules/@libsql/client/lib-esm/sqlite3.js:79:16)
+              at file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/libsql/session.js:195:61
+              at LibSQLPreparedQuery.queryWithCache (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/sqlite-core/session.js:41:22)
+              at LibSQLPreparedQuery.values (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/libsql/session.js:193:23)
+              at LibSQLPreparedQuery.all (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/libsql/session.js:136:29)
+              at QueryPromise.executeRaw (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/sqlite-core/query-builders/query.js:136:33)
+              at QueryPromise.execute (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/sqlite-core/query-builders/query.js:139:17)
+              at QueryPromise.then (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/query-promise.js:21:17)
+              at runNextTicks (node:internal/process/task_queues:65:5)
+              at process.processImmediate (node:internal/timers:472:9)
+              at process.callbackTrampoline (node:internal/async_hooks:130:17)
+          caused by: SqliteError: no such table: site_settings_header_nav
+              at convertError (D:\web\payload-local-demo\node_modules\.pnpm\libsql@0.4.7\node_modules\libsql\index.js:51:12)
+              at Database.prepare (D:\web\payload-local-demo\node_modules\.pnpm\libsql@0.4.7\node_modules\libsql\index.js:119:13)
+              at executeStmt (file:///D:/web/payload-local-demo/node_modules/.pnpm/@libsql+client@0.14.0/node_modules/@libsql/client/lib-esm/sqlite3.js:248:28)
+              at Sqlite3Client.execute (file:///D:/web/payload-local-demo/node_modules/.pnpm/@libsql+client@0.14.0/node_modules/@libsql/client/lib-esm/sqlite3.js:79:16)
+              at file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/libsql/session.js:195:61
+              at LibSQLPreparedQuery.queryWithCache (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/sqlite-core/session.js:41:22)
+              at LibSQLPreparedQuery.values (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/libsql/session.js:193:23)
+              at LibSQLPreparedQuery.all (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/libsql/session.js:136:29)
+              at QueryPromise.executeRaw (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/sqlite-core/query-builders/query.js:136:33)
+              at QueryPromise.execute (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/sqlite-core/query-builders/query.js:139:17)
+              at QueryPromise.then (file:///D:/web/payload-local-demo/node_modules/.pnpm/drizzle-orm@0.44.7_@libsql+client@0.14.0/node_modules/drizzle-orm/query-promise.js:21:17)
+              at runNextTicks (node:internal/process/task_queues:65:5)
+              at process.processImmediate (node:internal/timers:472:9)
+              at process.callbackTrampoline (node:internal/async_hooks:130:17)
+      "query": "select \"id\", \"site_name\", \"site_description\", \"support_email\", \"announcement\", \"footer_about_eyebrow\", \"footer_about_title\", \"footer_about_text\", \"footer_direction_eyebrow\", \"footer_direction_title\", \"footer_direction_text\", \"generation_pricing_image_credits\", \"generation_pricing_text_credits\", \"generation_pricing_hybrid_credits\", \"generation_pricing_download_credits\", \"updated_at\", \"created_at\", (select coalesce(json_group_array(json_array(\"_order\", \"id\", \"label\", \"href\")), json_array()) as \"data\" from (select * from \"site_settings_header_nav\" \"site_settings_headerNav\" where \"site_settings_headerNav\".\"_parent_id\" = \"site_settings\".\"id\" order by \"site_settings_headerNav\".\"_order\" asc) \"site_settings_headerNav\") as \"headerNav\", (select coalesce(json_group_array(json_array(\"_order\", \"id\", \"title\", \"shopify_variant_id\", \"credits\", \"price\", \"currency\")), json_array()) as \"data\" from (select * from \"site_settings_credit_packages\" \"site_settings_creditPackages\" where \"site_settings_creditPackages\".\"_parent_id\" = \"site_settings\".\"id\" order by \"site_settings_creditPackages\".\"_order\" asc) \"site_settings_creditPackages\") as \"creditPackages\" from \"site_settings\" \"site_settings\" order by \"site_settings\".\"created_at\" desc limit ?",
+      "params": [
+        1
+      ]
+    }
+[03:05:08] [31mERROR[39m: [36mnot-found[39m
+    err: {
+      "type": "Error",
+      "message": "not-found",
+      "stack":
+          Error: not-found
+              at renderDocument (webpack-internal:///(rsc)/./node_modules/.pnpm/@payloadcms+next@3.82.1_@ty_0b37c474e34329ca3c5fa0f368d9dc03/node_modules/@payloadcms/next/dist/views/Document/index.js:129:13)
+              at runNextTicks (node:internal/process/task_queues:65:5)
+              at process.processImmediate (node:internal/timers:472:9)
+              at process.callbackTrampoline (node:internal/async_hooks:130:17)
+              at async DocumentView (webpack-internal:///(rsc)/./node_modules/.pnpm/@payloadcms+next@3.82.1_@ty_0b37c474e34329ca3c5fa0f368d9dc03/node_modules/@payloadcms/next/dist/views/Document/index.js:410:9)
+    }
+ GET /admin/globals/site-settings 200 in 691ms (next.js: 27ms, application-code: 663ms)
+ GET /admin/collections/generation-tasks 200 in 1503ms (next.js: 11ms, application-code: 1493ms)
+ GET /api/users?depth=0&limit=250&where%5Bid%5D%5Bin%5D=1%2C4& 200 in 63ms (next.js: 32ms, application-code: 31ms)
+ GET /admin/collections/users 200 in 440ms (next.js: 5ms, application-code: 435ms)
+ POST /api/payload-preferences/nav 200 in 85ms (next.js: 5ms, application-code: 80ms)
+ GET /admin/account 200 in 497ms (next.js: 25ms, application-code: 471ms)
+ GET /api/payload-preferences/collection-users-1 200 in 48ms (next.js: 24ms, application-code: 25ms)
+ POST /admin/account 200 in 147ms (next.js: 21ms, application-code: 125ms)
+  └─ ƒ <inline action>({"args":{"checkForStaleData":true,"collectionSlug":"users","docPermissions":"[Object]","...":"11 items not stringified"},"name":"form-state"}) in 93ms ..//src/app/(payload)/layout.tsx
+ PATCH /api/users/1?depth=0&fallback-locale=null 200 in 147ms (next.js: 5ms, application-code: 142ms)
+ POST /api/users/refresh-token 200 in 54ms (next.js: 4ms, application-code: 50ms)
+ POST /api/users/access/1 200 in 23ms (next.js: 5ms, application-code: 18ms)
+ POST /api/users/access/1 200 in 21ms (next.js: 4ms, application-code: 17ms)
+ POST /admin/account 200 in 41ms (next.js: 6ms, application-code: 35ms)
+  └─ ƒ <inline action>({"args":{"collectionSlug":"users","data":"[Object]","docPermissions":"[Object]","...":"9 items not stringified"},"name":"form-state"}) in 12ms ..//src/app/(payload)/layout.tsx
+ GET / 200 in 958ms (next.js: 50ms, application-code: 908ms)
+[browser] THREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+ GET /features 200 in 248ms (next.js: 71ms, application-code: 177ms)
+ GET /solutions 200 in 168ms (next.js: 6ms, application-code: 162ms)
+ GET /showcase 200 in 137ms (next.js: 5ms, application-code: 132ms)
+○ Compiling /generate ...
+ GET /resources 200 in 16.1s (next.js: 14.1s, application-code: 2.0s)
+ GET /generate 200 in 14.7s (next.js: 12.7s, application-code: 1995ms)
+ GET /pricing 200 in 16.9s (next.js: 14.9s, application-code: 1988ms)
+ GET /developers 200 in 15.3s (next.js: 13.3s, application-code: 2.0s)
+ GET /dashboard 200 in 11.2s (next.js: 9.1s, application-code: 2.1s)
+ GET /dashboard/tasks 200 in 8.8s (next.js: 6.7s, application-code: 2.1s)
+○ Compiling /dashboard/orders ...
+ GET /generate 200 in 11.3s (next.js: 8.1s, application-code: 3.2s)
+ GET /developers 200 in 11.3s (next.js: 8.2s, application-code: 3.2s)
+ GET /dashboard/library 200 in 11.4s (next.js: 8.2s, application-code: 3.2s)
+ GET /dashboard/orders 200 in 11.4s (next.js: 8.2s, application-code: 3.2s)
+ GET /dashboard 200 in 11.4s (next.js: 8.1s, application-code: 3.3s)
+ GET /features 200 in 383ms (next.js: 29ms, application-code: 354ms)
+ GET /generate 200 in 163ms (next.js: 4ms, application-code: 158ms)
+ GET /admin 200 in 11.8s (next.js: 8.2s, application-code: 3.6s)
+  Reload env: .env
+Generating import map
+No new imports found, skipping writing import map
+ GET / 200 in 982ms (next.js: 227ms, application-code: 755ms)
+  Reload env: .env
+Generating import map
+No new imports found, skipping writing import map
+ GET /features 200 in 586ms (next.js: 154ms, application-code: 431ms)
+○ Compiling /login ...
+ GET /dashboard/orders 200 in 6.2s (next.js: 5.9s, application-code: 339ms)
+ GET /generate 200 in 8.2s (next.js: 7.9s, application-code: 344ms)
+ GET /solutions 200 in 3.1s (next.js: 2.8s, application-code: 342ms)
+ GET /login 200 in 5.4s (next.js: 5.1s, application-code: 344ms)
+ GET /register 200 in 4.7s (next.js: 4.4s, application-code: 344ms)
+ GET /showcase 200 in 2.8s (next.js: 2.4s, application-code: 342ms)
+Generating import map
+No new imports found, skipping writing import map
+ GET /pricing 200 in 2.2s (next.js: 1875ms, application-code: 306ms)
+ GET /login 200 in 2.2s (next.js: 1862ms, application-code: 305ms)
+ GET /resources 200 in 2.2s (next.js: 1863ms, application-code: 307ms)
+ GET /features 200 in 169ms (next.js: 8ms, application-code: 162ms)
+ GET /pricing 200 in 44ms (next.js: 2ms, application-code: 42ms)
+ GET /generate 200 in 47ms (next.js: 8ms, application-code: 38ms)
+ GET /solutions 200 in 101ms (next.js: 14ms, application-code: 87ms)
+ GET /login 200 in 36ms (next.js: 2ms, application-code: 34ms)
+Generating import map
+[13:16:39] [31mERROR[39m: [36mCannot read properties of undefined (reading 'id')[39m
+    err: {
+      "type": "TypeError",
+      "message": "Cannot read properties of undefined (reading 'id')",
+      "stack":
+          TypeError: Cannot read properties of undefined (reading 'id')
+              at buildQuery (file:///D:/web/payload-local-demo/node_modules/.pnpm/@payloadcms+drizzle@3.82.1__3043ef34b8b3df8581a47a17f7211df5/node_modules/@payloadcms/drizzle/dist/queries/buildQuery.js:5:39)
+              at find (file:///D:/web/payload-local-demo/node_modules/.pnpm/@payloadcms+drizzle@3.82.1__3043ef34b8b3df8581a47a17f7211df5/node_modules/@payloadcms/drizzle/dist/find/findMany.js:20:53)
+              at Object.findOne (file:///D:/web/payload-local-demo/node_modules/.pnpm/@payloadcms+drizzle@3.82.1__3043ef34b8b3df8581a47a17f7211df5/node_modules/@payloadcms/drizzle/dist/findOne.js:6:28)
+              at loginOperation (file:///D:/web/payload-local-demo/node_modules/.pnpm/payload@3.82.1_graphql@16.13.2_typescript@5.7.3/node_modules/payload/dist/auth/operations/login.js:197:67)
+              at async loginHandler (file:///D:/web/payload-local-demo/node_modules/.pnpm/payload@3.82.1_graphql@16.13.2_typescript@5.7.3/node_modules/payload/dist/auth/endpoints/login.js:19:20)
+              at async handleEndpoints (file:///D:/web/payload-local-demo/node_modules/.pnpm/payload@3.82.1_graphql@16.13.2_typescript@5.7.3/node_modules/payload/dist/utilities/handleEndpoints.js:198:26)
+              at async eval (webpack-internal:///(rsc)/./node_modules/.pnpm/@payloadcms+next@3.82.1_@ty_0b37c474e34329ca3c5fa0f368d9dc03/node_modules/@payloadcms/next/dist/routes/rest/index.js:32:20)
+              at async AppRouteRouteModule.do (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:5:40115)
+              at async AppRouteRouteModule.handle (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:5:47321)
+              at async responseGenerator (webpack-internal:///(rsc)/./node_modules/.pnpm/next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1/node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2F(payload)%2Fapi%2F%5B...slug%5D%2Froute&page=%2F(payload)%2Fapi%2F%5B...slug%5D%2Froute&appPaths=&allNormalizedAppPaths=&pagePath=private-next-app-dir%2F(payload)%2Fapi%2F%5B...slug%5D%2Froute.ts&appDir=D%3A%5Cweb%5Cpayload-local-demo%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=D%3A%5Cweb%5Cpayload-local-demo&isDev=true&tsconfigPath=&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:253:38)
+              at async AppRouteRouteModule.handleResponse (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:1:227141)
+              at async handleResponse (webpack-internal:///(rsc)/./node_modules/.pnpm/next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1/node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2F(payload)%2Fapi%2F%5B...slug%5D%2Froute&page=%2F(payload)%2Fapi%2F%5B...slug%5D%2Froute&appPaths=&allNormalizedAppPaths=&pagePath=private-next-app-dir%2F(payload)%2Fapi%2F%5B...slug%5D%2Froute.ts&appDir=D%3A%5Cweb%5Cpayload-local-demo%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=D%3A%5Cweb%5Cpayload-local-demo&isDev=true&tsconfigPath=&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:316:32)
+              at async Module.handler (webpack-internal:///(rsc)/./node_modules/.pnpm/next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1/node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2F(payload)%2Fapi%2F%5B...slug%5D%2Froute&page=%2F(payload)%2Fapi%2F%5B...slug%5D%2Froute&appPaths=&allNormalizedAppPaths=&pagePath=private-next-app-dir%2F(payload)%2Fapi%2F%5B...slug%5D%2Froute.ts&appDir=D%3A%5Cweb%5Cpayload-local-demo%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=D%3A%5Cweb%5Cpayload-local-demo&isDev=true&tsconfigPath=&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:371:13)
+              at async DevServer.renderToResponseWithComponentsImpl (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\base-server.js:1454:9)
+              at async DevServer.renderPageComponent (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\base-server.js:1506:24)
+              at async DevServer.renderToResponseImpl (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\base-server.js:1556:32)
+              at async DevServer.pipeImpl (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\base-server.js:1043:25)
+              at async NextNodeServer.handleCatchallRenderRequest (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\next-server.js:338:17)
+              at async DevServer.handleRequestImpl (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\base-server.js:934:17)
+              at async D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\dev\next-dev-server.js:394:20
+              at async Span.traceAsyncFn (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\trace\trace.js:164:20)
+              at async DevServer.handleRequest (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\dev\next-dev-server.js:390:24)
+              at async invokeRender (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\lib\router-server.js:266:21)
+              at async handleRequest (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\lib\router-server.js:465:24)
+              at async requestHandlerImpl (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\lib\router-server.js:514:13)
+              at async Server.requestListener (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\lib\start-server.js:225:13)
+    }
+ POST /api/users/login 500 in 1753ms (next.js: 1605ms, application-code: 148ms)
+No new imports found, skipping writing import map
+ GET /login 200 in 150ms (next.js: 47ms, application-code: 103ms)
+[13:16:47] [31mERROR[39m: [36m提供的电子邮件或密码不正确。[39m
+    err: {
+      "type": "AuthenticationError",
+      "message": "提供的电子邮件或密码不正确。",
+      "stack":
+          AuthenticationError: 提供的电子邮件或密码不正确。
+              at loginOperation (file:///D:/web/payload-local-demo/node_modules/.pnpm/payload@3.82.1_graphql@16.13.2_typescript@5.7.3/node_modules/payload/dist/auth/operations/login.js:182:15)
+              at async loginHandler (file:///D:/web/payload-local-demo/node_modules/.pnpm/payload@3.82.1_graphql@16.13.2_typescript@5.7.3/node_modules/payload/dist/auth/endpoints/login.js:19:20)
+              at async handleEndpoints (file:///D:/web/payload-local-demo/node_modules/.pnpm/payload@3.82.1_graphql@16.13.2_typescript@5.7.3/node_modules/payload/dist/utilities/handleEndpoints.js:198:26)
+              at async eval (webpack-internal:///(rsc)/./node_modules/.pnpm/@payloadcms+next@3.82.1_@ty_0b37c474e34329ca3c5fa0f368d9dc03/node_modules/@payloadcms/next/dist/routes/rest/index.js:32:20)
+              at async AppRouteRouteModule.do (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:5:40115)
+              at async AppRouteRouteModule.handle (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:5:47321)
+              at async responseGenerator (webpack-internal:///(rsc)/./node_modules/.pnpm/next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1/node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2F(payload)%2Fapi%2F%5B...slug%5D%2Froute&page=%2F(payload)%2Fapi%2F%5B...slug%5D%2Froute&appPaths=&allNormalizedAppPaths=&pagePath=private-next-app-dir%2F(payload)%2Fapi%2F%5B...slug%5D%2Froute.ts&appDir=D%3A%5Cweb%5Cpayload-local-demo%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=D%3A%5Cweb%5Cpayload-local-demo&isDev=true&tsconfigPath=&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:253:38)
+              at async AppRouteRouteModule.handleResponse (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\compiled\next-server\app-route.runtime.dev.js:1:227141)
+              at async handleResponse (webpack-internal:///(rsc)/./node_modules/.pnpm/next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1/node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2F(payload)%2Fapi%2F%5B...slug%5D%2Froute&page=%2F(payload)%2Fapi%2F%5B...slug%5D%2Froute&appPaths=&allNormalizedAppPaths=&pagePath=private-next-app-dir%2F(payload)%2Fapi%2F%5B...slug%5D%2Froute.ts&appDir=D%3A%5Cweb%5Cpayload-local-demo%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=D%3A%5Cweb%5Cpayload-local-demo&isDev=true&tsconfigPath=&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:316:32)
+              at async Module.handler (webpack-internal:///(rsc)/./node_modules/.pnpm/next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1/node_modules/next/dist/build/webpack/loaders/next-app-loader/index.js?name=app%2F(payload)%2Fapi%2F%5B...slug%5D%2Froute&page=%2F(payload)%2Fapi%2F%5B...slug%5D%2Froute&appPaths=&allNormalizedAppPaths=&pagePath=private-next-app-dir%2F(payload)%2Fapi%2F%5B...slug%5D%2Froute.ts&appDir=D%3A%5Cweb%5Cpayload-local-demo%5Csrc%5Capp&pageExtensions=tsx&pageExtensions=ts&pageExtensions=jsx&pageExtensions=js&rootDir=D%3A%5Cweb%5Cpayload-local-demo&isDev=true&tsconfigPath=&basePath=&assetPrefix=&nextConfigOutput=&preferredRegion=&middlewareConfig=e30%3D&isGlobalNotFoundEnabled=!:371:13)
+              at async DevServer.renderToResponseWithComponentsImpl (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\base-server.js:1454:9)
+              at async DevServer.renderPageComponent (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\base-server.js:1506:24)
+              at async DevServer.renderToResponseImpl (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\base-server.js:1556:32)
+              at async DevServer.pipeImpl (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\base-server.js:1043:25)
+              at async NextNodeServer.handleCatchallRenderRequest (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\next-server.js:338:17)
+              at async DevServer.handleRequestImpl (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\base-server.js:934:17)
+              at async D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\dev\next-dev-server.js:394:20
+              at async Span.traceAsyncFn (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\trace\trace.js:164:20)
+              at async DevServer.handleRequest (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\dev\next-dev-server.js:390:24)
+              at async invokeRender (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\lib\router-server.js:266:21)
+              at async handleRequest (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\lib\router-server.js:465:24)
+              at async requestHandlerImpl (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\lib\router-server.js:514:13)
+              at async Server.requestListener (D:\web\payload-local-demo\node_modules\.pnpm\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\node_modules\next\dist\server\lib\start-server.js:225:13)
+      "data": null,
+      "isOperational": true,
+      "isPublic": true,
+      "status": 401,
+      "name": "AuthenticationError"
+    }
+ POST /api/users/login 401 in 82ms (next.js: 8ms, application-code: 74ms)
+ POST /api/users/login 200 in 88ms (next.js: 7ms, application-code: 80ms)
+ GET /generate 200 in 107ms (next.js: 12ms, application-code: 95ms)
+ GET /generate 200 in 50ms (next.js: 2ms, application-code: 48ms)
+[browser] THREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+ GET /pricing 200 in 72ms (next.js: 13ms, application-code: 59ms)
+ GET /generate 200 in 51ms (next.js: 1854µs, application-code: 49ms)
+[browser] THREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+ GET /resources 200 in 78ms (next.js: 17ms, application-code: 61ms)
+ GET /developers 200 in 1384ms (next.js: 1085ms, application-code: 298ms)
+ GET /developers 200 in 124ms (next.js: 3ms, application-code: 121ms)
+ GET /resources 200 in 70ms (next.js: 7ms, application-code: 63ms)
+ GET /features 200 in 67ms (next.js: 10ms, application-code: 57ms)
+Generating import map
+No new imports found, skipping writing import map
+ GET /dashboard 200 in 1277ms (next.js: 805ms, application-code: 472ms)
+ GET /dashboard 200 in 339ms (next.js: 3ms, application-code: 336ms)
+ GET /dashboard/tasks 200 in 995ms (next.js: 826ms, application-code: 169ms)
+ GET /dashboard/tasks 200 in 113ms (next.js: 2ms, application-code: 111ms)
+Generating import map
+No new imports found, skipping writing import map
+ GET /dashboard/library 200 in 2.7s (next.js: 2.4s, application-code: 328ms)
+ GET /dashboard/library 200 in 201ms (next.js: 3ms, application-code: 198ms)
+ GET /dashboard/orders 200 in 1191ms (next.js: 1026ms, application-code: 165ms)
+ GET /dashboard/credits 200 in 1357ms (next.js: 1178ms, application-code: 180ms)
+ GET /dashboard/settings 200 in 1070ms (next.js: 896ms, application-code: 174ms)
+ GET /features 200 in 55ms (next.js: 8ms, application-code: 47ms)
+ GET /generate 200 in 91ms (next.js: 14ms, application-code: 77ms)
+[browser] THREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+ GET /dashboard 200 in 162ms (next.js: 11ms, application-code: 151ms)
+ GET /dashboard/tasks 200 in 66ms (next.js: 10ms, application-code: 56ms)
+ GET /dashboard/library 200 in 66ms (next.js: 10ms, application-code: 56ms)
+ GET /dashboard/orders 200 in 72ms (next.js: 10ms, application-code: 62ms)
+ GET /developers 200 in 57ms (next.js: 10ms, application-code: 47ms)
+ GET /features 200 in 61ms (next.js: 3ms, application-code: 58ms)
+ GET / 200 in 1585ms (next.js: 1423ms, application-code: 162ms)
+[browser] THREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+ GET /generate 200 in 93ms (next.js: 20ms, application-code: 73ms)
+[browser] THREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+ GET / 200 in 58ms (next.js: 3ms, application-code: 55ms)
+[browser] THREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+ GET /showcase 200 in 1639ms (next.js: 1466ms, application-code: 173ms)
+ GET /generate 200 in 54ms (next.js: 12ms, application-code: 42ms)
+[browser] THREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[13:18:16] [31mERROR[39m: [36mInvalid MIME type: image/png.[39m
+ POST /api/media 400 in 1594ms (next.js: 1542ms, application-code: 52ms)
+[13:18:16] [32mINFO[39m: [36mThe following field is invalid: file[39m
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+Generating import map
+No new imports found, skipping writing import map
+ GET /generate 200 in 609ms (next.js: 251ms, application-code: 358ms)
+Generating import map
+No new imports found, skipping writing import map
+ GET /generate 200 in 351ms (next.js: 97ms, application-code: 254ms)
+Generating import map
+No new imports found, skipping writing import map
+ GET /generate 200 in 405ms (next.js: 151ms, application-code: 254ms)
+Generating import map
+No new imports found, skipping writing import map
+ GET /generate 200 in 406ms (next.js: 164ms, application-code: 242ms)
+⚠ Fast Refresh had to perform a full reload when ad-local-demo\\node_modules\\.pnpm\\next@16.2.3_@babel+core@7.2_65f8036f43b808fa353e4c346e4d04f1\\node_modules\\next\\dist\\client\\app-dir\\link.js","ids":[]}, ad-local-demo\\src\\app\\(frontend)\\_components\\LogoutButton.tsx","ids":["LogoutButton"]} changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ GET /generate 200 in 460ms (next.js: 1860µs, application-code: 458ms)
+ GET / 200 in 228ms (next.js: 25ms, application-code: 203ms)
+[browser] Encountered two children with the same key, `?? 3D`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version. 
+ GET /generate 200 in 52ms (next.js: 3ms, application-code: 50ms)
+[browser] THREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+ GET /dashboard 200 in 208ms (next.js: 23ms, application-code: 185ms)
+ GET /dashboard/tasks 200 in 2.2s (next.js: 1861ms, application-code: 385ms)
+ GET /generate 200 in 120ms (next.js: 20ms, application-code: 99ms)
+Generating import map
+No new imports found, skipping writing import map
+ GET /dashboard/orders 200 in 2.8s (next.js: 1837ms, application-code: 946ms)
+ GET /dashboard/orders 200 in 588ms (next.js: 5ms, application-code: 583ms)
+ GET /generate 200 in 662ms (next.js: 20ms, application-code: 642ms)
+ GET /dashboard 200 in 2.8s (next.js: 1794ms, application-code: 973ms)
+ GET /dashboard/orders 200 in 572ms (next.js: 3ms, application-code: 569ms)
+○ Compiling /resources ...
+ GET /generate 200 in 7.5s (next.js: 6.5s, application-code: 1000ms)
+ GET /resources 200 in 6.5s (next.js: 5.5s, application-code: 999ms)
+ GET /developers 200 in 9.1s (next.js: 8.1s, application-code: 1008ms)
+ GET /developers 200 in 6.8s (next.js: 5.8s, application-code: 1010ms)
+ GET /pricing 200 in 5.9s (next.js: 4.9s, application-code: 1008ms)
+ GET /admin 200 in 8.9s (next.js: 7.8s, application-code: 1122ms)
+ GET /pricing 200 in 81ms (next.js: 2ms, application-code: 79ms)
+ GET /generate 200 in 131ms (next.js: 3ms, application-code: 128ms)
+Generating import map
+No new imports found, skipping writing import map
+ GET /generate 200 in 1750ms (next.js: 1290ms, application-code: 460ms)
+ GET /pricing 200 in 1767ms (next.js: 1303ms, application-code: 465ms)
+ GET /generate 200 in 213ms (next.js: 2ms, application-code: 210ms)
+ GET /pricing 200 in 235ms (next.js: 2ms, application-code: 233ms)
+ GET /pricing 200 in 200ms (next.js: 4ms, application-code: 196ms)
+ GET / 200 in 74ms (next.js: 26ms, application-code: 48ms)
+[browser] Encountered two children with the same key, `?? 3D`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version. 
+[browser] Encountered two children with the same key, `?? 3D`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version. 
+[browser] Encountered two children with the same key, `?? 3D`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version. 
+[browser] Encountered two children with the same key, `?? 3D`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version. 
+[browser] Encountered two children with the same key, `?? 3D`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version. 
+ GET /features 200 in 75ms (next.js: 2ms, application-code: 72ms)
+ GET /features 200 in 2.9s (next.js: 2.3s, application-code: 668ms)
+ GET / 200 in 230ms (next.js: 10ms, application-code: 220ms)
+[browser] Encountered two children with the same key, `?? 3D`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version. 
+Generating import map
+No new imports found, skipping writing import map
+ GET / 200 in 207ms (next.js: 35ms, application-code: 171ms)
+ GET /generate 200 in 58ms (next.js: 11ms, application-code: 47ms)
+[browser] THREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+[browser] THREE.WebGLShadowMap: PCFSoftShadowMap has been deprecated. Using PCFShadowMap instead.
+ GET /developers 200 in 1428ms (next.js: 1235ms, application-code: 192ms)
+Generating import map
+No new imports found, skipping writing import map
+ GET /resources 200 in 2.5s (next.js: 2.1s, application-code: 450ms)
+ GET /generate 200 in 2.5s (next.js: 2.0s, application-code: 450ms)
+ GET /features 200 in 284ms (next.js: 12ms, application-code: 273ms)
+ GET /generate 200 in 253ms (next.js: 3ms, application-code: 250ms)
+ GET /pricing 200 in 90ms (next.js: 17ms, application-code: 73ms)
+○ Compiling /admin/[[...segments]] ...
+ GET /features 200 in 6.8s (next.js: 5.6s, application-code: 1185ms)
+ GET /dashboard/library 200 in 10.4s (next.js: 9.2s, application-code: 1188ms)
+ GET /dashboard/tasks 200 in 8.6s (next.js: 7.4s, application-code: 1190ms)
+ GET /dashboard/orders 200 in 11.4s (next.js: 10.2s, application-code: 1193ms)
+ GET /features 200 in 111ms (next.js: 2ms, application-code: 108ms)
+ GET /admin 200 in 8.6s (next.js: 7.4s, application-code: 1188ms)
