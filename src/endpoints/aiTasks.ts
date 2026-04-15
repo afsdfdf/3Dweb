@@ -1,6 +1,7 @@
 import type { PayloadRequest } from 'payload'
 
 import { InsufficientCreditsError } from '@/lib/creditLedger'
+import { rejectRateLimitedEndpoint } from '@/lib/endpointRateLimit'
 import { handleAIWebhook, submitAITask, syncAITask } from '@/lib/aiTaskFlow'
 import { rejectDisallowedMutationOrigin } from '@/lib/requestSecurity'
 import { verifyWebhookSignature } from '@/lib/webhookSignature'
@@ -25,10 +26,16 @@ export const submitAITaskEndpoint = {
   path: '/studio/ai/tasks',
   method: 'post' as const,
   handler: async (req: PayloadRequest) => {
-    const blocked = rejectDisallowedMutationOrigin(req)
+    const blocked = await rejectDisallowedMutationOrigin(req)
     if (blocked) return blocked
 
     if (!req.user) return unauthorized()
+
+    const rateLimited = await rejectRateLimitedEndpoint({
+      req,
+      scope: 'ai-submit',
+    })
+    if (rateLimited) return rateLimited
 
     try {
       const body = req.json ? await req.json() : {}
@@ -62,9 +69,47 @@ export const syncAITaskEndpoint = {
   path: '/studio/ai/tasks/:taskId/sync',
   method: 'post' as const,
   handler: async (req: PayloadRequest) => {
+    const blocked = await rejectDisallowedMutationOrigin(req)
+    if (blocked) return blocked
+
     if (!req.user) return unauthorized()
 
-    const task = await syncAITask({ req, taskId: Number(String(req.routeParams?.taskId ?? '0')) })
+    const rateLimited = await rejectRateLimitedEndpoint({
+      req,
+      scope: 'ai-sync',
+    })
+    if (rateLimited) return rateLimited
+
+    const taskId = Number(String(req.routeParams?.taskId ?? '0'))
+    const tasks = await req.payload.find({
+      collection: 'generation-tasks',
+      depth: 0,
+      limit: 1,
+      overrideAccess: false,
+      pagination: false,
+      req,
+      user: req.user,
+      where: {
+        and: [
+          {
+            id: {
+              equals: taskId,
+            },
+          },
+          {
+            user: {
+              equals: req.user.id,
+            },
+          },
+        ],
+      },
+    })
+
+    if (!tasks.docs[0]) {
+      return Response.json({ message: 'Task not found.' }, { status: 404 })
+    }
+
+    const task = await syncAITask({ req, taskId })
     return Response.json({ message: '任务同步完成', task })
   },
 }
