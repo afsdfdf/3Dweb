@@ -1,7 +1,8 @@
-﻿import type { PayloadRequest } from 'payload'
+import type { PayloadRequest } from 'payload'
 
 import { InsufficientCreditsError } from '@/lib/creditLedger'
 import { handleAIWebhook, submitAITask, syncAITask } from '@/lib/aiTaskFlow'
+import { rejectDisallowedMutationOrigin } from '@/lib/requestSecurity'
 import { verifyWebhookSignature } from '@/lib/webhookSignature'
 
 const unauthorized = () => Response.json({ message: '请先登录' }, { status: 401 })
@@ -24,6 +25,9 @@ export const submitAITaskEndpoint = {
   path: '/studio/ai/tasks',
   method: 'post' as const,
   handler: async (req: PayloadRequest) => {
+    const blocked = rejectDisallowedMutationOrigin(req)
+    if (blocked) return blocked
+
     if (!req.user) return unauthorized()
 
     try {

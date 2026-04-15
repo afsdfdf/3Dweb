@@ -195,6 +195,7 @@ export interface Media {
   alt: string;
   owner?: (number | null) | User;
   purpose?: ('input' | 'preview' | 'model' | 'document' | 'asset') | null;
+  prefix?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -672,6 +673,7 @@ export interface MediaSelect<T extends boolean = true> {
   alt?: T;
   owner?: T;
   purpose?: T;
+  prefix?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;

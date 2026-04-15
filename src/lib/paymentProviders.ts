@@ -34,6 +34,7 @@ export async function getPaymentProviderSettings(input?: Payload | PayloadReques
     ? await payload
         .findGlobal({
           slug: 'site-settings',
+          overrideAccess: true,
         })
         .catch(() => null)
     : null

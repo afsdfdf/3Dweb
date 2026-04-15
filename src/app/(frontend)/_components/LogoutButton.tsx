@@ -1,6 +1,5 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import { useState, type ComponentProps } from 'react'
 
 import { Button } from '@/components/ui/button'
@@ -8,7 +7,6 @@ import { Button } from '@/components/ui/button'
 type LogoutButtonProps = Pick<ComponentProps<typeof Button>, 'className' | 'size' | 'variant'>
 
 export function LogoutButton({ className, size = 'sm', variant = 'outline' }: LogoutButtonProps) {
-  const router = useRouter()
   const [loading, setLoading] = useState(false)
 
   return (
@@ -17,12 +15,11 @@ export function LogoutButton({ className, size = 'sm', variant = 'outline' }: Lo
       disabled={loading}
       onClick={async () => {
         setLoading(true)
-        await fetch('/api/users/logout', {
+        await fetch('/api/platform/session/logout', {
           credentials: 'include',
           method: 'POST',
         })
-        router.push('/login')
-        router.refresh()
+        window.location.assign('/login')
       }}
       size={size}
       type="button"

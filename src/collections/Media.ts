@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 
 import { ownerOrStaff } from '@/access'
 import { syncMediaToS3AfterChange, syncMediaToS3AfterDelete } from '@/hooks/syncMediaToS3'
+import { mediaReadAccess } from '@/lib/mediaReadAccess'
 
 export const Media: CollectionConfig = {
   slug: 'media',
@@ -17,7 +18,7 @@ export const Media: CollectionConfig = {
   access: {
     create: ({ req }) => Boolean(req.user),
     delete: ownerOrStaff('owner'),
-    read: () => true,
+    read: mediaReadAccess,
     update: ownerOrStaff('owner'),
   },
   hooks: {
@@ -47,7 +48,6 @@ export const Media: CollectionConfig = {
       'image/jpeg',
       'image/webp',
       'image/gif',
-      'application/octet-stream',
       'application/zip',
       'model/gltf-binary',
       'model/gltf+json',

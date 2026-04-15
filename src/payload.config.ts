@@ -25,6 +25,7 @@ import { aiWebhookEndpoint, submitAITaskEndpoint, syncAITaskEndpoint } from './e
 import { mockModelDownloadEndpoint } from './endpoints/mockDownloads'
 import { opsDashboardEndpoint } from './endpoints/opsDashboard'
 import { createPrintOrderEndpoint, syncPrintOrderEndpoint } from './endpoints/printOrders'
+import { sessionLogoutEndpoint } from './endpoints/sessionLogout'
 import { stripeWebhookEndpoint } from './endpoints/stripeWebhook'
 import {
   createSubscriptionCheckoutEndpoint,
@@ -35,6 +36,7 @@ import { AIProviderSettings } from './globals/AIProviderSettings'
 import { HomepageContent } from './globals/HomepageContent'
 import { RuntimeDeploymentSettings } from './globals/RuntimeDeploymentSettings'
 import { SiteSettings } from './globals/SiteSettings'
+import { assertRuntimeSecurityGuards, getValidatedPayloadSecret } from './lib/envGuard'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -167,6 +169,8 @@ const emailAdapter = nodemailerAdapter({
 
 const s3Settings = readS3StorageSettings()
 const dbConfig = resolveDatabaseRuntimeConfig()
+assertRuntimeSecurityGuards()
+const payloadSecret = getValidatedPayloadSecret()
 
 export default buildConfig({
   admin: {
@@ -229,6 +233,7 @@ export default buildConfig({
     createSubscriptionCheckoutEndpoint,
     syncSubscriptionCheckoutEndpoint,
     createSubscriptionPortalEndpoint,
+    sessionLogoutEndpoint,
     stripeWebhookEndpoint,
   ],
   globals: [SiteSettings, HomepageContent, AIProviderSettings, RuntimeDeploymentSettings],
@@ -264,7 +269,7 @@ export default buildConfig({
         ]
       : []),
   ],
-  secret: process.env.PAYLOAD_SECRET || '',
+  secret: payloadSecret,
   serverURL: appURL,
   sharp,
   typescript: {

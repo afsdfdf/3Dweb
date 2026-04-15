@@ -95,6 +95,7 @@ export async function getEmailSettings(input: Payload | PayloadRequest): Promise
   const siteSettings = await payload
     .findGlobal({
       slug: 'site-settings',
+      overrideAccess: true,
     })
     .catch(() => null)
 

@@ -1,8 +1,10 @@
 import { headers } from 'next/headers'
+import { unstable_noStore as noStore } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { getCachedPayload } from '@/lib/getCachedPayload'
 
 async function getPayloadWithUser() {
+  noStore()
   const payload = await getCachedPayload()
   const authResult = await payload.auth({
     headers: await headers(),

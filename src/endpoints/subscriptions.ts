@@ -1,6 +1,7 @@
 import type { PayloadRequest } from 'payload'
 
 import { createSubscriptionCheckout, createSubscriptionPortal, syncSubscriptionCheckout } from '@/lib/subscriptionFlow'
+import { rejectDisallowedMutationOrigin } from '@/lib/requestSecurity'
 
 const unauthorized = () => Response.json({ message: '请先登录' }, { status: 401 })
 
@@ -16,6 +17,9 @@ export const createSubscriptionCheckoutEndpoint = {
   path: '/billing/subscriptions/checkout',
   method: 'post' as const,
   handler: async (req: PayloadRequest) => {
+    const blocked = rejectDisallowedMutationOrigin(req)
+    if (blocked) return blocked
+
     if (!req.user) return unauthorized()
 
     try {

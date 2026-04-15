@@ -10,7 +10,6 @@ import { DashboardShell } from '../../_components/DashboardShell'
 import { ModelViewer } from '../../_components/ModelViewer'
 import { getCurrentUserModels, requireUser } from '../../_lib/session'
 import { formatDateTime, formatModelStatus } from '../../_lib/ui-text'
-
 function formatVisibility(visibility: Model['visibility']) {
   switch (visibility) {
     case 'public':
@@ -74,7 +73,7 @@ export default async function DashboardLibraryPage() {
             const formats = Array.isArray(model.formats) ? model.formats : []
             const tags = Array.isArray(model.tags) ? model.tags : []
             const sourceTaskCode = getSourceTaskCode(model.sourceTask)
-            const primaryModelURL = getPrimaryModelURL(model)
+            const previewURL = getPrimaryModelURL(model)
               ? `/api/platform/mock/models/${model.id}/download?format=glb&inline=1&preview=1`
               : null
 
@@ -82,7 +81,7 @@ export default async function DashboardLibraryPage() {
               <Card className="overflow-hidden border-border/60 bg-card/80 shadow-sm" key={model.id}>
                 <CardContent className="p-4">
                   <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-black">
-                    <ModelViewer className="h-[340px] w-full" label={model.title} src={primaryModelURL} />
+                    <ModelViewer className="h-[340px] w-full" label={model.title} src={previewURL} />
                     <div className="pointer-events-none absolute left-4 top-4 flex flex-wrap gap-2">
                       <Badge variant={getStatusVariant(model.status)}>{formatModelStatus(model.status)}</Badge>
                       <Badge variant="outline">{model.printReady ? '可打印' : '可下载'}</Badge>

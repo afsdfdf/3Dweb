@@ -43,6 +43,25 @@ function extractKeyFromBaseURL(args: {
   return decodeKey(normalizedURL.slice(normalizedBaseURL.length + 1))
 }
 
+function extractBucketRegionKeyFromS3URL(url: string) {
+  try {
+    const parsed = new URL(url)
+    const match = parsed.hostname.match(/^(.+)\.s3\.([a-z0-9-]+)\.amazonaws\.com$/i)
+
+    if (!match) {
+      return null
+    }
+
+    return {
+      bucket: match[1],
+      key: decodeKey(parsed.pathname.replace(/^\/+/, '')),
+      region: match[2],
+    }
+  } catch {
+    return null
+  }
+}
+
 export async function getMediaAccessURL(args: {
   payload: Payload
   ttlSeconds?: number
@@ -52,17 +71,22 @@ export async function getMediaAccessURL(args: {
   if (!url) return null
 
   const settings = await getS3StorageSettings(payload)
-  if (!settings.enabled || !settings.bucket || !settings.region || !settings.accessKeyId || !settings.secretAccessKey) {
+  if (!settings.accessKeyId || !settings.secretAccessKey) {
     return url
   }
 
+  const inferredObject = extractBucketRegionKeyFromS3URL(url)
   const key = extractKeyFromS3URL({
     bucket: settings.bucket,
     region: settings.region,
     url,
   }) || extractKeyFromBaseURL({ baseURL: settings.baseURL, url })
 
-  if (!key) {
+  const resolvedBucket = inferredObject?.bucket || settings.bucket
+  const resolvedRegion = inferredObject?.region || settings.region
+  const resolvedKey = inferredObject?.key || key
+
+  if (!resolvedKey || !resolvedBucket || !resolvedRegion) {
     return url
   }
 
@@ -75,14 +99,14 @@ export async function getMediaAccessURL(args: {
       accessKeyId: settings.accessKeyId,
       secretAccessKey: settings.secretAccessKey,
     },
-    region: settings.region,
+    region: resolvedRegion,
   })
 
   return getSignedUrl(
     client,
     new GetObjectCommand({
-      Bucket: settings.bucket,
-      Key: key,
+      Bucket: resolvedBucket,
+      Key: resolvedKey,
     }),
     {
       expiresIn: ttlSeconds,

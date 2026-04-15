@@ -11,7 +11,7 @@ export const SiteSettings: GlobalConfig = {
     group: '平台',
   },
   access: {
-    read: () => true,
+    read: isStaff,
     update: isStaff,
   },
   fields: [

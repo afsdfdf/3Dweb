@@ -83,6 +83,7 @@ export async function getSubscriptionPlans(input?: Payload | PayloadRequest): Pr
     ? await payload
         .findGlobal({
           slug: 'site-settings',
+          overrideAccess: true,
         })
         .catch(() => null)
     : null

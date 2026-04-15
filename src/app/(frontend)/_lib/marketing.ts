@@ -31,6 +31,7 @@ export async function getMarketingSiteData() {
     const [siteSettings, homepageContent] = await Promise.all([
       payload.findGlobal({
         slug: 'site-settings',
+        overrideAccess: true,
       }),
       payload.findGlobal({
         slug: 'homepage-content',

@@ -144,20 +144,23 @@ export const mockModelDownloadEndpoint = {
           throw new Error('ASSET_HOST_NOT_ALLOWED')
         }
 
+        if (!inline && !preview) {
+          return Response.redirect(fetchURL, 307)
+        }
+
         const upstream = await fetch(fetchURL)
         if (!upstream.ok) {
           throw new Error(`ASSET_FETCH_FAILED:${upstream.status}`)
         }
 
-        const body = await upstream.arrayBuffer()
         const mimeType =
           fileRelation && typeof fileRelation === 'object' && 'mimeType' in fileRelation && typeof fileRelation.mimeType === 'string'
             ? fileRelation.mimeType
             : 'application/octet-stream'
 
-        return new Response(body, {
+        return new Response(upstream.body, {
           headers: {
-            'Content-Disposition': `${inline || preview ? 'inline' : 'attachment'}; filename="${model.title || `model-${model.id}`}.${format}"`,
+            'Content-Disposition': `inline; filename="${model.title || `model-${model.id}`}.${format}"`,
             'Content-Type': mimeType,
           },
           status: 200,

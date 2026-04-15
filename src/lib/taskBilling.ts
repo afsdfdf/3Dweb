@@ -43,11 +43,13 @@ export async function getTaskBillingSettings(req: PayloadRequest) {
     req.payload
       .findGlobal({
         slug: 'site-settings',
+        overrideAccess: true,
       })
       .catch(() => null),
     req.payload
       .findGlobal({
         slug: 'ai-provider-settings',
+        overrideAccess: true,
       })
       .catch(() => null),
   ])

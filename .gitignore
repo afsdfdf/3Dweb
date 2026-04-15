@@ -45,6 +45,7 @@ next-env.d.ts
 /media
 /payload.db
 /src/payload.db
+*.db*
 .run-*.log
 .thumb-*.log
 .single-gltf-preview.png

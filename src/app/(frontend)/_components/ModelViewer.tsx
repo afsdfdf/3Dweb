@@ -2,14 +2,60 @@
 
 import { Bounds, Center, Environment, Float, OrbitControls, useGLTF } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
-import { Suspense, useEffect, useMemo } from 'react'
+import { Component, Suspense, useEffect, useMemo } from 'react'
 import * as THREE from 'three'
+
+if (typeof window !== 'undefined' && 'createImageBitmap' in window) {
+  // Force GLTFLoader to use classic image loading instead of ImageBitmap for better
+  // compatibility with embedded texture blobs in certain browser/driver combinations.
+  ;(globalThis as any).createImageBitmap = undefined
+}
 
 type ModelViewerProps = {
   accent?: 'blue' | 'violet'
   className?: string
   label?: string
   src?: string | null
+}
+
+type ViewerErrorBoundaryProps = {
+  children: React.ReactNode
+  fallback: React.ReactNode
+  onError?: () => void
+}
+
+type ViewerErrorBoundaryState = {
+  hasError: boolean
+}
+
+class ViewerErrorBoundary extends Component<ViewerErrorBoundaryProps, ViewerErrorBoundaryState> {
+  state: ViewerErrorBoundaryState = {
+    hasError: false,
+  }
+
+  static getDerivedStateFromError() {
+    return {
+      hasError: true,
+    }
+  }
+
+  componentDidCatch() {
+    this.props.onError?.()
+  }
+
+  componentDidUpdate(prevProps: ViewerErrorBoundaryProps) {
+    if (prevProps.children !== this.props.children && this.state.hasError) {
+      this.setState({ hasError: false })
+    }
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback
+    }
+
+    return this.props.children
+  }
 }
 
 function CharacterFigure({ accent = 'violet' }: { accent?: 'blue' | 'violet' }) {
@@ -88,6 +134,14 @@ function LoadedModel({ src }: { src: string }) {
 export function ModelViewer({ accent = 'violet', className, label, src }: ModelViewerProps) {
   const pointLightColor = accent === 'blue' ? '#67b4ff' : '#8b6cff'
 
+  useEffect(() => {
+    THREE.Cache.enabled = true
+
+    if (src) {
+      useGLTF.preload(src)
+    }
+  }, [src])
+
   return (
     <div className={className}>
       <Canvas camera={{ fov: 36, position: [0, 1.6, 5.4] }} dpr={[1, 1.8]} shadows>
@@ -99,9 +153,11 @@ export function ModelViewer({ accent = 'violet', className, label, src }: ModelV
         <spotLight angle={0.45} color="#dfe8ff" intensity={20} penumbra={0.6} position={[0, 6, 2]} />
         <Environment preset="city" />
 
-        <Suspense fallback={<CharacterFigure accent={accent} />}>
-          {src ? <LoadedModel src={src} /> : <CharacterFigure accent={accent} />}
-        </Suspense>
+        <ViewerErrorBoundary fallback={<CharacterFigure accent={accent} />}>
+          <Suspense fallback={<CharacterFigure accent={accent} />}>
+            {src ? <LoadedModel src={src} /> : <CharacterFigure accent={accent} />}
+          </Suspense>
+        </ViewerErrorBoundary>
 
         <mesh position={[0, -1.2, 0]} receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
           <circleGeometry args={[3.2, 64]} />

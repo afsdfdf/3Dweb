@@ -1,7 +1,8 @@
-﻿import type { PayloadRequest } from 'payload'
+import type { PayloadRequest } from 'payload'
 
 import { createPrintOrder, syncPrintOrder } from '@/lib/printOrderFlow'
 import { getPaymentCheckoutUrl } from '@/lib/paymentRecords'
+import { rejectDisallowedMutationOrigin } from '@/lib/requestSecurity'
 
 const unauthorized = () => Response.json({ message: '请先登录' }, { status: 401 })
 
@@ -17,6 +18,9 @@ export const createPrintOrderEndpoint = {
   path: '/commerce/print-orders',
   method: 'post' as const,
   handler: async (req: PayloadRequest) => {
+    const blocked = rejectDisallowedMutationOrigin(req)
+    if (blocked) return blocked
+
     if (!req.user) return unauthorized()
 
     try {
