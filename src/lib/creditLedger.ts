@@ -1,5 +1,7 @@
 ﻿import type { PayloadRequest } from 'payload'
 
+import { withLedgerTransaction, type LedgerExecutor } from '@/lib/ledgerStore'
+
 const INTERNAL_ACCESS = true
 
 export class InsufficientCreditsError extends Error {
@@ -61,10 +63,6 @@ type MutationOptions = {
 
 const nowISO = () => new Date().toISOString()
 
-async function getClient(req: PayloadRequest) {
-  return req.payload.db.drizzle.$client
-}
-
 async function findCreditAccount(args: { req: PayloadRequest; userId: number }) {
   const { req, userId } = args
 
@@ -94,21 +92,30 @@ async function ensureCreditAccount(args: { req: PayloadRequest; userId: number |
     return existing
   }
 
-  return req.payload.create({
-    collection: 'credits',
-    data: {
-      accountLabel: '主积分账户',
-      balance: 0,
-      billingNotes: '系统自动创建的默认积分账户。',
-      lifetimePurchased: 0,
-      lifetimeSpent: 0,
-      reservedBalance: 0,
-      status: 'active',
-      user: normalizedUserId,
-    },
-    overrideAccess: INTERNAL_ACCESS,
-    req,
-  })
+  try {
+    return await req.payload.create({
+      collection: 'credits',
+      data: {
+        accountLabel: '主积分账户',
+        balance: 0,
+        billingNotes: '系统自动创建的默认积分账户。',
+        lifetimePurchased: 0,
+        lifetimeSpent: 0,
+        reservedBalance: 0,
+        status: 'active',
+        user: normalizedUserId,
+      },
+      overrideAccess: INTERNAL_ACCESS,
+      req,
+    })
+  } catch {
+    const createdElsewhere = await findCreditAccount({ req, userId: normalizedUserId })
+    if (createdElsewhere) {
+      return createdElsewhere
+    }
+
+    throw new Error('Failed to ensure a unique credit account for the user.')
+  }
 }
 
 async function findTransactionByIdempotencyKey(args: { idempotencyKey?: string; req: PayloadRequest }) {
@@ -133,17 +140,17 @@ async function findTransactionByIdempotencyKey(args: { idempotencyKey?: string; 
   return existing.docs[0] ?? null
 }
 
-async function getAtomicCreditAccount(args: { client: any; userId: number }) {
-  const { client, userId } = args
-  const result = await client.execute({
-    args: [userId],
-    sql: `
+async function getAtomicCreditAccount(args: { executor: LedgerExecutor; userId: number }) {
+  const { executor, userId } = args
+  const result = await executor.execute(
+    `
       SELECT id, balance, reserved_balance, lifetime_purchased, lifetime_spent
       FROM credits
       WHERE user_id = ?
       LIMIT 1
     `,
-  })
+    [userId],
+  )
 
   const row = result.rows?.[0]
   if (row) {
@@ -157,24 +164,24 @@ async function getAtomicCreditAccount(args: { client: any; userId: number }) {
   }
 
   const timestamp = nowISO()
-  await client.execute({
-    args: [userId, timestamp, timestamp],
-    sql: `
+  await executor.execute(
+    `
       INSERT INTO credits
       (account_label, user_id, balance, reserved_balance, lifetime_purchased, lifetime_spent, status, billing_notes, updated_at, created_at)
       VALUES ('主积分账户', ?, 0, 0, 0, 0, 'active', '系统自动创建的默认积分账户。', ?, ?)
     `,
-  })
+    [userId, timestamp, timestamp],
+  )
 
-  const inserted = await client.execute({
-    args: [userId],
-    sql: `
+  const inserted = await executor.execute(
+    `
       SELECT id, balance, reserved_balance, lifetime_purchased, lifetime_spent
       FROM credits
       WHERE user_id = ?
       LIMIT 1
     `,
-  })
+    [userId],
+  )
 
   const created = inserted.rows?.[0]
   return {
@@ -210,24 +217,21 @@ async function runAtomicLedgerMutation(options: MutationOptions): Promise<Ledger
     }
   }
 
-  const client = await getClient(req)
   const timestamp = nowISO()
 
-  await client.execute('BEGIN IMMEDIATE')
-  try {
+  return withLedgerTransaction(req, async (executor) => {
     if (idempotencyKey) {
-      const duplicate = await client.execute({
-        args: [idempotencyKey],
-        sql: `
+      const duplicate = await executor.execute(
+        `
           SELECT id
           FROM credit_transactions
           WHERE idempotency_key = ?
           LIMIT 1
         `,
-      })
+        [idempotencyKey],
+      )
 
       if (duplicate.rows?.[0]) {
-        await client.execute('COMMIT')
         return {
           account: await ensureCreditAccount({ req, userId }),
           applied: false,
@@ -236,12 +240,11 @@ async function runAtomicLedgerMutation(options: MutationOptions): Promise<Ledger
       }
     }
 
-    const current = await getAtomicCreditAccount({ client, userId })
+    const current = await getAtomicCreditAccount({ executor, userId })
     const next = mutate(current)
 
-    await client.execute({
-      args: [next.balance, next.reservedBalance, next.lifetimePurchased, next.lifetimeSpent, notes, timestamp, current.id],
-      sql: `
+    await executor.execute(
+      `
         UPDATE credits
         SET
           balance = ?,
@@ -252,10 +255,16 @@ async function runAtomicLedgerMutation(options: MutationOptions): Promise<Ledger
           updated_at = ?
         WHERE id = ?
       `,
-    })
+      [next.balance, next.reservedBalance, next.lifetimePurchased, next.lifetimeSpent, notes, timestamp, current.id],
+    )
 
-    await client.execute({
-      args: [
+    await executor.execute(
+      `
+        INSERT INTO credit_transactions
+        (reference_code, idempotency_key, user_id, credit_account_id, type, amount, currency, balance_after, source_task_id, source_order_id, notes, metadata, updated_at, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `,
+      [
         createReferenceCode(referencePrefix),
         idempotencyKey || null,
         userId,
@@ -271,16 +280,10 @@ async function runAtomicLedgerMutation(options: MutationOptions): Promise<Ledger
         timestamp,
         timestamp,
       ],
-      sql: `
-        INSERT INTO credit_transactions
-        (reference_code, idempotency_key, user_id, credit_account_id, type, amount, currency, balance_after, source_task_id, source_order_id, notes, metadata, updated_at, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `,
-    })
+    )
 
-    await client.execute({
-      args: [next.balance, timestamp, timestamp, userId],
-      sql: `
+    await executor.execute(
+      `
         UPDATE users
         SET
           credits_balance = ?,
@@ -288,20 +291,15 @@ async function runAtomicLedgerMutation(options: MutationOptions): Promise<Ledger
           updated_at = ?
         WHERE id = ?
       `,
-    })
+      [next.balance, timestamp, timestamp, userId],
+    )
 
-    await client.execute('COMMIT')
     return {
       account: await ensureCreditAccount({ req, userId }),
       applied: true,
       idempotencyKey,
     }
-  } catch (error) {
-    try {
-      await client.execute('ROLLBACK')
-    } catch {}
-    throw error
-  }
+  })
 }
 
 export { ensureCreditAccount }

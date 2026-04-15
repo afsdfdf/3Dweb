@@ -13,6 +13,7 @@
     "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
     "cleanup:temp": "node scripts/cleanup-temp.cjs",
     "test:smoke": "node scripts/smoke-test.mjs",
+    "test:unit": "node scripts/run-unit-tests.mjs",
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start"
   },
   "dependencies": {

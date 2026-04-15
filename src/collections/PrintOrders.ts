@@ -12,7 +12,7 @@ export const PrintOrders: CollectionConfig = {
     description: '管理模型打印订单、收货信息和生产状态。',
     group: '商务',
     useAsTitle: 'orderNumber',
-    defaultColumns: ['orderNumber', 'user', 'status', 'amount', 'updatedAt'],
+    defaultColumns: ['orderNumber', 'user', 'status', 'paymentStatus', 'amount', 'updatedAt'],
   },
   access: {
     create: ownerOrStaff('user'),
@@ -39,6 +39,19 @@ export const PrintOrders: CollectionConfig = {
         { label: '已发货', value: 'shipped' },
         { label: '已完成', value: 'completed' },
         { label: '已取消', value: 'cancelled' },
+      ],
+    },
+    {
+      name: 'paymentStatus',
+      type: 'select',
+      required: true,
+      defaultValue: 'pending',
+      label: '支付状态',
+      options: [
+        { label: '待支付', value: 'pending' },
+        { label: '已支付', value: 'paid' },
+        { label: '失败', value: 'failed' },
+        { label: '已退款', value: 'refunded' },
       ],
     },
     {

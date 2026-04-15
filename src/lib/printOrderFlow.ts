@@ -2,6 +2,7 @@ import type { PayloadRequest } from 'payload'
 import type Stripe from 'stripe'
 
 import { sendOrderPaidEmail } from '@/lib/businessEmails'
+import { getCanonicalAppURL } from '@/lib/getCanonicalAppURL'
 import { getPaymentProviderSettings } from '@/lib/paymentProviders'
 import { getStripeGateway } from '@/lib/stripeGateway'
 
@@ -28,23 +29,35 @@ const MATERIAL_PRICE_MAP: Record<string, number> = {
   plastic: 0,
 }
 
-const getAppOrigin = (req: PayloadRequest) => {
-  const origin = req.headers?.get?.('origin')
-  if (origin) return origin
-
-  const forwardedHost = req.headers?.get?.('x-forwarded-host')
-  const host = forwardedHost || req.headers?.get?.('host')
-  const proto = req.headers?.get?.('x-forwarded-proto') || 'http'
-
-  if (host) {
-    return `${proto}://${host}`
+const requireNonEmptyString = (value: string | undefined, fieldLabel: string) => {
+  if (!value || !value.trim()) {
+    throw new Error(`${fieldLabel} is required.`)
   }
 
-  return process.env.NEXT_PUBLIC_APP_URL || 'http://127.0.0.1:3000'
+  return value.trim()
 }
 
-const buildOrderUrl = (req: PayloadRequest, orderId: number | string, query: Record<string, string> = {}) => {
-  const url = new URL(`/dashboard/orders/${orderId}`, getAppOrigin(req))
+const assertModelCanBePrinted = (args: {
+  currentUserId: number | string
+  model: {
+    owner?: number | string | { id?: number | string | null } | null
+    printReady?: boolean | null
+  }
+}) => {
+  const ownerId =
+    typeof args.model.owner === 'object' && args.model.owner ? args.model.owner.id : args.model.owner
+
+  if (String(ownerId || '') !== String(args.currentUserId)) {
+    throw new Error('You can only print models that belong to your own account.')
+  }
+
+  if (!args.model.printReady) {
+    throw new Error('This model is not marked as print-ready yet.')
+  }
+}
+
+const buildOrderUrl = (orderId: number | string, query: Record<string, string> = {}) => {
+  const url = new URL(`/dashboard/orders/${orderId}`, getCanonicalAppURL())
 
   Object.entries(query).forEach(([key, value]) => {
     url.searchParams.set(key, value)
@@ -148,6 +161,7 @@ async function finalizePrintOrderPayment(args: {
     id: order.id,
     data: {
       internalNotes: 'Stripe payment confirmed. Order is now marked as paid.',
+      paymentStatus: 'paid',
       status: 'paid',
     },
     overrideAccess: INTERNAL_ACCESS,
@@ -189,9 +203,9 @@ export async function createPrintOrder(args: {
     materialOption = 'plastic',
     modelId,
     req,
-    shippingAddress = 'Test address pending confirmation',
-    shippingName = 'Test recipient',
-    shippingPhone = '13800000000',
+    shippingAddress,
+    shippingName,
+    shippingPhone,
     sizeOption = 'standard',
     sourceTaskId,
   } = args
@@ -213,6 +227,15 @@ export async function createPrintOrder(args: {
     req,
   })
 
+  assertModelCanBePrinted({
+    currentUserId: req.user.id,
+    model,
+  })
+
+  const normalizedShippingName = requireNonEmptyString(shippingName, 'Shipping name')
+  const normalizedShippingPhone = requireNonEmptyString(shippingPhone, 'Shipping phone')
+  const normalizedShippingAddress = requireNonEmptyString(shippingAddress, 'Shipping address')
+
   const amount = (ORDER_PRICE_MAP[sizeOption] ?? 39.9) + (MATERIAL_PRICE_MAP[materialOption] ?? 0)
   const orderNumber = randomCode('PO')
 
@@ -226,9 +249,10 @@ export async function createPrintOrder(args: {
       materialOption,
       model: modelId,
       orderNumber,
-      shippingAddress,
-      shippingName,
-      shippingPhone,
+      paymentStatus: 'pending',
+      shippingAddress: normalizedShippingAddress,
+      shippingName: normalizedShippingName,
+      shippingPhone: normalizedShippingPhone,
       sizeOption,
       sourceTask: sourceTaskId,
       status: 'pending-payment',
@@ -241,13 +265,13 @@ export async function createPrintOrder(args: {
   const gateway = getStripeGateway()
   const checkout = await gateway.createCheckout({
     amount,
-    cancelUrl: buildOrderUrl(req, order.id, { checkout: 'cancelled' }),
+    cancelUrl: buildOrderUrl(order.id, { checkout: 'cancelled' }),
     currency: 'USD',
     customerEmail: getUserEmail(req),
     modelTitle: typeof model.title === 'string' ? model.title : undefined,
     orderId: order.id,
     orderNumber,
-    successUrl: buildOrderUrl(req, order.id, {
+    successUrl: buildOrderUrl(order.id, {
       checkout: 'success',
       session_id: '{CHECKOUT_SESSION_ID}',
     }),

@@ -1,6 +1,7 @@
 import type { PayloadRequest } from 'payload'
 import type Stripe from 'stripe'
 
+import { getCanonicalAppURL } from '@/lib/getCanonicalAppURL'
 import { getPaymentProviderSettings } from '@/lib/paymentProviders'
 import { getSubscriptionPlan, type SubscriptionPlanDefinition, type SubscriptionPlanKey } from '@/lib/subscriptionPlans'
 import { getStripeClient } from '@/lib/stripeGateway'
@@ -10,21 +11,6 @@ const INTERNAL_ACCESS = true
 const getUserStringField = (req: PayloadRequest, key: 'email' | 'fullName' | 'phone' | 'stripeCustomerId') => {
   const value = req.user && typeof req.user === 'object' && key in req.user ? req.user[key] : undefined
   return typeof value === 'string' && value.length > 0 ? value : undefined
-}
-
-const getAppOrigin = (req: PayloadRequest) => {
-  const origin = req.headers?.get?.('origin')
-  if (origin) return origin
-
-  const forwardedHost = req.headers?.get?.('x-forwarded-host')
-  const host = forwardedHost || req.headers?.get?.('host')
-  const proto = req.headers?.get?.('x-forwarded-proto') || 'http'
-
-  if (host) {
-    return `${proto}://${host}`
-  }
-
-  return process.env.NEXT_PUBLIC_APP_URL || 'http://127.0.0.1:3000'
 }
 
 async function ensurePortalConfiguration(stripe: Stripe) {
@@ -155,7 +141,7 @@ export async function createSubscriptionCheckout(args: { planKey: SubscriptionPl
   const stripe = getStripeClient()
   const customerId = await ensureStripeCustomer(req)
   const price = await ensureStripePlanPrice(plan)
-  const origin = getAppOrigin(req)
+  const origin = getCanonicalAppURL()
 
   return stripe.checkout.sessions.create({
     allow_promotion_codes: true,
@@ -210,7 +196,7 @@ export async function createBillingPortalSession(args: { customerId: string; req
   }
 
   const stripe = getStripeClient()
-  const origin = getAppOrigin(req)
+  const origin = getCanonicalAppURL()
   const config = await ensurePortalConfiguration(stripe)
 
   return stripe.billingPortal.sessions.create({

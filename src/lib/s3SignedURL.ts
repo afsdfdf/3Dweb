@@ -29,6 +29,20 @@ function extractKeyFromS3URL(args: {
   return null
 }
 
+function extractKeyFromBaseURL(args: {
+  baseURL: string
+  url: string
+}) {
+  const normalizedBaseURL = normalizeBaseURL(args.baseURL)
+  const normalizedURL = args.url.trim()
+
+  if (!normalizedBaseURL || !normalizedURL.startsWith(`${normalizedBaseURL}/`)) {
+    return null
+  }
+
+  return decodeKey(normalizedURL.slice(normalizedBaseURL.length + 1))
+}
+
 export async function getMediaAccessURL(args: {
   payload: Payload
   ttlSeconds?: number
@@ -46,17 +60,13 @@ export async function getMediaAccessURL(args: {
     bucket: settings.bucket,
     region: settings.region,
     url,
-  })
+  }) || extractKeyFromBaseURL({ baseURL: settings.baseURL, url })
 
   if (!key) {
-    if (settings.baseURL && normalizeBaseURL(url).startsWith(normalizeBaseURL(settings.baseURL))) {
-      const base = normalizeBaseURL(settings.baseURL)
-      return url
-        .slice(base.length + 1)
-        .split('/')
-        .reduce((acc, seg, index) => (index === 0 ? decodeURIComponent(seg) : `${acc}/${decodeURIComponent(seg)}`), '')
-    }
+    return url
+  }
 
+  if (!settings.signedDownloads) {
     return url
   }
 

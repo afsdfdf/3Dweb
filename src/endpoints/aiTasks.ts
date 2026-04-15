@@ -2,28 +2,22 @@
 
 import { InsufficientCreditsError } from '@/lib/creditLedger'
 import { handleAIWebhook, submitAITask, syncAITask } from '@/lib/aiTaskFlow'
+import { verifyWebhookSignature } from '@/lib/webhookSignature'
 
 const unauthorized = () => Response.json({ message: '请先登录' }, { status: 401 })
 
-const validateWebhook = async (req: PayloadRequest) => {
-  let configuredSecret = process.env.AI_WEBHOOK_SECRET || process.env.PAYLOAD_AI_WEBHOOK_SECRET || ''
+const validateWebhook = async (args: { payload: string; req: PayloadRequest }) => {
+  const { payload, req } = args
+  const configuredSecret = process.env.AI_WEBHOOK_SECRET || process.env.PAYLOAD_AI_WEBHOOK_SECRET || ''
+  const signature = req.headers.get('x-provider-signature') || req.headers.get('x-webhook-signature')
+  const timestamp = req.headers.get('x-webhook-timestamp')
 
-  if (!configuredSecret) {
-    const globalConfig = await req.payload
-      .findGlobal({
-        slug: 'ai-provider-settings',
-      })
-      .catch(() => null)
-
-    configuredSecret = typeof globalConfig?.webhookSecret === 'string' ? globalConfig.webhookSecret.trim() : ''
-  }
-
-  if (!configuredSecret) {
-    return false
-  }
-
-  const token = req.headers.get('x-webhook-secret') || req.headers.get('x-provider-signature')
-  return token === configuredSecret
+  return verifyWebhookSignature({
+    payload,
+    secret: configuredSecret,
+    signature,
+    timestamp,
+  })
 }
 
 export const submitAITaskEndpoint = {
@@ -75,11 +69,24 @@ export const aiWebhookEndpoint = {
   path: '/platform/ai/webhooks/provider',
   method: 'post' as const,
   handler: async (req: PayloadRequest) => {
-    if (!(await validateWebhook(req))) {
-      return Response.json({ message: 'Webhook 密钥校验失败' }, { status: 401 })
+    const rawBody = req.text ? await req.text() : ''
+    const verification = await validateWebhook({ payload: rawBody, req })
+
+    if (!verification.ok) {
+      if (verification.code === 'REPLAY') {
+        return Response.json({ message: 'Webhook replay detected' }, { status: 409 })
+      }
+
+      return Response.json({ message: `Webhook verification failed: ${verification.code}` }, { status: 401 })
     }
 
-    const body = req.json ? await req.json() : {}
+    let body: Record<string, unknown> = {}
+    try {
+      body = rawBody ? (JSON.parse(rawBody) as Record<string, unknown>) : {}
+    } catch {
+      return Response.json({ message: 'Invalid webhook JSON payload' }, { status: 400 })
+    }
+
     const providerTaskId = String(body?.providerTaskId ?? '').trim()
 
     if (!providerTaskId) {

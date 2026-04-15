@@ -27,18 +27,27 @@ export async function getS3StorageSettings(payload: Payload): Promise<StorageSet
     .catch(() => null)
 
   const storage = toRecord(globalConfig?.storage)
+  const accessKeyId = process.env.AWS_ACCESS_KEY_ID || ''
+  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY || ''
+  const bucket = pickString(storage.bucket, process.env.S3_BUCKET || '')
+  const region = pickString(storage.region, process.env.S3_REGION || 'us-east-1')
+  const prefix = pickString(storage.prefix, process.env.S3_PREFIX || 'media')
+  const baseURL = pickString(storage.baseURL, process.env.S3_CDN_URL || '')
+  const signedDownloads = typeof storage.signedDownloads === 'boolean' ? storage.signedDownloads : true
+  const enabledByConfig =
+    typeof storage.enabled === 'boolean'
+      ? storage.enabled
+      : Boolean(bucket && accessKeyId && secretAccessKey)
 
   return {
-    accessKeyId: pickString(storage.accessKeyId, process.env.AWS_ACCESS_KEY_ID || ''),
-    baseURL: pickString(storage.baseURL, process.env.S3_CDN_URL || ''),
-    bucket: pickString(storage.bucket, process.env.S3_BUCKET || ''),
-    enabled:
-      typeof storage.enabled === 'boolean'
-        ? storage.enabled
-        : Boolean(process.env.S3_BUCKET && process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY),
-    prefix: pickString(storage.prefix, process.env.S3_PREFIX || 'media'),
-    region: pickString(storage.region, process.env.S3_REGION || 'us-east-1'),
-    secretAccessKey: pickString(storage.secretAccessKey, process.env.AWS_SECRET_ACCESS_KEY || ''),
-    signedDownloads: typeof storage.signedDownloads === 'boolean' ? storage.signedDownloads : true,
+    accessKeyId,
+    baseURL,
+    bucket,
+    enabled: enabledByConfig && Boolean(bucket && region && accessKeyId && secretAccessKey),
+    prefix,
+    region,
+    secretAccessKey,
+    signedDownloads,
   }
 }
+

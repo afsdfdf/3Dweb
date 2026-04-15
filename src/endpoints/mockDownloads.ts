@@ -1,6 +1,7 @@
 ﻿import type { PayloadRequest } from 'payload'
 
 import { InsufficientCreditsError, refundDownloadCredits, spendDownloadCredits } from '@/lib/creditLedger'
+import { isAllowedRemoteAssetURL } from '@/lib/remoteAssetSecurity'
 import { getMediaAccessURL } from '@/lib/s3SignedURL'
 
 const unauthorized = () => Response.json({ message: '请先登录' }, { status: 401 })
@@ -81,6 +82,23 @@ export const mockModelDownloadEndpoint = {
     const remoteFromTask = modelURLs && typeof modelURLs[format] === 'string' ? String(modelURLs[format]) : ''
     const remoteURL = remoteFromMedia || remoteFromTask
 
+    if (remoteURL) {
+      const allowedSource = await isAllowedRemoteAssetURL({
+        payload: req.payload,
+        url: remoteURL,
+      })
+
+      if (!allowedSource) {
+        req.payload.logger.warn({
+          modelId: model.id,
+          msg: 'Blocked remote model asset fetch because host is not on the allowlist.',
+          remoteURL,
+        })
+
+        return Response.json({ message: '模型资源来源未被允许，下载已被拒绝' }, { status: 403 })
+      }
+    }
+
     const shouldCharge = !inline && !preview
     let chargeResult: { applied?: boolean } | null = null
 
@@ -115,8 +133,18 @@ export const mockModelDownloadEndpoint = {
           ttlSeconds: inline || preview ? 3600 : 600,
           url: remoteURL,
         })
+        const fetchURL = accessURL || remoteURL
 
-        const upstream = await fetch(accessURL || remoteURL)
+        const allowedFetchTarget = await isAllowedRemoteAssetURL({
+          payload: req.payload,
+          url: fetchURL,
+        })
+
+        if (!allowedFetchTarget) {
+          throw new Error('ASSET_HOST_NOT_ALLOWED')
+        }
+
+        const upstream = await fetch(fetchURL)
         if (!upstream.ok) {
           throw new Error(`ASSET_FETCH_FAILED:${upstream.status}`)
         }
@@ -160,10 +188,13 @@ export const mockModelDownloadEndpoint = {
         return Response.json({ message: '模型资源暂时不可用，未完成下载扣费或已自动退款' }, { status: 502 })
       }
 
+      if (error instanceof Error && error.message === 'ASSET_HOST_NOT_ALLOWED') {
+        return Response.json({ message: '模型资源来源未被允许，未完成下载扣费或已自动退款' }, { status: 403 })
+      }
+
       return Response.json({ message: '模型下载失败，请稍后重试' }, { status: 500 })
     }
   },
   method: 'get' as const,
   path: '/platform/mock/models/:modelId/download',
 }
-

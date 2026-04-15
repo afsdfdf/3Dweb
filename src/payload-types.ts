@@ -385,6 +385,10 @@ export interface PrintOrder {
   model: number | Model;
   sourceTask?: (number | null) | GenerationTask;
   status: 'pending-payment' | 'paid' | 'in-production' | 'shipped' | 'completed' | 'cancelled';
+  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
+  /**
+   * 历史字段名保留为 shopifyOrderId，当前用于存放实际支付通道返回的订单/会话参考号。
+   */
   shopifyOrderId?: string | null;
   amount: number;
   currency?: string | null;
@@ -395,6 +399,9 @@ export interface PrintOrder {
   shippingPhone?: string | null;
   shippingAddress?: string | null;
   trackingNumber?: string | null;
+  /**
+   * 历史字段名保留为 shopifyCheckoutUrl，当前 Stripe Checkout URL 也写入此处。
+   */
   shopifyCheckoutUrl?: string | null;
   internalNotes?: string | null;
   updatedAt: string;
@@ -476,7 +483,7 @@ export interface Address {
   createdAt: string;
 }
 /**
- * 记录从 Shopify 同步或模拟生成的支付记录。
+ * 统一记录平台支付流水。当前线上支付主通道为 Stripe，保留 Shopify 兼容字段以支持未来迁移。
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "shopify-payments".
@@ -487,7 +494,13 @@ export interface ShopifyPayment {
   user: number | User;
   paymentType: 'credit-topup' | 'print-order';
   status?: ('pending' | 'paid' | 'failed' | 'refunded') | null;
+  /**
+   * 历史字段名保留为 shopifyOrderId，当前可用于存储 Stripe/Shopify 订单参考号。
+   */
   shopifyOrderId?: string | null;
+  /**
+   * 历史字段名保留为 shopifyCheckoutId，当前 Stripe Checkout Session ID 也写入此处。
+   */
   shopifyCheckoutId?: string | null;
   creditsGranted?: number | null;
   linkedOrder?: (number | null) | PrintOrder;
@@ -858,6 +871,7 @@ export interface PrintOrdersSelect<T extends boolean = true> {
   model?: T;
   sourceTask?: T;
   status?: T;
+  paymentStatus?: T;
   shopifyOrderId?: T;
   amount?: T;
   currency?: T;
@@ -1147,6 +1161,8 @@ export interface HomepageContent {
   createdAt?: string | null;
 }
 /**
+ * Manage non-sensitive AI and storage metadata here. Real secrets must stay in hosting environment variables.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "ai-provider-settings".
  */
@@ -1154,7 +1170,7 @@ export interface AiProviderSetting {
   id: number;
   defaultProvider?: ('custom' | 'meshy' | 'tripo') | null;
   mockMode?: boolean | null;
-  webhookSecret?: string | null;
+  credentialsNotice?: string | null;
   polling?: {
     enabled?: boolean | null;
     intervalSeconds?: number | null;
@@ -1168,17 +1184,15 @@ export interface AiProviderSetting {
     enabled?: boolean | null;
     bucket?: string | null;
     region?: string | null;
-    accessKeyId?: string | null;
-    secretAccessKey?: string | null;
     prefix?: string | null;
     baseURL?: string | null;
     signedDownloads?: boolean | null;
+    credentialsSource?: string | null;
+    lastValidatedAt?: string | null;
+    lastRotatedAt?: string | null;
   };
   meshy?: {
-    /**
-     * 填入 Meshy API Key 后，前台生成任务会优先走 Meshy 真正接口。
-     */
-    apiKey?: string | null;
+    credentialsSource?: string | null;
     baseURL?: string | null;
     textTo3DAiModel?: ('latest' | 'meshy-6' | 'meshy-5') | null;
     imageTo3DAiModel?: ('latest' | 'meshy-6' | 'meshy-5') | null;
@@ -1187,6 +1201,8 @@ export interface AiProviderSetting {
     moderation?: boolean | null;
     imageEnhancement?: boolean | null;
     removeLighting?: boolean | null;
+    lastValidatedAt?: string | null;
+    lastRotatedAt?: string | null;
   };
   providers?:
     | {
@@ -1502,7 +1518,7 @@ export interface HomepageContentSelect<T extends boolean = true> {
 export interface AiProviderSettingsSelect<T extends boolean = true> {
   defaultProvider?: T;
   mockMode?: T;
-  webhookSecret?: T;
+  credentialsNotice?: T;
   polling?:
     | T
     | {
@@ -1522,16 +1538,17 @@ export interface AiProviderSettingsSelect<T extends boolean = true> {
         enabled?: T;
         bucket?: T;
         region?: T;
-        accessKeyId?: T;
-        secretAccessKey?: T;
         prefix?: T;
         baseURL?: T;
         signedDownloads?: T;
+        credentialsSource?: T;
+        lastValidatedAt?: T;
+        lastRotatedAt?: T;
       };
   meshy?:
     | T
     | {
-        apiKey?: T;
+        credentialsSource?: T;
         baseURL?: T;
         textTo3DAiModel?: T;
         imageTo3DAiModel?: T;
@@ -1540,6 +1557,8 @@ export interface AiProviderSettingsSelect<T extends boolean = true> {
         moderation?: T;
         imageEnhancement?: T;
         removeLighting?: T;
+        lastValidatedAt?: T;
+        lastRotatedAt?: T;
       };
   providers?:
     | T

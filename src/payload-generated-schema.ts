@@ -581,6 +581,11 @@ export const print_orders = sqliteTable(
     })
       .notNull()
       .default("pending-payment"),
+    paymentStatus: text("payment_status", {
+      enum: ["pending", "paid", "failed", "refunded"],
+    })
+      .notNull()
+      .default("pending"),
     shopifyOrderId: text("shopify_order_id"),
     amount: numeric("amount", { mode: "number" }).notNull().default(0),
     currency: text("currency").default("USD"),
@@ -1345,7 +1350,9 @@ export const ai_provider_settings = sqliteTable("ai_provider_settings", {
     enum: ["custom", "meshy", "tripo"],
   }).default("custom"),
   mockMode: integer("mock_mode", { mode: "boolean" }).default(true),
-  webhookSecret: text("webhook_secret"),
+  credentialsNotice: text("credentials_notice").default(
+    "Meshy API key, AI webhook secret, S3 access key ID, and S3 secret access key are no longer stored in Payload globals. Configure them in your hosting environment or secret manager instead.",
+  ),
   polling_enabled: integer("polling_enabled", { mode: "boolean" }).default(
     true,
   ),
@@ -1366,14 +1373,23 @@ export const ai_provider_settings = sqliteTable("ai_provider_settings", {
   ),
   storage_bucket: text("storage_bucket"),
   storage_region: text("storage_region").default("us-east-1"),
-  storage_accessKeyId: text("storage_access_key_id"),
-  storage_secretAccessKey: text("storage_secret_access_key"),
   storage_prefix: text("storage_prefix").default("media"),
   storage_baseURL: text("storage_base_u_r_l"),
   storage_signedDownloads: integer("storage_signed_downloads", {
     mode: "boolean",
   }).default(true),
-  meshy_apiKey: text("meshy_api_key"),
+  storage_credentialsSource: text("storage_credentials_source").default(
+    "environment",
+  ),
+  storage_lastValidatedAt: text("storage_last_validated_at").default(
+    sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
+  ),
+  storage_lastRotatedAt: text("storage_last_rotated_at").default(
+    sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
+  ),
+  meshy_credentialsSource: text("meshy_credentials_source").default(
+    "environment",
+  ),
   meshy_baseURL: text("meshy_base_u_r_l").default("https://api.meshy.ai"),
   meshy_textTo3DAiModel: text("meshy_text_to3_d_ai_model", {
     enum: ["latest", "meshy-6", "meshy-5"],
@@ -1396,6 +1412,12 @@ export const ai_provider_settings = sqliteTable("ai_provider_settings", {
   meshy_removeLighting: integer("meshy_remove_lighting", {
     mode: "boolean",
   }).default(true),
+  meshy_lastValidatedAt: text("meshy_last_validated_at").default(
+    sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
+  ),
+  meshy_lastRotatedAt: text("meshy_last_rotated_at").default(
+    sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
+  ),
   updatedAt: text("updated_at").default(
     sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
   ),

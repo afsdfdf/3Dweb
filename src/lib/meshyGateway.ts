@@ -1,5 +1,7 @@
 import type { PayloadRequest } from 'payload'
 
+import { getCanonicalAppURL } from '@/lib/getCanonicalAppURL'
+
 export type MeshyImageTask = {
   id: string
   model_urls?: Record<string, string | null | undefined>
@@ -40,21 +42,6 @@ const DEFAULT_MESHY_SETTINGS: MeshySettings = {
 
 const normalizeBaseURL = (value: string) => {
   return value.replace(/\/+$/, '')
-}
-
-const getAppOrigin = (req: PayloadRequest) => {
-  const origin = req.headers?.get?.('origin')
-  if (origin) return origin
-
-  const forwardedHost = req.headers?.get?.('x-forwarded-host')
-  const host = forwardedHost || req.headers?.get?.('host')
-  const proto = req.headers?.get?.('x-forwarded-proto') || 'http'
-
-  if (host) {
-    return `${proto}://${host}`
-  }
-
-  return process.env.NEXT_PUBLIC_APP_URL || 'http://127.0.0.1:3000'
 }
 
 const toRecord = (value: unknown): Record<string, unknown> => {
@@ -120,9 +107,10 @@ export async function getMeshySettings(req: PayloadRequest): Promise<MeshySettin
     .catch(() => null)
 
   const meshy = toRecord(config?.meshy)
+  const apiKey = (process.env.MESHY_API_KEY || '').trim()
 
   return {
-    apiKey: typeof meshy.apiKey === 'string' ? meshy.apiKey.trim() : DEFAULT_MESHY_SETTINGS.apiKey,
+    apiKey,
     baseURL: typeof meshy.baseURL === 'string' && meshy.baseURL.trim() ? meshy.baseURL.trim() : DEFAULT_MESHY_SETTINGS.baseURL,
     enablePBR: typeof meshy.enablePBR === 'boolean' ? meshy.enablePBR : DEFAULT_MESHY_SETTINGS.enablePBR,
     imageEnhancement:
@@ -162,7 +150,7 @@ export async function resolveMeshyImageURL(args: {
     throw new Error('The selected source image does not have a public URL for Meshy.')
   }
 
-  return mediaURL.startsWith('http') ? mediaURL : `${getAppOrigin(args.req)}${mediaURL}`
+  return mediaURL.startsWith('http') ? mediaURL : `${getCanonicalAppURL()}${mediaURL}`
 }
 
 export async function createMeshyTextPreviewTask(args: {

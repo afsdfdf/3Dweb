@@ -111,3 +111,52 @@
 - 已新增上线前审计清单：`docs/PRODUCTION_LAUNCH_AUDIT_CHECKLIST_2026-04-15.md`。
 - 已新增部署准备文档：`docs/PRODUCTION_DEPLOYMENT_PREP_2026-04-15.md`。
 - 文档已覆盖：生产环境变量、支付/邮件/AI/S3 检查项、上线阻断项、冒烟测试与发布建议。
+
+## 2026-04-16 Task 1: secret-hardening
+- Removed all runtime secret reads from `ai-provider-settings` global.
+- `AI webhook secret`, `Meshy API key`, `S3 access key ID`, and `S3 secret access key` now resolve from environment variables only.
+- Kept non-sensitive metadata in Payload global so product behavior and operator-facing runtime metadata remain intact.
+- Tightened AI provider settings global access to admin-only because the page still contains sensitive infrastructure metadata.
+- Validation passed: `pnpm run generate:types`, `pnpm payload generate:db-schema`, `pnpm exec tsc --noEmit`, `pnpm build`.
+
+## 2026-04-16 Task 2: canonical-origin
+- Added `src/lib/getCanonicalAppURL.ts` as the single trusted app URL resolver.
+- Replaced per-request origin/host/header URL assembly in Stripe billing, print-order checkout, and Meshy media URL generation.
+- Scope intentionally limited to URL source replacement only, so checkout parameters and existing flow behavior remain unchanged.
+- Validation passed: `pnpm exec tsc --noEmit`, `pnpm build`.
+
+## 2026-04-16 Task 3: signed-ai-webhook
+- Added `src/lib/webhookSignature.ts` with HMAC-SHA256 verification, timestamp validation, replay cache, and timing-safe signature comparison.
+- Kept the webhook endpoint path unchanged while moving AI webhook auth away from plain shared-secret string comparison.
+- Added explicit response handling for replay detection (`409`) and verification failure (`401`).
+- Validation passed: `pnpm exec tsc --noEmit`, `pnpm build`.
+
+## 2026-04-16 Task 4: remote-asset-allowlist
+- Added `src/lib/remoteAssetSecurity.ts` to centralize remote asset host allowlist decisions.
+- Download endpoint now rejects non-allowlisted remote asset sources before server-side fetch.
+- Result-model creation now drops disallowed remote model URLs before they can flow into model format records.
+- Validation passed: `pnpm exec tsc --noEmit`, `pnpm build`.
+
+## 2026-04-16 Task 5: ledger-db-compat
+- Added `src/lib/ledgerStore.ts` as a minimal DB-compatible transaction layer for ledger mutations.
+- Ledger mutations now route through sqlite/libsql interactive transactions or postgres pooled transactions, without changing the external credit ledger API.
+- Kept mutation semantics stable while removing the direct SQLite-only `BEGIN IMMEDIATE` dependency from the main ledger logic.
+- Validation passed: `pnpm exec tsc --noEmit`, `pnpm build`.
+
+## 2026-04-16 Task 6: s3-download-fix
+- Fixed `src/lib/s3SignedURL.ts` so CDN/baseURL matches no longer return a relative object key.
+- The helper now either returns the original accessible URL or a proper signed S3 URL derived from the resolved object key.
+- This keeps download callers on a stable contract: fetchable URL in, fetchable URL out.
+- Validation passed: `pnpm exec tsc --noEmit`, `pnpm build`.
+
+## 2026-04-16 Task 7: order-validation
+- Removed demo fallback shipping data from print-order creation.
+- Added required shipping field validation and explicit printability / ownership checks before entering the payment flow.
+- Added `paymentStatus` to print orders so payment state and fulfillment state no longer fully share one field.
+- Validation passed: `pnpm run generate:types`, `pnpm payload generate:db-schema`, `pnpm exec tsc --noEmit`, `pnpm build`.
+
+## 2026-04-16 Task 8: test-foundation
+- Added a lightweight Node test foundation instead of introducing a heavier external framework.
+- Added unit coverage for webhook signing, canonical app URL resolution, remote asset allowlist, S3/CDN media URL resolution, and credit ledger idempotent mutations.
+- Added `scripts/run-unit-tests.mjs` plus a small alias loader so tests can execute TypeScript modules with the existing `@/` path alias safely.
+- Validation passed: `pnpm test:unit`, `pnpm exec tsc --noEmit`, `pnpm build`.

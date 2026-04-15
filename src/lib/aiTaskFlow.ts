@@ -15,6 +15,7 @@ import {
   retrieveMeshyImageTask,
   retrieveMeshyTextTask,
 } from '@/lib/meshyGateway'
+import { isAllowedRemoteAssetURL } from '@/lib/remoteAssetSecurity'
 import { defaultTaskCreditRules, getTaskBillingSettings, readTaskBillingSnapshot, resolveGenerationCredits } from '@/lib/taskBilling'
 
 const randomCode = (prefix: string) => {
@@ -202,7 +203,33 @@ async function createResultModel(args: {
     return task.resultModel
   }
 
-  const modelURLs = isRecord(payloadData?.modelUrls) ? payloadData?.modelUrls : {}
+  const rawModelURLs = isRecord(payloadData?.modelUrls) ? payloadData?.modelUrls : {}
+  const modelURLs: Record<string, string> = {}
+
+  for (const format of supportedFormats) {
+    const candidate = rawModelURLs[format]
+    if (typeof candidate !== 'string' || !candidate.trim()) {
+      continue
+    }
+
+    const allowed = await isAllowedRemoteAssetURL({
+      payload: req.payload,
+      url: candidate,
+    })
+
+    if (allowed) {
+      modelURLs[format] = candidate
+      continue
+    }
+
+    req.payload.logger.warn({
+      format,
+      msg: 'Dropped remote model URL because the host is not on the allowlist.',
+      taskId: task.id,
+      url: candidate,
+    })
+  }
+
   const formats = supportedFormats
     .filter((format) => typeof modelURLs[format] === 'string' && String(modelURLs[format]).length > 0)
     .map((format) => ({
