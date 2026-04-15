@@ -3,6 +3,7 @@ import type { PayloadRequest } from 'payload'
 import type { BillingSubscription } from '@/payload-types'
 import { sendSubscriptionSuccessEmail } from '@/lib/businessEmails'
 import { grantCredits } from '@/lib/creditLedger'
+import { getPaymentProviderSettings } from '@/lib/paymentProviders'
 import {
   createBillingPortalSession,
   createSubscriptionCheckout as createStripeSubscriptionCheckout,
@@ -262,6 +263,11 @@ export async function createSubscriptionCheckout(args: { planKey: SubscriptionPl
     throw new Error('Unauthorized')
   }
 
+  const providers = await getPaymentProviderSettings(req)
+  if (providers.subscriptionProvider !== 'stripe') {
+    throw new Error('当前站点订阅支付通道为 Shopify 预留模式，暂未启用在线订阅结算。')
+  }
+
   const existing = await req.payload.find({
     collection: 'billing-subscriptions',
     depth: 0,
@@ -344,7 +350,7 @@ export async function syncStripeSubscriptionState(args: {
   }
 
   const planKey = getPlanKeyFromSubscription(stripeSubscription)
-  const plan = getSubscriptionPlan(String(planKey))
+  const plan = await getSubscriptionPlan(String(planKey), req)
   const priceId = stripeSubscription.items.data[0]?.price.id
 
   if (!plan || !priceId) {
@@ -416,6 +422,11 @@ export async function createSubscriptionPortal(args: { req: PayloadRequest }) {
 
   if (!req.user) {
     throw new Error('Unauthorized')
+  }
+
+  const providers = await getPaymentProviderSettings(req)
+  if (providers.subscriptionProvider !== 'stripe') {
+    throw new Error('当前站点未启用 Stripe 订阅管理入口。')
   }
 
   const userCustomerId =

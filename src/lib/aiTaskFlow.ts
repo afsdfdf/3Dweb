@@ -675,20 +675,6 @@ export async function submitAITask(args: {
   })
   assertProviderAllowedInCurrentEnv(resolvedProvider)
 
-  const providerResult =
-    resolvedProvider === 'meshy'
-      ? await createMeshyTask({
-          inputMode,
-          prompt,
-          req,
-          sourceImage,
-          style: typeof parameterSnapshot?.style === 'string' ? parameterSnapshot.style : undefined,
-        })
-      : {
-          parameterSnapshotUpdate: {},
-          providerTaskId: `mock-${Date.now()}`,
-        }
-
   const task = await req.payload.create({
     collection: 'generation-tasks',
     data: {
@@ -702,17 +688,12 @@ export async function submitAITask(args: {
           refundOnFailure: creditRules.refundOnFailure,
           reserveOnSubmit: creditRules.reserveOnSubmit,
         },
-        ...(Object.keys(providerResult.parameterSnapshotUpdate).length > 0
-          ? {
-              meshy: providerResult.parameterSnapshotUpdate,
-            }
-          : {}),
       },
       printRequested,
-      progress: resolvedProvider === 'meshy' ? 8 : 5,
+      progress: 5,
       prompt,
       provider: resolvedProvider,
-      providerTaskId: providerResult.providerTaskId,
+      providerTaskId: resolvedProvider === 'custom' ? `mock-${Date.now()}` : '',
       sourceImage,
       startedAt: new Date().toISOString(),
       status: 'queued',
@@ -733,46 +714,119 @@ export async function submitAITask(args: {
         userId: Number(req.user.id),
       })
     }
+    await createTaskEvent({
+      eventType: 'queued',
+      message:
+        resolvedProvider === 'meshy'
+          ? 'Task created locally and credits reserved. Waiting to dispatch to Meshy.'
+          : 'Task created in local mock mode.',
+      provider: resolvedProvider,
+      req,
+      taskId: task.id,
+      userId: Number(req.user.id),
+    })
+
+    if (resolvedProvider === 'meshy') {
+      const providerResult = await createMeshyTask({
+        inputMode,
+        prompt,
+        req,
+        sourceImage,
+        style: typeof parameterSnapshot?.style === 'string' ? parameterSnapshot.style : undefined,
+      })
+
+      await req.payload.update({
+        collection: 'generation-tasks',
+        data: {
+          parameterSnapshot: {
+            ...(parameterSnapshot ?? {}),
+            billing: {
+              configuredCredits,
+              refundOnFailure: creditRules.refundOnFailure,
+              reserveOnSubmit: creditRules.reserveOnSubmit,
+            },
+            ...(Object.keys(providerResult.parameterSnapshotUpdate).length > 0
+              ? {
+                  meshy: providerResult.parameterSnapshotUpdate,
+                }
+              : {}),
+          },
+          progress: 8,
+          providerTaskId: providerResult.providerTaskId,
+        },
+        id: task.id,
+        req,
+        overrideAccess: false,
+      })
+
+      await createTaskEvent({
+        eventType: 'submitted',
+        message: 'Task submitted to Meshy provider.',
+        payload: {
+          configuredCredits,
+          parameterSnapshot,
+          prompt,
+          providerTaskId: providerResult.providerTaskId,
+        },
+        provider: resolvedProvider,
+        req,
+        taskId: task.id,
+        userId: Number(req.user.id),
+      })
+    } else {
+      await createTaskEvent({
+        eventType: 'submitted',
+        message: 'Task entered local mock generation flow.',
+        payload: {
+          configuredCredits,
+          parameterSnapshot,
+          prompt,
+          providerTaskId: task.providerTaskId,
+        },
+        provider: resolvedProvider,
+        req,
+        taskId: task.id,
+        userId: Number(req.user.id),
+      })
+    }
   } catch (error) {
-    await req.payload.delete({
+    await req.payload.update({
       collection: 'generation-tasks',
+      data: {
+        failureReason: error instanceof Error ? error.message : 'Task submission failed.',
+        progress: 100,
+        status: 'failed',
+      },
       id: task.id,
       req,
       overrideAccess: false,
     })
 
+    if (creditRules.reserveOnSubmit && configuredCredits > 0 && creditRules.refundOnFailure) {
+      await refundTaskCredits({
+        amount: configuredCredits,
+        notes: `${task.taskCode} provider dispatch failed, reserved credits refunded.`,
+        req,
+        taskId: task.id,
+        userId: Number(req.user.id),
+      }).catch(() => null)
+    }
+
+    await createTaskEvent({
+      eventType: 'failed',
+      message: error instanceof Error ? error.message : 'Task submission failed.',
+      payload: {
+        configuredCredits,
+        provider: resolvedProvider,
+      },
+      provider: resolvedProvider,
+      req,
+      taskId: task.id,
+      userId: Number(req.user.id),
+    })
+
     throw error
   }
-
-  await createTaskEvent({
-    eventType: 'queued',
-    message:
-      resolvedProvider === 'meshy'
-        ? `Task created and sent to Meshy (${providerResult.providerTaskId}).`
-        : `Task created in local mock mode.`,
-    provider: resolvedProvider,
-    req,
-    taskId: task.id,
-    userId: Number(req.user.id),
-  })
-
-  await createTaskEvent({
-    eventType: 'submitted',
-    message:
-      resolvedProvider === 'meshy'
-        ? 'Task submitted to Meshy provider.'
-        : 'Task entered local mock generation flow.',
-    payload: {
-      configuredCredits,
-      parameterSnapshot,
-      prompt,
-      providerTaskId: providerResult.providerTaskId,
-    },
-    provider: resolvedProvider,
-    req,
-    taskId: task.id,
-    userId: Number(req.user.id),
-  })
 
   return task
 }

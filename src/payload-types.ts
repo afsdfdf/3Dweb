@@ -316,7 +316,7 @@ export interface TaskEvent {
   createdAt: string;
 }
 /**
- * 管理用户积分余额、预扣和累计消费。
+ * 管理用户积分余额、预扣与累计消费。
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "credits".
@@ -959,6 +959,52 @@ export interface SiteSetting {
     directionTitle?: string | null;
     directionText?: string | null;
   };
+  paymentProviders?: {
+    subscriptionProvider?: ('stripe' | 'shopify') | null;
+    orderProvider?: ('stripe' | 'shopify') | null;
+    providerNotice?: string | null;
+  };
+  subscriptionPlans?: {
+    starter?: {
+      name?: string | null;
+      shortLabel?: string | null;
+      monthlyPrice?: number | null;
+      creditsPerMonth?: number | null;
+      description?: string | null;
+      features?:
+        | {
+            label: string;
+            id?: string | null;
+          }[]
+        | null;
+    };
+    pro?: {
+      name?: string | null;
+      shortLabel?: string | null;
+      monthlyPrice?: number | null;
+      creditsPerMonth?: number | null;
+      description?: string | null;
+      features?:
+        | {
+            label: string;
+            id?: string | null;
+          }[]
+        | null;
+    };
+    studio?: {
+      name?: string | null;
+      shortLabel?: string | null;
+      monthlyPrice?: number | null;
+      creditsPerMonth?: number | null;
+      description?: string | null;
+      features?:
+        | {
+            label: string;
+            id?: string | null;
+          }[]
+        | null;
+    };
+  };
   generationPricing?: {
     imageCredits?: number | null;
     textCredits?: number | null;
@@ -1212,6 +1258,62 @@ export interface SiteSettingsSelect<T extends boolean = true> {
         directionEyebrow?: T;
         directionTitle?: T;
         directionText?: T;
+      };
+  paymentProviders?:
+    | T
+    | {
+        subscriptionProvider?: T;
+        orderProvider?: T;
+        providerNotice?: T;
+      };
+  subscriptionPlans?:
+    | T
+    | {
+        starter?:
+          | T
+          | {
+              name?: T;
+              shortLabel?: T;
+              monthlyPrice?: T;
+              creditsPerMonth?: T;
+              description?: T;
+              features?:
+                | T
+                | {
+                    label?: T;
+                    id?: T;
+                  };
+            };
+        pro?:
+          | T
+          | {
+              name?: T;
+              shortLabel?: T;
+              monthlyPrice?: T;
+              creditsPerMonth?: T;
+              description?: T;
+              features?:
+                | T
+                | {
+                    label?: T;
+                    id?: T;
+                  };
+            };
+        studio?:
+          | T
+          | {
+              name?: T;
+              shortLabel?: T;
+              monthlyPrice?: T;
+              creditsPerMonth?: T;
+              description?: T;
+              features?:
+                | T
+                | {
+                    label?: T;
+                    id?: T;
+                  };
+            };
       };
   generationPricing?:
     | T

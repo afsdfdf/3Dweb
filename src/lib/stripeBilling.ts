@@ -1,6 +1,7 @@
 import type { PayloadRequest } from 'payload'
 import type Stripe from 'stripe'
 
+import { getPaymentProviderSettings } from '@/lib/paymentProviders'
 import { getSubscriptionPlan, type SubscriptionPlanDefinition, type SubscriptionPlanKey } from '@/lib/subscriptionPlans'
 import { getStripeClient } from '@/lib/stripeGateway'
 
@@ -136,7 +137,13 @@ export async function ensureStripePlanPrice(plan: SubscriptionPlanDefinition) {
 
 export async function createSubscriptionCheckout(args: { planKey: SubscriptionPlanKey; req: PayloadRequest }) {
   const { planKey, req } = args
-  const plan = getSubscriptionPlan(planKey)
+  const providers = await getPaymentProviderSettings(req)
+
+  if (providers.subscriptionProvider !== 'stripe') {
+    throw new Error('当前后台已将订阅支付通道切换为 Shopify 预留模式，Stripe 订阅暂不可创建。')
+  }
+
+  const plan = await getSubscriptionPlan(planKey, req)
   if (!plan) {
     throw new Error('未找到对应的订阅方案。')
   }
@@ -196,6 +203,12 @@ export async function retrieveStripeSubscription(subscriptionId: string) {
 
 export async function createBillingPortalSession(args: { customerId: string; req: PayloadRequest }) {
   const { customerId, req } = args
+  const providers = await getPaymentProviderSettings(req)
+
+  if (providers.subscriptionProvider !== 'stripe') {
+    throw new Error('当前订阅支付通道不是 Stripe，暂不支持打开 Stripe Billing Portal。')
+  }
+
   const stripe = getStripeClient()
   const origin = getAppOrigin(req)
   const config = await ensurePortalConfiguration(stripe)

@@ -64,6 +64,131 @@ export const SiteSettings: GlobalConfig = {
           label: '定价与积分',
           fields: [
             {
+              name: 'paymentProviders',
+              type: 'group',
+              label: '支付通道说明',
+              fields: [
+                {
+                  name: 'subscriptionProvider',
+                  type: 'select',
+                  defaultValue: 'stripe',
+                  label: '订阅支付通道',
+                  options: [
+                    { label: 'Stripe（当前已接通）', value: 'stripe' },
+                    { label: 'Shopify（预留接口）', value: 'shopify' },
+                  ],
+                },
+                {
+                  name: 'orderProvider',
+                  type: 'select',
+                  defaultValue: 'stripe',
+                  label: '订单支付通道',
+                  options: [
+                    { label: 'Stripe（当前已接通）', value: 'stripe' },
+                    { label: 'Shopify（预留接口）', value: 'shopify' },
+                  ],
+                },
+                {
+                  name: 'providerNotice',
+                  type: 'textarea',
+                  defaultValue:
+                    '当前版本正式启用 Stripe 处理订阅与订单支付；Shopify 相关数据结构继续保留，用于未来扩展商城/变体/结算链路。',
+                  label: '支付通道说明',
+                },
+              ],
+            },
+            {
+              name: 'subscriptionPlans',
+              type: 'group',
+              label: '订阅方案',
+              fields: [
+                {
+                  name: 'starter',
+                  type: 'group',
+                  label: 'Starter',
+                  fields: [
+                    { name: 'name', type: 'text', defaultValue: 'Starter', label: '方案名称' },
+                    { name: 'shortLabel', type: 'text', defaultValue: '入门订阅', label: '短标签' },
+                    { name: 'monthlyPrice', type: 'number', defaultValue: 19, label: '月付价格（USD）' },
+                    { name: 'creditsPerMonth', type: 'number', defaultValue: 240, label: '每月积分' },
+                    {
+                      name: 'description',
+                      type: 'textarea',
+                      defaultValue: '适合个人创作者持续生成角色、快速下载并维持轻量打印需求。',
+                      label: '方案说明',
+                    },
+                    {
+                      name: 'features',
+                      type: 'array',
+                      label: '功能要点',
+                      fields: [{ name: 'label', type: 'text', required: true, label: '文案' }],
+                      defaultValue: [
+                        { label: '每月 240 积分' },
+                        { label: '图生 / 文生 / 图文混合全模式可用' },
+                        { label: '标准模型下载与结果归档' },
+                      ],
+                    },
+                  ],
+                },
+                {
+                  name: 'pro',
+                  type: 'group',
+                  label: 'Pro',
+                  fields: [
+                    { name: 'name', type: 'text', defaultValue: 'Pro', label: '方案名称' },
+                    { name: 'shortLabel', type: 'text', defaultValue: '专业订阅', label: '短标签' },
+                    { name: 'monthlyPrice', type: 'number', defaultValue: 49, label: '月付价格（USD）' },
+                    { name: 'creditsPerMonth', type: 'number', defaultValue: 760, label: '每月积分' },
+                    {
+                      name: 'description',
+                      type: 'textarea',
+                      defaultValue: '适合高频创作、反复迭代与需要更稳定产能的小团队或工作室。',
+                      label: '方案说明',
+                    },
+                    {
+                      name: 'features',
+                      type: 'array',
+                      label: '功能要点',
+                      fields: [{ name: 'label', type: 'text', required: true, label: '文案' }],
+                      defaultValue: [
+                        { label: '每月 760 积分' },
+                        { label: '更适合高频角色迭代' },
+                        { label: '优先用于生成、下载与打样协同' },
+                      ],
+                    },
+                  ],
+                },
+                {
+                  name: 'studio',
+                  type: 'group',
+                  label: 'Studio',
+                  fields: [
+                    { name: 'name', type: 'text', defaultValue: 'Studio', label: '方案名称' },
+                    { name: 'shortLabel', type: 'text', defaultValue: '工作室订阅', label: '短标签' },
+                    { name: 'monthlyPrice', type: 'number', defaultValue: 99, label: '月付价格（USD）' },
+                    { name: 'creditsPerMonth', type: 'number', defaultValue: 1680, label: '每月积分' },
+                    {
+                      name: 'description',
+                      type: 'textarea',
+                      defaultValue: '适合把 AI 生成、资产沉淀与实体打样放进同一运营节奏的团队。',
+                      label: '方案说明',
+                    },
+                    {
+                      name: 'features',
+                      type: 'array',
+                      label: '功能要点',
+                      fields: [{ name: 'label', type: 'text', required: true, label: '文案' }],
+                      defaultValue: [
+                        { label: '每月 1680 积分' },
+                        { label: '适合稳定商业化产出' },
+                        { label: '支持持续生成、下载与打印履约' },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+            {
               name: 'generationPricing',
               type: 'group',
               label: '生成定价',

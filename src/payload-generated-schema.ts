@@ -355,7 +355,7 @@ export const credits = sqliteTable(
       .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
   },
   (columns) => [
-    index("credits_user_idx").on(columns.user),
+    uniqueIndex("credits_user_idx").on(columns.user),
     index("credits_updated_at_idx").on(columns.updatedAt),
     index("credits_created_at_idx").on(columns.createdAt),
   ],
@@ -366,6 +366,7 @@ export const credit_transactions = sqliteTable(
   {
     id: integer("id").primaryKey(),
     referenceCode: text("reference_code").notNull(),
+    idempotencyKey: text("idempotency_key"),
     user: integer("user_id")
       .notNull()
       .references(() => users.id, {
@@ -411,6 +412,9 @@ export const credit_transactions = sqliteTable(
   (columns) => [
     uniqueIndex("credit_transactions_reference_code_idx").on(
       columns.referenceCode,
+    ),
+    uniqueIndex("credit_transactions_idempotency_key_idx").on(
+      columns.idempotencyKey,
     ),
     index("credit_transactions_user_idx").on(columns.user),
     index("credit_transactions_credit_account_idx").on(columns.creditAccount),
@@ -884,6 +888,75 @@ export const site_settings_header_nav = sqliteTable(
   ],
 );
 
+export const site_settings_subscription_plans_starter_features = sqliteTable(
+  "site_settings_subscription_plans_starter_features",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: integer("_parent_id").notNull(),
+    id: text("id").primaryKey(),
+    label: text("label").notNull(),
+  },
+  (columns) => [
+    index("site_settings_subscription_plans_starter_features_order_idx").on(
+      columns._order,
+    ),
+    index("site_settings_subscription_plans_starter_features_parent_id_idx").on(
+      columns._parentID,
+    ),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [site_settings.id],
+      name: "site_settings_subscription_plans_starter_features_parent_id_fk",
+    }).onDelete("cascade"),
+  ],
+);
+
+export const site_settings_subscription_plans_pro_features = sqliteTable(
+  "site_settings_subscription_plans_pro_features",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: integer("_parent_id").notNull(),
+    id: text("id").primaryKey(),
+    label: text("label").notNull(),
+  },
+  (columns) => [
+    index("site_settings_subscription_plans_pro_features_order_idx").on(
+      columns._order,
+    ),
+    index("site_settings_subscription_plans_pro_features_parent_id_idx").on(
+      columns._parentID,
+    ),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [site_settings.id],
+      name: "site_settings_subscription_plans_pro_features_parent_id_fk",
+    }).onDelete("cascade"),
+  ],
+);
+
+export const site_settings_subscription_plans_studio_features = sqliteTable(
+  "site_settings_subscription_plans_studio_features",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: integer("_parent_id").notNull(),
+    id: text("id").primaryKey(),
+    label: text("label").notNull(),
+  },
+  (columns) => [
+    index("site_settings_subscription_plans_studio_features_order_idx").on(
+      columns._order,
+    ),
+    index("site_settings_subscription_plans_studio_features_parent_id_idx").on(
+      columns._parentID,
+    ),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [site_settings.id],
+      name: "site_settings_subscription_plans_studio_features_parent_id_fk",
+    }).onDelete("cascade"),
+  ],
+);
+
 export const site_settings_credit_packages = sqliteTable(
   "site_settings_credit_packages",
   {
@@ -931,6 +1004,69 @@ export const site_settings = sqliteTable("site_settings", {
   footer_directionText: text("footer_direction_text").default(
     "当前版本已经具备账号、任务、模型、订单、积分与后台运营结构，下一步将继续补齐正式营销站、Studio 和平台 API。",
   ),
+  paymentProviders_subscriptionProvider: text(
+    "payment_providers_subscription_provider",
+    { enum: ["stripe", "shopify"] },
+  ).default("stripe"),
+  paymentProviders_orderProvider: text("payment_providers_order_provider", {
+    enum: ["stripe", "shopify"],
+  }).default("stripe"),
+  paymentProviders_providerNotice: text(
+    "payment_providers_provider_notice",
+  ).default(
+    "当前版本正式启用 Stripe 处理订阅与订单支付；Shopify 相关数据结构继续保留，用于未来扩展商城/变体/结算链路。",
+  ),
+  subscriptionPlans_starter_name: text(
+    "subscription_plans_starter_name",
+  ).default("Starter"),
+  subscriptionPlans_starter_shortLabel: text(
+    "subscription_plans_starter_short_label",
+  ).default("入门订阅"),
+  subscriptionPlans_starter_monthlyPrice: numeric(
+    "subscription_plans_starter_monthly_price",
+    { mode: "number" },
+  ).default(19),
+  subscriptionPlans_starter_creditsPerMonth: numeric(
+    "subscription_plans_starter_credits_per_month",
+    { mode: "number" },
+  ).default(240),
+  subscriptionPlans_starter_description: text(
+    "subscription_plans_starter_description",
+  ).default("适合个人创作者持续生成角色、快速下载并维持轻量打印需求。"),
+  subscriptionPlans_pro_name: text("subscription_plans_pro_name").default(
+    "Pro",
+  ),
+  subscriptionPlans_pro_shortLabel: text(
+    "subscription_plans_pro_short_label",
+  ).default("专业订阅"),
+  subscriptionPlans_pro_monthlyPrice: numeric(
+    "subscription_plans_pro_monthly_price",
+    { mode: "number" },
+  ).default(49),
+  subscriptionPlans_pro_creditsPerMonth: numeric(
+    "subscription_plans_pro_credits_per_month",
+    { mode: "number" },
+  ).default(760),
+  subscriptionPlans_pro_description: text(
+    "subscription_plans_pro_description",
+  ).default("适合高频创作、反复迭代与需要更稳定产能的小团队或工作室。"),
+  subscriptionPlans_studio_name: text("subscription_plans_studio_name").default(
+    "Studio",
+  ),
+  subscriptionPlans_studio_shortLabel: text(
+    "subscription_plans_studio_short_label",
+  ).default("工作室订阅"),
+  subscriptionPlans_studio_monthlyPrice: numeric(
+    "subscription_plans_studio_monthly_price",
+    { mode: "number" },
+  ).default(99),
+  subscriptionPlans_studio_creditsPerMonth: numeric(
+    "subscription_plans_studio_credits_per_month",
+    { mode: "number" },
+  ).default(1680),
+  subscriptionPlans_studio_description: text(
+    "subscription_plans_studio_description",
+  ).default("适合把 AI 生成、资产沉淀与实体打样放进同一运营节奏的团队。"),
   generationPricing_imageCredits: numeric("generation_pricing_image_credits", {
     mode: "number",
   }).default(20),
@@ -1268,6 +1404,40 @@ export const ai_provider_settings = sqliteTable("ai_provider_settings", {
   ),
 });
 
+export const runtime_deployment_settings = sqliteTable(
+  "runtime_deployment_settings",
+  {
+    id: integer("id").primaryKey(),
+    databaseConnectionMode: text("database_connection_mode", {
+      enum: ["aws-rds-fields", "database-url"],
+    })
+      .notNull()
+      .default("aws-rds-fields"),
+    databaseUrlTemplate: text("database_url_template"),
+    awsRdsHost: text("aws_rds_host"),
+    awsRdsPort: numeric("aws_rds_port", { mode: "number" }).default(5432),
+    awsRdsDbName: text("aws_rds_db_name").default("payload_local_demo"),
+    awsRdsUsername: text("aws_rds_username").default("payload_admin"),
+    awsRdsSslMode: text("aws_rds_ssl_mode", {
+      enum: ["require", "verify-full", "disable"],
+    }).default("require"),
+    awsRdsSslRejectUnauthorized: integer("aws_rds_ssl_reject_unauthorized", {
+      mode: "boolean",
+    }).default(false),
+    databaseSecurityChecklist: text("database_security_checklist"),
+    nextPublicAppUrl: text("next_public_app_url").default(
+      "http://127.0.0.1:3000",
+    ),
+    payloadSecretRotationNote: text("payload_secret_rotation_note"),
+    updatedAt: text("updated_at").default(
+      sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
+    ),
+    createdAt: text("created_at").default(
+      sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
+    ),
+  },
+);
+
 export const relations_users_sessions = relations(
   users_sessions,
   ({ one }) => ({
@@ -1570,6 +1740,30 @@ export const relations_site_settings_header_nav = relations(
     }),
   }),
 );
+export const relations_site_settings_subscription_plans_starter_features =
+  relations(site_settings_subscription_plans_starter_features, ({ one }) => ({
+    _parentID: one(site_settings, {
+      fields: [site_settings_subscription_plans_starter_features._parentID],
+      references: [site_settings.id],
+      relationName: "subscriptionPlans_starter_features",
+    }),
+  }));
+export const relations_site_settings_subscription_plans_pro_features =
+  relations(site_settings_subscription_plans_pro_features, ({ one }) => ({
+    _parentID: one(site_settings, {
+      fields: [site_settings_subscription_plans_pro_features._parentID],
+      references: [site_settings.id],
+      relationName: "subscriptionPlans_pro_features",
+    }),
+  }));
+export const relations_site_settings_subscription_plans_studio_features =
+  relations(site_settings_subscription_plans_studio_features, ({ one }) => ({
+    _parentID: one(site_settings, {
+      fields: [site_settings_subscription_plans_studio_features._parentID],
+      references: [site_settings.id],
+      relationName: "subscriptionPlans_studio_features",
+    }),
+  }));
 export const relations_site_settings_credit_packages = relations(
   site_settings_credit_packages,
   ({ one }) => ({
@@ -1584,6 +1778,24 @@ export const relations_site_settings = relations(site_settings, ({ many }) => ({
   headerNav: many(site_settings_header_nav, {
     relationName: "headerNav",
   }),
+  subscriptionPlans_starter_features: many(
+    site_settings_subscription_plans_starter_features,
+    {
+      relationName: "subscriptionPlans_starter_features",
+    },
+  ),
+  subscriptionPlans_pro_features: many(
+    site_settings_subscription_plans_pro_features,
+    {
+      relationName: "subscriptionPlans_pro_features",
+    },
+  ),
+  subscriptionPlans_studio_features: many(
+    site_settings_subscription_plans_studio_features,
+    {
+      relationName: "subscriptionPlans_studio_features",
+    },
+  ),
   creditPackages: many(site_settings_credit_packages, {
     relationName: "creditPackages",
   }),
@@ -1676,6 +1888,10 @@ export const relations_ai_provider_settings = relations(
     }),
   }),
 );
+export const relations_runtime_deployment_settings = relations(
+  runtime_deployment_settings,
+  () => ({}),
+);
 
 type DatabaseSchema = {
   users_sessions: typeof users_sessions;
@@ -1700,6 +1916,9 @@ type DatabaseSchema = {
   payload_preferences_rels: typeof payload_preferences_rels;
   payload_migrations: typeof payload_migrations;
   site_settings_header_nav: typeof site_settings_header_nav;
+  site_settings_subscription_plans_starter_features: typeof site_settings_subscription_plans_starter_features;
+  site_settings_subscription_plans_pro_features: typeof site_settings_subscription_plans_pro_features;
+  site_settings_subscription_plans_studio_features: typeof site_settings_subscription_plans_studio_features;
   site_settings_credit_packages: typeof site_settings_credit_packages;
   site_settings: typeof site_settings;
   homepage_content_featured_works: typeof homepage_content_featured_works;
@@ -1710,6 +1929,7 @@ type DatabaseSchema = {
   homepage_content: typeof homepage_content;
   ai_provider_settings_providers: typeof ai_provider_settings_providers;
   ai_provider_settings: typeof ai_provider_settings;
+  runtime_deployment_settings: typeof runtime_deployment_settings;
   relations_users_sessions: typeof relations_users_sessions;
   relations_users: typeof relations_users;
   relations_media: typeof relations_media;
@@ -1732,6 +1952,9 @@ type DatabaseSchema = {
   relations_payload_preferences: typeof relations_payload_preferences;
   relations_payload_migrations: typeof relations_payload_migrations;
   relations_site_settings_header_nav: typeof relations_site_settings_header_nav;
+  relations_site_settings_subscription_plans_starter_features: typeof relations_site_settings_subscription_plans_starter_features;
+  relations_site_settings_subscription_plans_pro_features: typeof relations_site_settings_subscription_plans_pro_features;
+  relations_site_settings_subscription_plans_studio_features: typeof relations_site_settings_subscription_plans_studio_features;
   relations_site_settings_credit_packages: typeof relations_site_settings_credit_packages;
   relations_site_settings: typeof relations_site_settings;
   relations_homepage_content_featured_works: typeof relations_homepage_content_featured_works;
@@ -1742,6 +1965,7 @@ type DatabaseSchema = {
   relations_homepage_content: typeof relations_homepage_content;
   relations_ai_provider_settings_providers: typeof relations_ai_provider_settings_providers;
   relations_ai_provider_settings: typeof relations_ai_provider_settings;
+  relations_runtime_deployment_settings: typeof relations_runtime_deployment_settings;
 };
 
 declare module "@payloadcms/db-sqlite" {

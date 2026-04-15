@@ -1,5 +1,6 @@
-import type { PayloadRequest } from 'payload'
+﻿import type { PayloadRequest } from 'payload'
 
+import { InsufficientCreditsError } from '@/lib/creditLedger'
 import { handleAIWebhook, submitAITask, syncAITask } from '@/lib/aiTaskFlow'
 
 const unauthorized = () => Response.json({ message: '请先登录' }, { status: 401 })
@@ -53,7 +54,8 @@ export const submitAITaskEndpoint = {
       })
     } catch (error) {
       const message = error instanceof Error ? error.message : '任务提交失败'
-      return Response.json({ message }, { status: 400 })
+      const status = error instanceof InsufficientCreditsError ? 402 : 400
+      return Response.json({ message }, { status })
     }
   },
 }

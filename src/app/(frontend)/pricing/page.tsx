@@ -3,6 +3,9 @@ import Link from 'next/link'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { getCachedPayload } from '@/lib/getCachedPayload'
+import { getPaymentProviderSettings } from '@/lib/paymentProviders'
+import { getSubscriptionPlans } from '@/lib/subscriptionPlans'
 
 import { ManageSubscriptionButton } from '../_components/ManageSubscriptionButton'
 import { SiteShell } from '../_components/SiteShell'
@@ -10,17 +13,25 @@ import { SubscribePlanButton } from '../_components/SubscribePlanButton'
 import { SubscriptionStatusSync } from '../_components/SubscriptionStatusSync'
 import { getCurrentUser, getCurrentUserActiveSubscription } from '../_lib/session'
 import { formatDateTime, formatSubscriptionStatus } from '../_lib/ui-text'
-import { subscriptionPlans } from '@/lib/subscriptionPlans'
 
 export default async function PricingPage({
   searchParams,
 }: {
   searchParams: Promise<{ checkout?: string; session_id?: string }>
 }) {
-  const [user, activeSubscription, query] = await Promise.all([getCurrentUser(), getCurrentUserActiveSubscription(), searchParams])
+  const payload = await getCachedPayload()
+  const [user, activeSubscription, query, subscriptionPlans, paymentProviders] = await Promise.all([
+    getCurrentUser(),
+    getCurrentUserActiveSubscription(),
+    searchParams,
+    getSubscriptionPlans(payload),
+    getPaymentProviderSettings(payload),
+  ])
 
   const shouldSync = Boolean(user && query.checkout === 'success' && query.session_id)
   const isCancelled = query.checkout === 'cancelled'
+  const stripeSubscriptionsEnabled = paymentProviders.subscriptionProvider === 'stripe'
+  const subscriptionProviderLabel = stripeSubscriptionsEnabled ? 'Stripe（当前已启用）' : 'Shopify（预留）'
 
   return (
     <SiteShell currentPath="/pricing" user={user}>
@@ -34,10 +45,11 @@ export default async function PricingPage({
             </p>
 
             <div className="mt-6 flex flex-wrap gap-3">
-              <Badge variant="outline">Stripe Checkout 订阅</Badge>
+              <Badge variant="outline">{subscriptionProviderLabel}</Badge>
               <Badge variant="outline">每月自动发放积分</Badge>
               <Badge variant="outline">支持 Billing Portal 管理</Badge>
             </div>
+            <p className="mt-4 text-sm text-muted-foreground">{paymentProviders.providerNotice}</p>
 
             <div className="mt-8 grid gap-4 md:grid-cols-3">
               {[
@@ -58,9 +70,7 @@ export default async function PricingPage({
           <Card className="border-border/60 bg-card/85 shadow-sm">
             <CardHeader>
               <Badge variant="outline">当前订阅</Badge>
-              <CardTitle className="mt-3 text-2xl tracking-tight">
-                {activeSubscription ? activeSubscription.planKey : '尚未开通'}
-              </CardTitle>
+              <CardTitle className="mt-3 text-2xl tracking-tight">{activeSubscription ? activeSubscription.planKey : '尚未开通'}</CardTitle>
               <CardDescription>
                 {activeSubscription
                   ? `状态：${formatSubscriptionStatus(activeSubscription.status)}`
@@ -85,7 +95,11 @@ export default async function PricingPage({
                 activeSubscription ? (
                   <ManageSubscriptionButton />
                 ) : (
-                  <p className="w-full text-sm text-muted-foreground">选择下方任一方案即可进入 Stripe Checkout。</p>
+                  <p className="w-full text-sm text-muted-foreground">
+                    {stripeSubscriptionsEnabled
+                      ? '选择下方任一方案即可进入 Stripe Checkout。'
+                      : '当前订阅支付通道处于 Shopify 预留模式，在线订阅入口已暂停。'}
+                  </p>
                 )
               ) : (
                 <Button asChild className="w-full">
@@ -129,7 +143,7 @@ export default async function PricingPage({
                     isCurrentPlan ? (
                       <ManageSubscriptionButton label="管理当前订阅" variant="secondary" />
                     ) : (
-                      <SubscribePlanButton planKey={plan.key} />
+                      <SubscribePlanButton disabled={!stripeSubscriptionsEnabled} planKey={plan.key} />
                     )
                   ) : (
                     <Button asChild className="w-full" variant="outline">

@@ -26,7 +26,7 @@ export const isAdmin: Access = (args) => {
 }
 
 export const canAccessAdmin = ({ req }: { req: { user?: UserWithRole | null } }) => {
-  return Boolean(req.user?.role === 'admin')
+  return Boolean(req.user && ['admin', 'operator'].includes(req.user.role ?? 'customer'))
 }
 
 export const isSelfOrStaff: Access = (args) => {

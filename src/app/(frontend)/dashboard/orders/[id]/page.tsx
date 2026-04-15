@@ -1,8 +1,9 @@
-import Link from 'next/link'
+﻿import Link from 'next/link'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { getPaymentCheckoutUrl, getPaymentOrderReference } from '@/lib/paymentRecords'
 
 import { OrderActionButton } from '../../../_components/OrderActionButton'
 import { OrderPaymentStatusSync } from '../../../_components/OrderPaymentStatusSync'
@@ -38,11 +39,7 @@ export default async function DashboardOrderDetailPage({
 
   if (!order) {
     return (
-      <DashboardShell
-        currentPath="/dashboard/orders"
-        description="当前订单不存在，或你没有访问这张订单的权限。"
-        title="订单详情"
-      >
+      <DashboardShell currentPath="/dashboard/orders" description="当前订单不存在，或你没有访问这张订单的权限。" title="订单详情">
         <Card className="border-border/60 bg-card/80">
           <CardHeader>
             <CardTitle>订单不存在</CardTitle>
@@ -63,6 +60,8 @@ export default async function DashboardOrderDetailPage({
   const sourceTaskCode = typeof order.sourceTask === 'object' ? order.sourceTask?.taskCode || '—' : '—'
   const shouldAutoSync = query.checkout === 'success' && order.status === 'pending-payment'
   const showCancelledNotice = query.checkout === 'cancelled'
+  const paymentCheckoutUrl = getPaymentCheckoutUrl(order)
+  const paymentOrderReference = getPaymentOrderReference(order)
 
   return (
     <DashboardShell
@@ -83,9 +82,7 @@ export default async function DashboardOrderDetailPage({
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           {shouldAutoSync ? <OrderPaymentStatusSync enabled orderId={Number(order.id)} /> : null}
-          {showCancelledNotice ? (
-            <p className="text-sm text-muted-foreground">支付已取消，你可以稍后回来继续完成结算。</p>
-          ) : null}
+          {showCancelledNotice ? <p className="text-sm text-muted-foreground">支付已取消，你可以稍后回来继续完成结算。</p> : null}
 
           <div className="grid gap-3 lg:grid-cols-5">
             {steps.map((step, index) => {
@@ -166,9 +163,9 @@ export default async function DashboardOrderDetailPage({
             </div>
           </CardContent>
           <CardFooter className="flex flex-wrap gap-3">
-            {order.shopifyCheckoutUrl ? (
+            {paymentCheckoutUrl ? (
               <Button asChild>
-                <a href={order.shopifyCheckoutUrl} rel="noreferrer" target="_blank">
+                <a href={paymentCheckoutUrl} rel="noreferrer" target="_blank">
                   继续支付
                 </a>
               </Button>
@@ -204,8 +201,8 @@ export default async function DashboardOrderDetailPage({
                 <p className="mt-2 text-sm font-medium">{order.trackingNumber || '暂未生成'}</p>
               </div>
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">支付会话</p>
-                <p className="mt-2 text-sm font-medium">{query.session_id || order.shopifyOrderId || 'Stripe Checkout 已创建'}</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">支付会话 / 订单参考</p>
+                <p className="mt-2 text-sm font-medium">{query.session_id || paymentOrderReference || 'Stripe Checkout 已创建'}</p>
               </div>
             </CardContent>
           </Card>

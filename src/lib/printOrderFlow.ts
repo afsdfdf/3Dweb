@@ -2,6 +2,7 @@ import type { PayloadRequest } from 'payload'
 import type Stripe from 'stripe'
 
 import { sendOrderPaidEmail } from '@/lib/businessEmails'
+import { getPaymentProviderSettings } from '@/lib/paymentProviders'
 import { getStripeGateway } from '@/lib/stripeGateway'
 
 const INTERNAL_ACCESS = true
@@ -199,6 +200,11 @@ export async function createPrintOrder(args: {
     throw new Error('Unauthorized')
   }
 
+  const providers = await getPaymentProviderSettings(req)
+  if (providers.orderProvider !== 'stripe') {
+    throw new Error('Order payments are currently set to Shopify reserved mode, so Stripe print-order checkout is disabled.')
+  }
+
   const model = await req.payload.findByID({
     collection: 'models',
     depth: 0,
@@ -310,6 +316,11 @@ export async function syncPrintOrder(args: { orderId: number; req: PayloadReques
 
   if (!req.user) {
     throw new Error('Unauthorized')
+  }
+
+  const providers = await getPaymentProviderSettings(req)
+  if (providers.orderProvider !== 'stripe') {
+    throw new Error('Order payments are not using Stripe right now, so Stripe order sync is unavailable.')
   }
 
   if (['completed', 'cancelled'].includes(String(order.status))) {

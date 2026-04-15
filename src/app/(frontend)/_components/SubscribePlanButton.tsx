@@ -6,15 +6,18 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 
 type SubscribePlanButtonProps = {
+  disabled?: boolean
   planKey: 'starter' | 'pro' | 'studio'
 }
 
-export function SubscribePlanButton({ planKey }: SubscribePlanButtonProps) {
+export function SubscribePlanButton({ disabled = false, planKey }: SubscribePlanButtonProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   const onSubscribe = async () => {
+    if (disabled) return
+
     setLoading(true)
     setError('')
 
@@ -49,8 +52,8 @@ export function SubscribePlanButton({ planKey }: SubscribePlanButtonProps) {
 
   return (
     <div className="flex flex-col gap-2">
-      <Button className="w-full" disabled={loading} onClick={onSubscribe} type="button">
-        {loading ? '正在跳转结算…' : '立即订阅'}
+      <Button className="w-full" disabled={disabled || loading} onClick={onSubscribe} type="button">
+        {disabled ? '暂未启用' : loading ? '正在跳转结算…' : '立即订阅'}
       </Button>
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
     </div>

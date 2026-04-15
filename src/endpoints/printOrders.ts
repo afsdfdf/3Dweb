@@ -1,6 +1,7 @@
-import type { PayloadRequest } from 'payload'
+﻿import type { PayloadRequest } from 'payload'
 
 import { createPrintOrder, syncPrintOrder } from '@/lib/printOrderFlow'
+import { getPaymentCheckoutUrl } from '@/lib/paymentRecords'
 
 const unauthorized = () => Response.json({ message: '请先登录' }, { status: 401 })
 
@@ -32,7 +33,7 @@ export const createPrintOrderEndpoint = {
       })
 
       return Response.json({
-        checkoutUrl: order.shopifyCheckoutUrl,
+        checkoutUrl: getPaymentCheckoutUrl(order),
         message: '订单已创建，正在进入 Stripe Checkout。',
         order,
       })

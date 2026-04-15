@@ -1,4 +1,4 @@
-import type { CollectionConfig } from 'payload'
+﻿import type { CollectionConfig } from 'payload'
 
 import { isStaff, ownerOrStaff } from '@/access'
 
@@ -41,7 +41,14 @@ export const PrintOrders: CollectionConfig = {
         { label: '已取消', value: 'cancelled' },
       ],
     },
-    { name: 'shopifyOrderId', type: 'text', label: 'Shopify 订单 ID' },
+    {
+      name: 'shopifyOrderId',
+      type: 'text',
+      label: '支付订单参考号（兼容旧字段）',
+      admin: {
+        description: '历史字段名保留为 shopifyOrderId，当前用于存放实际支付通道返回的订单/会话参考号。',
+      },
+    },
     { name: 'amount', type: 'number', required: true, defaultValue: 0, label: '金额' },
     { name: 'currency', type: 'text', defaultValue: 'USD', label: '货币' },
     { name: 'creditsUsed', type: 'number', defaultValue: 0, label: '使用积分' },
@@ -51,7 +58,14 @@ export const PrintOrders: CollectionConfig = {
     { name: 'shippingPhone', type: 'text', label: '联系电话' },
     { name: 'shippingAddress', type: 'textarea', label: '收货地址' },
     { name: 'trackingNumber', type: 'text', label: '物流单号' },
-    { name: 'shopifyCheckoutUrl', type: 'text', label: 'Shopify 结算链接' },
+    {
+      name: 'shopifyCheckoutUrl',
+      type: 'text',
+      label: '支付结算链接（兼容旧字段）',
+      admin: {
+        description: '历史字段名保留为 shopifyCheckoutUrl，当前 Stripe Checkout URL 也写入此处。',
+      },
+    },
     { name: 'internalNotes', type: 'textarea', label: '内部备注' },
   ],
 }
