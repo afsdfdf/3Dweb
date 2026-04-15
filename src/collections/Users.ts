@@ -1,7 +1,22 @@
-﻿import type { CollectionConfig } from 'payload'
+import type { CollectionConfig } from 'payload'
 
 import { canAccessAdmin, isAdmin, isSelfOrStaff } from '@/access'
 import { createDefaultCreditAccount } from '@/hooks/createDefaultCreditAccount'
+import { sendWelcomeEmail } from '@/hooks/sendWelcomeEmail'
+import {
+  generateForgotPasswordEmailHTML,
+  generateForgotPasswordEmailSubject,
+  generateVerifyEmailHTML,
+  generateVerifyEmailSubject,
+} from '@/lib/emailTemplates'
+
+const staffFieldAccess = ({ req }: { req: { user?: { role?: string | null } | null } }) => {
+  return Boolean(req.user?.role === 'admin' || req.user?.role === 'operator')
+}
+
+const adminFieldAccess = ({ req }: { req: { user?: { role?: string | null } | null } }) => {
+  return Boolean(req.user?.role === 'admin')
+}
 
 export const Users: CollectionConfig = {
   slug: 'users',
@@ -15,7 +30,16 @@ export const Users: CollectionConfig = {
     useAsTitle: 'email',
     defaultColumns: ['email', 'fullName', 'role', 'creditsBalance', 'createdAt'],
   },
-  auth: true,
+  auth: {
+    forgotPassword: {
+      generateEmailHTML: generateForgotPasswordEmailHTML,
+      generateEmailSubject: generateForgotPasswordEmailSubject,
+    },
+    verify: {
+      generateEmailHTML: generateVerifyEmailHTML,
+      generateEmailSubject: generateVerifyEmailSubject,
+    },
+  },
   access: {
     admin: canAccessAdmin,
     create: () => true,
@@ -24,7 +48,7 @@ export const Users: CollectionConfig = {
     update: isSelfOrStaff,
   },
   hooks: {
-    afterChange: [createDefaultCreditAccount],
+    afterChange: [createDefaultCreditAccount, sendWelcomeEmail],
   },
   timestamps: true,
   fields: [
@@ -35,6 +59,10 @@ export const Users: CollectionConfig = {
       required: true,
       defaultValue: 'customer',
       label: '角色',
+      access: {
+        create: adminFieldAccess,
+        update: adminFieldAccess,
+      },
       options: [
         { label: '管理员', value: 'admin' },
         { label: '运营', value: 'operator' },
@@ -47,6 +75,18 @@ export const Users: CollectionConfig = {
       name: 'shopifyCustomerId',
       type: 'text',
       label: 'Shopify 客户 ID',
+      access: {
+        update: staffFieldAccess,
+      },
+      admin: { position: 'sidebar' },
+    },
+    {
+      name: 'stripeCustomerId',
+      type: 'text',
+      label: 'Stripe Customer ID',
+      access: {
+        update: staffFieldAccess,
+      },
       admin: { position: 'sidebar' },
     },
     {
@@ -54,12 +94,20 @@ export const Users: CollectionConfig = {
       type: 'number',
       defaultValue: 0,
       label: '积分余额',
+      access: {
+        create: staffFieldAccess,
+        update: staffFieldAccess,
+      },
       admin: { position: 'sidebar', readOnly: true },
     },
     {
       name: 'lastActiveAt',
       type: 'date',
       label: '最后活跃时间',
+      access: {
+        create: staffFieldAccess,
+        update: staffFieldAccess,
+      },
       admin: { position: 'sidebar' },
     },
   ],

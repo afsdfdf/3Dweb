@@ -1,6 +1,7 @@
-﻿import type { CollectionConfig } from 'payload'
+import type { CollectionConfig } from 'payload'
 
 import { ownerOrStaff } from '@/access'
+import { syncMediaToS3AfterChange, syncMediaToS3AfterDelete } from '@/hooks/syncMediaToS3'
 
 export const Media: CollectionConfig = {
   slug: 'media',
@@ -18,6 +19,10 @@ export const Media: CollectionConfig = {
     delete: ownerOrStaff('owner'),
     read: () => true,
     update: ownerOrStaff('owner'),
+  },
+  hooks: {
+    afterChange: [syncMediaToS3AfterChange],
+    afterDelete: [syncMediaToS3AfterDelete],
   },
   fields: [
     { name: 'alt', type: 'text', required: true, label: '替代文本' },
@@ -37,6 +42,18 @@ export const Media: CollectionConfig = {
     },
   ],
   upload: {
-    mimeTypes: ['*/*', 'application/octet-stream', 'application/zip'],
+    mimeTypes: [
+      'image/png',
+      'image/jpeg',
+      'image/webp',
+      'image/gif',
+      'application/octet-stream',
+      'application/zip',
+      'model/gltf-binary',
+      'model/gltf+json',
+      'application/sla',
+      'application/vnd.ms-pki.stl',
+      'text/plain',
+    ],
   },
 }

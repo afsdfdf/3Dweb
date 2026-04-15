@@ -1,5 +1,6 @@
 'use client'
 
+import { Badge } from '@/components/ui/badge'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
@@ -31,12 +32,12 @@ export function ResultStatus({ taskId, taskStatus }: ResultStatusProps) {
   }, [router, taskId, taskStatus])
 
   if (taskStatus === 'succeeded') {
-    return <span className="status-pill success">已完成</span>
+    return <Badge variant="secondary">已完成</Badge>
   }
 
   if (taskStatus === 'failed') {
-    return <span className="status-pill danger">失败</span>
+    return <Badge variant="destructive">失败</Badge>
   }
 
-  return <span className="status-pill">{busy ? '模拟生成中...' : '排队 / 处理中'}</span>
+  return <Badge variant="outline">{busy ? '正在同步进度...' : '排队 / 处理中'}</Badge>
 }

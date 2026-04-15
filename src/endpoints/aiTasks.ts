@@ -4,11 +4,21 @@ import { handleAIWebhook, submitAITask, syncAITask } from '@/lib/aiTaskFlow'
 
 const unauthorized = () => Response.json({ message: '请先登录' }, { status: 401 })
 
-const validateWebhook = (req: PayloadRequest) => {
-  const configuredSecret = process.env.AI_WEBHOOK_SECRET || process.env.PAYLOAD_AI_WEBHOOK_SECRET
+const validateWebhook = async (req: PayloadRequest) => {
+  let configuredSecret = process.env.AI_WEBHOOK_SECRET || process.env.PAYLOAD_AI_WEBHOOK_SECRET || ''
 
   if (!configuredSecret) {
-    return true
+    const globalConfig = await req.payload
+      .findGlobal({
+        slug: 'ai-provider-settings',
+      })
+      .catch(() => null)
+
+    configuredSecret = typeof globalConfig?.webhookSecret === 'string' ? globalConfig.webhookSecret.trim() : ''
+  }
+
+  if (!configuredSecret) {
+    return false
   }
 
   const token = req.headers.get('x-webhook-secret') || req.headers.get('x-provider-signature')
@@ -21,26 +31,30 @@ export const submitAITaskEndpoint = {
   handler: async (req: PayloadRequest) => {
     if (!req.user) return unauthorized()
 
-    const body = req.json ? await req.json() : {}
-    const task = await submitAITask({
-      creditsReserved: Number(body.creditsReserved ?? 0),
-      inputMode: body.inputMode ?? 'text',
-      parameterSnapshot: body.parameterSnapshot ?? {},
-      printRequested: Boolean(body.printRequested ?? false),
-      prompt: body.prompt,
-      provider: body.provider ?? 'custom',
-      req,
-      sourceImage: body.sourceImage,
-    })
+    try {
+      const body = req.json ? await req.json() : {}
+      const task = await submitAITask({
+        inputMode: body.inputMode ?? 'text',
+        parameterSnapshot: body.parameterSnapshot ?? {},
+        printRequested: Boolean(body.printRequested ?? false),
+        prompt: body.prompt,
+        provider: body.provider ?? 'custom',
+        req,
+        sourceImage: body.sourceImage,
+      })
 
-    return Response.json({
-      message: '任务已提交',
-      next: {
-        syncEndpoint: `/api/studio/ai/tasks/${task.id}/sync`,
-        webhookEndpoint: '/api/platform/ai/webhooks/provider',
-      },
-      task,
-    })
+      return Response.json({
+        message: '任务已提交',
+        next: {
+          syncEndpoint: `/api/studio/ai/tasks/${task.id}/sync`,
+          webhookEndpoint: '/api/platform/ai/webhooks/provider',
+        },
+        task,
+      })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '任务提交失败'
+      return Response.json({ message }, { status: 400 })
+    }
   },
 }
 
@@ -59,12 +73,28 @@ export const aiWebhookEndpoint = {
   path: '/platform/ai/webhooks/provider',
   method: 'post' as const,
   handler: async (req: PayloadRequest) => {
-    if (!validateWebhook(req)) {
-      return Response.json({ message: 'Webhook secret 校验失败' }, { status: 401 })
+    if (!(await validateWebhook(req))) {
+      return Response.json({ message: 'Webhook 密钥校验失败' }, { status: 401 })
     }
 
     const body = req.json ? await req.json() : {}
-    const result = await handleAIWebhook({ payloadData: body, req })
-    return Response.json({ message: '回调处理完成', result })
+    const providerTaskId = String(body?.providerTaskId ?? '').trim()
+
+    if (!providerTaskId) {
+      return Response.json({ message: 'providerTaskId is required' }, { status: 400 })
+    }
+
+    try {
+      const result = await handleAIWebhook({ payloadData: body, req })
+      return Response.json({ message: '回调处理完成', result })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '回调处理失败'
+
+      if (message.includes('Task not found')) {
+        return Response.json({ message }, { status: 404 })
+      }
+
+      return Response.json({ message }, { status: 400 })
+    }
   },
 }

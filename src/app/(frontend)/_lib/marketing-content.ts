@@ -317,7 +317,7 @@ export const marketingPages = {
   },
   developers: {
     currentPath: '/developers',
-    heroEyebrow: 'Developers',
+    heroEyebrow: '开发者',
     heroPrimaryCTA: { href: '/generate', label: '进入 Studio' },
     heroSecondaryCTA: { href: '/features', label: '查看产品能力' },
     heroText: '这里不是孤立的 API 演示，而是围绕 Studio、模型资产、订单与平台能力组织出来的真实产品接口边界。',
@@ -336,7 +336,7 @@ export const marketingPages = {
       },
       {
         bullets: [
-          'Public Site 负责产品介绍、转化和内容运营',
+          '产品站负责产品介绍、转化和内容运营',
           'Studio 负责生成、结果与模型沉淀',
           'Admin 负责 Payload 内容与业务运营',
           'API 负责稳定的程序化接入边界',

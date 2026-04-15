@@ -1,6 +1,6 @@
-﻿import type { CollectionConfig } from 'payload'
+import type { CollectionConfig } from 'payload'
 
-import { ownerOrStaff } from '@/access'
+import { isStaff, ownerOrStaff } from '@/access'
 
 export const CreditTransactions: CollectionConfig = {
   slug: 'credit-transactions',
@@ -12,17 +12,18 @@ export const CreditTransactions: CollectionConfig = {
     description: '记录每一笔积分变动。',
     group: '商务',
     useAsTitle: 'referenceCode',
-    defaultColumns: ['referenceCode', 'user', 'type', 'amount', 'createdAt'],
+    defaultColumns: ['referenceCode', 'type', 'amount', 'user', 'createdAt'],
   },
   access: {
-    create: ownerOrStaff('user'),
+    create: isStaff,
     read: ownerOrStaff('user'),
-    update: ownerOrStaff('user'),
+    update: isStaff,
   },
   defaultSort: '-createdAt',
   timestamps: true,
   fields: [
     { name: 'referenceCode', type: 'text', required: true, unique: true, label: '流水号' },
+    { name: 'idempotencyKey', type: 'text', unique: true, label: '幂等键' },
     { name: 'user', type: 'relationship', relationTo: 'users', required: true, label: '用户' },
     { name: 'creditAccount', type: 'relationship', relationTo: 'credits', required: true, label: '积分账户' },
     {
@@ -34,8 +35,10 @@ export const CreditTransactions: CollectionConfig = {
         { label: '购买', value: 'purchase' },
         { label: '任务预扣', value: 'task_hold' },
         { label: '任务扣费', value: 'task_spend' },
+        { label: '下载扣费', value: 'download_spend' },
         { label: '退款', value: 'refund' },
         { label: '手工调整', value: 'manual_adjustment' },
+        { label: '订阅发放', value: 'subscription_grant' },
       ],
     },
     { name: 'amount', type: 'number', required: true, label: '数量' },

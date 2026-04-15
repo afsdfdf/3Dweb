@@ -1,6 +1,10 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Separator } from '@/components/ui/separator'
+
 import type { FooterContent, NavigationItem } from '../_lib/marketing-content'
 import { defaultFooter, defaultSiteSettings } from '../_lib/marketing-content'
 import { LogoutButton } from './LogoutButton'
@@ -24,7 +28,7 @@ const appLinks = [
   { href: '/dashboard/tasks', label: '任务' },
   { href: '/dashboard/library', label: '模型' },
   { href: '/dashboard/orders', label: '订单' },
-  { href: '/developers', label: 'API' },
+  { href: '/developers', label: '开发者' },
   { href: '/admin', label: 'Admin' },
 ]
 
@@ -47,86 +51,94 @@ export function SiteShell({
   const isActivePath = (href: string) => currentPath === href || (href === '/dashboard' && currentPath?.startsWith('/dashboard'))
 
   return (
-    <div className="site-shell">
-      {announcement ? <div className="announcement-bar">{announcement}</div> : null}
+    <div className="min-h-screen bg-background text-foreground">
+      {announcement ? (
+        <div className="border-b border-border/60 bg-muted/50">
+          <div className="mx-auto max-w-7xl px-4 py-2 text-xs text-muted-foreground sm:px-6">{announcement}</div>
+        </div>
+      ) : null}
 
-      <header className="topbar topbar-clean">
-        <div className="brand-block">
-          <div className="brand-mark" aria-hidden="true">M</div>
-          <div>
-            <p className="eyebrow">AI 3D 角色产品平台</p>
-            <Link className="brand-title" href="/" translate="no">
-              MiniForge AI 3D
-            </Link>
+      <header className="sticky top-0 z-40 border-b border-border/60 bg-background/90 backdrop-blur">
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-2xl border border-border/60 bg-muted font-semibold">M</div>
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">AI 3D 平台</p>
+                <Link className="text-lg font-semibold tracking-tight" href="/" translate="no">
+                  MiniForge AI 3D
+                </Link>
+              </div>
+            </div>
+
+            <nav aria-label="站点导航" className="flex flex-wrap items-center gap-2">
+              {links.map((link) => (
+                <Button asChild key={`${link.href}-${link.label}`} size="sm" variant={currentPath === link.href ? 'secondary' : 'ghost'}>
+                  <Link href={link.href || '/'}>{link.label}</Link>
+                </Button>
+              ))}
+            </nav>
+
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              {user?.role ? <Badge variant="secondary">{roleLabel(user.role)}</Badge> : null}
+              {user?.email ? (
+                <Badge className="max-w-[220px] truncate" variant="outline">
+                  {user.email}
+                </Badge>
+              ) : null}
+              {user ? (
+                <>
+                  <Button asChild size="sm" variant="secondary">
+                    <Link href="/dashboard">打开工作台</Link>
+                  </Button>
+                  <LogoutButton />
+                </>
+              ) : (
+                <>
+                  <Button asChild size="sm" variant="outline">
+                    <Link href="/login">登录</Link>
+                  </Button>
+                  <Button asChild size="sm">
+                    <Link href="/register">免费开始</Link>
+                  </Button>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
-        <nav aria-label="主导航" className="nav-links topbar-nav">
-          {links.map((link) => (
-            <Link
-              key={`${link.href}-${link.label}`}
-              href={link.href || '/'}
-              className={currentPath === link.href ? 'nav-link active' : 'nav-link'}
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="topbar-actions topbar-actions-compact">
-          {user?.role ? <span className="user-badge">{roleLabel(user.role)}</span> : null}
-          {user?.email ? <span className="user-badge">{user.email}</span> : null}
-          {user ? (
-            <>
-              <Link className="secondary-button" href="/dashboard">
-                打开工作台
-              </Link>
-              <LogoutButton />
-            </>
-          ) : (
-            <>
-              <Link className="secondary-button" href="/login">
-                登录
-              </Link>
-              <Link className="primary-button" href="/register">
-                免费开始
-              </Link>
-            </>
-          )}
+        <div className="border-t border-border/60 bg-muted/30">
+          <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-2 px-4 py-3 sm:px-6">
+            <Badge variant="outline">产品分层</Badge>
+            {appLinks.map((link) => (
+              <Button asChild key={`${link.href}-${link.label}`} size="sm" variant={isActivePath(link.href) ? 'default' : 'ghost'}>
+                <Link href={link.href}>{link.label}</Link>
+              </Button>
+            ))}
+          </div>
         </div>
       </header>
 
-      <section className="product-rail product-rail-shell" aria-label="产品入口导航">
-        <div className="product-rail-copy">
-          <p className="eyebrow">Product Map</p>
-          <strong className="product-rail-title">从产品站直接进入 Studio、Dashboard、Admin 与 API。</strong>
-        </div>
+      <main>{children}</main>
 
-        <div className="product-rail-links">
-          {appLinks.map((link) => (
-            <Link
-              key={`${link.href}-${link.label}`}
-              href={link.href}
-              className={isActivePath(link.href) ? 'product-rail-link active' : 'product-rail-link'}
-            >
-              {link.label}
-            </Link>
-          ))}
-        </div>
-      </section>
+      <footer className="border-t border-border/60 bg-muted/20">
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+          <div className="grid gap-8 md:grid-cols-2">
+            <div className="flex flex-col gap-3">
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{footerContent.aboutEyebrow}</p>
+              <h3 className="text-xl font-semibold tracking-tight">{footerContent.aboutTitle}</h3>
+              <p className="max-w-xl text-sm leading-6 text-muted-foreground">{footerContent.aboutText}</p>
+            </div>
 
-      {children}
+            <div className="flex flex-col gap-3">
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{footerContent.directionEyebrow}</p>
+              <h3 className="text-xl font-semibold tracking-tight">{footerContent.directionTitle}</h3>
+              <p className="max-w-xl text-sm leading-6 text-muted-foreground">{footerContent.directionText}</p>
+            </div>
+          </div>
 
-      <footer className="footer-panel footer-panel-clean">
-        <div>
-          <p className="eyebrow">{footerContent.aboutEyebrow}</p>
-          <h3>{footerContent.aboutTitle}</h3>
-          <p className="soft-text">{footerContent.aboutText}</p>
-        </div>
-        <div>
-          <p className="eyebrow">{footerContent.directionEyebrow}</p>
-          <h3>{footerContent.directionTitle}</h3>
-          <p className="soft-text">{footerContent.directionText}</p>
+          <Separator className="my-6" />
+          <p className="text-sm text-muted-foreground">MiniForge 将产品站、Studio、Dashboard、Admin 与 API 保持清晰分层。</p>
         </div>
       </footer>
     </div>

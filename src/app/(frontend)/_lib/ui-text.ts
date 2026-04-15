@@ -78,12 +78,37 @@ export function formatCreditType(type?: string | null) {
       return '任务预扣'
     case 'task_spend':
       return '任务扣费'
+    case 'download_spend':
+      return '下载扣费'
     case 'refund':
       return '退款返还'
     case 'manual_adjustment':
       return '手工调整'
+    case 'subscription_grant':
+      return '订阅发放'
     default:
       return type || '未知类型'
+  }
+}
+
+export function formatSubscriptionStatus(status?: string | null) {
+  switch (status) {
+    case 'active':
+      return '已激活'
+    case 'trialing':
+      return '试用中'
+    case 'past_due':
+      return '逾期'
+    case 'unpaid':
+      return '未付款'
+    case 'canceled':
+      return '已取消'
+    case 'incomplete':
+      return '待完成'
+    case 'incomplete_expired':
+      return '已过期'
+    default:
+      return status || '未知'
   }
 }
 

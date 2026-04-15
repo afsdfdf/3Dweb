@@ -1,33 +1,72 @@
 'use client'
 
-import Image from 'next/image'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useMemo, useState } from 'react'
+
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSet } from '@/components/ui/field'
+import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import type { GenerationPricing } from '@/lib/taskBilling'
 
 type GenerateFormProps = {
+  generationPricing: GenerationPricing
   initialMode?: 'hybrid' | 'image' | 'text'
 }
 
 const qualityPresets = [
   { label: '标准', value: 'standard', note: '适合快速出稿' },
-  { label: '高质量', value: 'high', note: '推荐默认档位' },
-  { label: '超高质量', value: 'ultra', note: '更适合打印前确认' },
-]
+  { label: '高质量', value: 'high', note: '默认推荐档位' },
+  { label: '超高质量', value: 'ultra', note: '适合打印前确认' },
+] as const
 
-export function GenerateForm({ initialMode = 'image' }: GenerateFormProps) {
+const inputModes = [
+  { label: '图生 3D', value: 'image', note: '从概念图、草图或照片开始' },
+  { label: '文生 3D', value: 'text', note: '从提示词与角色设定开始' },
+  { label: '图文混合', value: 'hybrid', note: '同时结合参考图与文字控制' },
+] as const
+
+export function GenerateForm({ generationPricing, initialMode = 'image' }: GenerateFormProps) {
   const router = useRouter()
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [selectedMode, setSelectedMode] = useState<'hybrid' | 'image' | 'text'>(initialMode)
   const [selectedQuality, setSelectedQuality] = useState<'standard' | 'high' | 'ultra'>('high')
+  const [selectedStyle, setSelectedStyle] = useState('tabletop')
+  const [selectedFormat, setSelectedFormat] = useState('glb')
   const [previewUrl, setPreviewUrl] = useState('')
 
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl)
+      }
+    }
+  }, [previewUrl])
+
   const creditsReserved = useMemo(() => {
-    if (selectedQuality === 'ultra') return 40
-    if (selectedQuality === 'high') return 20
-    return 10
-  }, [selectedQuality])
+    switch (selectedMode) {
+      case 'image':
+        return generationPricing.imageCredits
+      case 'hybrid':
+        return generationPricing.hybridCredits
+      case 'text':
+      default:
+        return generationPricing.textCredits
+    }
+  }, [generationPricing.hybridCredits, generationPricing.imageCredits, generationPricing.textCredits, selectedMode])
 
   const handleSubmit = async (formData: FormData) => {
     setError('')
@@ -51,7 +90,7 @@ export function GenerateForm({ initialMode = 'image' }: GenerateFormProps) {
         })
 
         if (!mediaResp.ok) {
-          throw new Error('图片上传失败，请先登录后再重试。')
+          throw new Error('图片上传失败，请先登录后再试。')
         }
 
         const mediaJson = await mediaResp.json()
@@ -63,7 +102,6 @@ export function GenerateForm({ initialMode = 'image' }: GenerateFormProps) {
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          creditsReserved,
           inputMode: formData.get('inputMode'),
           parameterSnapshot: {
             format: formData.get('targetFormat'),
@@ -71,7 +109,6 @@ export function GenerateForm({ initialMode = 'image' }: GenerateFormProps) {
             style: formData.get('style'),
           },
           prompt: formData.get('prompt'),
-          provider: 'custom',
           sourceImage,
         }),
       })
@@ -100,132 +137,187 @@ export function GenerateForm({ initialMode = 'image' }: GenerateFormProps) {
       action={async (formData) => {
         await handleSubmit(formData)
       }}
-      className="panel gradient-panel generate-form-shell generate-form-shell-minimal"
+      className="w-full"
     >
-      <div className="generate-form-topline">
-        <div>
-          <p className="eyebrow">Create Task</p>
-          <h2>创建生成任务</h2>
-        </div>
-        <span className="status-pill">{uploading ? '上传中' : '可提交'}</span>
-      </div>
-
-      <div className="generate-form-section">
-        <div className="selection-grid">
-          <label className="selection-card">
-            <input checked={selectedMode === 'image'} name="inputMode" onChange={() => setSelectedMode('image')} type="radio" value="image" />
-            <span>图生 3D</span>
-            <small>从立绘或参考图生成</small>
-          </label>
-          <label className="selection-card">
-            <input checked={selectedMode === 'text'} name="inputMode" onChange={() => setSelectedMode('text')} type="radio" value="text" />
-            <span>文生 3D</span>
-            <small>从角色设定直接生成</small>
-          </label>
-          <label className="selection-card">
-            <input checked={selectedMode === 'hybrid'} name="inputMode" onChange={() => setSelectedMode('hybrid')} type="radio" value="hybrid" />
-            <span>图文混合</span>
-            <small>适合复杂角色生成</small>
-          </label>
-        </div>
-      </div>
-
-      <div className="form-grid">
-        <label>
-          风格
-          <select defaultValue="tabletop" name="style">
-            <option value="tabletop">桌游棋子</option>
-            <option value="realistic">写实</option>
-            <option value="anime">卡通</option>
-          </select>
-        </label>
-
-        <label>
-          输出格式
-          <select defaultValue="glb" name="targetFormat">
-            <option value="glb">GLB 预览</option>
-            <option value="stl">STL 打印</option>
-            <option value="obj">OBJ 通用</option>
-          </select>
-        </label>
-      </div>
-
-      <div className="generate-form-section">
-        <div className="selection-grid compact">
-          {qualityPresets.map((preset) => (
-            <label className="selection-card" key={preset.value}>
-              <input
-                checked={selectedQuality === preset.value}
-                name="quality"
-                onChange={() => setSelectedQuality(preset.value as 'standard' | 'high' | 'ultra')}
-                type="radio"
-                value={preset.value}
-              />
-              <span>{preset.label}</span>
-              <small>{preset.note}</small>
-            </label>
-          ))}
-        </div>
-      </div>
-
-      <div className="generate-form-section">
-        <div className="form-grid">
-          <label className="full-width upload-field">
-            上传参考图
-            <input
-              name="sourceImage"
-              type="file"
-              onChange={(event) => {
-                const file = event.target.files?.[0]
-                if (!file) {
-                  setPreviewUrl('')
-                  return
-                }
-
-                const url = URL.createObjectURL(file)
-                setPreviewUrl(url)
-              }}
-            />
-            <small>支持角色立绘、概念图、棋子参考图等图像输入。</small>
-          </label>
-
-          {previewUrl ? (
-            <div className="full-width upload-preview-card">
-              <div className="upload-preview-image">
-                <Image alt="上传预览" fill src={previewUrl} />
-              </div>
-              <div className="upload-preview-copy">
-                <strong>参考图已就绪</strong>
-                <p className="soft-text">系统会把这张图片作为输入参考，并结合你的文字描述生成模型。</p>
-              </div>
+      <Card className="border-border/60 bg-card/80 shadow-xl shadow-black/5 backdrop-blur">
+        <CardHeader className="gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">创建任务</p>
+              <CardTitle className="mt-2 text-2xl tracking-tight">创建生成任务</CardTitle>
+              <CardDescription className="mt-2">在提交前设置输入方式、风格、质量档位与提示词。</CardDescription>
             </div>
-          ) : null}
+            <Badge variant={uploading ? 'default' : 'secondary'}>{uploading ? '上传中' : '可提交'}</Badge>
+          </div>
+        </CardHeader>
 
-          <label className="full-width">
-            文字描述
-            <textarea
-              defaultValue="一个持盾的矮人战士，厚重盔甲、战锤、符文盾牌，适合 32mm 桌游打印。"
-              name="prompt"
-              rows={8}
-            />
-          </label>
-        </div>
-      </div>
+        <CardContent>
+          <FieldGroup>
+            <FieldSet>
+              <FieldLegend>输入方式</FieldLegend>
+              <FieldDescription>首页负责入口，Studio 页面负责真正开始任务。</FieldDescription>
+              <ToggleGroup
+                className="grid w-full grid-cols-1 gap-3 md:grid-cols-3"
+                onValueChange={(value) => {
+                  if (value === 'image' || value === 'text' || value === 'hybrid') {
+                    setSelectedMode(value)
+                  }
+                }}
+                type="single"
+                value={selectedMode}
+                variant="outline"
+              >
+                {inputModes.map((mode) => (
+                  <ToggleGroupItem
+                    className="h-auto min-h-24 flex-col items-start justify-start gap-2 rounded-2xl border border-border/60 px-4 py-4 text-left whitespace-normal data-[state=on]:border-primary data-[state=on]:bg-primary/5"
+                    key={mode.value}
+                    value={mode.value}
+                  >
+                    <span className="text-sm font-medium">{mode.label}</span>
+                    <span className="text-xs leading-5 text-muted-foreground">{mode.note}</span>
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+              <input name="inputMode" type="hidden" value={selectedMode} />
+            </FieldSet>
 
-      <div className="generate-bottom-bar">
-        <label className="credits-box">
-          预计消耗积分
-          <input value={creditsReserved} name="creditsReserved" readOnly type="number" />
-        </label>
+            <div className="grid gap-4 md:grid-cols-2">
+              <Field>
+                <FieldLabel>风格</FieldLabel>
+                <Select onValueChange={setSelectedStyle} value={selectedStyle}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="选择风格" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectItem value="tabletop">桌游手办</SelectItem>
+                      <SelectItem value="realistic">写实</SelectItem>
+                      <SelectItem value="anime">动漫</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+                <FieldDescription>用于控制模型整体造型与材质方向。</FieldDescription>
+                <input name="style" type="hidden" value={selectedStyle} />
+              </Field>
 
-        <div className="button-row wrap-end">
-          <button className="primary-button" disabled={isSubmitting} type="submit">
-            {isSubmitting ? (uploading ? '上传并提交中…' : '任务提交中…') : '开始生成'}
-          </button>
-        </div>
-      </div>
+              <Field>
+                <FieldLabel>输出格式</FieldLabel>
+                <Select onValueChange={setSelectedFormat} value={selectedFormat}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="选择输出格式" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectItem value="glb">GLB 预览</SelectItem>
+                      <SelectItem value="stl">STL 打印</SelectItem>
+                      <SelectItem value="obj">OBJ 通用</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+                <FieldDescription>结果页与模型库都会沿用当前输出格式选择。</FieldDescription>
+                <input name="targetFormat" type="hidden" value={selectedFormat} />
+              </Field>
+            </div>
 
-      {error ? <p aria-live="polite" className="error-text">{error}</p> : null}
+            <FieldSet>
+              <FieldLegend>质量档位</FieldLegend>
+              <FieldDescription>当前版本的生成积分由后台统一配置，质量档位不额外加价。</FieldDescription>
+              <ToggleGroup
+                className="grid w-full grid-cols-1 gap-3 md:grid-cols-3"
+                onValueChange={(value) => {
+                  if (value === 'standard' || value === 'high' || value === 'ultra') {
+                    setSelectedQuality(value)
+                  }
+                }}
+                type="single"
+                value={selectedQuality}
+                variant="outline"
+              >
+                {qualityPresets.map((preset) => (
+                  <ToggleGroupItem
+                    className="h-auto min-h-24 flex-col items-start justify-start gap-2 rounded-2xl border border-border/60 px-4 py-4 text-left whitespace-normal data-[state=on]:border-primary data-[state=on]:bg-primary/5"
+                    key={preset.value}
+                    value={preset.value}
+                  >
+                    <span className="text-sm font-medium">{preset.label}</span>
+                    <span className="text-xs leading-5 text-muted-foreground">{preset.note}</span>
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+              <input name="quality" type="hidden" value={selectedQuality} />
+            </FieldSet>
+
+            <Field>
+              <FieldLabel htmlFor="sourceImage">参考图片</FieldLabel>
+              <Input
+                accept="image/*"
+                id="sourceImage"
+                name="sourceImage"
+                onChange={(event) => {
+                  const file = event.target.files?.[0]
+                  if (!file) {
+                    if (previewUrl) {
+                      URL.revokeObjectURL(previewUrl)
+                    }
+                    setPreviewUrl('')
+                    return
+                  }
+
+                  if (previewUrl) {
+                    URL.revokeObjectURL(previewUrl)
+                  }
+
+                  const url = URL.createObjectURL(file)
+                  setPreviewUrl(url)
+                }}
+                type="file"
+              />
+              <FieldDescription>支持角色立绘、氛围图、草图或任意概念参考图。</FieldDescription>
+            </Field>
+
+            {previewUrl ? (
+              <div className="overflow-hidden rounded-2xl border border-border/60 bg-muted/30 p-4">
+                <div className="grid gap-4 md:grid-cols-[180px_minmax(0,1fr)] md:items-center">
+                  <div className="aspect-square overflow-hidden rounded-xl border border-border/60 bg-background">
+                    <img alt="上传预览" className="h-full w-full object-cover" src={previewUrl} />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <strong className="block text-base font-medium">参考图已就绪</strong>
+                    <p className="text-sm leading-6 text-muted-foreground">系统会把这张图片与提示词一起作为模型生成的输入参考。</p>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            <Field>
+              <FieldLabel htmlFor="prompt">文字描述</FieldLabel>
+              <Textarea
+                defaultValue="一个持盾的矮人战士，厚重盔甲、符文细节、宽大战锤，整体比例适合 32mm 桌游打印。"
+                id="prompt"
+                name="prompt"
+                rows={8}
+              />
+              <FieldDescription>尽量写清角色身份、装备、姿态、氛围、材质倾向与最终用途。</FieldDescription>
+            </Field>
+
+            <FieldError aria-live="polite">{error}</FieldError>
+          </FieldGroup>
+        </CardContent>
+
+        <CardFooter className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="rounded-2xl border border-border/60 bg-muted/40 px-4 py-3">
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">预计消耗积分</p>
+            <div className="mt-2 flex items-end gap-2">
+              <span className="text-2xl font-semibold tracking-tight">{creditsReserved}</span>
+              <span className="pb-1 text-sm text-muted-foreground">积分</span>
+            </div>
+          </div>
+
+          <Button className="w-full sm:w-auto" disabled={isSubmitting} type="submit">
+            {isSubmitting ? (uploading ? '上传并提交中...' : '任务提交中...') : '开始生成'}
+          </Button>
+        </CardFooter>
+      </Card>
     </form>
   )
 }

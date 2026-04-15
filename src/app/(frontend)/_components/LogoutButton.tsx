@@ -1,15 +1,19 @@
-﻿'use client'
+'use client'
 
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useState, type ComponentProps } from 'react'
 
-export function LogoutButton() {
+import { Button } from '@/components/ui/button'
+
+type LogoutButtonProps = Pick<ComponentProps<typeof Button>, 'className' | 'size' | 'variant'>
+
+export function LogoutButton({ className, size = 'sm', variant = 'outline' }: LogoutButtonProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
 
   return (
-    <button
-      className="ghost-button"
+    <Button
+      className={className}
       disabled={loading}
       onClick={async () => {
         setLoading(true)
@@ -20,9 +24,11 @@ export function LogoutButton() {
         router.push('/login')
         router.refresh()
       }}
+      size={size}
       type="button"
+      variant={variant}
     >
       {loading ? '退出中...' : '退出登录'}
-    </button>
+    </Button>
   )
 }

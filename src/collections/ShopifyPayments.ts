@@ -1,6 +1,6 @@
-﻿import type { CollectionConfig } from 'payload'
+import type { CollectionConfig } from 'payload'
 
-import { ownerOrStaff } from '@/access'
+import { isStaff, ownerOrStaff } from '@/access'
 
 export const ShopifyPayments: CollectionConfig = {
   slug: 'shopify-payments',
@@ -15,9 +15,9 @@ export const ShopifyPayments: CollectionConfig = {
     defaultColumns: ['checkoutReference', 'user', 'paymentType', 'status', 'amount'],
   },
   access: {
-    create: ownerOrStaff('user'),
+    create: isStaff,
     read: ownerOrStaff('user'),
-    update: ownerOrStaff('user'),
+    update: isStaff,
   },
   defaultSort: '-createdAt',
   timestamps: true,

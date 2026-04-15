@@ -75,6 +75,7 @@ export interface Config {
     credits: Credit;
     'credit-transactions': CreditTransaction;
     'credit-products': CreditProduct;
+    'billing-subscriptions': BillingSubscription;
     addresses: Address;
     'print-orders': PrintOrder;
     'shopify-payments': ShopifyPayment;
@@ -93,6 +94,7 @@ export interface Config {
     credits: CreditsSelect<false> | CreditsSelect<true>;
     'credit-transactions': CreditTransactionsSelect<false> | CreditTransactionsSelect<true>;
     'credit-products': CreditProductsSelect<false> | CreditProductsSelect<true>;
+    'billing-subscriptions': BillingSubscriptionsSelect<false> | BillingSubscriptionsSelect<true>;
     addresses: AddressesSelect<false> | AddressesSelect<true>;
     'print-orders': PrintOrdersSelect<false> | PrintOrdersSelect<true>;
     'shopify-payments': ShopifyPaymentsSelect<false> | ShopifyPaymentsSelect<true>;
@@ -109,11 +111,13 @@ export interface Config {
     'site-settings': SiteSetting;
     'homepage-content': HomepageContent;
     'ai-provider-settings': AiProviderSetting;
+    'runtime-deployment-settings': RuntimeDeploymentSetting;
   };
   globalsSelect: {
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     'homepage-content': HomepageContentSelect<false> | HomepageContentSelect<true>;
     'ai-provider-settings': AiProviderSettingsSelect<false> | AiProviderSettingsSelect<true>;
+    'runtime-deployment-settings': RuntimeDeploymentSettingsSelect<false> | RuntimeDeploymentSettingsSelect<true>;
   };
   locale: null;
   widgets: {
@@ -156,6 +160,7 @@ export interface User {
   avatar?: (number | null) | Media;
   phone?: string | null;
   shopifyCustomerId?: string | null;
+  stripeCustomerId?: string | null;
   creditsBalance?: number | null;
   lastActiveAt?: string | null;
   updatedAt: string;
@@ -165,6 +170,8 @@ export interface User {
   resetPasswordExpiration?: string | null;
   salt?: string | null;
   hash?: string | null;
+  _verified?: boolean | null;
+  _verificationToken?: string | null;
   loginAttempts?: number | null;
   lockUntil?: string | null;
   sessions?:
@@ -336,9 +343,17 @@ export interface Credit {
 export interface CreditTransaction {
   id: number;
   referenceCode: string;
+  idempotencyKey?: string | null;
   user: number | User;
   creditAccount: number | Credit;
-  type: 'purchase' | 'task_hold' | 'task_spend' | 'refund' | 'manual_adjustment';
+  type:
+    | 'purchase'
+    | 'task_hold'
+    | 'task_spend'
+    | 'download_spend'
+    | 'refund'
+    | 'manual_adjustment'
+    | 'subscription_grant';
   amount: number;
   currency?: string | null;
   balanceAfter?: number | null;
@@ -403,6 +418,39 @@ export interface CreditProduct {
   isFeatured?: boolean | null;
   isActive?: boolean | null;
   sortOrder?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * 记录 Stripe 订阅、当前周期和积分发放状态。
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "billing-subscriptions".
+ */
+export interface BillingSubscription {
+  id: number;
+  user: number | User;
+  planKey: string;
+  stripeCustomerId: string;
+  stripeSubscriptionId: string;
+  stripePriceId: string;
+  status: 'incomplete' | 'active' | 'trialing' | 'past_due' | 'unpaid' | 'canceled' | 'incomplete_expired';
+  interval?: string | null;
+  monthlyCredits?: number | null;
+  currentPeriodStart?: string | null;
+  currentPeriodEnd?: string | null;
+  cancelAtPeriodEnd?: boolean | null;
+  lastGrantedPeriodKey?: string | null;
+  lastCheckoutSessionId?: string | null;
+  metadata?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -514,6 +562,10 @@ export interface PayloadLockedDocument {
         value: number | CreditProduct;
       } | null)
     | ({
+        relationTo: 'billing-subscriptions';
+        value: number | BillingSubscription;
+      } | null)
+    | ({
         relationTo: 'addresses';
         value: number | Address;
       } | null)
@@ -577,6 +629,7 @@ export interface UsersSelect<T extends boolean = true> {
   avatar?: T;
   phone?: T;
   shopifyCustomerId?: T;
+  stripeCustomerId?: T;
   creditsBalance?: T;
   lastActiveAt?: T;
   updatedAt?: T;
@@ -586,6 +639,8 @@ export interface UsersSelect<T extends boolean = true> {
   resetPasswordExpiration?: T;
   salt?: T;
   hash?: T;
+  _verified?: T;
+  _verificationToken?: T;
   loginAttempts?: T;
   lockUntil?: T;
   sessions?:
@@ -717,6 +772,7 @@ export interface CreditsSelect<T extends boolean = true> {
  */
 export interface CreditTransactionsSelect<T extends boolean = true> {
   referenceCode?: T;
+  idempotencyKey?: T;
   user?: T;
   creditAccount?: T;
   type?: T;
@@ -747,6 +803,28 @@ export interface CreditProductsSelect<T extends boolean = true> {
   isFeatured?: T;
   isActive?: T;
   sortOrder?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "billing-subscriptions_select".
+ */
+export interface BillingSubscriptionsSelect<T extends boolean = true> {
+  user?: T;
+  planKey?: T;
+  stripeCustomerId?: T;
+  stripeSubscriptionId?: T;
+  stripePriceId?: T;
+  status?: T;
+  interval?: T;
+  monthlyCredits?: T;
+  currentPeriodStart?: T;
+  currentPeriodEnd?: T;
+  cancelAtPeriodEnd?: T;
+  lastGrantedPeriodKey?: T;
+  lastCheckoutSessionId?: T;
+  metadata?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -855,6 +933,8 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   createdAt?: T;
 }
 /**
+ * 统一管理站点品牌、导航、定价、积分套餐与邮件通知文案。
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "site-settings".
  */
@@ -895,6 +975,46 @@ export interface SiteSetting {
         id?: string | null;
       }[]
     | null;
+  emailSettings?: {
+    sender?: {
+      fromName?: string | null;
+      fromAddress?: string | null;
+      replyTo?: string | null;
+    };
+    branding?: {
+      productName?: string | null;
+      footerText?: string | null;
+    };
+    templates?: {
+      welcome?: {
+        subject?: string | null;
+        intro?: string | null;
+        ctaLabel?: string | null;
+      };
+      verify?: {
+        subject?: string | null;
+        intro?: string | null;
+        ctaLabel?: string | null;
+      };
+      forgotPassword?: {
+        subject?: string | null;
+        intro?: string | null;
+        ctaLabel?: string | null;
+      };
+    };
+    businessTemplates?: {
+      subscriptionSuccess?: {
+        subject?: string | null;
+        intro?: string | null;
+        ctaLabel?: string | null;
+      };
+      orderPaid?: {
+        subject?: string | null;
+        intro?: string | null;
+        ctaLabel?: string | null;
+      };
+    };
+  };
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -998,6 +1118,30 @@ export interface AiProviderSetting {
     reserveOnSubmit?: boolean | null;
     refundOnFailure?: boolean | null;
   };
+  storage?: {
+    enabled?: boolean | null;
+    bucket?: string | null;
+    region?: string | null;
+    accessKeyId?: string | null;
+    secretAccessKey?: string | null;
+    prefix?: string | null;
+    baseURL?: string | null;
+    signedDownloads?: boolean | null;
+  };
+  meshy?: {
+    /**
+     * 填入 Meshy API Key 后，前台生成任务会优先走 Meshy 真正接口。
+     */
+    apiKey?: string | null;
+    baseURL?: string | null;
+    textTo3DAiModel?: ('latest' | 'meshy-6' | 'meshy-5') | null;
+    imageTo3DAiModel?: ('latest' | 'meshy-6' | 'meshy-5') | null;
+    shouldTexture?: boolean | null;
+    enablePBR?: boolean | null;
+    moderation?: boolean | null;
+    imageEnhancement?: boolean | null;
+    removeLighting?: boolean | null;
+  };
   providers?:
     | {
         provider: 'custom' | 'meshy' | 'tripo';
@@ -1009,6 +1153,37 @@ export interface AiProviderSetting {
         id?: string | null;
       }[]
     | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * Manage deployment-time database and app runtime variables. Secrets must still be stored in your hosting platform environment.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "runtime-deployment-settings".
+ */
+export interface RuntimeDeploymentSetting {
+  id: number;
+  databaseConnectionMode: 'aws-rds-fields' | 'database-url';
+  /**
+   * Paste the deployment DATABASE_URL template without the real password if you want.
+   */
+  databaseUrlTemplate?: string | null;
+  awsRdsHost?: string | null;
+  awsRdsPort?: number | null;
+  awsRdsDbName?: string | null;
+  awsRdsUsername?: string | null;
+  awsRdsSslMode?: ('require' | 'verify-full' | 'disable') | null;
+  awsRdsSslRejectUnauthorized?: boolean | null;
+  /**
+   * Optional operator notes such as current security group, public access status, or the production server IP to allow.
+   */
+  databaseSecurityChecklist?: string | null;
+  nextPublicAppUrl?: string | null;
+  /**
+   * Optional note for operators about where the current PAYLOAD_SECRET lives and when it was rotated.
+   */
+  payloadSecretRotationNote?: string | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -1055,6 +1230,66 @@ export interface SiteSettingsSelect<T extends boolean = true> {
         price?: T;
         currency?: T;
         id?: T;
+      };
+  emailSettings?:
+    | T
+    | {
+        sender?:
+          | T
+          | {
+              fromName?: T;
+              fromAddress?: T;
+              replyTo?: T;
+            };
+        branding?:
+          | T
+          | {
+              productName?: T;
+              footerText?: T;
+            };
+        templates?:
+          | T
+          | {
+              welcome?:
+                | T
+                | {
+                    subject?: T;
+                    intro?: T;
+                    ctaLabel?: T;
+                  };
+              verify?:
+                | T
+                | {
+                    subject?: T;
+                    intro?: T;
+                    ctaLabel?: T;
+                  };
+              forgotPassword?:
+                | T
+                | {
+                    subject?: T;
+                    intro?: T;
+                    ctaLabel?: T;
+                  };
+            };
+        businessTemplates?:
+          | T
+          | {
+              subscriptionSuccess?:
+                | T
+                | {
+                    subject?: T;
+                    intro?: T;
+                    ctaLabel?: T;
+                  };
+              orderPaid?:
+                | T
+                | {
+                    subject?: T;
+                    intro?: T;
+                    ctaLabel?: T;
+                  };
+            };
       };
   updatedAt?: T;
   createdAt?: T;
@@ -1179,6 +1414,31 @@ export interface AiProviderSettingsSelect<T extends boolean = true> {
         reserveOnSubmit?: T;
         refundOnFailure?: T;
       };
+  storage?:
+    | T
+    | {
+        enabled?: T;
+        bucket?: T;
+        region?: T;
+        accessKeyId?: T;
+        secretAccessKey?: T;
+        prefix?: T;
+        baseURL?: T;
+        signedDownloads?: T;
+      };
+  meshy?:
+    | T
+    | {
+        apiKey?: T;
+        baseURL?: T;
+        textTo3DAiModel?: T;
+        imageTo3DAiModel?: T;
+        shouldTexture?: T;
+        enablePBR?: T;
+        moderation?: T;
+        imageEnhancement?: T;
+        removeLighting?: T;
+      };
   providers?:
     | T
     | {
@@ -1190,6 +1450,26 @@ export interface AiProviderSettingsSelect<T extends boolean = true> {
         enabled?: T;
         id?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "runtime-deployment-settings_select".
+ */
+export interface RuntimeDeploymentSettingsSelect<T extends boolean = true> {
+  databaseConnectionMode?: T;
+  databaseUrlTemplate?: T;
+  awsRdsHost?: T;
+  awsRdsPort?: T;
+  awsRdsDbName?: T;
+  awsRdsUsername?: T;
+  awsRdsSslMode?: T;
+  awsRdsSslRejectUnauthorized?: T;
+  databaseSecurityChecklist?: T;
+  nextPublicAppUrl?: T;
+  payloadSecretRotationNote?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

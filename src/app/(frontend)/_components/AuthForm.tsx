@@ -4,6 +4,11 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
+import { Input } from '@/components/ui/input'
+
 type AuthFormProps = {
   mode: 'login' | 'register'
 }
@@ -12,12 +17,14 @@ export function AuthForm({ mode }: AuthFormProps) {
   const router = useRouter()
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [notice, setNotice] = useState('')
 
   const isRegister = mode === 'register'
 
   const submit = async (formData: FormData) => {
     setLoading(true)
     setError('')
+    setNotice('')
 
     try {
       if (isRegister) {
@@ -37,6 +44,9 @@ export function AuthForm({ mode }: AuthFormProps) {
         if (!registerResp.ok) {
           throw new Error(registerJson.message || '注册失败')
         }
+
+        setNotice('注册成功，请先前往邮箱完成验证，然后再登录。')
+        return
       }
 
       const loginResp = await fetch('/api/users/login', {
@@ -52,7 +62,11 @@ export function AuthForm({ mode }: AuthFormProps) {
       const loginJson = await loginResp.json()
 
       if (!loginResp.ok) {
-        throw new Error(loginJson.errors?.[0]?.message || loginJson.message || '登录失败')
+        const message = loginJson.errors?.[0]?.message || loginJson.message || '登录失败'
+        if (String(message).includes('unverified') || String(message).includes('未验证')) {
+          throw new Error('邮箱尚未验证，请先前往邮箱完成验证。')
+        }
+        throw new Error(message)
       }
 
       router.push('/generate')
@@ -69,53 +83,67 @@ export function AuthForm({ mode }: AuthFormProps) {
       action={async (formData) => {
         await submit(formData)
       }}
-      className="panel auth-card auth-card-minimal"
+      className="w-full max-w-[560px]"
     >
-      <div className="auth-form-head">
-        <p className="eyebrow">{isRegister ? '创建账号' : '欢迎回来'}</p>
-        <h2>{isRegister ? '注册 MiniForge 账号' : '登录 MiniForge'}</h2>
-        <p className="soft-text">
-          {isRegister ? '注册后直接进入 Studio。' : '登录后直接回到工作流。'}
-        </p>
-      </div>
+      <Card className="border-border/60 bg-card/85 shadow-2xl shadow-black/5 backdrop-blur">
+        <CardHeader className="gap-3">
+          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{isRegister ? '创建账号' : '欢迎回来'}</p>
+          <CardTitle className="text-2xl tracking-tight">{isRegister ? '注册 MiniForge 账号' : '登录 MiniForge'}</CardTitle>
+          <CardDescription>{isRegister ? '注册后可直接进入 Studio 并开始创建任务。' : '登录后可直接回到你的产品工作流。'}</CardDescription>
+        </CardHeader>
 
-      <div className="form-grid">
-        {isRegister ? (
-          <>
-            <label>
-              姓名
-              <input name="fullName" placeholder="请输入你的姓名" type="text" />
-            </label>
-            <label>
-              手机号
-              <input name="phone" placeholder="用于后续打印联系" type="text" />
-            </label>
-          </>
-        ) : null}
+        <CardContent>
+          <FieldGroup>
+            {isRegister ? (
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field>
+                  <FieldLabel htmlFor="fullName">姓名</FieldLabel>
+                  <Input id="fullName" name="fullName" placeholder="请输入你的姓名" type="text" />
+                </Field>
 
-        <label className="full-width">
-          邮箱
-          <input name="email" placeholder="请输入邮箱" type="email" />
-        </label>
+                <Field>
+                  <FieldLabel htmlFor="phone">手机号</FieldLabel>
+                  <Input id="phone" name="phone" placeholder="用于后续打印联系" type="text" />
+                  <FieldDescription>后续打印订单会使用这个联系方式。</FieldDescription>
+                </Field>
+              </div>
+            ) : null}
 
-        <label className="full-width">
-          密码
-          <input name="password" placeholder="请输入密码" type="password" />
-        </label>
-      </div>
+            <Field>
+              <FieldLabel htmlFor="email">邮箱</FieldLabel>
+              <Input id="email" name="email" placeholder="请输入邮箱" type="email" />
+            </Field>
 
-      {error ? <p aria-live="polite" className="error-text">{error}</p> : null}
+            <Field>
+              <FieldLabel htmlFor="password">密码</FieldLabel>
+              <Input id="password" name="password" placeholder="请输入密码" type="password" />
+            </Field>
 
-      <div className="button-column auth-form-actions">
-        <button className="primary-button" disabled={loading} type="submit">
-          {loading ? '处理中…' : isRegister ? '注册并进入 Studio' : '登录并进入 Studio'}
-        </button>
-      </div>
+            <FieldError aria-live="polite">{error}</FieldError>
+            {notice ? <p className="text-sm text-emerald-600">{notice}</p> : null}
+          </FieldGroup>
+        </CardContent>
 
-      <div className="auth-form-footer">
-        <span className="muted-text">{isRegister ? '已经有账号？' : '还没有账号？'}</span>
-        <Link href={isRegister ? '/login' : '/register'}>{isRegister ? '去登录' : '立即注册'}</Link>
-      </div>
+        <CardFooter className="flex flex-col items-stretch gap-4">
+          <Button className="w-full" disabled={loading} type="submit">
+            {loading ? '处理中…' : isRegister ? '注册并进入 Studio' : '登录并进入 Studio'}
+          </Button>
+
+          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+            <span>{isRegister ? '已经有账号？' : '还没有账号？'}</span>
+            <Link className="font-medium text-foreground underline-offset-4 hover:underline" href={isRegister ? '/login' : '/register'}>
+              {isRegister ? '去登录' : '立即注册'}
+            </Link>
+          </div>
+          {!isRegister ? (
+            <div className="text-center text-sm">
+              <Link className="font-medium text-foreground underline-offset-4 hover:underline" href="/forgot-password">
+                忘记密码？
+              </Link>
+            </div>
+          ) : null}
+        </CardFooter>
+      </Card>
     </form>
   )
 }

@@ -50,5 +50,9 @@ export function OrderPaymentStatusSync({ enabled = false, orderId }: OrderPaymen
     return null
   }
 
-  return <p aria-live="polite" className="soft-text">{message}</p>
+  return (
+    <p aria-live="polite" className="text-sm text-muted-foreground">
+      {message}
+    </p>
+  )
 }

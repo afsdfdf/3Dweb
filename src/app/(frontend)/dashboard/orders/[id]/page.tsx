@@ -1,5 +1,9 @@
 import Link from 'next/link'
 
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+
 import { OrderActionButton } from '../../../_components/OrderActionButton'
 import { OrderPaymentStatusSync } from '../../../_components/OrderPaymentStatusSync'
 import { DashboardShell } from '../../../_components/DashboardShell'
@@ -7,12 +11,18 @@ import { getCurrentUserOrderById, requireUser } from '../../../_lib/session'
 import { formatDateTime, formatOrderStatus } from '../../../_lib/ui-text'
 
 const steps = [
-  { key: 'pending-payment', label: '待支付', description: '订单已创建，等待完成 Stripe Checkout 支付。' },
-  { key: 'paid', label: '已支付', description: '支付已确认，订单将进入生产排期。' },
-  { key: 'in-production', label: '生产中', description: '工单已进入制作阶段，正在安排生产。' },
-  { key: 'shipped', label: '已发货', description: '订单已出库，可以跟踪物流状态。' },
-  { key: 'completed', label: '已完成', description: '订单流程已结束，欢迎继续下单。' },
+  { key: 'pending-payment', label: '待支付', description: '订单已创建，正在等待 Stripe Checkout 完成支付。' },
+  { key: 'paid', label: '已支付', description: '支付已确认，订单可以进入生产排期。' },
+  { key: 'in-production', label: '生产中', description: '打印任务正在准备与执行。' },
+  { key: 'shipped', label: '已发货', description: '订单已离开生产环节，进入物流配送。' },
+  { key: 'completed', label: '已完成', description: '交付流程已经结束，订单已关闭。' },
 ] as const
+
+function getStatusVariant(status?: string) {
+  if (status === 'cancelled') return 'destructive' as const
+  if (['paid', 'in-production', 'shipped', 'completed'].includes(String(status))) return 'secondary' as const
+  return 'outline' as const
+}
 
 export default async function DashboardOrderDetailPage({
   params,
@@ -28,14 +38,22 @@ export default async function DashboardOrderDetailPage({
 
   if (!order) {
     return (
-      <DashboardShell currentPath="/dashboard/orders" description="当前订单不存在或你没有访问权限。" title="订单详情">
-        <section className="panel empty-state">
-          <strong>未找到订单</strong>
-          <p>请返回订单列表确认编号是否正确，或稍后刷新重试。</p>
-          <Link className="primary-button" href="/dashboard/orders">
-            返回订单列表
-          </Link>
-        </section>
+      <DashboardShell
+        currentPath="/dashboard/orders"
+        description="当前订单不存在，或你没有访问这张订单的权限。"
+        title="订单详情"
+      >
+        <Card className="border-border/60 bg-card/80">
+          <CardHeader>
+            <CardTitle>订单不存在</CardTitle>
+            <CardDescription>请返回订单列表确认 ID，或刷新后重试。</CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Button asChild>
+              <Link href="/dashboard/orders">返回订单列表</Link>
+            </Button>
+          </CardFooter>
+        </Card>
       </DashboardShell>
     )
   }
@@ -49,106 +67,174 @@ export default async function DashboardOrderDetailPage({
   return (
     <DashboardShell
       currentPath="/dashboard/orders"
-      description="查看支付、生产、物流与收货信息，并从这里继续推进订单。"
+      description="查看支付状态、生产推进、物流信息与当前订单的下一步处理动作。"
       title={order.orderNumber || '订单详情'}
     >
-      <section className="panel">
-        <div className="section-head">
-          <div>
-            <p className="eyebrow">订单流程</p>
-            <h2>履约进度</h2>
-          </div>
-          <span className={`status-pill${['paid', 'in-production', 'shipped', 'completed'].includes(String(order.status)) ? ' success' : ''}`}>
-            {formatOrderStatus(order.status)}
-          </span>
-        </div>
-
-        {shouldAutoSync ? <OrderPaymentStatusSync enabled orderId={Number(order.id)} /> : null}
-        {showCancelledNotice ? <p className="soft-text">你已取消本次支付，可稍后继续完成结账。</p> : null}
-
-        <div className="timeline-stage-grid">
-          {steps.map((step, index) => {
-            const active = index <= currentIndex
-            const current = index === currentIndex
-
-            return (
-              <article className={`timeline-stage${active ? ' active' : ''}${current ? ' current' : ''}`} key={step.key}>
-                <div className="timeline-stage-index">{index + 1}</div>
-                <div>
-                  <h3>{step.label}</h3>
-                  <p>{step.description}</p>
-                </div>
-              </article>
-            )
-          })}
-        </div>
-      </section>
-
-      <section className="mesh-grid order-detail-grid">
-        <div className="gradient-panel">
-          <div className="section-head">
+      <Card className="border-border/60 bg-card/80 shadow-sm">
+        <CardHeader className="gap-4">
+          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div>
-              <p className="eyebrow">订单信息</p>
-              <h2>支付与制作</h2>
+              <Badge variant="outline">订单流程</Badge>
+              <CardTitle className="mt-3 text-2xl tracking-tight">履约进度</CardTitle>
             </div>
+            <Badge variant={getStatusVariant(String(order.status))}>{formatOrderStatus(order.status)}</Badge>
           </div>
+          <CardDescription>在单一详情页中查看支付、生产与发货状态。</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          {shouldAutoSync ? <OrderPaymentStatusSync enabled orderId={Number(order.id)} /> : null}
+          {showCancelledNotice ? (
+            <p className="text-sm text-muted-foreground">支付已取消，你可以稍后回来继续完成结算。</p>
+          ) : null}
 
-          <div className="detail-grid">
-            <div><strong>订单号</strong><p>{order.orderNumber}</p></div>
-            <div><strong>当前状态</strong><p>{formatOrderStatus(order.status)}</p></div>
-            <div><strong>订单金额</strong><p>{order.amount ?? 0} {order.currency ?? 'USD'}</p></div>
-            <div><strong>使用积分</strong><p>{order.creditsUsed ?? 0}</p></div>
-            <div><strong>关联模型</strong><p>{modelTitle}</p></div>
-            <div><strong>来源任务</strong><p>{sourceTaskCode}</p></div>
-            <div><strong>尺寸方案</strong><p>{order.sizeOption || 'standard'}</p></div>
-            <div><strong>材质方案</strong><p>{order.materialOption || 'plastic'}</p></div>
-            <div><strong>创建时间</strong><p>{formatDateTime(order.createdAt)}</p></div>
-            <div><strong>更新时间</strong><p>{formatDateTime(order.updatedAt)}</p></div>
+          <div className="grid gap-3 lg:grid-cols-5">
+            {steps.map((step, index) => {
+              const active = currentIndex >= 0 && index <= currentIndex
+              const current = index === currentIndex
+
+              return (
+                <div className="rounded-2xl border border-border/60 p-4" key={step.key}>
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`flex size-8 items-center justify-center rounded-full border text-sm font-medium ${
+                        active ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-muted text-muted-foreground'
+                      }`}
+                    >
+                      {index + 1}
+                    </div>
+                    <div>
+                      <strong className="block text-sm font-medium">{step.label}</strong>
+                      {current ? <span className="text-xs text-muted-foreground">当前阶段</span> : null}
+                    </div>
+                  </div>
+                  <p className="mt-3 text-sm leading-6 text-muted-foreground">{step.description}</p>
+                </div>
+              )
+            })}
           </div>
+        </CardContent>
+      </Card>
 
-          <div className="button-column" style={{ marginTop: 18 }}>
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+        <Card className="border-border/60 bg-card/80 shadow-sm">
+          <CardHeader className="gap-3">
+            <Badge variant="secondary">订单详情</Badge>
+            <CardTitle className="text-2xl tracking-tight">支付与生产信息</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4 md:grid-cols-2">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">订单号</p>
+              <p className="mt-2 text-sm font-medium">{order.orderNumber}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">状态</p>
+              <p className="mt-2 text-sm font-medium">{formatOrderStatus(order.status)}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">金额</p>
+              <p className="mt-2 text-sm font-medium">
+                {order.amount ?? 0} {order.currency ?? 'USD'}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">消耗积分</p>
+              <p className="mt-2 text-sm font-medium">{order.creditsUsed ?? 0}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">模型</p>
+              <p className="mt-2 text-sm font-medium">{modelTitle}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">来源任务</p>
+              <p className="mt-2 text-sm font-medium">{sourceTaskCode}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">尺寸规格</p>
+              <p className="mt-2 text-sm font-medium">{order.sizeOption || 'standard'}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">材质规格</p>
+              <p className="mt-2 text-sm font-medium">{order.materialOption || 'plastic'}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">创建时间</p>
+              <p className="mt-2 text-sm font-medium">{formatDateTime(order.createdAt)}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">更新时间</p>
+              <p className="mt-2 text-sm font-medium">{formatDateTime(order.updatedAt)}</p>
+            </div>
+          </CardContent>
+          <CardFooter className="flex flex-wrap gap-3">
             {order.shopifyCheckoutUrl ? (
-              <a className="primary-button" href={order.shopifyCheckoutUrl} rel="noreferrer" target="_blank">
-                继续支付
-              </a>
+              <Button asChild>
+                <a href={order.shopifyCheckoutUrl} rel="noreferrer" target="_blank">
+                  继续支付
+                </a>
+              </Button>
             ) : null}
             <OrderActionButton orderId={Number(order.id)} status={String(order.status)} />
-            <Link className="ghost-button" href="/dashboard/orders">
-              返回订单列表
-            </Link>
-          </div>
-        </div>
+            <Button asChild variant="ghost">
+              <Link href="/dashboard/orders">返回订单列表</Link>
+            </Button>
+          </CardFooter>
+        </Card>
 
-        <div className="detail-stack">
-          <div className="panel">
-            <p className="eyebrow">收货信息</p>
-            <h2>配送详情</h2>
-            <div className="detail-grid compact-gap">
-              <div><strong>收件人</strong><p>{order.shippingName || '未填写'}</p></div>
-              <div><strong>联系电话</strong><p>{order.shippingPhone || '未填写'}</p></div>
-              <div className="full-width"><strong>收货地址</strong><p>{order.shippingAddress || '未填写'}</p></div>
-              <div><strong>物流单号</strong><p>{order.trackingNumber || '待生成'}</p></div>
-              <div><strong>支付会话</strong><p>{query.session_id || order.shopifyOrderId || 'Stripe Checkout 已创建'}</p></div>
-            </div>
-          </div>
+        <div className="grid gap-4">
+          <Card className="border-border/60 bg-card/80 shadow-sm">
+            <CardHeader>
+              <Badge variant="outline">物流</Badge>
+              <CardTitle className="mt-3 text-2xl tracking-tight">配送信息</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-2">
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">收件人</p>
+                <p className="mt-2 text-sm font-medium">{order.shippingName || '未填写'}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">手机号</p>
+                <p className="mt-2 text-sm font-medium">{order.shippingPhone || '未填写'}</p>
+              </div>
+              <div className="md:col-span-2">
+                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">收货地址</p>
+                <p className="mt-2 text-sm font-medium">{order.shippingAddress || '未填写'}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">物流单号</p>
+                <p className="mt-2 text-sm font-medium">{order.trackingNumber || '暂未生成'}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">支付会话</p>
+                <p className="mt-2 text-sm font-medium">{query.session_id || order.shopifyOrderId || 'Stripe Checkout 已创建'}</p>
+              </div>
+            </CardContent>
+          </Card>
 
-          <div className="panel">
-            <p className="eyebrow">订单备注</p>
-            <h2>内部状态</h2>
-            <p className="soft-text">
-              {order.internalNotes || '系统会在支付、生产和发货节点更新这里的说明。'}
-            </p>
-          </div>
+          <Card className="border-border/60 bg-card/80 shadow-sm">
+            <CardHeader>
+              <Badge variant="outline">内部备注</Badge>
+              <CardTitle className="mt-3 text-2xl tracking-tight">运营状态</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm leading-6 text-muted-foreground">
+                {order.internalNotes || '该区域会随着支付、生产与发货推进自动补充内部处理信息。'}
+              </p>
+            </CardContent>
+          </Card>
 
-          <div className="panel">
-            <p className="eyebrow">下一步</p>
-            <h2>操作建议</h2>
-            <ul className="check-list">
-              <li>如果已完成支付但状态未变化，可点击“检查支付结果”。</li>
-              <li>进入发货后，物流单号会显示在本页和订单列表中。</li>
-              <li>订单完成后仍可回到模型库继续下新的打印单。</li>
-            </ul>
-          </div>
+          <Card className="border-border/60 bg-card/80 shadow-sm">
+            <CardHeader>
+              <Badge variant="secondary">下一步</Badge>
+              <CardTitle className="mt-3 text-2xl tracking-tight">建议检查项</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="grid gap-3 text-sm leading-6 text-muted-foreground">
+                <li>如果支付已经完成但状态未刷新，先执行一次同步。</li>
+                <li>开始发货后，物流单号会同步显示在这里和订单列表中。</li>
+                <li>已完成订单仍可回到模型库继续发起新的打印轮次。</li>
+              </ul>
+            </CardContent>
+          </Card>
         </div>
       </section>
     </DashboardShell>

@@ -1,6 +1,10 @@
 import type { PayloadRequest } from 'payload'
+import type Stripe from 'stripe'
 
+import { sendOrderPaidEmail } from '@/lib/businessEmails'
 import { getStripeGateway } from '@/lib/stripeGateway'
+
+const INTERNAL_ACCESS = true
 
 const randomCode = (prefix: string) => {
   const date = new Date()
@@ -63,6 +67,113 @@ const getProviderFromPayload = (value: unknown) => {
     : null
 }
 
+async function finalizePrintOrderPayment(args: {
+  checkoutSession: Stripe.Checkout.Session
+  req: PayloadRequest
+}) {
+  const { checkoutSession, req } = args
+
+  const payments = await req.payload.find({
+    collection: 'shopify-payments',
+    depth: 0,
+    limit: 1,
+    overrideAccess: INTERNAL_ACCESS,
+    pagination: false,
+    req,
+    where: {
+      shopifyCheckoutId: {
+        equals: checkoutSession.id,
+      },
+    },
+  })
+
+  const payment = payments.docs[0]
+  if (!payment) {
+    throw new Error(`Payment record not found for Stripe session ${checkoutSession.id}`)
+  }
+
+  const linkedOrderId =
+    typeof payment.linkedOrder === 'object' && payment.linkedOrder ? payment.linkedOrder.id : payment.linkedOrder
+
+  if (!linkedOrderId) {
+    throw new Error(`Linked order is missing for Stripe session ${checkoutSession.id}`)
+  }
+
+  const order = await req.payload.findByID({
+    collection: 'print-orders',
+    depth: 1,
+    id: Number(linkedOrderId),
+    overrideAccess: INTERNAL_ACCESS,
+    req,
+  })
+
+  const rawPayload =
+    payment.rawWebhookPayload && typeof payment.rawWebhookPayload === 'object' && !Array.isArray(payment.rawWebhookPayload)
+      ? payment.rawWebhookPayload
+      : {}
+
+  await req.payload.update({
+    collection: 'shopify-payments',
+    id: payment.id,
+    data: {
+      rawWebhookPayload: {
+        ...rawPayload,
+        checkoutSessionCompletedAt: new Date().toISOString(),
+        paymentIntentId:
+          typeof checkoutSession.payment_intent === 'string'
+            ? checkoutSession.payment_intent
+            : checkoutSession.payment_intent?.id,
+        provider: 'stripe',
+        sessionId: checkoutSession.id,
+        sessionStatus: checkoutSession.status,
+        stage: checkoutSession.payment_status === 'paid' ? 'paid' : 'pending',
+      },
+      status: checkoutSession.payment_status === 'paid' ? 'paid' : payment.status,
+    },
+    overrideAccess: INTERNAL_ACCESS,
+    req,
+  })
+
+  if (String(order.status) !== 'pending-payment') {
+    return order
+  }
+
+  if (checkoutSession.payment_status !== 'paid' && checkoutSession.status !== 'complete') {
+    return order
+  }
+
+  const paidOrder = await req.payload.update({
+    collection: 'print-orders',
+    id: order.id,
+    data: {
+      internalNotes: 'Stripe payment confirmed. Order is now marked as paid.',
+      status: 'paid',
+    },
+    overrideAccess: INTERNAL_ACCESS,
+    req,
+  })
+
+  const email = getUserEmail(req)
+  if (email) {
+    await sendOrderPaidEmail({
+      amount: Number(paidOrder.amount || 0),
+      currency: paidOrder.currency,
+      email,
+      modelTitle: typeof order.model === 'object' && order.model && 'title' in order.model ? String(order.model.title || '') : undefined,
+      orderId: paidOrder.id,
+      orderNumber: paidOrder.orderNumber,
+      req,
+    }).catch((error) => {
+      req.payload.logger.error({
+        err: error,
+        msg: `Failed to send order paid email to ${email}`,
+      })
+    })
+  }
+
+  return paidOrder
+}
+
 export async function createPrintOrder(args: {
   materialOption?: string
   modelId: number
@@ -77,8 +188,8 @@ export async function createPrintOrder(args: {
     materialOption = 'plastic',
     modelId,
     req,
-    shippingAddress = '??????',
-    shippingName = '?????',
+    shippingAddress = 'Test address pending confirmation',
+    shippingName = 'Test recipient',
     shippingPhone = '13800000000',
     sizeOption = 'standard',
     sourceTaskId,
@@ -105,7 +216,7 @@ export async function createPrintOrder(args: {
       amount,
       creditsUsed: 0,
       currency: 'USD',
-      internalNotes: '??????????? Stripe Checkout?',
+      internalNotes: 'Order created, waiting for Stripe checkout.',
       materialOption,
       model: modelId,
       orderNumber,
@@ -140,7 +251,7 @@ export async function createPrintOrder(args: {
     collection: 'print-orders',
     id: order.id,
     data: {
-      internalNotes: '??? Stripe Checkout ??????????',
+      internalNotes: 'Stripe checkout created. Waiting for customer payment.',
       shopifyCheckoutUrl: checkout.checkoutUrl,
     },
     overrideAccess: false,
@@ -165,11 +276,26 @@ export async function createPrintOrder(args: {
       status: 'pending',
       user: req.user.id,
     },
-    overrideAccess: false,
+    overrideAccess: INTERNAL_ACCESS,
     req,
   })
 
   return updatedOrder
+}
+
+export async function finalizePrintOrderCheckoutSession(args: {
+  req: PayloadRequest
+  session?: Stripe.Checkout.Session
+  sessionId: string
+}) {
+  const { req, session, sessionId } = args
+  const gateway = getStripeGateway()
+  const checkoutSession = session ?? (await gateway.retrieveCheckout(sessionId))
+
+  return finalizePrintOrderPayment({
+    checkoutSession,
+    req,
+  })
 }
 
 export async function syncPrintOrder(args: { orderId: number; req: PayloadRequest }) {
@@ -190,6 +316,10 @@ export async function syncPrintOrder(args: { orderId: number; req: PayloadReques
     return order
   }
 
+  if (order.status !== 'pending-payment') {
+    return order
+  }
+
   const payments = await req.payload.find({
     collection: 'shopify-payments',
     limit: 1,
@@ -205,122 +335,34 @@ export async function syncPrintOrder(args: { orderId: number; req: PayloadReques
 
   const payment = payments.docs[0]
 
-  if (order.status === 'pending-payment') {
-    const provider = getProviderFromPayload(payment?.rawWebhookPayload)
-
-    if (payment?.shopifyCheckoutId && provider === 'stripe') {
-      const gateway = getStripeGateway()
-      const session = await gateway.retrieveCheckout(String(payment.shopifyCheckoutId))
-      const isPaid = session.payment_status === 'paid' || session.status === 'complete'
-
-      if (!isPaid) {
-        return req.payload.update({
-          collection: 'print-orders',
-          id: order.id,
-          data: {
-            internalNotes: 'Stripe ????????????????????',
-            shopifyCheckoutUrl: order.shopifyCheckoutUrl,
-          },
-          overrideAccess: false,
-          req,
-        })
-      }
-
-      await req.payload.update({
-        collection: 'shopify-payments',
-        id: payment.id,
-        data: {
-          rawWebhookPayload: {
-            ...(payment.rawWebhookPayload && typeof payment.rawWebhookPayload === 'object' && !Array.isArray(payment.rawWebhookPayload)
-              ? payment.rawWebhookPayload
-              : {}),
-            paidAt: new Date().toISOString(),
-            paymentIntentId:
-              typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id,
-            provider: 'stripe',
-            sessionId: session.id,
-            sessionStatus: session.status,
-            stage: 'paid',
-          },
-          status: 'paid',
-        },
-        overrideAccess: false,
-        req,
-      })
-
-      return req.payload.update({
-        collection: 'print-orders',
-        id: order.id,
-        data: {
-          internalNotes: 'Stripe ???????????????',
-          status: 'paid',
-        },
-        overrideAccess: false,
-        req,
-      })
-    }
-
-    if (payment) {
-      await req.payload.update({
-        collection: 'shopify-payments',
-        id: payment.id,
-        data: {
-          rawWebhookPayload: { mock: true, stage: 'paid' },
-          shopifyOrderId: randomCode('SHOPIFY-ORDER'),
-          status: 'paid',
-        },
-        overrideAccess: false,
-        req,
-      })
-    }
-
+  if (!payment) {
     return req.payload.update({
       collection: 'print-orders',
       id: order.id,
       data: {
-        internalNotes: '?????????????',
-        status: 'paid',
+        internalNotes: 'Payment record missing. Please recreate the order or contact support.',
       },
       overrideAccess: false,
       req,
     })
   }
 
-  if (order.status === 'paid') {
+  const provider = getProviderFromPayload(payment.rawWebhookPayload)
+
+  if (!payment.shopifyCheckoutId || provider !== 'stripe') {
     return req.payload.update({
       collection: 'print-orders',
       id: order.id,
       data: {
-        internalNotes: '????????',
-        status: 'in-production',
+        internalNotes: 'Payment record is not linked to a Stripe checkout session.',
       },
       overrideAccess: false,
       req,
     })
   }
 
-  if (order.status === 'in-production') {
-    return req.payload.update({
-      collection: 'print-orders',
-      id: order.id,
-      data: {
-        internalNotes: '??????',
-        status: 'shipped',
-        trackingNumber: randomCode('TRACK'),
-      },
-      overrideAccess: false,
-      req,
-    })
-  }
-
-  return req.payload.update({
-    collection: 'print-orders',
-    id: order.id,
-    data: {
-      internalNotes: '??????',
-      status: 'completed',
-    },
-    overrideAccess: false,
+  return finalizePrintOrderCheckoutSession({
     req,
+    sessionId: String(payment.shopifyCheckoutId),
   })
 }

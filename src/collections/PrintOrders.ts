@@ -1,6 +1,6 @@
-﻿import type { CollectionConfig } from 'payload'
+import type { CollectionConfig } from 'payload'
 
-import { ownerOrStaff } from '@/access'
+import { isStaff, ownerOrStaff } from '@/access'
 
 export const PrintOrders: CollectionConfig = {
   slug: 'print-orders',
@@ -17,7 +17,7 @@ export const PrintOrders: CollectionConfig = {
   access: {
     create: ownerOrStaff('user'),
     read: ownerOrStaff('user'),
-    update: ownerOrStaff('user'),
+    update: isStaff,
   },
   defaultSort: '-createdAt',
   timestamps: true,

@@ -1,5 +1,8 @@
 import Link from 'next/link'
 
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import type { GenerationTask, PrintOrder } from '@/payload-types'
 
 import { DashboardShell } from '../_components/DashboardShell'
@@ -25,6 +28,14 @@ function getOrderModelTitle(order: PrintOrder) {
   return typeof order.model === 'object' ? order.model?.title || '未命名模型' : '未命名模型'
 }
 
+function getStatusVariant(status?: string) {
+  if (status === 'failed' || status === 'cancelled') return 'destructive' as const
+  if (status === 'succeeded' || status === 'completed' || status === 'paid' || status === 'in-production' || status === 'shipped') {
+    return 'secondary' as const
+  }
+  return 'outline' as const
+}
+
 export default async function DashboardOverviewPage() {
   const user = await requireUser()
   const [tasks, models, orders, creditAccount] = await Promise.all([
@@ -43,7 +54,7 @@ export default async function DashboardOverviewPage() {
     ...tasks.docs.slice(0, 3).map((task: GenerationTask) => ({
       id: `task-${task.id}`,
       title: `${task.taskCode} · ${formatTaskStatus(task.status)}`,
-      description: task.prompt || '该任务暂未填写提示词说明。',
+      description: task.prompt || '该任务未保存详细提示词。',
       time: task.updatedAt || task.createdAt,
       href: `/results/${task.taskCode}`,
       kind: '任务',
@@ -63,173 +74,172 @@ export default async function DashboardOverviewPage() {
   return (
     <DashboardShell
       currentPath="/dashboard"
-      description="快速查看当前任务、模型、订单与积分状态，这是用户进入 Studio 之后的主控制台。"
+      description="总览页是 Studio 之后的主控制面板：任务、模型、订单与积分都会集中显示在这里。"
       title="工作台总览"
     >
-      <section className="metric-grid">
-        <article className="stat-card">
-          <p>当前账号</p>
-          <h3>{user.fullName || user.email}</h3>
-          <span className="muted-text">欢迎回来，继续推进你的 3D 工作流。</span>
-        </article>
-        <article className="stat-card">
-          <p>处理中任务</p>
-          <h3>{processing}</h3>
-          <span className="muted-text">累计完成 {completedTasks} 个任务</span>
-        </article>
-        <article className="stat-card">
-          <p>模型资产</p>
-          <h3>{models.docs.length}</h3>
-          <span className="muted-text">其中 {readyModels} 个已可下载或打印</span>
-        </article>
-        <article className="stat-card">
-          <p>可用积分</p>
-          <h3>{creditAccount?.balance ?? 0}</h3>
-          <span className="muted-text">已支付订单 {paidOrders} 个</span>
-        </article>
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {[
+          { label: '当前账号', value: user.fullName || user.email || '账户', note: '继续推进当前的 3D 工作流。' },
+          { label: '进行中任务', value: String(processing), note: `已累计完成 ${completedTasks} 个任务。` },
+          { label: '模型资产', value: String(models.docs.length), note: `其中 ${readyModels} 个可下载或进入打印。` },
+          { label: '可用积分', value: String(creditAccount?.balance ?? 0), note: `已有 ${paidOrders} 个已支付或推进中的订单。` },
+        ].map((item) => (
+          <Card className="border-border/60 bg-card/80" key={item.label}>
+            <CardHeader className="gap-2">
+              <CardDescription>{item.label}</CardDescription>
+              <CardTitle className="text-3xl tracking-tight">{item.value}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm leading-6 text-muted-foreground">{item.note}</p>
+            </CardContent>
+          </Card>
+        ))}
       </section>
 
-      <section className="mesh-grid dashboard-spotlight">
-        <div className="gradient-panel dashboard-summary-panel">
-          <div className="section-head">
-            <div>
-              <p className="eyebrow">今日重点</p>
-              <h2>先处理正在运行的任务，再把可用模型推进到下载或打印。</h2>
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+        <Card className="border-border/60 bg-card/80 shadow-sm">
+          <CardHeader className="gap-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <Badge variant="secondary">今日重点</Badge>
+                <CardTitle className="mt-3 text-2xl tracking-tight">工作台摘要</CardTitle>
+              </div>
+              <Badge variant="outline">工作流在线</Badge>
             </div>
-            <span className="status-pill success">工作流在线</span>
-          </div>
+            <CardDescription>先处理正在运行的任务，再把可用模型推进到下载或打印交付流程。</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 md:grid-cols-2">
+            <div className="rounded-2xl border border-border/60 bg-muted/40 p-4">
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">任务节奏</p>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">当前仍有 {processing} 个任务处于排队或处理中，建议先观察队列压力再继续提交新任务。</p>
+            </div>
+            <div className="rounded-2xl border border-border/60 bg-muted/40 p-4">
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">模型状态</p>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">{readyModels} 个模型已经可用于下载、打印交接或资产复核。</p>
+            </div>
+            <div className="rounded-2xl border border-border/60 bg-muted/40 p-4">
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">订单推进</p>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">{paidOrders} 个订单已经越过支付阶段，进入生产或交付流程。</p>
+            </div>
+            <div className="rounded-2xl border border-border/60 bg-muted/40 p-4">
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">积分状态</p>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">当前有 {creditAccount?.balance ?? 0} 积分可用，足够继续提交新任务或做后续处理。</p>
+            </div>
+          </CardContent>
+          <CardFooter className="flex flex-wrap gap-3">
+            <Button asChild>
+              <Link href="/generate">进入 Studio</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/dashboard/library">打开模型库</Link>
+            </Button>
+          </CardFooter>
+        </Card>
 
-          <div className="detail-grid compact-gap">
-            <div>
-              <strong>任务节奏</strong>
-              <p>当前有 {processing} 个任务在运行，建议先关注排队与处理中项。</p>
-            </div>
-            <div>
-              <strong>模型沉淀</strong>
-              <p>{readyModels} 个模型已可进入下载、模型库归档或打印订单链路。</p>
-            </div>
-            <div>
-              <strong>订单推进</strong>
-              <p>{paidOrders} 个订单已完成支付，可继续进入生产或物流阶段。</p>
-            </div>
-            <div>
-              <strong>资金状态</strong>
-              <p>当前积分余额 {creditAccount?.balance ?? 0}，足够继续提交新任务或下载结果。</p>
-            </div>
-          </div>
-
-          <div className="button-row" style={{ marginTop: 18 }}>
-            <Link className="primary-button" href="/generate">
-              进入 Studio
-            </Link>
-            <Link className="secondary-button" href="/dashboard/library">
-              打开模型库
-            </Link>
-          </div>
-        </div>
-
-        <div className="panel dashboard-activity-panel">
-          <div className="section-head">
-            <div>
-              <p className="eyebrow">最近动态</p>
-              <h2>最近更新的任务与订单</h2>
-            </div>
-          </div>
-
-          <div className="timeline-list">
+        <Card className="border-border/60 bg-card/80 shadow-sm">
+          <CardHeader>
+            <Badge variant="outline">最近动态</Badge>
+            <CardTitle className="mt-3 text-2xl tracking-tight">最新任务与订单更新</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-3">
             {activities.length > 0 ? (
               activities.map((item) => (
-                <article className="timeline-item" key={item.id}>
-                  <div className="timeline-dot" />
-                  <div className="timeline-content">
-                    <div className="timeline-topline">
-                      <strong>{item.title}</strong>
-                      <span className="muted-text">{item.kind}</span>
+                <div className="rounded-2xl border border-border/60 p-4" key={item.id}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <strong className="block text-sm font-medium">{item.title}</strong>
+                      <p className="mt-1 text-sm leading-6 text-muted-foreground">{item.description}</p>
                     </div>
-                    <p>{item.description}</p>
-                    <div className="timeline-footer">
-                      <span className="muted-text">{formatDateTime(item.time)}</span>
-                      <Link href={item.href}>查看详情</Link>
-                    </div>
+                    <Badge variant="outline">{item.kind}</Badge>
                   </div>
-                </article>
+                  <div className="mt-3 flex items-center justify-between gap-3 text-sm">
+                    <span className="text-muted-foreground">{formatDateTime(item.time)}</span>
+                    <Button asChild size="sm" variant="ghost">
+                      <Link href={item.href}>查看</Link>
+                    </Button>
+                  </div>
+                </div>
               ))
             ) : (
-              <div className="empty-state compact">
-                <strong>还没有最近动态</strong>
-                <p>先创建一个生成任务，随后这里会展示最新的任务和订单变化。</p>
+              <div className="rounded-2xl border border-dashed border-border/60 p-4">
+                <strong className="block text-sm font-medium">还没有最近动态</strong>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">先创建一个生成任务，这里就会开始显示最新任务与订单变化。</p>
               </div>
             )}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </section>
 
-      <section className="two-column">
-        <div className="panel">
-          <div className="section-head">
+      <section className="grid gap-4 lg:grid-cols-2">
+        <Card className="border-border/60 bg-card/80 shadow-sm">
+          <CardHeader className="flex flex-row items-start justify-between gap-3">
             <div>
-              <p className="eyebrow">任务面板</p>
-              <h2>需要你关注的生成任务</h2>
+              <Badge variant="outline">任务面板</Badge>
+              <CardTitle className="mt-3 text-2xl tracking-tight">生成队列</CardTitle>
             </div>
-            <Link href="/dashboard/tasks">查看全部</Link>
-          </div>
-
-          <div className="table-like">
+            <Button asChild size="sm" variant="ghost">
+              <Link href="/dashboard/tasks">查看全部</Link>
+            </Button>
+          </CardHeader>
+          <CardContent className="grid gap-3">
             {tasks.docs.length > 0 ? (
               tasks.docs.slice(0, 4).map((task) => (
-                <div className="table-row" key={task.id}>
+                <div className="flex flex-col gap-3 rounded-2xl border border-border/60 p-4 sm:flex-row sm:items-start sm:justify-between" key={task.id}>
                   <div>
-                    <strong>{task.taskCode}</strong>
-                    <p>{task.prompt || '该任务未填写详细提示词。'}</p>
+                    <strong className="block text-sm font-medium">{task.taskCode}</strong>
+                    <p className="mt-1 text-sm leading-6 text-muted-foreground">{task.prompt || '该任务未保存详细提示词。'}</p>
                   </div>
-                  <div className="row-meta-stack">
-                    <p>{formatTaskStatus(task.status)}</p>
-                    <span className="muted-text">
+                  <div className="flex flex-col items-start gap-2 sm:items-end">
+                    <Badge variant={getStatusVariant(task.status)}>{formatTaskStatus(task.status)}</Badge>
+                    <span className="text-sm text-muted-foreground">
                       {task.progress ?? 0}% · {formatDateTime(task.updatedAt || task.createdAt)}
                     </span>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="empty-state compact">
-                <strong>还没有生成任务</strong>
-                <p>进入 Studio 后提交第一条任务，这里就会开始显示进度。</p>
+              <div className="rounded-2xl border border-dashed border-border/60 p-4">
+                <strong className="block text-sm font-medium">还没有生成任务</strong>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">进入 Studio 提交第一个任务后，这里就会显示队列状态。</p>
               </div>
             )}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="panel">
-          <div className="section-head">
+        <Card className="border-border/60 bg-card/80 shadow-sm">
+          <CardHeader className="flex flex-row items-start justify-between gap-3">
             <div>
-              <p className="eyebrow">订单面板</p>
-              <h2>最近需要推进的履约订单</h2>
+              <Badge variant="outline">订单面板</Badge>
+              <CardTitle className="mt-3 text-2xl tracking-tight">实体交付链路</CardTitle>
             </div>
-            <Link href="/dashboard/orders">查看全部</Link>
-          </div>
-
-          <div className="table-like">
+            <Button asChild size="sm" variant="ghost">
+              <Link href="/dashboard/orders">查看全部</Link>
+            </Button>
+          </CardHeader>
+          <CardContent className="grid gap-3">
             {orders.docs.length > 0 ? (
               orders.docs.slice(0, 4).map((order: PrintOrder) => (
-                <div className="table-row" key={order.id}>
+                <div className="flex flex-col gap-3 rounded-2xl border border-border/60 p-4 sm:flex-row sm:items-start sm:justify-between" key={order.id}>
                   <div>
-                    <strong>{order.orderNumber}</strong>
-                    <p>{getOrderModelTitle(order)}</p>
+                    <strong className="block text-sm font-medium">{order.orderNumber}</strong>
+                    <p className="mt-1 text-sm leading-6 text-muted-foreground">{getOrderModelTitle(order)}</p>
                   </div>
-                  <div className="row-meta-stack">
-                    <p>{formatOrderStatus(order.status)}</p>
-                    <span className="muted-text">{order.amount ?? 0} {order.currency ?? 'USD'}</span>
+                  <div className="flex flex-col items-start gap-2 sm:items-end">
+                    <Badge variant={getStatusVariant(order.status)}>{formatOrderStatus(order.status)}</Badge>
+                    <span className="text-sm text-muted-foreground">
+                      {order.amount ?? 0} {order.currency ?? 'USD'}
+                    </span>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="empty-state compact">
-                <strong>还没有打印订单</strong>
-                <p>当模型进入实物交付流程后，订单会在这里出现。</p>
+              <div className="rounded-2xl border border-dashed border-border/60 p-4">
+                <strong className="block text-sm font-medium">还没有打印订单</strong>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">当结果或模型进入实体打印流程后，订单就会出现在这里。</p>
               </div>
             )}
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </section>
     </DashboardShell>
   )

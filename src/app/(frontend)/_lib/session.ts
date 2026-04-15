@@ -113,3 +113,27 @@ export async function getCurrentUserCreditTransactions() {
     user,
   })
 }
+
+export async function getCurrentUserSubscriptions() {
+  const { payload, user } = await getPayloadWithUser()
+  if (!user) return { docs: [] }
+
+  return payload.find({
+    collection: 'billing-subscriptions',
+    depth: 0,
+    limit: 10,
+    overrideAccess: false,
+    sort: '-updatedAt',
+    user,
+  })
+}
+
+export async function getCurrentUserActiveSubscription() {
+  const subscriptions = await getCurrentUserSubscriptions()
+
+  return (
+    subscriptions.docs.find((item) => ['active', 'trialing', 'past_due', 'incomplete'].includes(String(item.status))) ??
+    subscriptions.docs[0] ??
+    null
+  )
+}

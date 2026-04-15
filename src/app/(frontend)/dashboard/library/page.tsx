@@ -1,20 +1,24 @@
 import Link from 'next/link'
 
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import type { GenerationTask, Model } from '@/payload-types'
 
-import { DashboardShell } from '../../_components/DashboardShell'
 import { CreatePrintOrderButton } from '../../_components/CreatePrintOrderButton'
+import { DashboardShell } from '../../_components/DashboardShell'
+import { ModelViewer } from '../../_components/ModelViewer'
 import { getCurrentUserModels, requireUser } from '../../_lib/session'
 import { formatDateTime, formatModelStatus } from '../../_lib/ui-text'
 
 function formatVisibility(visibility: Model['visibility']) {
   switch (visibility) {
     case 'public':
-      return '\u516c\u5f00\u5c55\u793a'
+      return '公开'
     case 'team':
-      return '\u56e2\u961f\u53ef\u89c1'
+      return '团队'
     default:
-      return '\u79c1\u6709'
+      return '私有'
   }
 }
 
@@ -30,10 +34,28 @@ function formatDimensions(model: Model) {
   const dimensions = model.dimensions
 
   if (dimensions?.widthMm && dimensions.heightMm && dimensions.depthMm) {
-    return `${dimensions.widthMm} \u00d7 ${dimensions.heightMm} \u00d7 ${dimensions.depthMm} mm`
+    return `${dimensions.widthMm} × ${dimensions.heightMm} × ${dimensions.depthMm} mm`
   }
 
-  return '\u5f85\u751f\u6210\u540e\u8865\u5145'
+  return '生成后补充'
+}
+
+function getStatusVariant(status?: string | null) {
+  if (status === 'ready') return 'secondary' as const
+  if (status === 'archived') return 'outline' as const
+  return 'outline' as const
+}
+
+function getPrimaryModelURL(model: Model) {
+  const formats = Array.isArray(model.formats) ? model.formats : []
+  const preferred = formats.find((item) => String(item.format).toLowerCase() === 'glb') || formats[0]
+  const file = preferred?.file
+
+  if (file && typeof file === 'object' && 'url' in file && typeof file.url === 'string') {
+    return file.url
+  }
+
+  return null
 }
 
 export default async function DashboardLibraryPage() {
@@ -43,106 +65,103 @@ export default async function DashboardLibraryPage() {
   return (
     <DashboardShell
       currentPath="/dashboard/library"
-      description="\u96c6\u4e2d\u7ba1\u7406\u4f60\u7684\u751f\u6210\u6a21\u578b\u3001\u4e0b\u8f7d\u5165\u53e3\u4e0e\u6253\u5370\u64cd\u4f5c\u3002"
-      title="\u6a21\u578b\u5e93"
+      description="集中管理已生成模型，继续下载交付文件，或将可打印资产推进到订单流程。"
+      title="模型库"
     >
       {models.docs.length > 0 ? (
-        <section className="asset-grid">
+        <section className="grid gap-4 xl:grid-cols-2">
           {models.docs.map((model) => {
             const formats = Array.isArray(model.formats) ? model.formats : []
             const tags = Array.isArray(model.tags) ? model.tags : []
             const sourceTaskCode = getSourceTaskCode(model.sourceTask)
+            const primaryModelURL = getPrimaryModelURL(model)
+              ? `/api/platform/mock/models/${model.id}/download?format=glb&inline=1&preview=1`
+              : null
 
             return (
-              <article className="asset-card" key={model.id}>
-                <div className="asset-preview viewer-shell">
-                  <div className="glow-ring" />
-                  <div className="viewer-model-label">
-                    <p className="eyebrow">\u6a21\u578b\u9884\u89c8</p>
-                    <h3>{model.title}</h3>
-                    <p className="soft-text">
-                      {formatModelStatus(model.status)} \u00b7 {model.printReady ? '\u652f\u6301\u6253\u5370' : '\u4ec5\u4f9b\u4e0b\u8f7d'}
+              <Card className="overflow-hidden border-border/60 bg-card/80 shadow-sm" key={model.id}>
+                <CardContent className="p-4">
+                  <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-black">
+                    <ModelViewer className="h-[340px] w-full" label={model.title} src={primaryModelURL} />
+                    <div className="pointer-events-none absolute left-4 top-4 flex flex-wrap gap-2">
+                      <Badge variant={getStatusVariant(model.status)}>{formatModelStatus(model.status)}</Badge>
+                      <Badge variant="outline">{model.printReady ? '可打印' : '可下载'}</Badge>
+                    </div>
+                  </div>
+                </CardContent>
+
+                <CardHeader className="gap-4">
+                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div>
+                      <CardTitle className="text-2xl tracking-tight">{model.title}</CardTitle>
+                      <CardDescription className="mt-2">
+                        这里集中展示真实模型预览、状态、权限、可下载格式与打印就绪信息。
+                      </CardDescription>
+                    </div>
+                    <Badge variant="outline">{formatVisibility(model.visibility)}</Badge>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">格式</p>
+                    <p className="mt-2 text-sm font-medium">
+                      {formats.length > 0 ? formats.map((item) => String(item.format).toUpperCase()).join(' / ') : 'GLB / STL'}
                     </p>
                   </div>
-                </div>
-
-                <div className="asset-meta">
-                  <div className="record-card-head">
-                    <div>
-                      <p className="eyebrow">\u6a21\u578b\u8d44\u4ea7</p>
-                      <h2>{model.title}</h2>
-                    </div>
-                    <span className={`status-pill${model.status === 'ready' ? ' success' : ''}`}>
-                      {formatModelStatus(model.status)}
-                    </span>
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">尺寸</p>
+                    <p className="mt-2 text-sm font-medium">{formatDimensions(model)}</p>
                   </div>
-
-                  <p className="record-summary">
-                    {model.description || '\u6682\u65e0\u63cf\u8ff0\uff0c\u53ef\u5728\u63a5\u5165\u771f\u5b9e\u751f\u6210\u63a5\u53e3\u540e\u8865\u5b8c\u6574\u6a21\u578b\u8bf4\u660e\u3002'}
-                  </p>
-
-                  <div className="detail-grid compact-gap">
-                    <div>
-                      <strong>\u683c\u5f0f</strong>
-                      <p>
-                        {formats.length > 0
-                          ? formats.map((item) => String(item.format).toUpperCase()).join(' / ')
-                          : 'GLB / STL'}
-                      </p>
-                    </div>
-                    <div>
-                      <strong>\u53ef\u89c1\u6027</strong>
-                      <p>{formatVisibility(model.visibility)}</p>
-                    </div>
-                    <div>
-                      <strong>\u5c3a\u5bf8</strong>
-                      <p>{formatDimensions(model)}</p>
-                    </div>
-                    <div>
-                      <strong>\u6700\u540e\u66f4\u65b0</strong>
-                      <p>{formatDateTime(model.updatedAt)}</p>
-                    </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">可见范围</p>
+                    <p className="mt-2 text-sm font-medium">{formatVisibility(model.visibility)}</p>
                   </div>
-
-                  {tags.length > 0 ? (
-                    <div className="tag-row">
-                      {tags.map((tag, index) => (
-                        <span className="metric-pill" key={`${model.id}-${index}`}>
-                          {tag.label || '\u672a\u5206\u7c7b\u6807\u7b7e'}
-                        </span>
-                      ))}
-                    </div>
-                  ) : null}
-
-                  <div className="asset-actions">
-                    <a className="primary-button" href={`/api/platform/mock/models/${model.id}/download?format=glb`}>
-                      \u4e0b\u8f7d GLB
-                    </a>
-                    <a className="secondary-button" href={`/api/platform/mock/models/${model.id}/download?format=stl`}>
-                      \u4e0b\u8f7d STL
-                    </a>
-                    {model.printReady ? (
-                      <CreatePrintOrderButton buttonClassName="ghost-button" modelId={Number(model.id)} />
-                    ) : null}
-                    <Link className="ghost-button" href={sourceTaskCode ? `/results/${sourceTaskCode}` : '/dashboard/library'}>
-                      \u67e5\u770b\u6765\u6e90\u4efb\u52a1
-                    </Link>
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">更新时间</p>
+                    <p className="mt-2 text-sm font-medium">{formatDateTime(model.updatedAt)}</p>
                   </div>
-                </div>
-              </article>
+                </CardContent>
+
+                {tags.length > 0 ? (
+                  <CardContent className="flex flex-wrap gap-2">
+                    {tags.map((tag, index) => (
+                      <Badge key={`${model.id}-${index}`} variant="outline">
+                        {tag.label || '未命名标签'}
+                      </Badge>
+                    ))}
+                  </CardContent>
+                ) : null}
+
+                <CardFooter className="flex flex-wrap gap-3">
+                  <Button asChild>
+                    <a href={`/api/platform/mock/models/${model.id}/download?format=glb`}>下载 GLB</a>
+                  </Button>
+                  <Button asChild variant="outline">
+                    <a href={`/api/platform/mock/models/${model.id}/download?format=stl`}>下载 STL</a>
+                  </Button>
+                  {model.printReady ? <CreatePrintOrderButton modelId={Number(model.id)} variant="ghost" /> : null}
+                  <Button asChild variant="ghost">
+                    <Link href={sourceTaskCode ? `/results/${sourceTaskCode}` : '/dashboard/library'}>查看来源任务</Link>
+                  </Button>
+                </CardFooter>
+              </Card>
             )
           })}
         </section>
       ) : (
-        <section className="panel empty-state">
-          <strong>\u4f60\u7684\u6a21\u578b\u5e93\u8fd8\u662f\u7a7a\u7684</strong>
-          <p>
-            \u751f\u6210\u6210\u529f\u540e\uff0c\u6a21\u578b\u4f1a\u81ea\u52a8\u8fdb\u5165\u8fd9\u91cc\u3002\u540e\u7eed\u4f60\u53ef\u4ee5\u91cd\u590d\u4e0b\u8f7d\u3001\u518d\u6b21\u4e0b\u5355\u6216\u7ee7\u7eed\u505a\u7248\u672c\u7ba1\u7406\u3002
-          </p>
-          <Link className="primary-button" href="/generate">
-            \u53bb\u751f\u6210\u7b2c\u4e00\u4e2a\u6a21\u578b
-          </Link>
-        </section>
+        <Card className="border-border/60 bg-card/80 shadow-sm">
+          <CardHeader>
+            <Badge variant="outline">模型库为空</Badge>
+            <CardTitle className="mt-3 text-2xl tracking-tight">还没有可管理的模型</CardTitle>
+            <CardDescription>生成成功后的资产会自动进入这里，供后续下载、归档或打印。</CardDescription>
+          </CardHeader>
+          <CardFooter>
+            <Button asChild>
+              <Link href="/generate">创建第一个模型</Link>
+            </Button>
+          </CardFooter>
+        </Card>
       )}
     </DashboardShell>
   )

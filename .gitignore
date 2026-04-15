@@ -27,6 +27,8 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+.dev*.log
+.payload-dev*.log
 
 # local env files
 .env*.local
@@ -41,6 +43,13 @@ next-env.d.ts
 .env
 
 /media
+/payload.db
+/src/payload.db
+.run-*.log
+.thumb-*.log
+.single-gltf-preview.png
+.real-previews/
+.import-previews/
 
 # Playwright
 node_modules/

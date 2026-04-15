@@ -2,14 +2,14 @@ import type { PayloadRequest } from 'payload'
 
 import { createPrintOrder, syncPrintOrder } from '@/lib/printOrderFlow'
 
-const unauthorized = () => Response.json({ message: '???????????' }, { status: 401 })
+const unauthorized = () => Response.json({ message: '请先登录' }, { status: 401 })
 
 const getErrorMessage = (error: unknown) => {
   if (error instanceof Error) {
     return error.message
   }
 
-  return '?????????????'
+  return '订单处理失败'
 }
 
 export const createPrintOrderEndpoint = {
@@ -33,7 +33,7 @@ export const createPrintOrderEndpoint = {
 
       return Response.json({
         checkoutUrl: order.shopifyCheckoutUrl,
-        message: '????????????? Stripe Checkout?',
+        message: '订单已创建，正在进入 Stripe Checkout。',
         order,
       })
     } catch (error) {
@@ -50,7 +50,7 @@ export const syncPrintOrderEndpoint = {
 
     try {
       const order = await syncPrintOrder({ orderId: Number(req.routeParams?.orderId ?? 0), req })
-      return Response.json({ message: '????????', order })
+      return Response.json({ message: '订单同步完成', order })
     } catch (error) {
       return Response.json({ message: getErrorMessage(error) }, { status: 400 })
     }

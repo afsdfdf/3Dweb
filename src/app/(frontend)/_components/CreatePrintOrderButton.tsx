@@ -3,13 +3,19 @@
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
+import { Button } from '@/components/ui/button'
+
 type CreatePrintOrderButtonProps = {
-  buttonClassName?: string
   modelId: number
   sourceTaskId?: number
+  variant?: 'default' | 'secondary' | 'outline' | 'ghost'
 }
 
-export function CreatePrintOrderButton({ buttonClassName = 'secondary-button', modelId, sourceTaskId }: CreatePrintOrderButtonProps) {
+export function CreatePrintOrderButton({
+  modelId,
+  sourceTaskId,
+  variant = 'secondary',
+}: CreatePrintOrderButtonProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -28,7 +34,7 @@ export function CreatePrintOrderButton({ buttonClassName = 'secondary-button', m
         body: JSON.stringify({
           materialOption: 'plastic',
           modelId,
-          shippingAddress: '本地测试地址（后续可接入真实地址簿）',
+          shippingAddress: '本地测试地址（后续接入真实结算地址）',
           shippingName: '测试收件人',
           shippingPhone: '13800000000',
           sizeOption: 'standard',
@@ -58,11 +64,15 @@ export function CreatePrintOrderButton({ buttonClassName = 'secondary-button', m
   }
 
   return (
-    <div className="button-column">
-      <button className={buttonClassName} disabled={loading} onClick={createOrder} type="button">
+    <div className="flex flex-col gap-2">
+      <Button disabled={loading} onClick={createOrder} type="button" variant={variant}>
         {loading ? '正在创建订单…' : '立即下单并支付'}
-      </button>
-      {error ? <p aria-live="polite" className="error-text">{error}</p> : null}
+      </Button>
+      {error ? (
+        <p aria-live="polite" className="text-sm text-destructive">
+          {error}
+        </p>
+      ) : null}
     </div>
   )
 }

@@ -1,5 +1,9 @@
 import Link from 'next/link'
 
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+
 import { OrderActionButton } from '../../_components/OrderActionButton'
 import { DashboardShell } from '../../_components/DashboardShell'
 import { getCurrentUserOrders, requireUser } from '../../_lib/session'
@@ -7,6 +11,12 @@ import { formatDateTime, formatOrderStatus } from '../../_lib/ui-text'
 
 function getOrderModelTitle(order: Awaited<ReturnType<typeof getCurrentUserOrders>>['docs'][number]) {
   return typeof order.model === 'object' ? order.model?.title || '未命名模型' : '未命名模型'
+}
+
+function getStatusVariant(status?: string) {
+  if (status === 'cancelled') return 'destructive' as const
+  if (['paid', 'in-production', 'shipped', 'completed'].includes(String(status))) return 'secondary' as const
+  return 'outline' as const
 }
 
 export default async function DashboardOrdersPage() {
@@ -21,17 +31,26 @@ export default async function DashboardOrdersPage() {
   return (
     <DashboardShell
       currentPath="/dashboard/orders"
-      description="查看支付进度、生产状态、物流信息与订单备注，所有实物履约都从这里继续。"
+      description="统一追踪支付状态、生产进度、物流节点与每张实体订单的后续动作。"
       title="订单中心"
     >
-      <section className="metric-grid">
-        <article className="stat-card"><p>订单总数</p><h3>{orders.docs.length}</h3></article>
-        <article className="stat-card"><p>待支付</p><h3>{pendingPayment}</h3></article>
-        <article className="stat-card"><p>生产中</p><h3>{inProduction}</h3></article>
-        <article className="stat-card"><p>已发货 / 已完成</p><h3>{shipped + completed}</h3></article>
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {[
+          { label: '订单总数', value: orders.docs.length },
+          { label: '待支付', value: pendingPayment },
+          { label: '生产中', value: inProduction },
+          { label: '已发货 / 已完成', value: shipped + completed },
+        ].map((item) => (
+          <Card className="border-border/60 bg-card/80" key={item.label} size="sm">
+            <CardHeader>
+              <CardDescription>{item.label}</CardDescription>
+              <CardTitle className="text-3xl tracking-tight">{item.value}</CardTitle>
+            </CardHeader>
+          </Card>
+        ))}
       </section>
 
-      <section className="records-grid">
+      <section className="grid gap-4">
         {orders.docs.length > 0 ? (
           orders.docs.map((order) => {
             const progressMap: Record<string, number> = {
@@ -44,64 +63,77 @@ export default async function DashboardOrdersPage() {
             }
 
             return (
-              <article className="record-card" key={order.id}>
-                <div className="record-card-head">
-                  <div>
-                    <p className="eyebrow">订单</p>
-                    <h2>{order.orderNumber}</h2>
+              <Card className="border-border/60 bg-card/80 shadow-sm" key={order.id}>
+                <CardHeader className="gap-4">
+                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">订单号</p>
+                      <CardTitle className="mt-2 text-2xl tracking-tight">{order.orderNumber}</CardTitle>
+                    </div>
+                    <Badge variant={getStatusVariant(order.status)}>{formatOrderStatus(order.status)}</Badge>
                   </div>
-                  <span className={`status-pill${['completed', 'paid', 'in-production', 'shipped'].includes(order.status) ? ' success' : ''}`}>
-                    {formatOrderStatus(order.status)}
-                  </span>
-                </div>
+                  <CardDescription className="text-sm leading-6">
+                    {getOrderModelTitle(order)} · {order.sizeOption || 'standard'} / {order.materialOption || 'plastic'}
+                  </CardDescription>
+                </CardHeader>
 
-                <p className="record-summary">
-                  {getOrderModelTitle(order)} · {order.sizeOption || 'standard'} / {order.materialOption || 'plastic'}
-                </p>
+                <CardContent className="flex flex-col gap-5">
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">金额</p>
+                      <p className="mt-2 text-sm font-medium">
+                        {order.amount ?? 0} {order.currency ?? 'USD'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">消耗积分</p>
+                      <p className="mt-2 text-sm font-medium">{order.creditsUsed ?? 0}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">物流单号</p>
+                      <p className="mt-2 text-sm font-medium">{order.trackingNumber || '暂未生成'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">更新时间</p>
+                      <p className="mt-2 text-sm font-medium">{formatDateTime(order.updatedAt)}</p>
+                    </div>
+                  </div>
 
-                <div className="detail-grid compact-gap">
-                  <div>
-                    <strong>金额</strong>
-                    <p>{order.amount ?? 0} {order.currency ?? 'USD'}</p>
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">当前进度</span>
+                      <span className="font-medium">{progressMap[String(order.status)] ?? 10}%</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-muted">
+                      <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${progressMap[String(order.status)] ?? 10}%` }} />
+                    </div>
                   </div>
-                  <div>
-                    <strong>积分</strong>
-                    <p>{order.creditsUsed ?? 0}</p>
-                  </div>
-                  <div>
-                    <strong>物流单号</strong>
-                    <p>{order.trackingNumber || '待生成'}</p>
-                  </div>
-                  <div>
-                    <strong>最近更新</strong>
-                    <p>{formatDateTime(order.updatedAt)}</p>
-                  </div>
-                </div>
+                </CardContent>
 
-                <div className="progress-track order-progress" aria-hidden="true">
-                  <span style={{ width: `${progressMap[String(order.status)] ?? 10}%` }} />
-                </div>
-
-                <div className="record-card-footer order-actions-row">
-                  <span className="muted-text">创建于 {formatDateTime(order.createdAt)}</span>
-                  <div className="button-row wrap-end">
-                    <Link className="ghost-button" href={`/dashboard/orders/${order.id}`}>
-                      查看详情
-                    </Link>
+                <CardFooter className="flex flex-col items-start justify-between gap-3 lg:flex-row lg:items-center">
+                  <span className="text-sm text-muted-foreground">创建于 {formatDateTime(order.createdAt)}</span>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Button asChild size="sm" variant="ghost">
+                      <Link href={`/dashboard/orders/${order.id}`}>查看详情</Link>
+                    </Button>
                     <OrderActionButton orderId={Number(order.id)} status={String(order.status)} />
                   </div>
-                </div>
-              </article>
+                </CardFooter>
+              </Card>
             )
           })
         ) : (
-          <section className="panel empty-state">
-            <strong>还没有打印订单</strong>
-            <p>当你在模型库或生成结果里发起实物打印后，订单会出现在这里。</p>
-            <Link className="primary-button" href="/dashboard/library">
-              前往模型库
-            </Link>
-          </section>
+          <Card className="border-border/60 bg-card/80">
+            <CardHeader>
+              <CardTitle>还没有打印订单</CardTitle>
+              <CardDescription>当结果或模型进入实体打印流程后，订单会自动出现在这里。</CardDescription>
+            </CardHeader>
+            <CardFooter>
+              <Button asChild>
+                <Link href="/dashboard/library">前往模型库</Link>
+              </Button>
+            </CardFooter>
+          </Card>
         )}
       </section>
     </DashboardShell>

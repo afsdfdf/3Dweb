@@ -28,7 +28,7 @@ const toMinorUnits = (amount: number) => {
 
 let stripeClient: Stripe | null = null
 
-function getStripeClient() {
+export function getStripeClient() {
   if (stripeClient) {
     return stripeClient
   }
@@ -36,11 +36,23 @@ function getStripeClient() {
   const secretKey = process.env.STRIPE_SECRET_KEY
 
   if (!secretKey) {
-    throw new Error('?? STRIPE_SECRET_KEY????? Stripe ?????')
+    throw new Error('未配置 STRIPE_SECRET_KEY，无法创建 Stripe 客户端。')
   }
 
-  stripeClient = new Stripe(secretKey)
+  stripeClient = new Stripe(secretKey, {
+    apiVersion: '2026-03-25.dahlia',
+  })
+
   return stripeClient
+}
+
+export function constructStripeWebhookEvent(args: { payload: string; signature: string }) {
+  const secret = process.env.STRIPE_WEBHOOK_SECRET || ''
+  if (!secret) {
+    throw new Error('STRIPE_WEBHOOK_SECRET is not configured.')
+  }
+
+  return getStripeClient().webhooks.constructEvent(args.payload, args.signature, secret)
 }
 
 export class StripeGateway {
@@ -59,8 +71,8 @@ export class StripeGateway {
           price_data: {
             currency,
             product_data: {
-              description: input.modelTitle ? `???${input.modelTitle}` : '?? Studio ? 3D ??????',
-              name: `3D ???? ${input.orderNumber}`,
+              description: input.modelTitle ? `模型：${input.modelTitle}` : 'MiniForge Studio 3D 打印订单',
+              name: `3D 打印订单 ${input.orderNumber}`,
             },
             unit_amount: toMinorUnits(input.amount),
           },
@@ -78,7 +90,7 @@ export class StripeGateway {
     })
 
     if (!session.url) {
-      throw new Error('Stripe ???????????')
+      throw new Error('Stripe 未返回可用的结算链接。')
     }
 
     return {
