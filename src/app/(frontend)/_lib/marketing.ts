@@ -1,6 +1,7 @@
 import { getCachedPayload } from '@/lib/getCachedPayload'
 import type { FooterContent } from './marketing-content'
-import { defaultHomepageContent, defaultSiteSettings } from './marketing-content'
+import { getDefaultHomepageContent, getDefaultSiteSettings } from './marketing-content'
+import { getCurrentLocale } from './locale-server'
 
 const pickArray = <T,>(value: null | T[] | undefined, fallback: T[]) => {
   return Array.isArray(value) && value.length > 0 ? value : fallback
@@ -26,15 +27,23 @@ const mergeNullableObject = <T extends Record<string, unknown>>(
 }
 
 export async function getMarketingSiteData() {
+  const locale = await getCurrentLocale()
+  const defaultHomepageContent = getDefaultHomepageContent(locale)
+  const defaultSiteSettings = getDefaultSiteSettings(locale)
+
   try {
     const payload = await getCachedPayload()
     const [siteSettings, homepageContent] = await Promise.all([
       payload.findGlobal({
         slug: 'site-settings',
+        locale: locale as never,
         overrideAccess: true,
+        fallbackLocale: 'en' as never,
       }),
       payload.findGlobal({
         slug: 'homepage-content',
+        locale: locale as never,
+        fallbackLocale: 'en' as never,
       }),
     ])
 

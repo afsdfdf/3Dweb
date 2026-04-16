@@ -5,14 +5,13 @@ import { getMediaAccessURL } from '../src/lib/s3SignedURL.ts'
 
 const createPayloadMock = (signedDownloads = true) => ({
   findGlobal: async () => ({
-    storage: {
-      baseURL: 'https://cdn.example-assets.com',
-      bucket: 'demo-bucket',
-      enabled: true,
-      prefix: 'media',
-      region: 'us-east-1',
-      signedDownloads,
-    },
+    baseURL: 'https://cdn.example-assets.com',
+    bucket: 'demo-bucket',
+    credentialsSource: 'environment',
+    enabled: true,
+    prefix: 'media',
+    region: 'us-east-1',
+    signedDownloads,
   }),
 })
 

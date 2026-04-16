@@ -1,3 +1,4 @@
+import { en } from 'payload/i18n/en'
 import { zh } from 'payload/i18n/zh'
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { sqliteAdapter } from '@payloadcms/db-sqlite'
@@ -11,13 +12,17 @@ import sharp from 'sharp'
 
 import { Addresses } from './collections/Addresses'
 import { BillingSubscriptions } from './collections/BillingSubscriptions'
+import { Announcements } from './collections/Announcements'
 import { CreditProducts } from './collections/CreditProducts'
 import { CreditTransactions } from './collections/CreditTransactions'
 import { Credits } from './collections/Credits'
 import { GenerationTasks } from './collections/GenerationTasks'
+import { HomepageItems } from './collections/HomepageItems'
 import { Media } from './collections/Media'
+import { ModelBundles } from './collections/ModelBundles'
 import { Models } from './collections/Models'
 import { PrintOrders } from './collections/PrintOrders'
+import { Posts } from './collections/Posts'
 import { ShopifyPayments } from './collections/ShopifyPayments'
 import { TaskEvents } from './collections/TaskEvents'
 import { Users } from './collections/Users'
@@ -35,7 +40,10 @@ import {
 import { AIProviderSettings } from './globals/AIProviderSettings'
 import { HomepageContent } from './globals/HomepageContent'
 import { RuntimeDeploymentSettings } from './globals/RuntimeDeploymentSettings'
+import { SecuritySettings } from './globals/SecuritySettings'
 import { SiteSettings } from './globals/SiteSettings'
+import { StorageSettings } from './globals/StorageSettings'
+import { readS3StorageSettings, resolveDatabaseRuntimeConfig } from './lib/databaseRuntimeConfig'
 import { assertRuntimeSecurityGuards, getValidatedPayloadSecret } from './lib/envGuard'
 
 const filename = fileURLToPath(import.meta.url)
@@ -46,100 +54,6 @@ const defaultFromAddress = process.env.EMAIL_FROM_ADDRESS || 'no-reply@miniforge
 const defaultFromName = process.env.EMAIL_FROM_NAME || 'MiniForge AI 3D'
 const smtpSecure = process.env.SMTP_SECURE === 'true'
 const smtpPort = Number(process.env.SMTP_PORT || (smtpSecure ? 465 : 587))
-
-type S3StorageSettings = {
-  accessKeyId: string
-  baseURL: string
-  bucket: string
-  enabled: boolean
-  prefix: string
-  region: string
-  secretAccessKey: string
-  signedDownloads: boolean
-}
-
-type DatabaseRuntimeConfig =
-  | {
-      connectionString: string
-      provider: 'postgres'
-      ssl:
-        | false
-        | {
-            rejectUnauthorized: boolean
-          }
-    }
-  | {
-      provider: 'sqlite'
-      url: string
-    }
-
-const isTruthy = (value: string | undefined) => ['1', 'true', 'yes', 'on'].includes(String(value || '').toLowerCase())
-
-function readS3StorageSettings(): S3StorageSettings {
-  return {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    baseURL: process.env.S3_CDN_URL || '',
-    bucket: process.env.S3_BUCKET || '',
-    enabled: Boolean(process.env.S3_BUCKET && process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY),
-    prefix: process.env.S3_PREFIX || 'media',
-    region: process.env.S3_REGION || 'us-east-1',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-    signedDownloads: process.env.S3_SIGNED_DOWNLOADS !== 'false',
-  }
-}
-
-function buildAwsRdsConnectionString() {
-  const host = process.env.AWS_RDS_HOST || ''
-  const database = process.env.AWS_RDS_DB_NAME || process.env.AWS_RDS_DATABASE || ''
-  const username = process.env.AWS_RDS_USERNAME || process.env.AWS_RDS_USER || ''
-  const password = process.env.AWS_RDS_PASSWORD || ''
-
-  if (!host || !database || !username || !password) {
-    return ''
-  }
-
-  const port = Number(process.env.AWS_RDS_PORT || 5432)
-  const sslmode = process.env.AWS_RDS_SSL_MODE || 'require'
-
-  const url = new URL(`postgresql://${encodeURIComponent(username)}:${encodeURIComponent(password)}@${host}:${port}/${database}`)
-  url.searchParams.set('sslmode', sslmode)
-
-  if (process.env.AWS_RDS_SCHEMA) {
-    url.searchParams.set('schema', process.env.AWS_RDS_SCHEMA)
-  }
-
-  return url.toString()
-}
-
-function resolveDatabaseRuntimeConfig(): DatabaseRuntimeConfig {
-  const explicitProvider = String(process.env.DATABASE_PROVIDER || process.env.DB_PROVIDER || '').toLowerCase()
-  const directUrl = process.env.DATABASE_URL || ''
-  const awsRdsUrl = buildAwsRdsConnectionString()
-  const connectionString = directUrl || awsRdsUrl
-  const shouldUsePostgres =
-    explicitProvider === 'postgres' ||
-    explicitProvider === 'postgresql' ||
-    /^postgres(ql)?:\/\//i.test(connectionString) ||
-    Boolean(awsRdsUrl)
-
-  if (shouldUsePostgres && connectionString) {
-    const sslDisabled = explicitProvider === 'postgres' || explicitProvider === 'postgresql'
-      ? process.env.AWS_RDS_SSL === 'false' || process.env.POSTGRES_SSL === 'false'
-      : false
-    const rejectUnauthorized = isTruthy(process.env.AWS_RDS_SSL_REJECT_UNAUTHORIZED || process.env.POSTGRES_SSL_REJECT_UNAUTHORIZED)
-
-    return {
-      connectionString,
-      provider: 'postgres',
-      ssl: sslDisabled ? false : { rejectUnauthorized },
-    }
-  }
-
-  return {
-    provider: 'sqlite',
-    url: process.env.DATABASE_URL || 'file:./payload.db',
-  }
-}
 
 const emailAdapter = nodemailerAdapter({
   defaultFromAddress,
@@ -196,6 +110,10 @@ export default buildConfig({
     GenerationTasks,
     TaskEvents,
     Models,
+    HomepageItems,
+    Posts,
+    Announcements,
+    ModelBundles,
     Credits,
     CreditTransactions,
     CreditProducts,
@@ -210,6 +128,10 @@ export default buildConfig({
           migrationDir: path.resolve(dirname, 'migrations'),
           pool: {
             connectionString: dbConfig.connectionString,
+            connectionTimeoutMillis: dbConfig.pool.connectionTimeoutMillis,
+            idleTimeoutMillis: dbConfig.pool.idleTimeoutMillis,
+            max: dbConfig.pool.max,
+            min: dbConfig.pool.min,
             ssl: dbConfig.ssl,
           },
           push: false,
@@ -236,12 +158,18 @@ export default buildConfig({
     sessionLogoutEndpoint,
     stripeWebhookEndpoint,
   ],
-  globals: [SiteSettings, HomepageContent, AIProviderSettings, RuntimeDeploymentSettings],
+  globals: [SiteSettings, HomepageContent, AIProviderSettings, StorageSettings, SecuritySettings, RuntimeDeploymentSettings],
   i18n: {
-    fallbackLanguage: 'zh' as const,
+    fallbackLanguage: 'en' as const,
     supportedLanguages: {
+      en,
       zh,
     },
+  },
+  localization: {
+    defaultLocale: 'en',
+    fallback: true,
+    locales: ['en', 'zh'],
   },
   plugins: [
     ...(s3Settings.enabled && s3Settings.bucket && s3Settings.region && s3Settings.accessKeyId && s3Settings.secretAccessKey

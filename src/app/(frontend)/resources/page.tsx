@@ -1,6 +1,8 @@
-﻿import { MarketingPage } from '../_components/MarketingPage'
-import { marketingPages } from '../_lib/marketing-content'
+import { MarketingPage } from '../_components/MarketingPage'
+import { getMarketingPages } from '../_lib/marketing-content'
+import { getCurrentLocale } from '../_lib/locale-server'
 
-export default function ResourcesPage() {
-  return <MarketingPage page={marketingPages.resources} />
+export default async function ResourcesPage() {
+  const locale = await getCurrentLocale()
+  return <MarketingPage page={getMarketingPages(locale).resources} />
 }

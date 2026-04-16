@@ -6,7 +6,9 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 
 import type { FooterContent, NavigationItem } from '../_lib/marketing-content'
-import { defaultFooter, defaultSiteSettings } from '../_lib/marketing-content'
+import { getDefaultFooter, getDefaultSiteSettings } from '../_lib/marketing-content'
+import { getCurrentLocale } from '../_lib/locale-server'
+import { LocaleSwitcher } from './LocaleSwitcher'
 import { LogoutButton } from './LogoutButton'
 
 type SiteShellProps = {
@@ -21,24 +23,55 @@ type SiteShellProps = {
   }
 }
 
-const defaultLinks = defaultSiteSettings.headerNav
-const appLinks = [
-  { href: '/generate', label: 'Studio' },
-  { href: '/dashboard', label: 'Dashboard' },
-  { href: '/dashboard/tasks', label: '任务' },
-  { href: '/dashboard/library', label: '模型' },
-  { href: '/dashboard/orders', label: '订单' },
-  { href: '/developers', label: '开发者' },
-  { href: '/admin', label: 'Admin' },
-]
+const appLinks = {
+  en: [
+    { href: '/generate', label: 'Studio' },
+    { href: '/dashboard', label: 'Dashboard' },
+    { href: '/dashboard/tasks', label: 'Tasks' },
+    { href: '/dashboard/library', label: 'Library' },
+    { href: '/dashboard/orders', label: 'Orders' },
+    { href: '/developers', label: 'Developers' },
+    { href: '/admin', label: 'Admin' },
+  ],
+  zh: [
+    { href: '/generate', label: 'Studio' },
+    { href: '/dashboard', label: '工作台' },
+    { href: '/dashboard/tasks', label: '任务' },
+    { href: '/dashboard/library', label: '模型' },
+    { href: '/dashboard/orders', label: '订单' },
+    { href: '/developers', label: '开发者' },
+    { href: '/admin', label: '管理后台' },
+  ],
+} as const
 
-const roleLabel = (role?: string | null) => {
-  if (role === 'admin') return '管理员'
-  if (role === 'operator') return '运营'
-  return '用户'
-}
+const shellCopy = {
+  en: {
+    footerLine: 'MiniForge keeps the product site, Studio, Dashboard, Admin, and APIs clearly separated.',
+    login: 'Log in',
+    navLabel: 'Site navigation',
+    openWorkspace: 'Open workspace',
+    platformBadge: 'AI 3D platform',
+    productLayers: 'Product layers',
+    roleAdmin: 'Admin',
+    roleCustomer: 'User',
+    roleOperator: 'Operator',
+    startFree: 'Start free',
+  },
+  zh: {
+    footerLine: 'MiniForge 将产品站、Studio、Dashboard、Admin 与 API 保持清晰分层。',
+    login: '登录',
+    navLabel: '站点导航',
+    openWorkspace: '打开工作台',
+    platformBadge: 'AI 3D 平台',
+    productLayers: '产品分层',
+    roleAdmin: '管理员',
+    roleCustomer: '用户',
+    roleOperator: '运营',
+    startFree: '免费开始',
+  },
+} as const
 
-export function SiteShell({
+export async function SiteShell({
   announcement,
   children,
   currentPath,
@@ -46,8 +79,19 @@ export function SiteShell({
   navigation,
   user,
 }: SiteShellProps) {
+  const locale = await getCurrentLocale()
+  const copy = shellCopy[locale]
+  const defaultSiteSettings = getDefaultSiteSettings(locale)
+  const defaultLinks = defaultSiteSettings.headerNav
   const links = navigation?.length ? navigation : defaultLinks
-  const footerContent = { ...defaultFooter, ...footer }
+  const footerContent = { ...getDefaultFooter(locale), ...footer }
+
+  const roleLabel = (role?: string | null) => {
+    if (role === 'admin') return copy.roleAdmin
+    if (role === 'operator') return copy.roleOperator
+    return copy.roleCustomer
+  }
+
   const isActivePath = (href: string) => currentPath === href || (href === '/dashboard' && currentPath?.startsWith('/dashboard'))
 
   return (
@@ -64,14 +108,14 @@ export function SiteShell({
             <div className="flex items-center gap-3">
               <div className="flex size-10 items-center justify-center rounded-2xl border border-border/60 bg-muted font-semibold">M</div>
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">AI 3D 平台</p>
+                <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{copy.platformBadge}</p>
                 <Link className="text-lg font-semibold tracking-tight" href="/" translate="no">
                   MiniForge AI 3D
                 </Link>
               </div>
             </div>
 
-            <nav aria-label="站点导航" className="flex flex-wrap items-center gap-2">
+            <nav aria-label={copy.navLabel} className="flex flex-wrap items-center gap-2">
               {links.map((link) => (
                 <Button asChild key={`${link.href}-${link.label}`} size="sm" variant={currentPath === link.href ? 'secondary' : 'ghost'}>
                   <Link href={link.href || '/'}>{link.label}</Link>
@@ -80,6 +124,7 @@ export function SiteShell({
             </nav>
 
             <div className="flex flex-wrap items-center justify-end gap-2">
+              <LocaleSwitcher currentLocale={locale} currentPath={currentPath} />
               {user?.role ? <Badge variant="secondary">{roleLabel(user.role)}</Badge> : null}
               {user?.email ? (
                 <Badge className="max-w-[220px] truncate" variant="outline">
@@ -89,17 +134,17 @@ export function SiteShell({
               {user ? (
                 <>
                   <Button asChild size="sm" variant="secondary">
-                    <Link href="/dashboard">打开工作台</Link>
+                    <Link href="/dashboard">{copy.openWorkspace}</Link>
                   </Button>
                   <LogoutButton />
                 </>
               ) : (
                 <>
                   <Button asChild size="sm" variant="outline">
-                    <Link href="/login">登录</Link>
+                    <Link href="/login">{copy.login}</Link>
                   </Button>
                   <Button asChild size="sm">
-                    <Link href="/register">免费开始</Link>
+                    <Link href="/register">{copy.startFree}</Link>
                   </Button>
                 </>
               )}
@@ -109,8 +154,8 @@ export function SiteShell({
 
         <div className="border-t border-border/60 bg-muted/30">
           <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-2 px-4 py-3 sm:px-6">
-            <Badge variant="outline">产品分层</Badge>
-            {appLinks.map((link) => (
+            <Badge variant="outline">{copy.productLayers}</Badge>
+            {appLinks[locale].map((link) => (
               <Button asChild key={`${link.href}-${link.label}`} size="sm" variant={isActivePath(link.href) ? 'default' : 'ghost'}>
                 <Link href={link.href}>{link.label}</Link>
               </Button>
@@ -138,7 +183,7 @@ export function SiteShell({
           </div>
 
           <Separator className="my-6" />
-          <p className="text-sm text-muted-foreground">MiniForge 将产品站、Studio、Dashboard、Admin 与 API 保持清晰分层。</p>
+          <p className="text-sm text-muted-foreground">{copy.footerLine}</p>
         </div>
       </footer>
     </div>

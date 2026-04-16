@@ -1,6 +1,14 @@
+/**
+ * Webhook 签名验证模块 — replayCache 使用 KVStore 抽象层
+ *
+ * I-01: 生产环境通过 REDIS_URL 切换 Redis，解决重启后重放检测窗口丢失的问题。
+ */
+
 import crypto from 'crypto'
 
-const replayCache = new Map<string, number>()
+import { getKVStore } from '@/lib/kvStore'
+
+const REPLAY_PREFIX = 'webhook-replay:'
 const DEFAULT_TOLERANCE_SECONDS = 300
 
 export type WebhookVerificationResult =
@@ -12,28 +20,18 @@ const getToleranceSeconds = () => {
   return Number.isFinite(configured) && configured > 0 ? configured : DEFAULT_TOLERANCE_SECONDS
 }
 
-const cleanupReplayCache = (now: number) => {
-  const maxAge = getToleranceSeconds()
-
-  for (const [key, timestamp] of replayCache.entries()) {
-    if (now - timestamp > maxAge) {
-      replayCache.delete(key)
-    }
-  }
-}
-
 export function signWebhookPayload(args: { payload: string; secret: string; timestamp: string }) {
   const signer = crypto.createHmac('sha256', args.secret)
   signer.update(`${args.timestamp}.${args.payload}`)
   return signer.digest('hex')
 }
 
-export function verifyWebhookSignature(args: {
+export async function verifyWebhookSignature(args: {
   payload: string
   secret: string
   signature?: string | null
   timestamp?: string | null
-}): WebhookVerificationResult {
+}): Promise<WebhookVerificationResult> {
   const { payload, secret, signature, timestamp } = args
 
   if (!secret.trim()) {
@@ -55,10 +53,11 @@ export function verifyWebhookSignature(args: {
     return { code: 'EXPIRED', ok: false }
   }
 
-  cleanupReplayCache(now)
+  // 重放检测 — 使用 KVStore
+  const store = getKVStore()
+  const replayKey = `${REPLAY_PREFIX}${timestamp}:${signature}`
 
-  const replayKey = `${timestamp}:${signature}`
-  if (replayCache.has(replayKey)) {
+  if (await store.has(replayKey)) {
     return { code: 'REPLAY', ok: false }
   }
 
@@ -79,7 +78,7 @@ export function verifyWebhookSignature(args: {
     return { code: 'SIGNATURE_MISMATCH', ok: false }
   }
 
-  replayCache.set(replayKey, now)
+  // 记录已使用的签名，TTL = 容差窗口
+  await store.set(replayKey, String(now), tolerance * 1000)
   return { ok: true }
 }
-

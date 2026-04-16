@@ -25,7 +25,7 @@ export const BillingSubscriptions: CollectionConfig = {
   fields: [
     { name: 'user', type: 'relationship', relationTo: 'users', required: true, label: '用户' },
     { name: 'planKey', type: 'text', required: true, label: '方案标识' },
-    { name: 'stripeCustomerId', type: 'text', required: true, label: 'Stripe Customer ID' },
+    { name: 'stripeCustomerId', type: 'text', required: true, index: true, label: 'Stripe Customer ID' },
     { name: 'stripeSubscriptionId', type: 'text', required: true, unique: true, label: 'Stripe Subscription ID' },
     { name: 'stripePriceId', type: 'text', required: true, label: 'Stripe Price ID' },
     {

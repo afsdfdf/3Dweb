@@ -7,7 +7,7 @@ export const AIProviderSettings: GlobalConfig = {
   label: 'AI Provider Settings',
   admin: {
     description:
-      'Manage non-sensitive AI and storage metadata here. Real secrets must stay in hosting environment variables.',
+      'Manage non-sensitive AI provider metadata here. Storage settings now live in the dedicated Storage Settings global, while real secrets must stay in hosting environment variables.',
     group: 'AI Production',
   },
   access: {
@@ -59,22 +59,6 @@ export const AIProviderSettings: GlobalConfig = {
       fields: [
         { name: 'reserveOnSubmit', type: 'checkbox', defaultValue: true, label: 'Reserve credits on submit' },
         { name: 'refundOnFailure', type: 'checkbox', defaultValue: true, label: 'Refund on failure' },
-      ],
-    },
-    {
-      name: 'storage',
-      type: 'group',
-      label: 'Object storage',
-      fields: [
-        { name: 'enabled', type: 'checkbox', defaultValue: false, label: 'Enable S3-backed storage' },
-        { name: 'bucket', type: 'text', label: 'Bucket name' },
-        { name: 'region', type: 'text', defaultValue: 'us-east-1', label: 'Region' },
-        { name: 'prefix', type: 'text', defaultValue: 'media', label: 'Object prefix' },
-        { name: 'baseURL', type: 'text', label: 'CDN / base URL' },
-        { name: 'signedDownloads', type: 'checkbox', defaultValue: true, label: 'Use signed downloads' },
-        { name: 'credentialsSource', type: 'text', defaultValue: 'environment', label: 'Credentials source' },
-        { name: 'lastValidatedAt', type: 'date', label: 'Last validated at' },
-        { name: 'lastRotatedAt', type: 'date', label: 'Last rotated at' },
       ],
     },
     {
@@ -150,4 +134,3 @@ export const AIProviderSettings: GlobalConfig = {
     },
   ],
 }
-

@@ -8,7 +8,7 @@ import {
   rejectDisallowedMutationOrigin,
 } from '../src/lib/requestSecurity.ts'
 
-test('getAllowedRequestOrigins includes env-configured origins', () => {
+test('getAllowedRequestOrigins includes env-configured origins', async () => {
   const previousAllowed = process.env.ALLOWED_REQUEST_ORIGINS
   const previousCanonical = process.env.CANONICAL_APP_URL
   const previousPublic = process.env.NEXT_PUBLIC_APP_URL
@@ -18,7 +18,7 @@ test('getAllowedRequestOrigins includes env-configured origins', () => {
   process.env.NEXT_PUBLIC_APP_URL = ''
 
   try {
-    assert.deepEqual(getAllowedRequestOrigins(), ['https://app.example.com', 'https://admin.example.com'])
+    assert.deepEqual(await getAllowedRequestOrigins(), ['https://app.example.com', 'https://admin.example.com'])
   } finally {
     process.env.ALLOWED_REQUEST_ORIGINS = previousAllowed
     process.env.CANONICAL_APP_URL = previousCanonical
@@ -38,7 +38,7 @@ test('rejectDisallowedMutationOrigin blocks unknown origins in production', asyn
       origin: 'https://evil.example.com',
     })
 
-    const response = rejectDisallowedMutationOrigin({
+    const response = await rejectDisallowedMutationOrigin({
       headers,
     } as never)
 

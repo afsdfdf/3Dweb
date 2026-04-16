@@ -4,9 +4,12 @@ import { useState, type ComponentProps } from 'react'
 
 import { Button } from '@/components/ui/button'
 
+import { useLocale } from './LocaleProvider'
+
 type LogoutButtonProps = Pick<ComponentProps<typeof Button>, 'className' | 'size' | 'variant'>
 
 export function LogoutButton({ className, size = 'sm', variant = 'outline' }: LogoutButtonProps) {
+  const locale = useLocale()
   const [loading, setLoading] = useState(false)
 
   return (
@@ -25,7 +28,7 @@ export function LogoutButton({ className, size = 'sm', variant = 'outline' }: Lo
       type="button"
       variant={variant}
     >
-      {loading ? '退出中...' : '退出登录'}
+      {loading ? (locale === 'zh' ? '退出中...' : 'Signing out...') : locale === 'zh' ? '退出登录' : 'Sign out'}
     </Button>
   )
 }

@@ -1,18 +1,25 @@
 import React from 'react'
+
 import './globals.css'
 
+import { LocaleProvider } from './_components/LocaleProvider'
+import { getCurrentLocale } from './_lib/locale-server'
+
 export const metadata = {
-  description: '基于 Payload CMS 与 Next.js 构建的 AI 3D 角色生成、模型管理与打印交付平台。',
+  description: 'AI 3D character generation, model management, and print fulfillment platform built with Payload CMS and Next.js.',
   title: 'MiniForge AI 3D',
 }
 
 export default async function RootLayout(props: { children: React.ReactNode }) {
   const { children } = props
+  const locale = await getCurrentLocale()
 
   return (
-    <html lang="zh-CN">
+    <html lang={locale === 'zh' ? 'zh-CN' : 'en'}>
       <body>
-        <main>{children}</main>
+        <LocaleProvider locale={locale}>
+          <main>{children}</main>
+        </LocaleProvider>
       </body>
     </html>
   )

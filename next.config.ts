@@ -10,6 +10,7 @@ const allowedDevOrigins = getAllowedDevOrigins()
 
 const nextConfig: NextConfig = {
   allowedDevOrigins,
+  poweredByHeader: false,
   images: {
     localPatterns: [
       {

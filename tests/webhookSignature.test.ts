@@ -3,13 +3,13 @@ import assert from 'node:assert/strict'
 
 import { signWebhookPayload, verifyWebhookSignature } from '../src/lib/webhookSignature.ts'
 
-test('webhook signature verification succeeds for valid payload', () => {
+test('webhook signature verification succeeds for valid payload', async () => {
   const payload = JSON.stringify({ providerTaskId: 'task_123', status: 'SUCCEEDED' })
   const secret = 'test-secret'
   const timestamp = String(Math.floor(Date.now() / 1000))
   const signature = signWebhookPayload({ payload, secret, timestamp })
 
-  const result = verifyWebhookSignature({
+  const result = await verifyWebhookSignature({
     payload,
     secret,
     signature,
@@ -19,13 +19,13 @@ test('webhook signature verification succeeds for valid payload', () => {
   assert.deepEqual(result, { ok: true })
 })
 
-test('webhook signature verification rejects expired payloads', () => {
+test('webhook signature verification rejects expired payloads', async () => {
   const payload = JSON.stringify({ providerTaskId: 'task_123' })
   const secret = 'test-secret'
   const timestamp = '1'
   const signature = signWebhookPayload({ payload, secret, timestamp })
 
-  const result = verifyWebhookSignature({
+  const result = await verifyWebhookSignature({
     payload,
     secret,
     signature,
@@ -38,13 +38,13 @@ test('webhook signature verification rejects expired payloads', () => {
   }
 })
 
-test('webhook signature verification rejects replayed requests', () => {
+test('webhook signature verification rejects replayed requests', async () => {
   const payload = JSON.stringify({ providerTaskId: 'task_123', status: 'processing' })
   const secret = 'test-secret'
   const timestamp = String(Math.floor(Date.now() / 1000))
   const signature = signWebhookPayload({ payload, secret, timestamp })
 
-  const first = verifyWebhookSignature({
+  const first = await verifyWebhookSignature({
     payload,
     secret,
     signature,
@@ -53,7 +53,7 @@ test('webhook signature verification rejects replayed requests', () => {
 
   assert.deepEqual(first, { ok: true })
 
-  const replay = verifyWebhookSignature({
+  const replay = await verifyWebhookSignature({
     payload,
     secret,
     signature,

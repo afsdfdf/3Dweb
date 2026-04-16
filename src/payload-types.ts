@@ -72,6 +72,10 @@ export interface Config {
     'generation-tasks': GenerationTask;
     'task-events': TaskEvent;
     models: Model;
+    'homepage-items': HomepageItem;
+    posts: Post;
+    announcements: Announcement;
+    'model-bundles': ModelBundle;
     credits: Credit;
     'credit-transactions': CreditTransaction;
     'credit-products': CreditProduct;
@@ -91,6 +95,10 @@ export interface Config {
     'generation-tasks': GenerationTasksSelect<false> | GenerationTasksSelect<true>;
     'task-events': TaskEventsSelect<false> | TaskEventsSelect<true>;
     models: ModelsSelect<false> | ModelsSelect<true>;
+    'homepage-items': HomepageItemsSelect<false> | HomepageItemsSelect<true>;
+    posts: PostsSelect<false> | PostsSelect<true>;
+    announcements: AnnouncementsSelect<false> | AnnouncementsSelect<true>;
+    'model-bundles': ModelBundlesSelect<false> | ModelBundlesSelect<true>;
     credits: CreditsSelect<false> | CreditsSelect<true>;
     'credit-transactions': CreditTransactionsSelect<false> | CreditTransactionsSelect<true>;
     'credit-products': CreditProductsSelect<false> | CreditProductsSelect<true>;
@@ -106,20 +114,24 @@ export interface Config {
   db: {
     defaultIDType: number;
   };
-  fallbackLocale: null;
+  fallbackLocale: ('false' | 'none' | 'null') | false | null | ('en' | 'zh') | ('en' | 'zh')[];
   globals: {
     'site-settings': SiteSetting;
     'homepage-content': HomepageContent;
     'ai-provider-settings': AiProviderSetting;
+    'storage-settings': StorageSetting;
+    'security-settings': SecuritySetting;
     'runtime-deployment-settings': RuntimeDeploymentSetting;
   };
   globalsSelect: {
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     'homepage-content': HomepageContentSelect<false> | HomepageContentSelect<true>;
     'ai-provider-settings': AiProviderSettingsSelect<false> | AiProviderSettingsSelect<true>;
+    'storage-settings': StorageSettingsSelect<false> | StorageSettingsSelect<true>;
+    'security-settings': SecuritySettingsSelect<false> | SecuritySettingsSelect<true>;
     'runtime-deployment-settings': RuntimeDeploymentSettingsSelect<false> | RuntimeDeploymentSettingsSelect<true>;
   };
-  locale: null;
+  locale: 'en' | 'zh';
   widgets: {
     collections: CollectionsWidget;
   };
@@ -315,6 +327,150 @@ export interface TaskEvent {
     | null;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * 管理首页展示卡片、板块内容、排序、显示隐藏和发布时间。
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "homepage-items".
+ */
+export interface HomepageItem {
+  id: number;
+  title: string;
+  /**
+   * 首页内容项的唯一标识，便于后续内容查询或外部同步。
+   */
+  slug: string;
+  placement: 'hero-secondary' | 'featured' | 'bundles' | 'announcements' | 'articles';
+  contentType: 'custom' | 'model' | 'post' | 'announcement' | 'bundle';
+  summary?: string | null;
+  coverImage?: (number | null) | Media;
+  linkedModel?: (number | null) | Model;
+  linkedPost?: (number | null) | Post;
+  linkedAnnouncement?: (number | null) | Announcement;
+  linkedBundle?: (number | null) | ModelBundle;
+  /**
+   * 当内容类型为自定义卡片时使用，用于跳转到任意站内或站外链接。
+   */
+  customHref?: string | null;
+  createdBy?: (number | null) | User;
+  publishAt?: string | null;
+  isPinned?: boolean | null;
+  isVisible?: boolean | null;
+  sortOrder?: number | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * 管理首页活动帖、博客文章与公告型长内容。
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "posts".
+ */
+export interface Post {
+  id: number;
+  title: string;
+  /**
+   * 用于内容详情页的唯一标识，建议保持稳定且仅使用 URL 友好字符。
+   */
+  slug: string;
+  category: 'article' | 'event' | 'announcement';
+  coverImage?: (number | null) | Media;
+  excerpt?: string | null;
+  content: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  /**
+   * 支持 YouTube 等第三方视频链接，用于内容详情页嵌入。
+   */
+  videoUrl?: string | null;
+  createdBy?: (number | null) | User;
+  publishedAt?: string | null;
+  isPinned?: boolean | null;
+  isVisible?: boolean | null;
+  sortOrder?: number | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * 管理首页公告、系统通知与短内容提示。
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "announcements".
+ */
+export interface Announcement {
+  id: number;
+  title: string;
+  slug: string;
+  summary?: string | null;
+  content: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  createdBy?: (number | null) | User;
+  publishAt?: string | null;
+  isPinned?: boolean | null;
+  isVisible?: boolean | null;
+  sortOrder?: number | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * 管理员可从用户模型中挑选多个模型组成专题包或合集。
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "model-bundles".
+ */
+export interface ModelBundle {
+  id: number;
+  title: string;
+  slug: string;
+  coverImage?: (number | null) | Media;
+  summary?: string | null;
+  tags?:
+    | {
+        label: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * 从现有用户生成的模型中选择一个或多个模型组成专题包。
+   */
+  models: (number | Model)[];
+  createdBy?: (number | null) | User;
+  publishAt?: string | null;
+  isVisible?: boolean | null;
+  isFeatured?: boolean | null;
+  sortOrder?: number | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * 管理用户积分余额、预扣与累计消费。
@@ -564,6 +720,22 @@ export interface PayloadLockedDocument {
         value: number | Model;
       } | null)
     | ({
+        relationTo: 'homepage-items';
+        value: number | HomepageItem;
+      } | null)
+    | ({
+        relationTo: 'posts';
+        value: number | Post;
+      } | null)
+    | ({
+        relationTo: 'announcements';
+        value: number | Announcement;
+      } | null)
+    | ({
+        relationTo: 'model-bundles';
+        value: number | ModelBundle;
+      } | null)
+    | ({
         relationTo: 'credits';
         value: number | Credit;
       } | null)
@@ -764,6 +936,95 @@ export interface ModelsSelect<T extends boolean = true> {
   description?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "homepage-items_select".
+ */
+export interface HomepageItemsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  placement?: T;
+  contentType?: T;
+  summary?: T;
+  coverImage?: T;
+  linkedModel?: T;
+  linkedPost?: T;
+  linkedAnnouncement?: T;
+  linkedBundle?: T;
+  customHref?: T;
+  createdBy?: T;
+  publishAt?: T;
+  isPinned?: T;
+  isVisible?: T;
+  sortOrder?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "posts_select".
+ */
+export interface PostsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  category?: T;
+  coverImage?: T;
+  excerpt?: T;
+  content?: T;
+  videoUrl?: T;
+  createdBy?: T;
+  publishedAt?: T;
+  isPinned?: T;
+  isVisible?: T;
+  sortOrder?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "announcements_select".
+ */
+export interface AnnouncementsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  summary?: T;
+  content?: T;
+  createdBy?: T;
+  publishAt?: T;
+  isPinned?: T;
+  isVisible?: T;
+  sortOrder?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "model-bundles_select".
+ */
+export interface ModelBundlesSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  coverImage?: T;
+  summary?: T;
+  tags?:
+    | T
+    | {
+        label?: T;
+        id?: T;
+      };
+  models?: T;
+  createdBy?: T;
+  publishAt?: T;
+  isVisible?: T;
+  isFeatured?: T;
+  sortOrder?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1163,7 +1424,7 @@ export interface HomepageContent {
   createdAt?: string | null;
 }
 /**
- * Manage non-sensitive AI and storage metadata here. Real secrets must stay in hosting environment variables.
+ * Manage non-sensitive AI provider metadata here. Storage settings now live in the dedicated Storage Settings global, while real secrets must stay in hosting environment variables.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "ai-provider-settings".
@@ -1181,17 +1442,6 @@ export interface AiProviderSetting {
   creditRules?: {
     reserveOnSubmit?: boolean | null;
     refundOnFailure?: boolean | null;
-  };
-  storage?: {
-    enabled?: boolean | null;
-    bucket?: string | null;
-    region?: string | null;
-    prefix?: string | null;
-    baseURL?: string | null;
-    signedDownloads?: boolean | null;
-    credentialsSource?: string | null;
-    lastValidatedAt?: string | null;
-    lastRotatedAt?: string | null;
   };
   meshy?: {
     credentialsSource?: string | null;
@@ -1214,6 +1464,82 @@ export interface AiProviderSetting {
         statusPath?: string | null;
         apiKeyHint?: string | null;
         enabled?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * Manage non-sensitive object storage settings here. Keep AWS access key ID and secret access key in environment variables only. Migration note: copy the previous AI Provider storage values here before removing them from old operational docs.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "storage-settings".
+ */
+export interface StorageSetting {
+  id: number;
+  /**
+   * Default: disabled. Turn this on only after bucket, region, and environment secrets are configured.
+   */
+  enabled?: boolean | null;
+  /**
+   * Default: empty. Example: media-assets-prod.
+   */
+  bucket?: string | null;
+  /**
+   * Default: us-east-1.
+   */
+  region?: string | null;
+  /**
+   * Default: media. Files are stored under this logical folder prefix.
+   */
+  prefix?: string | null;
+  /**
+   * Default: empty. Optional public CDN domain used for media access URLs.
+   */
+  baseURL?: string | null;
+  /**
+   * Default: enabled. When disabled, absolute media URLs are returned without signing.
+   */
+  signedDownloads?: boolean | null;
+  /**
+   * Default: environment. This is a note for operators; real secrets still live in environment variables.
+   */
+  credentialsSource?: string | null;
+  /**
+   * Optional operator timestamp for the last successful storage validation.
+   */
+  lastValidatedAt?: string | null;
+  /**
+   * Optional operator timestamp for the last key rotation event recorded outside Payload.
+   */
+  lastRotatedAt?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * Manage non-sensitive request origin and remote asset allowlists here. Migration note: copy any existing ALLOWED_REQUEST_ORIGINS or AI_REMOTE_ASSET_ALLOWLIST values into this screen so future maintenance can happen in the admin panel.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "security-settings".
+ */
+export interface SecuritySetting {
+  id: number;
+  /**
+   * Default: empty. Add one absolute origin per row, for example https://app.example.com. Local development still allows requests without Origin outside production.
+   */
+  allowedMutationOrigins?:
+    | {
+        origin: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Default: empty. Add hostnames such as cdn.example.com or example.com. Subdomains are matched automatically.
+   */
+  allowedRemoteAssetHosts?:
+    | {
+        host: string;
         id?: string | null;
       }[]
     | null;
@@ -1534,19 +1860,6 @@ export interface AiProviderSettingsSelect<T extends boolean = true> {
         reserveOnSubmit?: T;
         refundOnFailure?: T;
       };
-  storage?:
-    | T
-    | {
-        enabled?: T;
-        bucket?: T;
-        region?: T;
-        prefix?: T;
-        baseURL?: T;
-        signedDownloads?: T;
-        credentialsSource?: T;
-        lastValidatedAt?: T;
-        lastRotatedAt?: T;
-      };
   meshy?:
     | T
     | {
@@ -1571,6 +1884,45 @@ export interface AiProviderSettingsSelect<T extends boolean = true> {
         statusPath?: T;
         apiKeyHint?: T;
         enabled?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "storage-settings_select".
+ */
+export interface StorageSettingsSelect<T extends boolean = true> {
+  enabled?: T;
+  bucket?: T;
+  region?: T;
+  prefix?: T;
+  baseURL?: T;
+  signedDownloads?: T;
+  credentialsSource?: T;
+  lastValidatedAt?: T;
+  lastRotatedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "security-settings_select".
+ */
+export interface SecuritySettingsSelect<T extends boolean = true> {
+  allowedMutationOrigins?:
+    | T
+    | {
+        origin?: T;
+        id?: T;
+      };
+  allowedRemoteAssetHosts?:
+    | T
+    | {
+        host?: T;
         id?: T;
       };
   updatedAt?: T;

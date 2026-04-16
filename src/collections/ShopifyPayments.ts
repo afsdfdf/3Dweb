@@ -57,6 +57,7 @@ export const ShopifyPayments: CollectionConfig = {
     {
       name: 'shopifyCheckoutId',
       type: 'text',
+      index: true,
       label: '支付结算会话 ID（兼容旧字段）',
       admin: {
         description: '历史字段名保留为 shopifyCheckoutId，当前 Stripe Checkout Session ID 也写入此处。',

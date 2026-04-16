@@ -45,20 +45,38 @@ export const mockModelDownloadEndpoint = {
 
     let model: any = null
     try {
-      model = await req.payload.findByID({
-        collection: 'models',
-        depth: 2,
-        id: Number(modelId),
-        overrideAccess: allowAnonymousPreview,
-        req,
-        ...(req.user ? { user: req.user } : {}),
-      })
+      if (allowAnonymousPreview) {
+        // M-02: 匿名预览使用 find + where 约束，不绕过集合访问控制
+        const results = await req.payload.find({
+          collection: 'models',
+          depth: 2,
+          limit: 1,
+          overrideAccess: false,
+          pagination: false,
+          req,
+          where: {
+            and: [
+              { id: { equals: Number(modelId) } },
+              { visibility: { equals: 'public' } },
+            ],
+          },
+        })
+        model = results.docs[0] || null
+        if (!model) {
+          return Response.json({ message: '模型不存在或未开放预览' }, { status: 404 })
+        }
+      } else {
+        model = await req.payload.findByID({
+          collection: 'models',
+          depth: 2,
+          id: Number(modelId),
+          overrideAccess: false,
+          req,
+          user: req.user,
+        })
+      }
     } catch {
       return Response.json({ message: '模型不存在或你无权下载该资源' }, { status: 404 })
-    }
-
-    if (allowAnonymousPreview && String(model.visibility || 'private') !== 'public') {
-      return Response.json({ message: '该模型未开放预览' }, { status: 404 })
     }
 
     const formats = Array.isArray(model.formats) ? model.formats : []
@@ -133,7 +151,11 @@ export const mockModelDownloadEndpoint = {
           ttlSeconds: inline || preview ? 3600 : 600,
           url: remoteURL,
         })
-        const fetchURL = accessURL || remoteURL
+        if (!accessURL) {
+          throw new Error('ASSET_URL_INVALID')
+        }
+
+        const fetchURL = accessURL
 
         const allowedFetchTarget = await isAllowedRemoteAssetURL({
           payload: req.payload,
@@ -158,9 +180,11 @@ export const mockModelDownloadEndpoint = {
             ? fileRelation.mimeType
             : 'application/octet-stream'
 
+        // L-06: 清理文件名中的特殊字符，防止 header injection
+        const safeName = String(model.title || `model-${model.id}`).replace(/["\r\n\\]/g, '')
         return new Response(upstream.body, {
           headers: {
-            'Content-Disposition': `inline; filename="${model.title || `model-${model.id}`}.${format}"`,
+            'Content-Disposition': `inline; filename="${safeName}.${format}"`,
             'Content-Type': mimeType,
           },
           status: 200,
@@ -193,6 +217,10 @@ export const mockModelDownloadEndpoint = {
 
       if (error instanceof Error && error.message === 'ASSET_HOST_NOT_ALLOWED') {
         return Response.json({ message: '模型资源来源未被允许，未完成下载扣费或已自动退款' }, { status: 403 })
+      }
+
+      if (error instanceof Error && error.message === 'ASSET_URL_INVALID') {
+        return Response.json({ message: '模型资源地址无效或不完整，未完成下载扣费或已自动退款' }, { status: 502 })
       }
 
       return Response.json({ message: '模型下载失败，请稍后重试' }, { status: 500 })

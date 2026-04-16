@@ -1,8 +1,9 @@
-import type { CollectionConfig } from 'payload'
+﻿import type { CollectionConfig } from 'payload'
 
 import { canAccessAdmin, isAdmin, isSelfOrStaff } from '@/access'
 import { createDefaultCreditAccount } from '@/hooks/createDefaultCreditAccount'
 import { sendWelcomeEmail } from '@/hooks/sendWelcomeEmail'
+import { registrationPrivacyMessage } from '@/lib/registrationPrivacy'
 import {
   generateForgotPasswordEmailHTML,
   generateForgotPasswordEmailSubject,
@@ -35,6 +36,8 @@ export const Users: CollectionConfig = {
       generateEmailHTML: generateForgotPasswordEmailHTML,
       generateEmailSubject: generateForgotPasswordEmailSubject,
     },
+    lockTime: 15 * 60 * 1000,
+    maxLoginAttempts: 5,
     verify: {
       generateEmailHTML: generateVerifyEmailHTML,
       generateEmailSubject: generateVerifyEmailSubject,
@@ -42,12 +45,37 @@ export const Users: CollectionConfig = {
   },
   access: {
     admin: canAccessAdmin,
+    // Public signup remains intentionally open because the product supports self-service registration.
+    // Abuse protection is enforced by middleware (origin checks + rate limiting), so do not tighten
+    // this access rule unless the public registration flow is replaced at the route layer.
     create: () => true,
     delete: isAdmin,
     read: isSelfOrStaff,
     update: isSelfOrStaff,
   },
   hooks: {
+    afterOperation: [
+      ({ operation, result, req }) => {
+        // M-01: 注册反枚举 — 对 create(user) 失败统一返回模糊消息
+        if (operation === 'create' && req.method === 'POST' && !req.user) {
+          const msg = String(result?.message || result?.errors?.[0]?.message || '')
+          const lower = msg.toLowerCase()
+          if (
+            lower.includes('exist') ||
+            lower.includes('duplicate') ||
+            lower.includes('已存在') ||
+            lower.includes('already')
+          ) {
+            return {
+              ...result,
+              errors: [{ message: registrationPrivacyMessage }],
+              message: registrationPrivacyMessage,
+            }
+          }
+        }
+        return result
+      },
+    ],
     afterChange: [createDefaultCreditAccount, sendWelcomeEmail],
   },
   timestamps: true,
@@ -83,6 +111,7 @@ export const Users: CollectionConfig = {
     {
       name: 'stripeCustomerId',
       type: 'text',
+      index: true,
       label: 'Stripe Customer ID',
       access: {
         update: staffFieldAccess,

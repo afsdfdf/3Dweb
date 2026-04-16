@@ -22,8 +22,26 @@ const tryGetHostname = (value: string) => {
   }
 }
 
+const toRecord = (value: unknown): Record<string, unknown> => {
+  return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {}
+}
+
+const readSecuritySettings = async (payload: Payload) => {
+  if (typeof payload?.findGlobal !== 'function') {
+    return null
+  }
+
+  return payload
+    .findGlobal({
+      overrideAccess: true,
+      slug: 'security-settings' as never,
+    })
+    .catch(() => null)
+}
+
 export async function getAllowedRemoteAssetHosts(payload: Payload) {
   const settings = await getS3StorageSettings(payload)
+  const securitySettings = await readSecuritySettings(payload)
   const allowedHosts = new Set<string>()
   const canonicalHost = tryGetHostname(getCanonicalAppURL())
 
@@ -38,6 +56,17 @@ export async function getAllowedRemoteAssetHosts(payload: Payload) {
   const storageBaseHost = tryGetHostname(settings.baseURL)
   if (storageBaseHost) {
     allowedHosts.add(storageBaseHost)
+  }
+
+  const configuredHosts = Array.isArray(toRecord(securitySettings).allowedRemoteAssetHosts)
+    ? (toRecord(securitySettings).allowedRemoteAssetHosts as unknown[])
+    : []
+
+  for (const item of configuredHosts) {
+    const host = String(toRecord(item).host || '').trim().toLowerCase()
+    if (host) {
+      allowedHosts.add(host)
+    }
   }
 
   for (const pattern of toHostPatterns(process.env.AI_REMOTE_ASSET_ALLOWLIST || '')) {
@@ -65,4 +94,3 @@ export async function isAllowedRemoteAssetURL(args: { payload: Payload; url: str
   const allowedHosts = await getAllowedRemoteAssetHosts(args.payload)
   return allowedHosts.some((pattern) => matchesHostPattern(hostname, pattern))
 }
-

@@ -48,7 +48,7 @@ export const GenerationTasks: CollectionConfig = {
         { label: '自定义接口', value: 'custom' },
       ],
     },
-    { name: 'providerTaskId', type: 'text', label: '供应商任务 ID' },
+    { name: 'providerTaskId', type: 'text', index: true, label: '供应商任务 ID' },
     {
       name: 'status',
       type: 'select',

@@ -1,0 +1,1 @@
+export const TASK_DETAIL_QUERY_DEPTH = 1

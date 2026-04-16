@@ -3,14 +3,15 @@
 import config from '@payload-config'
 import '@payloadcms/next/css'
 import { GRAPHQL_PLAYGROUND_GET } from '@payloadcms/next/routes'
+import { isGraphQLPlaygroundEnabled } from '@/lib/requestSecurity'
 
 export const GET =
-  process.env.NODE_ENV === 'production'
-    ? async () =>
+  isGraphQLPlaygroundEnabled()
+    ? GRAPHQL_PLAYGROUND_GET(config)
+    : async () =>
         Response.json(
           {
-            message: 'GraphQL Playground is disabled in production.',
+            message: 'GraphQL Playground is disabled.',
           },
           { status: 404 },
         )
-    : GRAPHQL_PLAYGROUND_GET(config)

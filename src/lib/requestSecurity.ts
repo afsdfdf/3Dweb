@@ -1,6 +1,16 @@
-import type { PayloadRequest } from 'payload'
+import type { Payload, PayloadRequest } from 'payload'
+
+import { isTokenRevoked } from '@/lib/tokenRevocation'
 
 const isProduction = () => process.env.NODE_ENV === 'production'
+const isExplicitlyEnabled = (value: string | undefined) => String(value || '').toLowerCase() === 'true'
+
+const normalizeIP = (value: null | string | undefined) => {
+  const candidate = String(value || '').split(',')[0]?.trim()
+  return candidate || ''
+}
+
+const shouldTrustProxyHeaders = () => process.env.TRUST_PROXY_HEADERS === 'true'
 
 const normalizeOrigin = (value: null | string | undefined) => {
   if (!value) return ''
@@ -13,13 +23,50 @@ const normalizeOrigin = (value: null | string | undefined) => {
   }
 }
 
-export function getAllowedRequestOrigins() {
+type PayloadWithGlobals = Pick<Payload, 'findGlobal'>
+
+const hasFindGlobal = (payload: unknown): payload is PayloadWithGlobals => {
+  return payload !== null && typeof payload === 'object' && 'findGlobal' in payload && typeof payload.findGlobal === 'function'
+}
+
+const toRecord = (value: unknown): Record<string, unknown> => {
+  return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {}
+}
+
+const readSecuritySettings = async (payload?: unknown) => {
+  if (!hasFindGlobal(payload)) {
+    return null
+  }
+
+  return payload
+    .findGlobal({
+      overrideAccess: true,
+      slug: 'security-settings' as never,
+    })
+    .catch(() => null)
+}
+
+const getConfiguredOriginsFromGlobal = (value: unknown) => {
+  const settings = toRecord(value)
+  const configured = Array.isArray(settings.allowedMutationOrigins) ? settings.allowedMutationOrigins : []
+
+  return configured
+    .map((item) => normalizeOrigin(toRecord(item).origin as string | undefined))
+    .filter(Boolean)
+}
+
+export async function getAllowedRequestOrigins(payload?: unknown) {
   const allowed = new Set<string>()
   const configured = (process.env.ALLOWED_REQUEST_ORIGINS || '').trim()
 
   for (const value of configured.split(',').map((item) => item.trim()).filter(Boolean)) {
     const normalized = normalizeOrigin(value)
     if (normalized) allowed.add(normalized)
+  }
+
+  const securitySettings = await readSecuritySettings(payload)
+  for (const origin of getConfiguredOriginsFromGlobal(securitySettings)) {
+    allowed.add(origin)
   }
 
   for (const fallback of [process.env.CANONICAL_APP_URL, process.env.NEXT_PUBLIC_APP_URL]) {
@@ -37,18 +84,19 @@ export function getRequestOrigin(headers: Headers) {
   return normalizeOrigin(headers.get('referer'))
 }
 
-export function isAllowedMutationOrigin(headers: Headers) {
+export async function isAllowedMutationOrigin(args: { headers: Headers; payload?: unknown }) {
+  const { headers, payload } = args
   const requestOrigin = getRequestOrigin(headers)
 
   if (!requestOrigin) {
     return !isProduction()
   }
 
-  return getAllowedRequestOrigins().includes(requestOrigin)
+  return (await getAllowedRequestOrigins(payload)).includes(requestOrigin)
 }
 
-export function rejectDisallowedMutationOrigin(req: Pick<PayloadRequest, 'headers'>) {
-  if (isAllowedMutationOrigin(req.headers)) {
+export async function rejectDisallowedMutationOrigin(req: Pick<PayloadRequest, 'headers'> & { payload?: unknown }) {
+  if (await isAllowedMutationOrigin({ headers: req.headers, payload: req.payload })) {
     return null
   }
 
@@ -63,16 +111,77 @@ export function rejectDisallowedMutationOrigin(req: Pick<PayloadRequest, 'header
 }
 
 export function getRequestIP(headers: Headers) {
-  const forwarded = headers.get('x-forwarded-for')
-  if (forwarded) {
-    return forwarded.split(',')[0]?.trim() || 'unknown'
+  if (shouldTrustProxyHeaders()) {
+    const proxyHeaders = [
+      headers.get('cf-connecting-ip'),
+      headers.get('x-real-ip'),
+      headers.get('x-forwarded-for'),
+    ]
+
+    for (const headerValue of proxyHeaders) {
+      const normalized = normalizeIP(headerValue)
+      if (normalized) {
+        return normalized
+      }
+    }
   }
 
-  return headers.get('x-real-ip') || headers.get('cf-connecting-ip') || 'unknown'
+  return 'unknown'
+}
+
+export function extractRequestToken(headers: Headers) {
+  const authorization = headers.get('authorization') || ''
+
+  if (authorization.startsWith('Bearer ')) {
+    return authorization.slice('Bearer '.length).trim()
+  }
+
+  if (authorization.startsWith('JWT ')) {
+    return authorization.slice('JWT '.length).trim()
+  }
+
+  const cookiePrefix = process.env.PAYLOAD_COOKIE_PREFIX || 'payload'
+  const cookieHeader = headers.get('cookie') || ''
+  const tokenCookieName = `${cookiePrefix}-token=`
+  const cookiePair = cookieHeader
+    .split(';')
+    .map((item) => item.trim())
+    .find((item) => item.startsWith(tokenCookieName))
+
+  return cookiePair ? cookiePair.slice(tokenCookieName.length) : ''
+}
+
+export async function rejectRevokedToken(req: Pick<PayloadRequest, 'headers'>) {
+  const token = extractRequestToken(req.headers)
+
+  if (!token || !(await isTokenRevoked(token))) {
+    return null
+  }
+
+  return Response.json(
+    {
+      message: 'This session has been revoked. Please sign in again.',
+    },
+    {
+      status: 401,
+    },
+  )
 }
 
 export function containsGraphQLIntrospectionQuery(body: string) {
   return body.includes('__schema') || body.includes('__type')
+}
+
+export function isGraphQLIntrospectionEnabled() {
+  return isExplicitlyEnabled(process.env.ENABLE_GRAPHQL_INTROSPECTION)
+}
+
+export function isGraphQLPlaygroundEnabled() {
+  return isExplicitlyEnabled(process.env.ENABLE_GRAPHQL_PLAYGROUND)
+}
+
+export function isPublicAccessEndpointEnabled() {
+  return isExplicitlyEnabled(process.env.ENABLE_PUBLIC_ACCESS_ENDPOINT)
 }
 
 export function applySecurityHeaders(headers: Headers) {
@@ -115,4 +224,3 @@ export function applySecurityHeaders(headers: Headers) {
     headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload')
   }
 }
-

@@ -1,5 +1,6 @@
 import { headers } from 'next/headers'
 import { getCachedPayload } from '@/lib/getCachedPayload'
+import { TASK_DETAIL_QUERY_DEPTH } from '@/lib/queryDefaults'
 
 export async function getTaskByCode(taskCode: string) {
   const payload = await getCachedPayload()
@@ -13,7 +14,7 @@ export async function getTaskByCode(taskCode: string) {
 
   const json = await payload.find({
     collection: 'generation-tasks',
-    depth: 2,
+    depth: TASK_DETAIL_QUERY_DEPTH,
     limit: 1,
     overrideAccess: false,
     user: authResult.user,

@@ -5,14 +5,12 @@ import { isAllowedRemoteAssetURL } from '../src/lib/remoteAssetSecurity.ts'
 
 const createPayloadMock = () => ({
   findGlobal: async () => ({
-    storage: {
-      baseURL: 'https://cdn.example-assets.com',
-      bucket: 'demo-bucket',
-      enabled: true,
-      prefix: 'media',
-      region: 'us-east-1',
-      signedDownloads: true,
-    },
+    baseURL: 'https://cdn.example-assets.com',
+    bucket: 'demo-bucket',
+    enabled: true,
+    prefix: 'media',
+    region: 'us-east-1',
+    signedDownloads: true,
   }),
 })
 

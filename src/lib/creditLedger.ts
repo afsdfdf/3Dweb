@@ -34,6 +34,8 @@ type CreditAccountRow = {
   reservedBalance: number
 }
 
+type CreditAccountSnapshot = CreditAccountRow
+
 export type LedgerMutationResult = {
   account: unknown
   applied: boolean
@@ -208,15 +210,6 @@ async function runAtomicLedgerMutation(options: MutationOptions): Promise<Ledger
     userId,
   } = options
 
-  const existing = await findTransactionByIdempotencyKey({ idempotencyKey, req })
-  if (existing) {
-    return {
-      account: await ensureCreditAccount({ req, userId }),
-      applied: false,
-      idempotencyKey,
-    }
-  }
-
   const timestamp = nowISO()
 
   return withLedgerTransaction(req, async (executor) => {
@@ -232,8 +225,9 @@ async function runAtomicLedgerMutation(options: MutationOptions): Promise<Ledger
       )
 
       if (duplicate.rows?.[0]) {
+        const current = await getAtomicCreditAccount({ executor, userId })
         return {
-          account: await ensureCreditAccount({ req, userId }),
+          account: current satisfies CreditAccountSnapshot,
           applied: false,
           idempotencyKey,
         }
@@ -295,7 +289,13 @@ async function runAtomicLedgerMutation(options: MutationOptions): Promise<Ledger
     )
 
     return {
-      account: await ensureCreditAccount({ req, userId }),
+      account: {
+        balance: next.balance,
+        id: current.id,
+        lifetimePurchased: next.lifetimePurchased,
+        lifetimeSpent: next.lifetimeSpent,
+        reservedBalance: next.reservedBalance,
+      } satisfies CreditAccountSnapshot,
       applied: true,
       idempotencyKey,
     }

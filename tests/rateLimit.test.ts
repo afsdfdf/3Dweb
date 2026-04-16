@@ -3,18 +3,18 @@ import assert from 'node:assert/strict'
 
 import { enforceRateLimit, getRateLimitConfig } from '../src/lib/rateLimit.ts'
 
-test('enforceRateLimit allows requests within the window and blocks overflow', () => {
-  const first = enforceRateLimit({
+test('enforceRateLimit allows requests within the window and blocks overflow', async () => {
+  const first = await enforceRateLimit({
     key: 'unit-rate-limit',
     limit: 2,
     windowMs: 10_000,
   })
-  const second = enforceRateLimit({
+  const second = await enforceRateLimit({
     key: 'unit-rate-limit',
     limit: 2,
     windowMs: 10_000,
   })
-  const third = enforceRateLimit({
+  const third = await enforceRateLimit({
     key: 'unit-rate-limit',
     limit: 2,
     windowMs: 10_000,

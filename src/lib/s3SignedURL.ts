@@ -5,12 +5,28 @@ import type { Payload } from 'payload'
 import { getS3StorageSettings } from '@/lib/s3Settings'
 
 const normalizeBaseURL = (value: string) => value.replace(/\/+$/, '')
+const ABSOLUTE_URL_PROTOCOLS = new Set(['http:', 'https:'])
 
 const decodeKey = (value: string) => {
   return value
     .split('/')
     .map((part) => decodeURIComponent(part))
     .join('/')
+}
+
+function normalizeAbsoluteURL(value: null | string | undefined) {
+  if (!value) return null
+
+  try {
+    const parsed = new URL(value.trim())
+    if (!ABSOLUTE_URL_PROTOCOLS.has(parsed.protocol)) {
+      return null
+    }
+
+    return parsed.toString()
+  } catch {
+    return null
+  }
 }
 
 function extractKeyFromS3URL(args: {
@@ -68,30 +84,31 @@ export async function getMediaAccessURL(args: {
   url?: null | string
 }) {
   const { payload, ttlSeconds = 3600, url } = args
-  if (!url) return null
+  const absoluteURL = normalizeAbsoluteURL(url)
+  if (!absoluteURL) return null
 
   const settings = await getS3StorageSettings(payload)
   if (!settings.accessKeyId || !settings.secretAccessKey) {
-    return url
+    return absoluteURL
   }
 
-  const inferredObject = extractBucketRegionKeyFromS3URL(url)
+  const inferredObject = extractBucketRegionKeyFromS3URL(absoluteURL)
   const key = extractKeyFromS3URL({
     bucket: settings.bucket,
     region: settings.region,
-    url,
-  }) || extractKeyFromBaseURL({ baseURL: settings.baseURL, url })
+    url: absoluteURL,
+  }) || extractKeyFromBaseURL({ baseURL: settings.baseURL, url: absoluteURL })
 
   const resolvedBucket = inferredObject?.bucket || settings.bucket
   const resolvedRegion = inferredObject?.region || settings.region
   const resolvedKey = inferredObject?.key || key
 
   if (!resolvedKey || !resolvedBucket || !resolvedRegion) {
-    return url
+    return absoluteURL
   }
 
   if (!settings.signedDownloads) {
-    return url
+    return absoluteURL
   }
 
   const client = new S3Client({

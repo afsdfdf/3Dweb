@@ -1,36 +1,46 @@
+/**
+ * 速率限制模块 — 基于 KVStore 抽象层
+ *
+ * M-04: 生产环境可通过 REDIS_URL 切换到 Redis 共享存储，
+ * 解决多实例/容器化部署时内存限速不共享的问题。
+ */
+
+import { getKVStore } from '@/lib/kvStore'
+
+type RateLimitResult = {
+  allowed: boolean
+  remaining: number
+  resetAt: number
+}
+
 type RateLimitEntry = {
   count: number
   resetAt: number
 }
 
-const bucket = new Map<string, RateLimitEntry>()
+const KV_PREFIX = 'ratelimit:'
 
-const now = () => Date.now()
-
-const cleanupExpiredEntries = (currentTime: number) => {
-  for (const [key, entry] of bucket.entries()) {
-    if (entry.resetAt <= currentTime) {
-      bucket.delete(key)
-    }
-  }
-}
-
-export function enforceRateLimit(args: {
+export async function enforceRateLimit(args: {
   key: string
   limit: number
   windowMs: number
-}) {
-  const currentTime = now()
-  cleanupExpiredEntries(currentTime)
+}): Promise<RateLimitResult> {
+  const store = getKVStore()
+  const kvKey = `${KV_PREFIX}${args.key}`
 
-  const existing = bucket.get(args.key)
+  // 定期清理
+  await store.cleanup()
 
-  if (!existing || existing.resetAt <= currentTime) {
-    const nextEntry = {
+  const raw = await store.get(kvKey)
+  const existing: RateLimitEntry | null = raw ? JSON.parse(raw) : null
+  const now = Date.now()
+
+  if (!existing || existing.resetAt <= now) {
+    const nextEntry: RateLimitEntry = {
       count: 1,
-      resetAt: currentTime + args.windowMs,
+      resetAt: now + args.windowMs,
     }
-    bucket.set(args.key, nextEntry)
+    await store.set(kvKey, JSON.stringify(nextEntry), args.windowMs)
     return {
       allowed: true,
       remaining: Math.max(0, args.limit - 1),
@@ -47,7 +57,8 @@ export function enforceRateLimit(args: {
   }
 
   existing.count += 1
-  bucket.set(args.key, existing)
+  const ttlMs = Math.max(1, existing.resetAt - now)
+  await store.set(kvKey, JSON.stringify(existing), ttlMs)
 
   return {
     allowed: true,
@@ -70,4 +81,3 @@ export function getRateLimitConfig(args: {
     windowMs: Number.isFinite(parsedWindow) && parsedWindow > 0 ? parsedWindow : args.fallbackWindowMs,
   }
 }
-

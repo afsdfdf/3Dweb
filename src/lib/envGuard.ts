@@ -36,6 +36,7 @@ export function getAllowedDevOrigins() {
     return []
   }
 
-  return ['127.0.0.1', 'localhost', '192.168.1.65']
+  // L-03: 移除硬编码内网 IP，仅保留标准本地回环地址
+  return ['127.0.0.1', 'localhost']
 }
 

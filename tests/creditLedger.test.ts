@@ -12,6 +12,7 @@ const createMockRequest = () => {
   const state = {
     creditTransactions: [] as any[],
     credits: [] as any[],
+    findCalls: [] as Array<{ collection: string; where: Record<string, any> }>,
     users: [{ creditsBalance: 0, id: 1 }],
   }
 
@@ -135,6 +136,8 @@ const createMockRequest = () => {
       },
     },
     find: async ({ collection, where }: { collection: string; where: Record<string, any> }) => {
+      state.findCalls.push({ collection, where })
+
       if (collection === 'credits') {
         const userId = where.user.equals
         return {
@@ -184,6 +187,7 @@ test('grantCredits applies balance updates once', async () => {
   assert.equal(result.applied, true)
   assert.equal(state.credits[0].balance, 10)
   assert.equal(state.users[0].creditsBalance, 10)
+  assert.equal(state.findCalls.length, 0)
 })
 
 test('reserveTaskCredits is idempotent per task', async () => {
@@ -216,6 +220,7 @@ test('reserveTaskCredits is idempotent per task', async () => {
   assert.equal(duplicate.applied, false)
   assert.equal(state.credits[0].balance, 6)
   assert.equal(state.credits[0].reservedBalance, 4)
+  assert.equal(state.findCalls.length, 0)
 })
 
 test('settleReservedTaskCredits and refundTaskCredits update reserved balance safely', async () => {
