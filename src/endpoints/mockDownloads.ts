@@ -4,6 +4,19 @@ import { InsufficientCreditsError, refundDownloadCredits, spendDownloadCredits }
 import { isAllowedRemoteAssetURL } from '@/lib/remoteAssetSecurity'
 import { getMediaAccessURL } from '@/lib/s3SignedURL'
 
+type MockDownloadEndpointTestHooks = {
+  getMediaAccessURL?: typeof getMediaAccessURL
+  isAllowedRemoteAssetURL?: typeof isAllowedRemoteAssetURL
+  refundDownloadCredits?: typeof refundDownloadCredits
+  spendDownloadCredits?: typeof spendDownloadCredits
+}
+
+let mockDownloadEndpointTestHooks: MockDownloadEndpointTestHooks | null = null
+
+export function __setMockDownloadEndpointTestHooks(hooks: MockDownloadEndpointTestHooks | null) {
+  mockDownloadEndpointTestHooks = hooks
+}
+
 const unauthorized = () => Response.json({ message: '请先登录' }, { status: 401 })
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
@@ -23,7 +36,7 @@ async function chargeDownloadIfNeeded(args: {
     return { applied: false }
   }
 
-  return spendDownloadCredits({
+  return (mockDownloadEndpointTestHooks?.spendDownloadCredits || spendDownloadCredits)({
     amount: downloadCredits,
     format,
     modelId,
@@ -101,7 +114,7 @@ export const mockModelDownloadEndpoint = {
     const remoteURL = remoteFromMedia || remoteFromTask
 
     if (remoteURL) {
-      const allowedSource = await isAllowedRemoteAssetURL({
+      const allowedSource = await (mockDownloadEndpointTestHooks?.isAllowedRemoteAssetURL || isAllowedRemoteAssetURL)({
         payload: req.payload,
         url: remoteURL,
       })
@@ -146,7 +159,7 @@ export const mockModelDownloadEndpoint = {
 
     try {
       if (remoteURL) {
-        const accessURL = await getMediaAccessURL({
+        const accessURL = await (mockDownloadEndpointTestHooks?.getMediaAccessURL || getMediaAccessURL)({
           payload: req.payload,
           ttlSeconds: inline || preview ? 3600 : 600,
           url: remoteURL,
@@ -157,7 +170,7 @@ export const mockModelDownloadEndpoint = {
 
         const fetchURL = accessURL
 
-        const allowedFetchTarget = await isAllowedRemoteAssetURL({
+        const allowedFetchTarget = await (mockDownloadEndpointTestHooks?.isAllowedRemoteAssetURL || isAllowedRemoteAssetURL)({
           payload: req.payload,
           url: fetchURL,
         })
@@ -201,7 +214,7 @@ export const mockModelDownloadEndpoint = {
       })
     } catch (error) {
       if (shouldCharge && chargeResult?.applied && req.user && downloadCredits > 0) {
-        await refundDownloadCredits({
+        await (mockDownloadEndpointTestHooks?.refundDownloadCredits || refundDownloadCredits)({
           amount: downloadCredits,
           format,
           modelId: Number(model.id),

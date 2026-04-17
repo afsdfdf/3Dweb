@@ -1,34 +1,104 @@
-﻿import test from 'node:test'
 import assert from 'node:assert/strict'
+import test from 'node:test'
 
 import { getCanonicalAppURL } from '../src/lib/getCanonicalAppURL.ts'
 
-test('getCanonicalAppURL prefers canonical env value and trims trailing slash', () => {
-  const previousCanonical = process.env.CANONICAL_APP_URL
-  const previousPublic = process.env.NEXT_PUBLIC_APP_URL
+const withEnv = async (
+  overrides: Record<string, string | undefined>,
+  callback: () => Promise<void> | void,
+) => {
+  const previous = new Map<string, string | undefined>()
 
-  process.env.CANONICAL_APP_URL = 'https://example.com/'
-  process.env.NEXT_PUBLIC_APP_URL = 'https://fallback.example.com'
+  for (const [key, value] of Object.entries(overrides)) {
+    previous.set(key, process.env[key])
+
+    if (typeof value === 'undefined') {
+      delete process.env[key]
+    } else {
+      process.env[key] = value
+    }
+  }
 
   try {
-    assert.equal(getCanonicalAppURL(), 'https://example.com')
+    await callback()
   } finally {
-    process.env.CANONICAL_APP_URL = previousCanonical
-    process.env.NEXT_PUBLIC_APP_URL = previousPublic
+    for (const [key, value] of previous.entries()) {
+      if (typeof value === 'undefined') {
+        delete process.env[key]
+      } else {
+        process.env[key] = value
+      }
+    }
   }
+}
+
+test('getCanonicalAppURL prefers canonical env value and trims trailing slash', async () => {
+  await withEnv(
+    {
+      CANONICAL_APP_URL: 'https://example.com/',
+      NEXT_PUBLIC_APP_URL: 'https://fallback.example.com',
+      NODE_ENV: 'development',
+    },
+    () => {
+      assert.equal(getCanonicalAppURL(), 'https://example.com')
+    },
+  )
 })
 
-test('getCanonicalAppURL falls back to local default when env is invalid', () => {
-  const previousCanonical = process.env.CANONICAL_APP_URL
-  const previousPublic = process.env.NEXT_PUBLIC_APP_URL
+test('getCanonicalAppURL falls back to local default in development when env is invalid', async () => {
+  await withEnv(
+    {
+      CANONICAL_APP_URL: 'not a url',
+      NEXT_PUBLIC_APP_URL: '',
+      NODE_ENV: 'development',
+    },
+    () => {
+      assert.equal(getCanonicalAppURL(), 'http://127.0.0.1:3000')
+    },
+  )
+})
 
-  process.env.CANONICAL_APP_URL = 'not a url'
-  process.env.NEXT_PUBLIC_APP_URL = ''
+test('getCanonicalAppURL falls back to local default in development when env is missing', async () => {
+  await withEnv(
+    {
+      CANONICAL_APP_URL: '',
+      NEXT_PUBLIC_APP_URL: '',
+      NODE_ENV: 'development',
+    },
+    () => {
+      assert.equal(getCanonicalAppURL(), 'http://127.0.0.1:3000')
+    },
+  )
+})
 
-  try {
-    assert.equal(getCanonicalAppURL(), 'http://127.0.0.1:3000')
-  } finally {
-    process.env.CANONICAL_APP_URL = previousCanonical
-    process.env.NEXT_PUBLIC_APP_URL = previousPublic
-  }
+test('getCanonicalAppURL throws in production when env is missing', async () => {
+  await withEnv(
+    {
+      CANONICAL_APP_URL: '',
+      NEXT_PUBLIC_APP_URL: '',
+      NODE_ENV: 'production',
+    },
+    () => {
+      assert.throws(
+        () => getCanonicalAppURL(),
+        /Canonical app URL is required in production and must be a valid absolute URL\. No canonical URL is configured\./,
+      )
+    },
+  )
+})
+
+test('getCanonicalAppURL throws in production when env is invalid', async () => {
+  await withEnv(
+    {
+      CANONICAL_APP_URL: 'not a url',
+      NEXT_PUBLIC_APP_URL: '',
+      NODE_ENV: 'production',
+    },
+    () => {
+      assert.throws(
+        () => getCanonicalAppURL(),
+        /Canonical app URL is required in production and must be a valid absolute URL\. Invalid configured value: "not a url"\./,
+      )
+    },
+  )
 })

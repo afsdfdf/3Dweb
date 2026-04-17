@@ -1,8 +1,15 @@
 import type { PayloadRequest } from 'payload'
 import type Stripe from 'stripe'
 
+import { writeAuditLog } from '@/lib/auditLog'
 import { sendOrderPaidEmail } from '@/lib/businessEmails'
 import { getCanonicalAppURL } from '@/lib/getCanonicalAppURL'
+import {
+  getPaymentProviderKey,
+  getPaymentSessionId,
+  PAYMENT_LEGACY_FIELD_NAMES,
+  setPaymentLegacyFields,
+} from '@/lib/paymentRecords'
 import { getPaymentProviderSettings } from '@/lib/paymentProviders'
 import { getStripeGateway } from '@/lib/stripeGateway'
 
@@ -71,16 +78,6 @@ const getUserEmail = (req: PayloadRequest) => {
   return typeof email === 'string' ? email : undefined
 }
 
-const getProviderFromPayload = (value: unknown) => {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    return null
-  }
-
-  return typeof (value as Record<string, unknown>).provider === 'string'
-    ? String((value as Record<string, unknown>).provider)
-    : null
-}
-
 async function finalizePrintOrderPayment(args: {
   checkoutSession: Stripe.Checkout.Session
   req: PayloadRequest
@@ -95,7 +92,7 @@ async function finalizePrintOrderPayment(args: {
     pagination: false,
     req,
     where: {
-      shopifyCheckoutId: {
+      [PAYMENT_LEGACY_FIELD_NAMES.sessionId]: {
         equals: checkoutSession.id,
       },
     },
@@ -166,6 +163,21 @@ async function finalizePrintOrderPayment(args: {
     },
     overrideAccess: INTERNAL_ACCESS,
     req,
+  })
+
+  writeAuditLog({
+    details: {
+      fromStatus: order.status,
+      paymentStatus: checkoutSession.payment_status,
+      toStatus: paidOrder.status,
+    },
+    eventType: 'print_order.status_change',
+    orderId: paidOrder.id,
+    provider: 'stripe',
+    req,
+    sessionId: checkoutSession.id,
+    status: 'completed',
+    userId: typeof req.user?.id === 'number' || typeof req.user?.id === 'string' ? req.user.id : undefined,
   })
 
   const email = getUserEmail(req)
@@ -282,7 +294,9 @@ export async function createPrintOrder(args: {
     id: order.id,
     data: {
       internalNotes: 'Stripe checkout created. Waiting for customer payment.',
-      shopifyCheckoutUrl: checkout.checkoutUrl,
+      ...setPaymentLegacyFields({
+        checkoutUrl: checkout.checkoutUrl,
+      }),
     },
     overrideAccess: false,
     req,
@@ -302,9 +316,11 @@ export async function createPrintOrder(args: {
         sessionId: checkout.sessionId,
         stage: 'created',
       },
-      shopifyCheckoutId: checkout.sessionId,
       status: 'pending',
       user: req.user.id,
+      ...setPaymentLegacyFields({
+        sessionId: checkout.sessionId,
+      }),
     },
     overrideAccess: INTERNAL_ACCESS,
     req,
@@ -382,9 +398,10 @@ export async function syncPrintOrder(args: { orderId: number; req: PayloadReques
     })
   }
 
-  const provider = getProviderFromPayload(payment.rawWebhookPayload)
+  const provider = getPaymentProviderKey(payment.rawWebhookPayload)
+  const sessionId = getPaymentSessionId(payment)
 
-  if (!payment.shopifyCheckoutId || provider !== 'stripe') {
+  if (!sessionId || provider !== 'stripe') {
     return req.payload.update({
       collection: 'print-orders',
       id: order.id,
@@ -398,6 +415,6 @@ export async function syncPrintOrder(args: { orderId: number; req: PayloadReques
 
   return finalizePrintOrderCheckoutSession({
     req,
-    sessionId: String(payment.shopifyCheckoutId),
+    sessionId,
   })
 }

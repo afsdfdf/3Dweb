@@ -1,7 +1,7 @@
 import type { GlobalConfig } from 'payload'
 
 import { defaultSiteSettings } from '@/app/(frontend)/_lib/marketing-content'
-import { isStaff } from '@/access'
+import { isAdmin, isStaff } from '@/access'
 
 export const SiteSettings: GlobalConfig = {
   slug: 'site-settings',
@@ -12,7 +12,7 @@ export const SiteSettings: GlobalConfig = {
   },
   access: {
     read: isStaff,
-    update: isStaff,
+    update: isAdmin,
   },
   fields: [
     {

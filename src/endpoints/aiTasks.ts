@@ -1,10 +1,22 @@
 import type { PayloadRequest } from 'payload'
 
+import { handleAIWebhook, submitAITask, syncAITask } from '@/lib/aiTaskFlow'
+import { writeAuditLog } from '@/lib/auditLog'
 import { InsufficientCreditsError } from '@/lib/creditLedger'
 import { rejectRateLimitedEndpoint } from '@/lib/endpointRateLimit'
-import { handleAIWebhook, submitAITask, syncAITask } from '@/lib/aiTaskFlow'
 import { rejectDisallowedMutationOrigin } from '@/lib/requestSecurity'
 import { verifyWebhookSignature } from '@/lib/webhookSignature'
+
+type AITasksEndpointTestHooks = {
+  handleAIWebhook?: typeof handleAIWebhook
+  verifyWebhookSignature?: typeof verifyWebhookSignature
+}
+
+let aiTasksEndpointTestHooks: AITasksEndpointTestHooks | null = null
+
+export function __setAITasksEndpointTestHooks(hooks: AITasksEndpointTestHooks | null) {
+  aiTasksEndpointTestHooks = hooks
+}
 
 const unauthorized = () => Response.json({ message: '请先登录' }, { status: 401 })
 
@@ -14,7 +26,7 @@ const validateWebhook = async (args: { payload: string; req: PayloadRequest }) =
   const signature = req.headers.get('x-provider-signature') || req.headers.get('x-webhook-signature')
   const timestamp = req.headers.get('x-webhook-timestamp')
 
-  return verifyWebhookSignature({
+  return (aiTasksEndpointTestHooks?.verifyWebhookSignature || verifyWebhookSignature)({
     payload,
     secret: configuredSecret,
     signature,
@@ -122,6 +134,16 @@ export const aiWebhookEndpoint = {
     const verification = await validateWebhook({ payload: rawBody, req })
 
     if (!verification.ok) {
+      writeAuditLog({
+        details: {
+          verificationCode: verification.code,
+        },
+        eventType: 'ai.webhook.verification',
+        provider: 'ai',
+        req,
+        status: verification.code === 'REPLAY' ? 'rejected' : 'failed',
+      })
+
       if (verification.code === 'REPLAY') {
         return Response.json({ message: 'Webhook replay detected' }, { status: 409 })
       }
@@ -143,10 +165,32 @@ export const aiWebhookEndpoint = {
     }
 
     try {
-      const result = await handleAIWebhook({ payloadData: body, req })
+      const result = await (aiTasksEndpointTestHooks?.handleAIWebhook || handleAIWebhook)({ payloadData: body, req })
+      writeAuditLog({
+        details: {
+          providerTaskId,
+        },
+        eventType: 'ai.webhook.processing',
+        provider: String(body.provider ?? 'custom'),
+        req,
+        status: 'completed',
+        taskId: result.taskId,
+      })
+
       return Response.json({ message: '回调处理完成', result })
     } catch (error) {
       const message = error instanceof Error ? error.message : '回调处理失败'
+      writeAuditLog({
+        details: {
+          message,
+          providerTaskId,
+        },
+        eventType: 'ai.webhook.processing',
+        level: 'error',
+        provider: String(body.provider ?? 'custom'),
+        req,
+        status: 'failed',
+      })
 
       if (message.includes('Task not found')) {
         return Response.json({ message }, { status: 404 })

@@ -65,3 +65,45 @@ test('webhook signature verification rejects replayed requests', async () => {
     assert.equal(replay.code, 'REPLAY')
   }
 })
+
+test('webhook signature verification rejects missing secret', async () => {
+  const result = await verifyWebhookSignature({
+    payload: '{}',
+    secret: '',
+    signature: 'abc',
+    timestamp: String(Math.floor(Date.now() / 1000)),
+  })
+
+  assert.equal(result.ok, false)
+  if (!result.ok) {
+    assert.equal(result.code, 'MISSING_SECRET')
+  }
+})
+
+test('webhook signature verification rejects missing signature or timestamp', async () => {
+  const result = await verifyWebhookSignature({
+    payload: '{}',
+    secret: 'test-secret',
+    signature: '',
+    timestamp: '',
+  })
+
+  assert.equal(result.ok, false)
+  if (!result.ok) {
+    assert.equal(result.code, 'MISSING_SIGNATURE')
+  }
+})
+
+test('webhook signature verification rejects malformed timestamp', async () => {
+  const result = await verifyWebhookSignature({
+    payload: '{}',
+    secret: 'test-secret',
+    signature: 'abc',
+    timestamp: 'not-a-number',
+  })
+
+  assert.equal(result.ok, false)
+  if (!result.ok) {
+    assert.equal(result.code, 'MALFORMED_TIMESTAMP')
+  }
+})

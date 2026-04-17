@@ -26,6 +26,57 @@ test('getAllowedRequestOrigins includes env-configured origins', async () => {
   }
 })
 
+test('getAllowedRequestOrigins prefers Security Settings over legacy env allowlist', async () => {
+  const previousAllowed = process.env.ALLOWED_REQUEST_ORIGINS
+  const previousCanonical = process.env.CANONICAL_APP_URL
+  const previousPublic = process.env.NEXT_PUBLIC_APP_URL
+
+  process.env.ALLOWED_REQUEST_ORIGINS = 'https://legacy.example.com'
+  process.env.CANONICAL_APP_URL = 'https://canonical.example.com'
+  process.env.NEXT_PUBLIC_APP_URL = ''
+
+  try {
+    const origins = await getAllowedRequestOrigins({
+      findGlobal: async ({ slug }: { slug: string }) => {
+        assert.equal(slug, 'security-settings')
+        return {
+          allowedMutationOrigins: [{ origin: 'https://admin-configured.example.com' }],
+        }
+      },
+    } as never)
+
+    assert.deepEqual(origins, ['https://admin-configured.example.com', 'https://canonical.example.com'])
+  } finally {
+    process.env.ALLOWED_REQUEST_ORIGINS = previousAllowed
+    process.env.CANONICAL_APP_URL = previousCanonical
+    process.env.NEXT_PUBLIC_APP_URL = previousPublic
+  }
+})
+
+test('getAllowedRequestOrigins falls back to canonical app url when no explicit allowlist exists', async () => {
+  const previousAllowed = process.env.ALLOWED_REQUEST_ORIGINS
+  const previousCanonical = process.env.CANONICAL_APP_URL
+  const previousPublic = process.env.NEXT_PUBLIC_APP_URL
+
+  process.env.ALLOWED_REQUEST_ORIGINS = ''
+  process.env.CANONICAL_APP_URL = 'https://canonical.example.com'
+  process.env.NEXT_PUBLIC_APP_URL = ''
+
+  try {
+    const origins = await getAllowedRequestOrigins({
+      findGlobal: async () => ({
+        allowedMutationOrigins: [],
+      }),
+    } as never)
+
+    assert.deepEqual(origins, ['https://canonical.example.com'])
+  } finally {
+    process.env.ALLOWED_REQUEST_ORIGINS = previousAllowed
+    process.env.CANONICAL_APP_URL = previousCanonical
+    process.env.NEXT_PUBLIC_APP_URL = previousPublic
+  }
+})
+
 test('rejectDisallowedMutationOrigin blocks unknown origins in production', async () => {
   const previousNodeEnv = process.env.NODE_ENV
   const previousAllowed = process.env.ALLOWED_REQUEST_ORIGINS
@@ -44,6 +95,32 @@ test('rejectDisallowedMutationOrigin blocks unknown origins in production', asyn
 
     assert.ok(response)
     assert.equal(response?.status, 403)
+  } finally {
+    ;(process.env as Record<string, string | undefined>).NODE_ENV = previousNodeEnv
+    process.env.ALLOWED_REQUEST_ORIGINS = previousAllowed
+  }
+})
+
+test('rejectDisallowedMutationOrigin honors Security Settings when payload is provided', async () => {
+  const previousNodeEnv = process.env.NODE_ENV
+  const previousAllowed = process.env.ALLOWED_REQUEST_ORIGINS
+
+  ;(process.env as Record<string, string | undefined>).NODE_ENV = 'production'
+  process.env.ALLOWED_REQUEST_ORIGINS = 'https://legacy.example.com'
+
+  try {
+    const allowedResponse = await rejectDisallowedMutationOrigin({
+      headers: new Headers({
+        origin: 'https://security-settings.example.com',
+      }),
+      payload: {
+        findGlobal: async () => ({
+          allowedMutationOrigins: [{ origin: 'https://security-settings.example.com' }],
+        }),
+      },
+    } as never)
+
+    assert.equal(allowedResponse, null)
   } finally {
     ;(process.env as Record<string, string | undefined>).NODE_ENV = previousNodeEnv
     process.env.ALLOWED_REQUEST_ORIGINS = previousAllowed

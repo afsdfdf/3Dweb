@@ -1,14 +1,3 @@
-type S3StorageSettings = {
-  accessKeyId: string
-  baseURL: string
-  bucket: string
-  enabled: boolean
-  prefix: string
-  region: string
-  secretAccessKey: string
-  signedDownloads: boolean
-}
-
 export type DatabaseRuntimeConfig =
   | {
       connectionString: string
@@ -31,19 +20,6 @@ export type DatabaseRuntimeConfig =
     }
 
 const isTruthy = (value: string | undefined) => ['1', 'true', 'yes', 'on'].includes(String(value || '').toLowerCase())
-
-export function readS3StorageSettings(): S3StorageSettings {
-  return {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    baseURL: process.env.S3_CDN_URL || '',
-    bucket: process.env.S3_BUCKET || '',
-    enabled: Boolean(process.env.S3_BUCKET && process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY),
-    prefix: process.env.S3_PREFIX || 'media',
-    region: process.env.S3_REGION || 'us-east-1',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-    signedDownloads: process.env.S3_SIGNED_DOWNLOADS !== 'false',
-  }
-}
 
 export function buildAwsRdsConnectionString() {
   const host = process.env.AWS_RDS_HOST || ''

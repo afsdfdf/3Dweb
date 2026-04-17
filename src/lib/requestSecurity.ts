@@ -1,5 +1,9 @@
 import type { Payload, PayloadRequest } from 'payload'
 
+import {
+  getAllowedOriginsFromEnv,
+  getSecuritySettingsSnapshot,
+} from '@/lib/securitySettings'
 import { isTokenRevoked } from '@/lib/tokenRevocation'
 
 const isProduction = () => process.env.NODE_ENV === 'production'
@@ -23,49 +27,15 @@ const normalizeOrigin = (value: null | string | undefined) => {
   }
 }
 
-type PayloadWithGlobals = Pick<Payload, 'findGlobal'>
-
-const hasFindGlobal = (payload: unknown): payload is PayloadWithGlobals => {
-  return payload !== null && typeof payload === 'object' && 'findGlobal' in payload && typeof payload.findGlobal === 'function'
-}
-
-const toRecord = (value: unknown): Record<string, unknown> => {
-  return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {}
-}
-
-const readSecuritySettings = async (payload?: unknown) => {
-  if (!hasFindGlobal(payload)) {
-    return null
-  }
-
-  return payload
-    .findGlobal({
-      overrideAccess: true,
-      slug: 'security-settings' as never,
-    })
-    .catch(() => null)
-}
-
-const getConfiguredOriginsFromGlobal = (value: unknown) => {
-  const settings = toRecord(value)
-  const configured = Array.isArray(settings.allowedMutationOrigins) ? settings.allowedMutationOrigins : []
-
-  return configured
-    .map((item) => normalizeOrigin(toRecord(item).origin as string | undefined))
-    .filter(Boolean)
-}
-
 export async function getAllowedRequestOrigins(payload?: unknown) {
   const allowed = new Set<string>()
-  const configured = (process.env.ALLOWED_REQUEST_ORIGINS || '').trim()
+  const securitySettings = await getSecuritySettingsSnapshot(payload)
+  const explicitOrigins =
+    securitySettings.allowedMutationOrigins.length > 0
+      ? securitySettings.allowedMutationOrigins
+      : getAllowedOriginsFromEnv()
 
-  for (const value of configured.split(',').map((item) => item.trim()).filter(Boolean)) {
-    const normalized = normalizeOrigin(value)
-    if (normalized) allowed.add(normalized)
-  }
-
-  const securitySettings = await readSecuritySettings(payload)
-  for (const origin of getConfiguredOriginsFromGlobal(securitySettings)) {
+  for (const origin of explicitOrigins) {
     allowed.add(origin)
   }
 

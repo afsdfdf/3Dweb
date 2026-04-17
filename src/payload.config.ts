@@ -43,8 +43,9 @@ import { RuntimeDeploymentSettings } from './globals/RuntimeDeploymentSettings'
 import { SecuritySettings } from './globals/SecuritySettings'
 import { SiteSettings } from './globals/SiteSettings'
 import { StorageSettings } from './globals/StorageSettings'
-import { readS3StorageSettings, resolveDatabaseRuntimeConfig } from './lib/databaseRuntimeConfig'
 import { assertRuntimeSecurityGuards, getValidatedPayloadSecret } from './lib/envGuard'
+import { resolveDatabaseRuntimeConfig } from './lib/databaseRuntimeConfig'
+import { readS3PluginBootstrapSettingsFromEnv } from './lib/s3Settings'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -81,7 +82,7 @@ const emailAdapter = nodemailerAdapter({
       }),
 })
 
-const s3Settings = readS3StorageSettings()
+const s3Settings = readS3PluginBootstrapSettingsFromEnv()
 const dbConfig = resolveDatabaseRuntimeConfig()
 assertRuntimeSecurityGuards()
 const payloadSecret = getValidatedPayloadSecret()

@@ -1,6 +1,7 @@
 import type { PayloadRequest } from 'payload'
 
 import type { BillingSubscription } from '@/payload-types'
+import { writeAuditLog } from '@/lib/auditLog'
 import { sendSubscriptionSuccessEmail } from '@/lib/businessEmails'
 import { grantCredits } from '@/lib/creditLedger'
 import { getPaymentProviderSettings } from '@/lib/paymentProviders'
@@ -11,6 +12,20 @@ import {
   retrieveStripeSubscription,
 } from '@/lib/stripeBilling'
 import { getSubscriptionPlan, type SubscriptionPlanKey } from '@/lib/subscriptionPlans'
+
+type SubscriptionFlowTestHooks = {
+  getSubscriptionPlan?: typeof getSubscriptionPlan
+  grantCredits?: typeof grantCredits
+  retrieveBillingCheckoutSession?: typeof retrieveBillingCheckoutSession
+  retrieveStripeSubscription?: typeof retrieveStripeSubscription
+  sendSubscriptionSuccessEmail?: typeof sendSubscriptionSuccessEmail
+}
+
+let subscriptionFlowTestHooks: SubscriptionFlowTestHooks | null = null
+
+export function __setSubscriptionFlowTestHooks(hooks: SubscriptionFlowTestHooks | null) {
+  subscriptionFlowTestHooks = hooks
+}
 
 const ACTIVE_SUBSCRIPTION_STATUSES = ['active', 'trialing', 'past_due', 'incomplete']
 const INTERNAL_ACCESS = true
@@ -214,7 +229,7 @@ async function grantSubscriptionCreditsIfNeeded(args: {
     return billingSubscription
   }
 
-  await grantCredits({
+  const grantResult = await (subscriptionFlowTestHooks?.grantCredits || grantCredits)({
     amount: planCredits,
     idempotencyKey: `subscription-grant:${stripeSubscription.id}:${periodKey}`,
     metadata: {
@@ -225,6 +240,20 @@ async function grantSubscriptionCreditsIfNeeded(args: {
     notes: `${planLabel} monthly credits granted`,
     referencePrefix: 'SUB',
     req,
+    userId: user.id,
+  })
+
+  writeAuditLog({
+    details: {
+      periodKey,
+      planCredits,
+      planKey,
+    },
+    eventType: 'subscription.credits_grant',
+    provider: 'stripe',
+    req,
+    status: grantResult.applied ? 'completed' : 'idempotent',
+    subscriptionId: stripeSubscription.id,
     userId: user.id,
   })
 
@@ -239,7 +268,7 @@ async function grantSubscriptionCreditsIfNeeded(args: {
   })) as BillingSubscription
 
   if (user.email) {
-    await sendSubscriptionSuccessEmail({
+    await (subscriptionFlowTestHooks?.sendSubscriptionSuccessEmail || sendSubscriptionSuccessEmail)({
       currentPeriodEnd: updated.currentPeriodEnd,
       email: user.email,
       monthlyCredits: planCredits,
@@ -304,7 +333,7 @@ export async function finalizeSubscriptionCheckoutSession(args: {
   sessionId: string
 }) {
   const { expectedUserId, req, sessionId } = args
-  const session = await retrieveBillingCheckoutSession(sessionId)
+  const session = await (subscriptionFlowTestHooks?.retrieveBillingCheckoutSession || retrieveBillingCheckoutSession)(sessionId)
   if (session.mode !== 'subscription') {
     throw new Error('The checkout session is not a subscription session.')
   }
@@ -339,7 +368,7 @@ export async function syncStripeSubscriptionState(args: {
 }) {
   const { customerId, lastCheckoutSessionId = '', req, subscriptionId, userIdHint } = args
 
-  const stripeSubscription = await retrieveStripeSubscription(subscriptionId)
+  const stripeSubscription = await (subscriptionFlowTestHooks?.retrieveStripeSubscription || retrieveStripeSubscription)(subscriptionId)
   const resolvedCustomerId =
     customerId ||
     (typeof stripeSubscription.customer === 'string' ? stripeSubscription.customer : stripeSubscription.customer?.id) ||
@@ -350,7 +379,7 @@ export async function syncStripeSubscriptionState(args: {
   }
 
   const planKey = getPlanKeyFromSubscription(stripeSubscription)
-  const plan = await getSubscriptionPlan(String(planKey), req)
+  const plan = await (subscriptionFlowTestHooks?.getSubscriptionPlan || getSubscriptionPlan)(String(planKey), req)
   const priceId = stripeSubscription.items.data[0]?.price.id
 
   if (!plan || !priceId) {

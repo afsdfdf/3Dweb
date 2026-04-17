@@ -1,4 +1,7 @@
 import type { PayloadRequest } from 'payload'
+import fs from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
 
 import { refundTaskCredits, reserveTaskCredits, settleReservedTaskCredits, spendTaskCredits } from '@/lib/creditLedger'
 import {
@@ -32,6 +35,8 @@ const randomCode = (prefix: string) => {
 type TaskStatus = 'failed' | 'processing' | 'queued' | 'succeeded' | 'timeout'
 
 type SupportedProvider = 'custom' | 'meshy' | 'tripo'
+
+type SupportedModelFormat = 'fbx' | 'glb' | 'obj' | 'stl' | 'usdz'
 
 type MeshySnapshot = {
   imageTaskId?: string
@@ -98,6 +103,156 @@ const mergeTaskParameterSnapshot = (args: {
 
 const getTaskProvider = (task: { provider?: SupportedProvider | null }) => {
   return (task.provider || 'custom') as SupportedProvider
+}
+
+const MODEL_FORMAT_MIME_TYPES: Record<SupportedModelFormat, string> = {
+  fbx: 'application/octet-stream',
+  glb: 'model/gltf-binary',
+  obj: 'text/plain',
+  stl: 'application/vnd.ms-pki.stl',
+  usdz: 'model/vnd.usdz+zip',
+}
+
+const sanitizeFilenamePart = (value: string) => {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9-_]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+}
+
+const getModelMimeType = (format: SupportedModelFormat, response: Response) => {
+  const headerValue = response.headers.get('content-type') || ''
+  if (headerValue.trim()) {
+    return headerValue.split(';')[0]?.trim() || MODEL_FORMAT_MIME_TYPES[format]
+  }
+
+  return MODEL_FORMAT_MIME_TYPES[format]
+}
+
+async function ingestRemoteModelAsset(args: {
+  downloadURL: string
+  format: SupportedModelFormat
+  req: PayloadRequest
+  taskCode: string
+  userId: number
+}) {
+  const { downloadURL, format, req, taskCode, userId } = args
+  const response = await fetch(downloadURL)
+
+  if (!response.ok) {
+    throw new Error(`Remote asset fetch failed with ${response.status}.`)
+  }
+
+  const arrayBuffer = await response.arrayBuffer()
+  const buffer = Buffer.from(arrayBuffer)
+
+  if (buffer.byteLength === 0) {
+    throw new Error('Remote asset fetch returned an empty file.')
+  }
+
+  const safeTaskCode = sanitizeFilenamePart(taskCode) || 'task-result'
+  const filename = `${safeTaskCode}-${format}.${format}`
+  const tempPath = path.join(os.tmpdir(), `miniforge-${Date.now()}-${filename}`)
+
+  await fs.writeFile(tempPath, buffer)
+
+  try {
+    const media = await req.payload.create({
+      collection: 'media',
+      data: {
+        alt: `${taskCode} ${format.toUpperCase()} model`,
+        owner: userId,
+        purpose: 'model',
+      },
+      filePath: tempPath,
+      overrideAccess: false,
+      req,
+    })
+
+    return {
+      fileSizeMb: Number((buffer.byteLength / (1024 * 1024)).toFixed(3)),
+      media,
+      mimeType: getModelMimeType(format, response),
+    }
+  } finally {
+    await fs.unlink(tempPath).catch(() => null)
+  }
+}
+
+export async function resolveModelFormatAssets(args: {
+  generationPricingDownloadCredits: number
+  payloadData?: Record<string, unknown>
+  req: PayloadRequest
+  taskCode: string
+  taskId: number
+  userId: number
+}) {
+  const { generationPricingDownloadCredits, payloadData, req, taskCode, taskId, userId } = args
+  const supportedFormats: SupportedModelFormat[] = ['glb', 'fbx', 'obj', 'stl', 'usdz']
+  const rawModelURLs = isRecord(payloadData?.modelUrls) ? payloadData?.modelUrls : {}
+  const formats: Array<{
+    downloadCredits: number
+    file: null | number
+    fileSizeMb: number
+    format: SupportedModelFormat
+  }> = []
+
+  for (const format of supportedFormats) {
+    const candidate = rawModelURLs[format]
+    if (typeof candidate !== 'string' || !candidate.trim()) {
+      continue
+    }
+
+    const allowed = await isAllowedRemoteAssetURL({
+      payload: req.payload,
+      url: candidate,
+    })
+
+    if (!allowed) {
+      req.payload.logger.warn({
+        format,
+        msg: 'Dropped remote model URL because the host is not on the allowlist.',
+        taskId,
+        url: candidate,
+      })
+      continue
+    }
+
+    try {
+      const ingested = await ingestRemoteModelAsset({
+        downloadURL: candidate,
+        format,
+        req,
+        taskCode,
+        userId,
+      })
+
+      formats.push({
+        downloadCredits: generationPricingDownloadCredits,
+        file: Number(ingested.media.id),
+        fileSizeMb: ingested.fileSizeMb,
+        format,
+      })
+    } catch (error) {
+      req.payload.logger.warn({
+        err: error,
+        format,
+        msg: 'AI result asset ingestion fell back to remote URL because local media storage failed.',
+        taskId,
+        url: candidate,
+      })
+
+      formats.push({
+        downloadCredits: generationPricingDownloadCredits,
+        file: null,
+        fileSizeMb: 0,
+        format,
+      })
+    }
+  }
+
+  return formats
 }
 
 async function finalizeTaskBilling(args: {
@@ -196,48 +351,20 @@ async function createResultModel(args: {
   userId: number
 }) {
   const { payloadData, req, task, userId } = args
-  const supportedFormats = ['glb', 'fbx', 'obj', 'stl', 'usdz'] as const
   const { generationPricing } = await getTaskBillingSettings(req)
 
   if (task.resultModel) {
     return task.resultModel
   }
 
-  const rawModelURLs = isRecord(payloadData?.modelUrls) ? payloadData?.modelUrls : {}
-  const modelURLs: Record<string, string> = {}
-
-  for (const format of supportedFormats) {
-    const candidate = rawModelURLs[format]
-    if (typeof candidate !== 'string' || !candidate.trim()) {
-      continue
-    }
-
-    const allowed = await isAllowedRemoteAssetURL({
-      payload: req.payload,
-      url: candidate,
-    })
-
-    if (allowed) {
-      modelURLs[format] = candidate
-      continue
-    }
-
-    req.payload.logger.warn({
-      format,
-      msg: 'Dropped remote model URL because the host is not on the allowlist.',
-      taskId: task.id,
-      url: candidate,
-    })
-  }
-
-  const formats = supportedFormats
-    .filter((format) => typeof modelURLs[format] === 'string' && String(modelURLs[format]).length > 0)
-    .map((format) => ({
-      downloadCredits: generationPricing.downloadCredits,
-      file: null,
-      fileSizeMb: 0,
-      format,
-    }))
+  const formats = await resolveModelFormatAssets({
+    generationPricingDownloadCredits: generationPricing.downloadCredits,
+    payloadData,
+    req,
+    taskCode: task.taskCode,
+    taskId: task.id,
+    userId,
+  })
 
   const model = await req.payload.create({
     collection: 'models',

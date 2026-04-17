@@ -4,7 +4,7 @@ import path from 'node:path'
 import { DeleteObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import type { CollectionAfterChangeHook, CollectionAfterDeleteHook } from 'payload'
 
-import { getS3StorageSettings } from '@/lib/s3Settings'
+import { describeS3StorageConfigProblem, getS3StorageSettings } from '@/lib/s3Settings'
 
 const encodeS3Key = (value: string) => {
   return value
@@ -37,7 +37,15 @@ export const syncMediaToS3AfterChange: CollectionAfterChangeHook = async ({ cont
   if (operation !== 'create' && operation !== 'update') return doc
 
   const s3 = await getS3StorageSettings(req.payload)
-  if (!s3.enabled || !s3.bucket || !s3.region || !s3.accessKeyId || !s3.secretAccessKey) {
+  const configProblem = describeS3StorageConfigProblem(s3)
+  if (configProblem) {
+    req.payload.logger.error({
+      msg: `Media S3 sync skipped: ${configProblem}`,
+    })
+    return doc
+  }
+
+  if (!s3.enabled || !s3.hasRequiredConfig) {
     return doc
   }
 
@@ -104,7 +112,15 @@ export const syncMediaToS3AfterChange: CollectionAfterChangeHook = async ({ cont
 
 export const syncMediaToS3AfterDelete: CollectionAfterDeleteHook = async ({ doc, req }) => {
   const s3 = await getS3StorageSettings(req.payload)
-  if (!s3.enabled || !s3.bucket || !s3.region || !s3.accessKeyId || !s3.secretAccessKey) {
+  const configProblem = describeS3StorageConfigProblem(s3)
+  if (configProblem) {
+    req.payload.logger.error({
+      msg: `Media S3 delete skipped: ${configProblem}`,
+    })
+    return doc
+  }
+
+  if (!s3.enabled || !s3.hasRequiredConfig) {
     return doc
   }
 

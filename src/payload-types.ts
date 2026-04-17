@@ -1471,7 +1471,7 @@ export interface AiProviderSetting {
   createdAt?: string | null;
 }
 /**
- * Manage non-sensitive object storage settings here. Keep AWS access key ID and secret access key in environment variables only. Migration note: copy the previous AI Provider storage values here before removing them from old operational docs.
+ * Manage non-sensitive object storage settings here. Runtime code reads bucket / region / prefix / baseURL / signedDownloads from this global only. Keep AWS access key ID and secret access key in environment variables. Build-time S3 plugin bootstrap may still use env values during migration, but operators should treat this global as the single runtime source of truth.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "storage-settings".
@@ -1518,7 +1518,7 @@ export interface StorageSetting {
   createdAt?: string | null;
 }
 /**
- * Manage non-sensitive request origin and remote asset allowlists here. Migration note: copy any existing ALLOWED_REQUEST_ORIGINS or AI_REMOTE_ASSET_ALLOWLIST values into this screen so future maintenance can happen in the admin panel.
+ * Manage non-sensitive request origin and remote asset allowlists here. Runtime security checks prefer this global when values are present, then fall back to legacy environment allowlists for migration.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "security-settings".

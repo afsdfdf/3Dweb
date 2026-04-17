@@ -3,9 +3,12 @@ import assert from 'node:assert/strict'
 
 import {
   grantCredits,
+  InsufficientCreditsError,
+  refundDownloadCredits,
   refundTaskCredits,
   reserveTaskCredits,
   settleReservedTaskCredits,
+  spendDownloadCredits,
 } from '../src/lib/creditLedger.ts'
 
 const createMockRequest = () => {
@@ -272,4 +275,102 @@ test('settleReservedTaskCredits and refundTaskCredits update reserved balance sa
 
   assert.equal(state.credits[0].balance, 15)
   assert.equal(state.credits[0].reservedBalance, 0)
+})
+
+test('settleReservedTaskCredits rejects over-settlement when reserved balance is insufficient', async () => {
+  const { req } = createMockRequest()
+
+  await grantCredits({
+    amount: 10,
+    idempotencyKey: 'grant-4',
+    notes: 'initial credits',
+    req,
+    userId: 1,
+  })
+
+  await reserveTaskCredits({
+    amount: 2,
+    notes: 'reserve task 301',
+    req,
+    taskId: 301,
+    userId: 1,
+  })
+
+  await assert.rejects(
+    () =>
+      settleReservedTaskCredits({
+        amount: 3,
+        notes: 'invalid settle task 301',
+        req,
+        taskId: 301,
+        userId: 1,
+      }),
+    /Reserved balance is insufficient to settle task 301/,
+  )
+})
+
+test('spendDownloadCredits throws when available balance is insufficient', async () => {
+  const { req } = createMockRequest()
+
+  await assert.rejects(
+    () =>
+      spendDownloadCredits({
+        amount: 5,
+        format: 'glb',
+        modelId: 42,
+        notes: 'download spend',
+        req,
+        userId: 1,
+      }),
+    (error: unknown) => error instanceof InsufficientCreditsError,
+  )
+})
+
+test('refundDownloadCredits refunds only after a matching charged download exists', async () => {
+  const { req, state } = createMockRequest()
+
+  await grantCredits({
+    amount: 10,
+    idempotencyKey: 'grant-5',
+    notes: 'initial credits',
+    req,
+    userId: 1,
+  })
+
+  const skippedRefund = await refundDownloadCredits({
+    amount: 2,
+    format: 'glb',
+    modelId: 501,
+    notes: 'refund without prior charge',
+    req,
+    userId: 1,
+  })
+
+  assert.equal(skippedRefund.applied, false)
+  assert.equal(state.credits[0].balance, 10)
+
+  const charged = await spendDownloadCredits({
+    amount: 2,
+    format: 'glb',
+    modelId: 501,
+    notes: 'charge download',
+    req,
+    userId: 1,
+  })
+
+  assert.equal(charged.applied, true)
+  assert.equal(state.credits[0].balance, 8)
+
+  const refunded = await refundDownloadCredits({
+    amount: 2,
+    format: 'glb',
+    modelId: 501,
+    notes: 'refund charged download',
+    req,
+    userId: 1,
+  })
+
+  assert.equal(refunded.applied, true)
+  assert.equal(state.credits[0].balance, 10)
+  assert.equal(state.credits[0].lifetimeSpent, 0)
 })

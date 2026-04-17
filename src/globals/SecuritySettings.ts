@@ -7,7 +7,7 @@ export const SecuritySettings: GlobalConfig = {
   label: 'Security Settings',
   admin: {
     description:
-      'Manage non-sensitive request origin and remote asset allowlists here. Migration note: copy any existing ALLOWED_REQUEST_ORIGINS or AI_REMOTE_ASSET_ALLOWLIST values into this screen so future maintenance can happen in the admin panel.',
+      'Manage non-sensitive request origin and remote asset allowlists here. Runtime security checks prefer this global when values are present, then fall back to legacy environment allowlists for migration.',
     group: 'Platform',
   },
   access: {

@@ -1,6 +1,7 @@
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
+import { getCachedPayload } from './lib/getCachedPayload'
 import { enforceRateLimit, getRateLimitConfig } from './lib/rateLimit'
 import { applySecurityHeaders, extractRequestToken, getAllowedRequestOrigins, getRequestIP } from './lib/requestSecurity'
 import { isTokenRevoked } from './lib/tokenRevocation'
@@ -53,7 +54,8 @@ export async function proxy(request: NextRequest) {
 
   if (pathname === '/api/users' && request.method === 'POST') {
     const origin = request.headers.get('origin')
-    const allowedRequestOrigins = await getAllowedRequestOrigins()
+    const payload = await getCachedPayload().catch(() => null)
+    const allowedRequestOrigins = await getAllowedRequestOrigins(payload)
     if (origin && !allowedRequestOrigins.some((item: string) => origin.toLowerCase() === item)) {
       return withSecurityHeaders(
         NextResponse.json(

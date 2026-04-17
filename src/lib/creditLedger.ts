@@ -1,5 +1,6 @@
 ﻿import type { PayloadRequest } from 'payload'
 
+import { writeAuditLog } from '@/lib/auditLog'
 import { withLedgerTransaction, type LedgerExecutor } from '@/lib/ledgerStore'
 
 const INTERNAL_ACCESS = true
@@ -63,7 +64,41 @@ type MutationOptions = {
   mutate: (current: CreditAccountRow) => CreditAccountRow
 }
 
+const toAuditEventType = (transactionType: MutationOptions['transactionType']) => {
+  switch (transactionType) {
+    case 'subscription_grant':
+      return 'credits.subscription_grant'
+    case 'task_hold':
+      return 'credits.task_hold'
+    case 'task_spend':
+      return 'credits.task_spend'
+    case 'refund':
+      return 'credits.refund'
+    case 'download_spend':
+      return 'credits.download_spend'
+    case 'manual_adjustment':
+      return 'credits.manual_adjustment'
+    case 'purchase':
+      return 'credits.purchase'
+    default:
+      return 'credits.unknown'
+  }
+}
+
 const nowISO = () => new Date().toISOString()
+
+const isUniqueConstraintError = (error: unknown) => {
+  if (!error || typeof error !== 'object') {
+    return false
+  }
+
+  const candidate = error as { code?: string; message?: string }
+  return (
+    candidate.code === '23505' ||
+    String(candidate.message || '').toLowerCase().includes('unique') ||
+    String(candidate.message || '').toLowerCase().includes('duplicate')
+  )
+}
 
 async function findCreditAccount(args: { req: PayloadRequest; userId: number }) {
   const { req, userId } = args
@@ -144,15 +179,23 @@ async function findTransactionByIdempotencyKey(args: { idempotencyKey?: string; 
 
 async function getAtomicCreditAccount(args: { executor: LedgerExecutor; userId: number }) {
   const { executor, userId } = args
-  const result = await executor.execute(
-    `
-      SELECT id, balance, reserved_balance, lifetime_purchased, lifetime_spent
-      FROM credits
-      WHERE user_id = ?
-      LIMIT 1
-    `,
-    [userId],
-  )
+  const selectSql =
+    executor.dialect === 'postgres'
+      ? `
+          SELECT id, balance, reserved_balance, lifetime_purchased, lifetime_spent
+          FROM credits
+          WHERE user_id = ?
+          LIMIT 1
+          FOR UPDATE
+        `
+      : `
+          SELECT id, balance, reserved_balance, lifetime_purchased, lifetime_spent
+          FROM credits
+          WHERE user_id = ?
+          LIMIT 1
+        `
+
+  const result = await executor.execute(selectSql, [userId])
 
   const row = result.rows?.[0]
   if (row) {
@@ -166,24 +209,28 @@ async function getAtomicCreditAccount(args: { executor: LedgerExecutor; userId: 
   }
 
   const timestamp = nowISO()
-  await executor.execute(
-    `
-      INSERT INTO credits
-      (account_label, user_id, balance, reserved_balance, lifetime_purchased, lifetime_spent, status, billing_notes, updated_at, created_at)
-      VALUES ('主积分账户', ?, 0, 0, 0, 0, 'active', '系统自动创建的默认积分账户。', ?, ?)
-    `,
-    [userId, timestamp, timestamp],
-  )
+  if (executor.dialect === 'postgres') {
+    await executor.execute(
+      `
+        INSERT INTO credits
+        (account_label, user_id, balance, reserved_balance, lifetime_purchased, lifetime_spent, status, billing_notes, updated_at, created_at)
+        VALUES ('主积分账户', ?, 0, 0, 0, 0, 'active', '系统自动创建的默认积分账户。', ?, ?)
+        ON CONFLICT (user_id) DO NOTHING
+      `,
+      [userId, timestamp, timestamp],
+    )
+  } else {
+    await executor.execute(
+      `
+        INSERT INTO credits
+        (account_label, user_id, balance, reserved_balance, lifetime_purchased, lifetime_spent, status, billing_notes, updated_at, created_at)
+        VALUES ('主积分账户', ?, 0, 0, 0, 0, 'active', '系统自动创建的默认积分账户。', ?, ?)
+      `,
+      [userId, timestamp, timestamp],
+    )
+  }
 
-  const inserted = await executor.execute(
-    `
-      SELECT id, balance, reserved_balance, lifetime_purchased, lifetime_spent
-      FROM credits
-      WHERE user_id = ?
-      LIMIT 1
-    `,
-    [userId],
-  )
+  const inserted = await executor.execute(selectSql, [userId])
 
   const created = inserted.rows?.[0]
   return {
@@ -226,6 +273,21 @@ async function runAtomicLedgerMutation(options: MutationOptions): Promise<Ledger
 
       if (duplicate.rows?.[0]) {
         const current = await getAtomicCreditAccount({ executor, userId })
+        writeAuditLog({
+          details: {
+            amount,
+            idempotencyKey,
+            notes,
+            sourceOrderId,
+            sourceTaskId,
+          },
+          eventType: toAuditEventType(transactionType),
+          orderId: sourceOrderId,
+          req,
+          status: 'idempotent',
+          taskId: sourceTaskId,
+          userId,
+        })
         return {
           account: current satisfies CreditAccountSnapshot,
           applied: false,
@@ -236,6 +298,58 @@ async function runAtomicLedgerMutation(options: MutationOptions): Promise<Ledger
 
     const current = await getAtomicCreditAccount({ executor, userId })
     const next = mutate(current)
+
+    try {
+      await executor.execute(
+        `
+          INSERT INTO credit_transactions
+          (reference_code, idempotency_key, user_id, credit_account_id, type, amount, currency, balance_after, source_task_id, source_order_id, notes, metadata, updated_at, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `,
+        [
+          createReferenceCode(referencePrefix),
+          idempotencyKey || null,
+          userId,
+          current.id,
+          transactionType,
+          amount,
+          'credits',
+          next.balance,
+          sourceTaskId,
+          sourceOrderId,
+          notes,
+          metadata ? JSON.stringify(metadata) : null,
+          timestamp,
+          timestamp,
+        ],
+      )
+    } catch (error) {
+      if (idempotencyKey && isUniqueConstraintError(error)) {
+        const latest = await getAtomicCreditAccount({ executor, userId })
+        writeAuditLog({
+          details: {
+            amount,
+            idempotencyKey,
+            notes,
+            sourceOrderId,
+            sourceTaskId,
+          },
+          eventType: toAuditEventType(transactionType),
+          orderId: sourceOrderId,
+          req,
+          status: 'idempotent',
+          taskId: sourceTaskId,
+          userId,
+        })
+        return {
+          account: latest satisfies CreditAccountSnapshot,
+          applied: false,
+          idempotencyKey,
+        }
+      }
+
+      throw error
+    }
 
     await executor.execute(
       `
@@ -254,30 +368,6 @@ async function runAtomicLedgerMutation(options: MutationOptions): Promise<Ledger
 
     await executor.execute(
       `
-        INSERT INTO credit_transactions
-        (reference_code, idempotency_key, user_id, credit_account_id, type, amount, currency, balance_after, source_task_id, source_order_id, notes, metadata, updated_at, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `,
-      [
-        createReferenceCode(referencePrefix),
-        idempotencyKey || null,
-        userId,
-        current.id,
-        transactionType,
-        amount,
-        'credits',
-        next.balance,
-        sourceTaskId,
-        sourceOrderId,
-        notes,
-        metadata ? JSON.stringify(metadata) : null,
-        timestamp,
-        timestamp,
-      ],
-    )
-
-    await executor.execute(
-      `
         UPDATE users
         SET
           credits_balance = ?,
@@ -287,6 +377,24 @@ async function runAtomicLedgerMutation(options: MutationOptions): Promise<Ledger
       `,
       [next.balance, timestamp, timestamp, userId],
     )
+
+    writeAuditLog({
+      details: {
+        amount,
+        balanceAfter: next.balance,
+        idempotencyKey,
+        notes,
+        reservedBalanceAfter: next.reservedBalance,
+        sourceOrderId,
+        sourceTaskId,
+      },
+      eventType: toAuditEventType(transactionType),
+      orderId: sourceOrderId,
+      req,
+      status: 'completed',
+      taskId: sourceTaskId,
+      userId,
+    })
 
     return {
       account: {
@@ -300,6 +408,12 @@ async function runAtomicLedgerMutation(options: MutationOptions): Promise<Ledger
       idempotencyKey,
     }
   })
+}
+
+function assertReservedBalanceAvailable(current: CreditAccountRow, amount: number, message: string) {
+  if (current.reservedBalance < amount) {
+    throw new Error(message)
+  }
 }
 
 export { ensureCreditAccount }
@@ -414,7 +528,14 @@ export async function settleReservedTaskCredits(args: {
     mutate: (current) => ({
       ...current,
       lifetimeSpent: current.lifetimeSpent + normalizedAmount,
-      reservedBalance: Math.max(0, current.reservedBalance - normalizedAmount),
+      reservedBalance: (() => {
+        assertReservedBalanceAvailable(
+          current,
+          normalizedAmount,
+          `Reserved balance is insufficient to settle task ${taskId}. Current reserved balance is ${current.reservedBalance}, settlement requires ${normalizedAmount}.`,
+        )
+        return current.reservedBalance - normalizedAmount
+      })(),
     }),
     notes,
     referencePrefix: 'TASKSPEND',
@@ -614,11 +735,19 @@ export async function refundTaskCredits(args: {
   return runAtomicLedgerMutation({
     amount: normalizedAmount,
     idempotencyKey,
-    mutate: (current) => ({
-      ...current,
-      balance: current.balance + normalizedAmount,
-      reservedBalance: Math.max(0, current.reservedBalance - normalizedAmount),
-    }),
+    mutate: (current) => {
+      assertReservedBalanceAvailable(
+        current,
+        normalizedAmount,
+        `Reserved balance is insufficient to refund task ${taskId}. Current reserved balance is ${current.reservedBalance}, refund requires ${normalizedAmount}.`,
+      )
+
+      return {
+        ...current,
+        balance: current.balance + normalizedAmount,
+        reservedBalance: current.reservedBalance - normalizedAmount,
+      }
+    },
     notes,
     referencePrefix: 'REFUND',
     req,

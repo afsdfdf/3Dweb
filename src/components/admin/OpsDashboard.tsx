@@ -393,6 +393,66 @@ function InsightPanel({ items }: { items: string[] }) {
   )
 }
 
+function QueueList({
+  emptyText,
+  items,
+  linkLabel,
+  linkPrefix,
+  renderMeta,
+  title,
+}: {
+  emptyText: string
+  items: any[]
+  linkLabel: string
+  linkPrefix: string
+  renderMeta: (item: any) => string
+  title: string
+}) {
+  return (
+    <div style={{ display: 'grid', gap: 12 }}>
+      <div style={{ alignItems: 'center', display: 'flex', justifyContent: 'space-between' }}>
+        <h3 style={{ fontSize: 18, margin: 0 }}>{title}</h3>
+        <Link href={linkPrefix} style={{ color: colors.blue, fontSize: 13, fontWeight: 700 }}>
+          {linkLabel}
+        </Link>
+      </div>
+      <div style={{ display: 'grid', gap: 10 }}>
+        {items.length > 0 ? (
+          items.map((item) => (
+            <div
+              key={`${title}-${item.id}`}
+              style={{
+                background: colors.subtle,
+                border: `1px solid ${colors.border}`,
+                borderRadius: 14,
+                display: 'grid',
+                gap: 8,
+                padding: '12px 14px',
+              }}
+            >
+              <div style={{ alignItems: 'center', display: 'flex', gap: 12, justifyContent: 'space-between' }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700 }}>
+                    {item.taskCode || item.orderNumber || item.checkoutReference || item.user?.email || item.accountLabel || `#${item.id}`}
+                  </div>
+                  <div style={{ color: colors.slate, fontSize: 12, marginTop: 4 }}>{renderMeta(item)}</div>
+                </div>
+                <Link href={`${linkPrefix}/${item.id}`} style={linkPillStyle}>
+                  查看
+                </Link>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div style={{ background: colors.subtle, border: `1px dashed ${colors.border}`, borderRadius: 14, color: colors.slate, padding: 18 }}>
+            {emptyText}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 const groupedLinks = [
   {
     items: [
@@ -590,6 +650,76 @@ export async function OpsDashboardView() {
               '订单、支付、积分与用户数据继续由后台统一追踪。',
             ]}
           />
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gap: 16, gridTemplateColumns: '1fr 1fr' }}>
+        <div style={panelStyle}>
+          <div style={{ marginBottom: 16 }}>
+            <p style={headingMetaStyle}>运营筛查</p>
+            <h2 style={{ fontSize: 26, margin: '6px 0 0' }}>异常任务与订单</h2>
+            <p style={{ color: colors.slate, fontSize: 13, lineHeight: 1.7, margin: '8px 0 0' }}>
+              优先把失败任务、待支付订单、退款/失败支付放到同一块，减少运营在多个集合之间来回切换。
+            </p>
+          </div>
+          <div style={{ display: 'grid', gap: 16 }}>
+            <QueueList
+              emptyText="当前没有失败或超时任务。"
+              items={data.operatorQueues.failedTasks.docs}
+              linkLabel={`失败任务 ${data.operatorQueues.failedTasks.count}`}
+              linkPrefix="/admin/collections/generation-tasks"
+              renderMeta={(item) => `${formatTaskStatus(item.status)} · ${formatDateTime(item.updatedAt)} · ${item.user?.email || '未关联用户'}`}
+              title="失败任务队列"
+            />
+            <QueueList
+              emptyText="当前没有待跟进订单。"
+              items={data.operatorQueues.pendingOrders.docs}
+              linkLabel={`异常订单 ${data.operatorQueues.pendingOrders.count}`}
+              linkPrefix="/admin/collections/print-orders"
+              renderMeta={(item) =>
+                `${formatOrderStatus(item.status)} / ${getPaymentStatusLabel(item.paymentStatus)} · ${item.user?.email || '未关联用户'}`
+              }
+              title="订单异常队列"
+            />
+          </div>
+        </div>
+
+        <div style={panelStyle}>
+          <div style={{ marginBottom: 16 }}>
+            <p style={headingMetaStyle}>运营筛查</p>
+            <h2 style={{ fontSize: 26, margin: '6px 0 0' }}>支付与余额关注名单</h2>
+            <p style={{ color: colors.slate, fontSize: 13, lineHeight: 1.7, margin: '8px 0 0' }}>
+              运营可直接查看支付异常和高/低余额账户，优先做人工排查、提醒和后续跟进。
+            </p>
+          </div>
+          <div style={{ display: 'grid', gap: 16 }}>
+            <QueueList
+              emptyText="当前没有支付异常记录。"
+              items={data.operatorQueues.paymentExceptions.docs}
+              linkLabel={`支付异常 ${data.operatorQueues.paymentExceptions.count}`}
+              linkPrefix="/admin/collections/shopify-payments"
+              renderMeta={(item) => `${getPaymentStatusLabel(item.status)} · ${item.user?.email || '未关联用户'} · ${item.amount ?? 0} ${item.currency ?? 'USD'}`}
+              title="支付异常队列"
+            />
+            <div style={{ display: 'grid', gap: 16, gridTemplateColumns: '1fr 1fr' }}>
+              <QueueList
+                emptyText="当前没有低余额账户。"
+                items={data.operatorQueues.lowBalanceAccounts.docs}
+                linkLabel={`低余额 ${data.operatorQueues.lowBalanceAccounts.count}`}
+                linkPrefix="/admin/collections/credits"
+                renderMeta={(item) => `余额 ${item.balance ?? 0} · 预扣 ${item.reservedBalance ?? 0} · ${item.user?.email || '未关联用户'}`}
+                title="低余额账户"
+              />
+              <QueueList
+                emptyText="当前没有高余额账户。"
+                items={data.operatorQueues.highBalanceAccounts.docs}
+                linkLabel={`高余额 ${data.operatorQueues.highBalanceAccounts.count}`}
+                linkPrefix="/admin/collections/credits"
+                renderMeta={(item) => `余额 ${item.balance ?? 0} · 预扣 ${item.reservedBalance ?? 0} · ${item.user?.email || '未关联用户'}`}
+                title="高余额账户"
+              />
+            </div>
+          </div>
         </div>
       </div>
 

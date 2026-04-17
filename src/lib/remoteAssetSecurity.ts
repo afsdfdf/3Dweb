@@ -1,14 +1,8 @@
 import type { Payload } from 'payload'
 
 import { getCanonicalAppURL } from '@/lib/getCanonicalAppURL'
+import { getAllowedRemoteAssetHostsFromEnv, getSecuritySettingsSnapshot } from '@/lib/securitySettings'
 import { getS3StorageSettings } from '@/lib/s3Settings'
-
-const toHostPatterns = (value: string) => {
-  return value
-    .split(',')
-    .map((item) => item.trim().toLowerCase())
-    .filter(Boolean)
-}
 
 const matchesHostPattern = (hostname: string, pattern: string) => {
   return hostname === pattern || hostname.endsWith(`.${pattern}`)
@@ -22,26 +16,9 @@ const tryGetHostname = (value: string) => {
   }
 }
 
-const toRecord = (value: unknown): Record<string, unknown> => {
-  return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {}
-}
-
-const readSecuritySettings = async (payload: Payload) => {
-  if (typeof payload?.findGlobal !== 'function') {
-    return null
-  }
-
-  return payload
-    .findGlobal({
-      overrideAccess: true,
-      slug: 'security-settings' as never,
-    })
-    .catch(() => null)
-}
-
 export async function getAllowedRemoteAssetHosts(payload: Payload) {
   const settings = await getS3StorageSettings(payload)
-  const securitySettings = await readSecuritySettings(payload)
+  const securitySettings = await getSecuritySettingsSnapshot(payload)
   const allowedHosts = new Set<string>()
   const canonicalHost = tryGetHostname(getCanonicalAppURL())
 
@@ -58,18 +35,12 @@ export async function getAllowedRemoteAssetHosts(payload: Payload) {
     allowedHosts.add(storageBaseHost)
   }
 
-  const configuredHosts = Array.isArray(toRecord(securitySettings).allowedRemoteAssetHosts)
-    ? (toRecord(securitySettings).allowedRemoteAssetHosts as unknown[])
-    : []
+  const explicitHosts =
+    securitySettings.allowedRemoteAssetHosts.length > 0
+      ? securitySettings.allowedRemoteAssetHosts
+      : getAllowedRemoteAssetHostsFromEnv()
 
-  for (const item of configuredHosts) {
-    const host = String(toRecord(item).host || '').trim().toLowerCase()
-    if (host) {
-      allowedHosts.add(host)
-    }
-  }
-
-  for (const pattern of toHostPatterns(process.env.AI_REMOTE_ASSET_ALLOWLIST || '')) {
+  for (const pattern of explicitHosts) {
     allowedHosts.add(pattern)
   }
 

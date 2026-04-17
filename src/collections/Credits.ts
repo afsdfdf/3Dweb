@@ -1,6 +1,6 @@
 ﻿import type { CollectionConfig } from 'payload'
 
-import { isStaff, ownerOrStaff } from '@/access'
+import { isAdmin, ownerOrStaff } from '@/access'
 
 export const Credits: CollectionConfig = {
   slug: 'credits',
@@ -15,10 +15,10 @@ export const Credits: CollectionConfig = {
     defaultColumns: ['accountLabel', 'user', 'balance', 'reservedBalance', 'status'],
   },
   access: {
-    create: isStaff,
-    delete: isStaff,
+    create: isAdmin,
+    delete: isAdmin,
     read: ownerOrStaff('user'),
-    update: isStaff,
+    update: isAdmin,
   },
   timestamps: true,
   fields: [

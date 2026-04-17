@@ -1,6 +1,6 @@
 import type { GlobalConfig } from 'payload'
 
-import { isStaff } from '@/access'
+import { isAdmin, isStaff } from '@/access'
 
 export const EmailSettings: GlobalConfig = {
   slug: 'email-settings',
@@ -11,7 +11,7 @@ export const EmailSettings: GlobalConfig = {
   },
   access: {
     read: isStaff,
-    update: isStaff,
+    update: isAdmin,
   },
   fields: [
     {

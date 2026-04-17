@@ -7,7 +7,7 @@ export const StorageSettings: GlobalConfig = {
   label: 'Storage Settings',
   admin: {
     description:
-      'Manage non-sensitive object storage settings here. Keep AWS access key ID and secret access key in environment variables only. Migration note: copy the previous AI Provider storage values here before removing them from old operational docs.',
+      'Manage non-sensitive object storage settings here. Runtime code reads bucket / region / prefix / baseURL / signedDownloads from this global only. Keep AWS access key ID and secret access key in environment variables. Build-time S3 plugin bootstrap may still use env values during migration, but operators should treat this global as the single runtime source of truth.',
     group: 'Platform',
   },
   access: {

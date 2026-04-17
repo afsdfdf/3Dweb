@@ -124,8 +124,8 @@ export const Users: CollectionConfig = {
       defaultValue: 0,
       label: '积分余额',
       access: {
-        create: staffFieldAccess,
-        update: staffFieldAccess,
+        create: adminFieldAccess,
+        update: adminFieldAccess,
       },
       admin: { position: 'sidebar', readOnly: true },
     },

@@ -1,9 +1,23 @@
 import type Stripe from 'stripe'
 import type { PayloadRequest } from 'payload'
 
+import { writeAuditLog } from '@/lib/auditLog'
 import { finalizePrintOrderCheckoutSession } from '@/lib/printOrderFlow'
 import { constructStripeWebhookEvent } from '@/lib/stripeGateway'
 import { finalizeSubscriptionCheckoutSession, syncStripeSubscriptionState } from '@/lib/subscriptionFlow'
+
+type StripeWebhookTestHooks = {
+  constructStripeWebhookEvent?: typeof constructStripeWebhookEvent
+  finalizePrintOrderCheckoutSession?: typeof finalizePrintOrderCheckoutSession
+  finalizeSubscriptionCheckoutSession?: typeof finalizeSubscriptionCheckoutSession
+  syncStripeSubscriptionState?: typeof syncStripeSubscriptionState
+}
+
+let stripeWebhookTestHooks: null | StripeWebhookTestHooks = null
+
+export function __setStripeWebhookTestHooks(hooks: null | StripeWebhookTestHooks) {
+  stripeWebhookTestHooks = hooks
+}
 
 const getErrorMessage = (error: unknown) => {
   if (error instanceof Error) {
@@ -27,6 +41,10 @@ const getNestedString = (value: unknown, path: string[]) => {
   return typeof current === 'string' ? current : ''
 }
 
+const getEventObjectId = (value: unknown) => {
+  return value && typeof value === 'object' && 'id' in value && typeof value.id === 'string' ? value.id : undefined
+}
+
 async function handleStripeEvent(args: { event: Stripe.Event; req: PayloadRequest }) {
   const { event, req } = args
 
@@ -36,7 +54,7 @@ async function handleStripeEvent(args: { event: Stripe.Event; req: PayloadReques
       const session = event.data.object as Stripe.Checkout.Session
 
       if (session.mode === 'payment') {
-        await finalizePrintOrderCheckoutSession({
+        await (stripeWebhookTestHooks?.finalizePrintOrderCheckoutSession || finalizePrintOrderCheckoutSession)({
           req,
           session,
           sessionId: session.id,
@@ -45,7 +63,7 @@ async function handleStripeEvent(args: { event: Stripe.Event; req: PayloadReques
       }
 
       if (session.mode === 'subscription') {
-        await finalizeSubscriptionCheckoutSession({
+        await (stripeWebhookTestHooks?.finalizeSubscriptionCheckoutSession || finalizeSubscriptionCheckoutSession)({
           req,
           sessionId: session.id,
         })
@@ -66,7 +84,7 @@ async function handleStripeEvent(args: { event: Stripe.Event; req: PayloadReques
         return { ignored: true, reason: 'Missing invoice subscription id', type: event.type }
       }
 
-      await syncStripeSubscriptionState({
+      await (stripeWebhookTestHooks?.syncStripeSubscriptionState || syncStripeSubscriptionState)({
         customerId: customerId || undefined,
         req,
         subscriptionId,
@@ -81,7 +99,7 @@ async function handleStripeEvent(args: { event: Stripe.Event; req: PayloadReques
       const customerId =
         typeof subscription.customer === 'string' ? subscription.customer : subscription.customer?.id
 
-      await syncStripeSubscriptionState({
+      await (stripeWebhookTestHooks?.syncStripeSubscriptionState || syncStripeSubscriptionState)({
         customerId: customerId || undefined,
         req,
         subscriptionId: subscription.id,
@@ -109,7 +127,7 @@ export const stripeWebhookEndpoint = {
     }
 
     try {
-      const event = constructStripeWebhookEvent({
+      const event = (stripeWebhookTestHooks?.constructStripeWebhookEvent || constructStripeWebhookEvent)({
         payload: rawBody,
         signature,
       })
@@ -119,8 +137,35 @@ export const stripeWebhookEndpoint = {
         req,
       })
 
+      writeAuditLog({
+        details: {
+          stripeEventType: event.type,
+          webhookResult: result,
+        },
+        eventType: 'stripe.webhook',
+        provider: 'stripe',
+        req,
+        sessionId: event.type.includes('checkout.session') ? getEventObjectId(event.data.object) : undefined,
+        status: result.ok ? 'completed' : 'ignored',
+        subscriptionId:
+          'subscription' in event.data.object && typeof event.data.object.subscription === 'string'
+            ? event.data.object.subscription
+            : undefined,
+      })
+
       return Response.json({ received: true, result })
     } catch (error) {
+      writeAuditLog({
+        details: {
+          message: getErrorMessage(error),
+        },
+        eventType: 'stripe.webhook',
+        level: 'error',
+        provider: 'stripe',
+        req,
+        status: 'failed',
+      })
+
       req.payload.logger.error({
         err: error,
         msg: 'Stripe webhook processing failed',

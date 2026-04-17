@@ -48,7 +48,22 @@ export async function getOpsDashboardData() {
   const today = toISO(startOfToday())
   const ranges = buildDateRanges(7)
 
-  const [tasks, models, orders, payments, creditAccounts, recentTasks, recentOrders, recentPayments, topCreditAccounts] = await Promise.all([
+  const [
+    tasks,
+    models,
+    orders,
+    payments,
+    creditAccounts,
+    recentTasks,
+    recentOrders,
+    recentPayments,
+    topCreditAccounts,
+    failedTaskQueue,
+    pendingOrderQueue,
+    paymentExceptionQueue,
+    lowBalanceQueue,
+    highBalanceQueue,
+  ] = await Promise.all([
     payload.count({ collection: 'generation-tasks', where: {} }),
     payload.count({ collection: 'models', where: {} }),
     payload.count({ collection: 'print-orders', where: {} }),
@@ -58,6 +73,51 @@ export async function getOpsDashboardData() {
     payload.find({ collection: 'print-orders', depth: 2, limit: 5, sort: '-updatedAt' }),
     payload.find({ collection: 'shopify-payments', depth: 2, limit: 5, sort: '-updatedAt' }),
     payload.find({ collection: 'credits', depth: 1, limit: 5, sort: '-balance' }),
+    payload.find({
+      collection: 'generation-tasks',
+      depth: 1,
+      limit: 6,
+      sort: '-updatedAt',
+      where: {
+        status: { in: ['failed', 'timeout'] },
+      },
+    }),
+    payload.find({
+      collection: 'print-orders',
+      depth: 2,
+      limit: 6,
+      sort: '-updatedAt',
+      where: {
+        or: [{ status: { equals: 'pending-payment' } }, { paymentStatus: { in: ['failed', 'refunded'] } }, { status: { equals: 'cancelled' } }],
+      },
+    }),
+    payload.find({
+      collection: 'shopify-payments',
+      depth: 2,
+      limit: 6,
+      sort: '-updatedAt',
+      where: {
+        status: { in: ['failed', 'refunded', 'pending'] },
+      },
+    }),
+    payload.find({
+      collection: 'credits',
+      depth: 1,
+      limit: 6,
+      sort: 'balance',
+      where: {
+        balance: { less_than_equal: 20 },
+      },
+    }),
+    payload.find({
+      collection: 'credits',
+      depth: 1,
+      limit: 6,
+      sort: '-balance',
+      where: {
+        balance: { greater_than: 50 },
+      },
+    }),
   ])
 
   const [
@@ -210,6 +270,28 @@ export async function getOpsDashboardData() {
       reservedCreditAccounts: reservedCreditAccounts.totalDocs,
       tasks: tasks.totalDocs,
       totalOrders: orders.totalDocs,
+    },
+    operatorQueues: {
+      failedTasks: {
+        count: failedTaskQueue.totalDocs,
+        docs: failedTaskQueue.docs,
+      },
+      highBalanceAccounts: {
+        count: highBalanceQueue.totalDocs,
+        docs: highBalanceQueue.docs,
+      },
+      lowBalanceAccounts: {
+        count: lowBalanceQueue.totalDocs,
+        docs: lowBalanceQueue.docs,
+      },
+      pendingOrders: {
+        count: pendingOrderQueue.totalDocs,
+        docs: pendingOrderQueue.docs,
+      },
+      paymentExceptions: {
+        count: paymentExceptionQueue.totalDocs,
+        docs: paymentExceptionQueue.docs,
+      },
     },
     recentOrders: recentOrders.docs,
     recentPayments: recentPayments.docs,

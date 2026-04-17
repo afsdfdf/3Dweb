@@ -44,13 +44,16 @@ export const Media: CollectionConfig = {
   ],
   upload: {
     mimeTypes: [
+      'application/octet-stream',
       'image/png',
       'image/jpeg',
       'image/webp',
       'image/gif',
       'application/zip',
+      'application/vnd.autodesk.fbx',
       'model/gltf-binary',
       'model/gltf+json',
+      'model/vnd.usdz+zip',
       'application/sla',
       'application/vnd.ms-pki.stl',
       'text/plain',

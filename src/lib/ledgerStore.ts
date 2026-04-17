@@ -7,6 +7,7 @@ export type LedgerQueryResult = {
 }
 
 export type LedgerExecutor = {
+  dialect: 'postgres' | 'sqlite'
   execute: (sql: string, args?: unknown[]) => Promise<LedgerQueryResult>
 }
 
@@ -22,6 +23,7 @@ async function withSqliteTransaction<T>(rawClient: any, callback: (executor: Led
   const transaction = await rawClient.transaction('write')
 
   const executor: LedgerExecutor = {
+    dialect: 'sqlite',
     execute: async (sql, args = []) => transaction.execute({ args, sql }),
   }
 
@@ -41,6 +43,7 @@ async function withPostgresTransaction<T>(rawClient: any, callback: (executor: L
   const client = await rawClient.connect()
 
   const executor: LedgerExecutor = {
+    dialect: 'postgres',
     execute: async (sql, args = []) => client.query(toPostgresPlaceholders(sql), args),
   }
 
@@ -70,4 +73,3 @@ export async function withLedgerTransaction<T>(req: PayloadRequest, callback: (e
 
   throw new Error('Unsupported ledger database client. Expected sqlite/libsql or postgres pool client.')
 }
-

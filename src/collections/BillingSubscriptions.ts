@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
-import { isStaff, ownerOrStaff } from '@/access'
+import { isAdmin, ownerOrStaff } from '@/access'
 
 export const BillingSubscriptions: CollectionConfig = {
   slug: 'billing-subscriptions',
@@ -15,10 +15,10 @@ export const BillingSubscriptions: CollectionConfig = {
     useAsTitle: 'stripeSubscriptionId',
   },
   access: {
-    create: isStaff,
-    delete: isStaff,
+    create: isAdmin,
+    delete: isAdmin,
     read: ownerOrStaff('user'),
-    update: isStaff,
+    update: isAdmin,
   },
   defaultSort: '-updatedAt',
   timestamps: true,

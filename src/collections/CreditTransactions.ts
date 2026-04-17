@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
-import { isStaff, ownerOrStaff } from '@/access'
+import { isAdmin, ownerOrStaff } from '@/access'
 
 export const CreditTransactions: CollectionConfig = {
   slug: 'credit-transactions',
@@ -15,9 +15,9 @@ export const CreditTransactions: CollectionConfig = {
     defaultColumns: ['referenceCode', 'type', 'amount', 'user', 'createdAt'],
   },
   access: {
-    create: isStaff,
+    create: isAdmin,
     read: ownerOrStaff('user'),
-    update: isStaff,
+    update: isAdmin,
   },
   defaultSort: '-createdAt',
   timestamps: true,

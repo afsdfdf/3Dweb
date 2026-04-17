@@ -2,7 +2,7 @@ import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import type { Payload } from 'payload'
 
-import { getS3StorageSettings } from '@/lib/s3Settings'
+import { describeS3StorageConfigProblem, getS3StorageSettings } from '@/lib/s3Settings'
 
 const normalizeBaseURL = (value: string) => value.replace(/\/+$/, '')
 const ABSOLUTE_URL_PROTOCOLS = new Set(['http:', 'https:'])
@@ -88,7 +88,15 @@ export async function getMediaAccessURL(args: {
   if (!absoluteURL) return null
 
   const settings = await getS3StorageSettings(payload)
-  if (!settings.accessKeyId || !settings.secretAccessKey) {
+  const configProblem = describeS3StorageConfigProblem(settings)
+  if (configProblem) {
+    payload.logger.error({
+      msg: `Media signed URL fallback to absolute URL: ${configProblem}`,
+    })
+    return absoluteURL
+  }
+
+  if (!settings.hasRequiredConfig) {
     return absoluteURL
   }
 
