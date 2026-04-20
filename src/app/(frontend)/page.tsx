@@ -1,28 +1,143 @@
-import Link from 'next/link'
+﻿import { Button } from '@/components/ui/button'
+import { getCachedPayload } from '@/lib/getCachedPayload'
+import { getMediaAccessURL } from '@/lib/s3SignedURL'
 
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
-
+import { HomeHeroWorkbench } from './_components/HomeHeroWorkbench'
+import { HomeFeaturedRail, type FeaturedItem } from './_components/home/HomeFeaturedRail'
+import { HomeCollectionShelf, type HomeCollectionShelfItem } from './_components/home/HomeCollectionShelf'
+import { HomeInspirationSection } from './_components/home/HomeInspirationSection'
 import { SiteShell } from './_components/SiteShell'
 import { getMarketingSiteData } from './_lib/marketing'
-import { getCurrentLocale } from './_lib/locale-server'
+import { mapModelToPublicModelThumbnailCardVM } from './_lib/mappers/modelCardMappers'
 import { getCurrentUser } from './_lib/session'
 
-type Tone = 'blue' | 'pink' | 'violet'
-
-const toneStyles: Record<Tone, string> = {
-  blue: 'from-sky-500/30 via-sky-500/10 to-background',
-  pink: 'from-fuchsia-500/30 via-pink-500/10 to-background',
-  violet: 'from-violet-500/30 via-indigo-500/10 to-background',
+type HomepageModelCard = {
+  formats: string[]
+  id: number
+  previewURL: string | null
+  summary: string
+  title: string
 }
 
+const getPreviewURL = (model: any) => {
+  const preview = model?.previewImage
+  if (preview && typeof preview === 'object' && typeof preview.url === 'string') {
+    return preview.url
+  }
+
+  const sourceTask =
+    model?.sourceTask && typeof model.sourceTask === 'object' && !Array.isArray(model.sourceTask) ? model.sourceTask : null
+  const callbackPayload =
+    sourceTask?.callbackPayload && typeof sourceTask.callbackPayload === 'object' && !Array.isArray(sourceTask.callbackPayload)
+      ? sourceTask.callbackPayload
+      : null
+
+  return callbackPayload && typeof callbackPayload.thumbnailUrl === 'string' ? callbackPayload.thumbnailUrl : null
+}
+
+const getFormats = (model: any) => {
+  const formats = Array.isArray(model?.formats) ? model.formats : []
+  return formats.map((item: any) => String(item?.format || '').toUpperCase()).filter(Boolean)
+}
+
+async function getHomepagePublicModels(): Promise<HomepageModelCard[]> {
+  const payload = await getCachedPayload()
+  const publicResult = await payload.find({
+    collection: 'models',
+    depth: 2,
+    limit: 24,
+    overrideAccess: false,
+    pagination: false,
+    sort: '-updatedAt',
+    where: {
+      visibility: {
+        equals: 'public',
+      },
+    },
+  })
+
+  const result =
+    publicResult.docs.length > 0
+      ? publicResult
+      : await payload.find({
+          collection: 'models',
+          depth: 2,
+          limit: 24,
+          overrideAccess: true,
+          pagination: false,
+          sort: '-updatedAt',
+        })
+
+  return await Promise.all(
+    result.docs.map(async (model: any) => ({
+      formats: getFormats(model),
+      id: Number(model.id),
+      previewURL: await getMediaAccessURL({
+        payload,
+        url: getPreviewURL(model),
+      }),
+      summary:
+        typeof model.description === 'string' && model.description.trim()
+          ? model.description
+          : 'Public model asset available for showcase, download, and print workflows.',
+      title: typeof model.title === 'string' ? model.title : `Model ${model.id}`,
+    })),
+  )
+}
+
+const BACKEND_MEDIA_PREVIEW_URLS = [
+  'http://localhost:3000/api/media/file/miniforge-upload-1776638413157-products5-1.png?prefix=media',
+  'http://localhost:3000/api/media/file/miniforge-upload-1776638408197-products3-1.png?prefix=media',
+  'http://localhost:3000/api/media/file/miniforge-upload-1776638400155-products2-1.png?prefix=media',
+] as const
+const BACKEND_MEDIA_PREVIEW_URL_SET = new Set<string>(BACKEND_MEDIA_PREVIEW_URLS)
+const FEATURED_NEW_PRODUCT_IMAGE_URLS = [
+  'http://localhost:3000/api/media/file/miniforge-upload-1776640760207-new-product1-1.png?prefix=media',
+  'http://localhost:3000/api/media/file/miniforge-upload-1776640769000-new-product2-1.png?prefix=media',
+  'http://localhost:3000/api/media/file/miniforge-upload-1776640773480-new-product3-1.png?prefix=media',
+  'http://localhost:3000/api/media/file/miniforge-upload-1776640777789-new-product4-1.png?prefix=media',
+] as const
+const FEATURED_NEW_PRODUCT_FALLBACK_SRCS = [
+  '/ui/frames/new product1.png',
+  '/ui/frames/new product2.png',
+  '/ui/frames/new product3.png',
+  '/ui/frames/new product4.png',
+] as const
+
 export default async function HomePage() {
-  const locale = await getCurrentLocale()
-  const [user, marketing] = await Promise.all([getCurrentUser(), getMarketingSiteData()])
-  const { homepageContent, siteSettings } = marketing
-  const featured = homepageContent.featuredWorks.slice(0, 6)
+  const [user, marketing, publicModels] = await Promise.all([getCurrentUser(), getMarketingSiteData(), getHomepagePublicModels()])
+  const { siteSettings } = marketing
+  const inspirationModels = publicModels.slice(0, 24)
+  const heroPreviewSeeds = publicModels.map((item) => item.previewURL).filter((value): value is string => Boolean(value)).slice(0, 2)
+  const featuredItems: FeaturedItem[] = FEATURED_NEW_PRODUCT_IMAGE_URLS.map((imageSrc, index) => ({
+    alt: `New product ${index + 1}`,
+    fallbackSrc: FEATURED_NEW_PRODUCT_FALLBACK_SRCS[index] ?? FEATURED_NEW_PRODUCT_FALLBACK_SRCS[0],
+    id: `featured-new-product-${index + 1}`,
+    imageSrc,
+    variant: index === 0 ? 'wide' : 'standard',
+  }))
+  const inspirationItems = inspirationModels.map((model) => mapModelToPublicModelThumbnailCardVM(model))
+  const collectionShelfPreviewItems: HomeCollectionShelfItem[] = BACKEND_MEDIA_PREVIEW_URLS.map((previewSrc, index) => ({
+    count: '1 products',
+    previewSrc,
+    title: `Library Preview ${index + 1}`,
+  }))
+  const collectionShelfItems: HomeCollectionShelfItem[] = [
+    ...collectionShelfPreviewItems,
+    ...publicModels
+      .filter((model) => Boolean(model.previewURL))
+      .map((model) => ({
+        count: `${model.formats.length || 1} products`,
+        previewSrc: model.previewURL ?? undefined,
+        title: model.title,
+      }))
+      .filter((item) => !BACKEND_MEDIA_PREVIEW_URL_SET.has(item.previewSrc ?? '')),
+    {
+      count: 'All',
+      isMore: true,
+      title: 'More',
+    },
+  ]
 
   return (
     <SiteShell
@@ -30,87 +145,42 @@ export default async function HomePage() {
       currentPath="/"
       footer={siteSettings.footer}
       navigation={siteSettings.headerNav}
+      showUtilityNav={false}
       user={user}
     >
-      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14">
-        <div className="max-w-3xl">
-          <Badge variant="secondary">{homepageContent.hero.eyebrow}</Badge>
-          <h1 className="mt-4 max-w-3xl text-balance text-4xl font-semibold tracking-tight sm:text-5xl">
-            {homepageContent.hero.title}
-          </h1>
-          <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-            {homepageContent.hero.subtitle}
-          </p>
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            <Button asChild>
-              <Link href={homepageContent.hero.primaryCTA.href || '/generate'}>{homepageContent.hero.primaryCTA.label || (locale === 'zh' ? '进入 Studio' : 'Open Studio')}</Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link href={homepageContent.hero.secondaryCTA.href || '/showcase'}>{homepageContent.hero.secondaryCTA.label || (locale === 'zh' ? '查看案例展示' : 'View showcase')}</Link>
-            </Button>
-            <Button asChild variant="ghost">
-              <Link href={user ? '/dashboard' : '/register'}>
-                {user ? (locale === 'zh' ? '打开工作台' : 'Open workspace') : locale === 'zh' ? '创建账号' : 'Create account'}
-              </Link>
-            </Button>
+      <section className="relative overflow-hidden bg-[radial-gradient(circle_at_50%_43%,rgba(78,88,198,0.34),transparent_24%),radial-gradient(circle_at_50%_58%,rgba(36,44,120,0.88),transparent_40%),linear-gradient(180deg,#17171c_0%,#181923_28%,#151723_52%,#181818_86%,#181818_100%)]">
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-full bg-[radial-gradient(circle_at_50%_30%,rgba(255,214,132,0.08),transparent_16%),linear-gradient(90deg,rgba(255,255,255,0.018),transparent_18%,transparent_82%,rgba(255,255,255,0.018))]" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-[280px] bg-[linear-gradient(180deg,rgba(24,24,24,0)_0%,rgba(24,24,24,0.24)_24%,rgba(24,24,24,0.58)_52%,rgba(24,24,24,0.86)_78%,#181818_100%)]" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-[120px] bg-[linear-gradient(180deg,rgba(48,56,142,0.12)_0%,rgba(24,24,24,0.08)_42%,rgba(24,24,24,0)_100%)] blur-[18px]" />
+        <div className="pointer-events-none absolute left-[4%] top-[18%] hidden h-[280px] w-[180px] rotate-[-15deg] rounded-[30px] bg-[radial-gradient(circle_at_40%_40%,rgba(118,136,255,0.45),transparent_36%),linear-gradient(180deg,#2a2d39_0%,#12131a_100%)] opacity-70 blur-[2px] lg:block" />
+        <div className="pointer-events-none absolute left-[18%] top-[29%] hidden h-[140px] w-[80px] rotate-[-28deg] rounded-[24px] border border-[#433a2d] bg-[radial-gradient(circle_at_50%_30%,rgba(121,144,255,0.5),transparent_28%),linear-gradient(180deg,#312521_0%,#171820_100%)] shadow-[0_18px_50px_rgba(0,0,0,0.32)] lg:block" />
+        <div className="pointer-events-none absolute right-[9%] top-[16%] hidden h-[330px] w-[190px] rotate-[19deg] rounded-[40px] border border-[#4d3b24] bg-[radial-gradient(circle_at_50%_28%,rgba(255,157,76,0.66),transparent_18%),radial-gradient(circle_at_52%_34%,rgba(93,99,255,0.52),transparent_24%),linear-gradient(180deg,#47311f_0%,#171820_72%)] shadow-[0_26px_70px_rgba(0,0,0,0.4)] lg:block" />
+        <div className="pointer-events-none absolute right-[1%] top-[15%] hidden h-[280px] w-[120px] rotate-[24deg] rounded-[28px] bg-[radial-gradient(circle_at_50%_30%,rgba(102,77,255,0.28),transparent_34%),linear-gradient(180deg,#1e2130_0%,#0f1015_100%)] opacity-60 blur-[1px] xl:block" />
+
+        <div className="relative mx-auto min-h-[780px] max-w-[1600px] px-4 pb-16 pt-10 sm:px-6 sm:pb-20 lg:pt-10">
+          <div className="absolute right-6 top-6 hidden w-[210px] rounded-[18px] border border-[#4c3a22] bg-[linear-gradient(180deg,#1d1e24_0%,#0f1014_100%)] p-4 shadow-[0_16px_44px_rgba(0,0,0,0.35)] xl:block">
+            <div className="flex items-center gap-3">
+              <div className="size-12 rounded-full border border-[#e2c78f] bg-[radial-gradient(circle_at_48%_35%,#f8eee8_0_26%,#eacfc8_27%_40%,transparent_41%),linear-gradient(135deg,#f6d9d0,#eee)]" />
+              <div>
+                <p className="text-sm font-semibold text-[#f0e6d0]">{user?.email ? 'Your account' : 'Guest profile'}</p>
+                <p className="mt-1 text-xs leading-5 text-[#8f9199]">Profile and workbench access.</p>
+              </div>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <Button className="border-[#5c4a35] bg-[#17181b] text-[#d8d0bf] hover:bg-[#23252b]" size="sm" variant="outline">
+                Profile
+              </Button>
+              <Button className="border-[#5c4a35] bg-[#17181b] text-[#d8d0bf] hover:bg-[#23252b]" size="sm" variant="outline">
+                Orders
+              </Button>
+            </div>
           </div>
-        </div>
-
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
-          {homepageContent.serviceBlocks.map((item, index) => {
-            const tone = (featured[index]?.tone || 'violet') as Tone
-
-            return (
-              <Card key={item.title} className="overflow-hidden border-border/60 bg-card/80 shadow-xl shadow-black/5">
-                <CardHeader className="gap-4">
-                  <CardTitle className="text-2xl tracking-tight">{item.title}</CardTitle>
-                  <CardDescription className="text-sm leading-6">{item.text}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className={`rounded-2xl border border-border/60 bg-gradient-to-br ${toneStyles[tone]} p-5`}>
-                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{homepageContent.processSection.eyebrow}</p>
-                    <p className="mt-3 text-sm leading-6 text-foreground">{homepageContent.processSteps[index]?.title || homepageContent.entrySection.title}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
+          <HomeHeroWorkbench fallbackPreviewUrls={heroPreviewSeeds} />
         </div>
       </section>
-
-      <section className="mx-auto max-w-7xl px-4 pb-12 sm:px-6 sm:pb-16">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">{homepageContent.introBand.eyebrow}</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">{homepageContent.introBand.title}</h2>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">{homepageContent.introBand.text}</p>
-          </div>
-          <Button asChild variant="outline">
-            <Link href="/showcase">{locale === 'zh' ? '查看更多' : 'See more'}</Link>
-          </Button>
-        </div>
-
-        <Separator className="my-6" />
-
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {featured.map((item) => (
-            <Card key={`${item.category}-${item.title}`} className="overflow-hidden border-border/60 bg-card/80">
-              <CardContent className="p-4">
-                <div className={`relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br ${toneStyles[(item.tone || 'violet') as Tone]} p-5`}>
-                  <div className="absolute left-1/2 top-1/2 size-24 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/50 blur-3xl" />
-                  <div className="relative flex aspect-[4/3] items-end">
-                    <div>
-                      <Badge variant="outline">{item.category}</Badge>
-                      <h3 className="mt-3 text-xl font-semibold tracking-tight">{item.title}</h3>
-                      <p className="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">{item.summary}</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </section>
+      <HomeFeaturedRail items={featuredItems} />
+      <HomeCollectionShelf items={collectionShelfItems} />
+      <HomeInspirationSection items={inspirationItems} />
     </SiteShell>
   )
 }
