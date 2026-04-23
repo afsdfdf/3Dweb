@@ -2,7 +2,7 @@ import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 
 import { enforceRateLimit, getRateLimitConfig } from './lib/rateLimit'
-import { applySecurityHeaders, extractRequestToken, getRequestRateLimitKey } from './lib/requestSecurity'
+import { applySecurityHeaders, extractRequestToken } from './lib/requestSecurity'
 import { getAllowedOriginsFromEnv } from './lib/securitySettings'
 import { isTokenRevoked } from './lib/tokenRevocation'
 
@@ -57,6 +57,47 @@ function getAllowedRequestOriginsFromEnv() {
   }
 
   return Array.from(allowed)
+}
+
+function normalizeIP(value: null | string | undefined) {
+  const candidate = String(value || '').split(',')[0]?.trim()
+  return candidate || ''
+}
+
+function normalizeUserAgent(value: null | string | undefined) {
+  return String(value || '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase()
+}
+
+function getRequestIP(headers: Headers) {
+  if (process.env.TRUST_PROXY_HEADERS === 'true') {
+    const proxyHeaders = [headers.get('cf-connecting-ip'), headers.get('x-real-ip')]
+
+    for (const headerValue of proxyHeaders) {
+      const normalized = normalizeIP(headerValue)
+      if (normalized) {
+        return normalized
+      }
+    }
+  }
+
+  return 'unknown'
+}
+
+function getRequestRateLimitKey(headers: Headers) {
+  const ip = getRequestIP(headers)
+  if (ip !== 'unknown') {
+    return `ip:${ip}`
+  }
+
+  const userAgent = normalizeUserAgent(headers.get('user-agent'))
+  if (userAgent) {
+    return `ua:${userAgent}`
+  }
+
+  return 'anonymous'
 }
 
 export async function proxy(request: NextRequest) {
