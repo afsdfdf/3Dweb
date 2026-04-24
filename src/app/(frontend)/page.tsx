@@ -1,4 +1,4 @@
-﻿import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui/button'
 import { getCachedPayload } from '@/lib/getCachedPayload'
 import { getMediaAccessURL } from '@/lib/s3SignedURL'
 
@@ -17,6 +17,11 @@ type HomepageModelCard = {
   previewURL: string | null
   summary: string
   title: string
+}
+
+type HomepageManagedContent = {
+  collectionShelfItems: HomeCollectionShelfItem[]
+  featuredRailItems: FeaturedItem[]
 }
 
 const getPreviewURL = (model: any) => {
@@ -40,9 +45,102 @@ const getFormats = (model: any) => {
   return formats.map((item: any) => String(item?.format || '').toUpperCase()).filter(Boolean)
 }
 
+async function getHomepageItemPreviewURL(payload: Awaited<ReturnType<typeof getCachedPayload>>, item: any) {
+  const directCover =
+    item?.coverImage && typeof item.coverImage === 'object' && typeof item.coverImage.url === 'string' ? item.coverImage.url : null
+
+  if (directCover) {
+    return getMediaAccessURL({
+      payload,
+      url: directCover,
+    })
+  }
+
+  if (item?.linkedModel && typeof item.linkedModel === 'object' && !Array.isArray(item.linkedModel)) {
+    return getMediaAccessURL({
+      payload,
+      url: getPreviewURL(item.linkedModel),
+    })
+  }
+
+  if (item?.linkedBundle && typeof item.linkedBundle === 'object' && !Array.isArray(item.linkedBundle)) {
+    const bundleCover =
+      item.linkedBundle.coverImage && typeof item.linkedBundle.coverImage === 'object' && typeof item.linkedBundle.coverImage.url === 'string'
+        ? item.linkedBundle.coverImage.url
+        : null
+
+    return getMediaAccessURL({
+      payload,
+      url: bundleCover,
+    })
+  }
+
+  return null
+}
+
+async function getHomepageManagedContent(): Promise<HomepageManagedContent> {
+  const payload = await getCachedPayload()
+  const result = await payload.find({
+    collection: 'homepage-items',
+    depth: 2,
+    limit: 20,
+    overrideAccess: false,
+    pagination: false,
+    sort: ['placement', '-isPinned', 'sortOrder', '-publishAt'],
+    where: {
+      placement: {
+        in: ['featured-rail', 'collection-shelf'],
+      },
+    },
+  })
+
+  const featuredRailItems: FeaturedItem[] = []
+  const collectionShelfItems: HomeCollectionShelfItem[] = []
+
+  for (const item of result.docs) {
+    const previewSrc = await getHomepageItemPreviewURL(payload, item)
+
+    if (item.placement === 'featured-rail' && previewSrc) {
+      featuredRailItems.push({
+        alt: typeof item.title === 'string' ? item.title : 'Homepage featured item',
+        fallbackSrc: previewSrc,
+        id: String(item.id),
+        imageSrc: previewSrc,
+        variant: item.railVariant === 'wide' ? 'wide' : 'standard',
+      })
+    }
+
+    if (item.placement === 'collection-shelf' && previewSrc) {
+      const linkedBundle =
+        item.linkedBundle && typeof item.linkedBundle === 'object' && !Array.isArray(item.linkedBundle) ? item.linkedBundle : null
+      const linkedModel =
+        item.linkedModel && typeof item.linkedModel === 'object' && !Array.isArray(item.linkedModel) ? item.linkedModel : null
+      const count =
+        typeof item.itemCountLabel === 'string' && item.itemCountLabel.trim()
+          ? item.itemCountLabel
+          : linkedBundle && Array.isArray(linkedBundle.models)
+            ? `Products x${linkedBundle.models.length}`
+            : linkedModel
+              ? `Products x${Math.max(1, Array.isArray(linkedModel.formats) ? linkedModel.formats.length : 1)}`
+              : 'Products x1'
+
+      collectionShelfItems.push({
+        count,
+        previewSrc,
+        title: typeof item.title === 'string' ? item.title : 'Homepage collection item',
+      })
+    }
+  }
+
+  return {
+    collectionShelfItems,
+    featuredRailItems,
+  }
+}
+
 async function getHomepagePublicModels(): Promise<HomepageModelCard[]> {
   const payload = await getCachedPayload()
-  const publicResult = await payload.find({
+  const result = await payload.find({
     collection: 'models',
     depth: 2,
     limit: 24,
@@ -55,18 +153,6 @@ async function getHomepagePublicModels(): Promise<HomepageModelCard[]> {
       },
     },
   })
-
-  const result =
-    publicResult.docs.length > 0
-      ? publicResult
-      : await payload.find({
-          collection: 'models',
-          depth: 2,
-          limit: 24,
-          overrideAccess: true,
-          pagination: false,
-          sort: '-updatedAt',
-        })
 
   return await Promise.all(
     result.docs.map(async (model: any) => ({
@@ -105,39 +191,57 @@ const FEATURED_NEW_PRODUCT_FALLBACK_SRCS = [
 ] as const
 
 export default async function HomePage() {
-  const [user, marketing, publicModels] = await Promise.all([getCurrentUser(), getMarketingSiteData(), getHomepagePublicModels()])
+  const [user, marketing, publicModels, managedContent] = await Promise.all([
+    getCurrentUser(),
+    getMarketingSiteData(),
+    getHomepagePublicModels(),
+    getHomepageManagedContent(),
+  ])
   const { siteSettings } = marketing
   const inspirationModels = publicModels.slice(0, 24)
   const heroPreviewSeeds = publicModels.map((item) => item.previewURL).filter((value): value is string => Boolean(value)).slice(0, 2)
-  const featuredItems: FeaturedItem[] = FEATURED_NEW_PRODUCT_IMAGE_URLS.map((imageSrc, index) => ({
-    alt: `New product ${index + 1}`,
-    fallbackSrc: FEATURED_NEW_PRODUCT_FALLBACK_SRCS[index] ?? FEATURED_NEW_PRODUCT_FALLBACK_SRCS[0],
-    id: `featured-new-product-${index + 1}`,
-    imageSrc,
-    variant: index === 0 ? 'wide' : 'standard',
-  }))
+  const featuredItems: FeaturedItem[] =
+    managedContent.featuredRailItems.length > 0
+      ? managedContent.featuredRailItems
+      : FEATURED_NEW_PRODUCT_IMAGE_URLS.map((imageSrc, index) => ({
+          alt: `New product ${index + 1}`,
+          fallbackSrc: FEATURED_NEW_PRODUCT_FALLBACK_SRCS[index] ?? FEATURED_NEW_PRODUCT_FALLBACK_SRCS[0],
+          id: `featured-new-product-${index + 1}`,
+          imageSrc,
+          variant: index === 0 ? 'wide' : 'standard',
+        }))
   const inspirationItems = inspirationModels.map((model) => mapModelToPublicModelThumbnailCardVM(model))
   const collectionShelfPreviewItems: HomeCollectionShelfItem[] = BACKEND_MEDIA_PREVIEW_URLS.map((previewSrc, index) => ({
     count: '1 products',
     previewSrc,
     title: `Library Preview ${index + 1}`,
   }))
-  const collectionShelfItems: HomeCollectionShelfItem[] = [
-    ...collectionShelfPreviewItems,
-    ...publicModels
-      .filter((model) => Boolean(model.previewURL))
-      .map((model) => ({
-        count: `${model.formats.length || 1} products`,
-        previewSrc: model.previewURL ?? undefined,
-        title: model.title,
-      }))
-      .filter((item) => !BACKEND_MEDIA_PREVIEW_URL_SET.has(item.previewSrc ?? '')),
-    {
-      count: 'All',
-      isMore: true,
-      title: 'More',
-    },
-  ]
+  const collectionShelfItems: HomeCollectionShelfItem[] =
+    managedContent.collectionShelfItems.length > 0
+      ? [
+          ...managedContent.collectionShelfItems.slice(0, 3),
+          {
+            count: 'All',
+            isMore: true,
+            title: 'More',
+          },
+        ]
+      : [
+          ...collectionShelfPreviewItems,
+          ...publicModels
+            .filter((model) => Boolean(model.previewURL))
+            .map((model) => ({
+              count: `${model.formats.length || 1} products`,
+              previewSrc: model.previewURL ?? undefined,
+              title: model.title,
+            }))
+            .filter((item) => !BACKEND_MEDIA_PREVIEW_URL_SET.has(item.previewSrc ?? '')),
+          {
+            count: 'All',
+            isMore: true,
+            title: 'More',
+          },
+        ]
 
   return (
     <SiteShell
@@ -178,8 +282,8 @@ export default async function HomePage() {
           <HomeHeroWorkbench fallbackPreviewUrls={heroPreviewSeeds} />
         </div>
       </section>
-      <HomeFeaturedRail items={featuredItems} />
-      <HomeCollectionShelf items={collectionShelfItems} />
+      <HomeFeaturedRail copy={marketing.homepageContent.featuredRail} items={featuredItems} />
+      <HomeCollectionShelf copy={marketing.homepageContent.collectionShelf} items={collectionShelfItems} />
       <HomeInspirationSection items={inspirationItems} />
     </SiteShell>
   )

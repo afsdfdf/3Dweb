@@ -1,23 +1,16 @@
 import type { CSSProperties } from 'react'
+
 import Link from 'next/link'
 
 import { getOpsDashboardData } from '@/lib/adminDashboard'
+import { getAdminLocale } from '@/lib/adminText'
 
 const colors = {
-  blue: '#2563eb',
-  blueSoft: '#dbeafe',
   border: 'rgba(15, 23, 42, 0.08)',
-  cyan: '#0891b2',
-  foreground: '#0f172a',
-  green: '#16a34a',
-  greenSoft: '#dcfce7',
   panel: '#ffffff',
   slate: '#64748b',
-  subtle: '#f8fafc',
-  violet: '#7c3aed',
-  violetSoft: '#ede9fe',
-  yellow: '#d97706',
-  yellowSoft: '#fef3c7',
+  soft: '#f8fafc',
+  text: '#0f172a',
 }
 
 const shellStyle: CSSProperties = {
@@ -33,362 +26,263 @@ const panelStyle: CSSProperties = {
   padding: 20,
 }
 
-const headingMetaStyle: CSSProperties = {
+const headingStyle: CSSProperties = {
   color: colors.slate,
   fontSize: 13,
-  fontWeight: 600,
-  letterSpacing: '0.04em',
-  margin: 0,
-  textTransform: 'uppercase',
-}
-
-const sectionTitleStyle: CSSProperties = {
-  fontSize: 13,
   fontWeight: 700,
-  letterSpacing: '0.06em',
+  letterSpacing: '0.05em',
   margin: 0,
   textTransform: 'uppercase',
 }
 
-const linkPillStyle: CSSProperties = {
-  background: colors.subtle,
+const pillStyle: CSSProperties = {
+  background: colors.soft,
   border: `1px solid ${colors.border}`,
   borderRadius: 999,
-  color: colors.foreground,
+  color: colors.text,
   fontSize: 13,
   fontWeight: 600,
   padding: '8px 14px',
   textDecoration: 'none',
 }
 
-const cardStyle: CSSProperties = {
-  ...panelStyle,
-  padding: 18,
+const copy = {
+  en: {
+    accountFallback: 'Unknown user',
+    dashboard: 'Operations overview',
+    generatedAt: 'Generated at',
+    intro:
+      'This overview keeps tasks, payments, orders, and credits on one screen so operators can spot exceptions before they spread.',
+    metrics: {
+      failedTasks: 'Failed tasks',
+      highBalanceAccounts: 'High-balance accounts',
+      newTasksToday: 'New tasks today',
+      pendingOrders: 'Pending orders',
+      processingTasks: 'Active queue',
+    },
+    nav: {
+      ai: 'AI Production',
+      aiProviders: 'AI provider settings',
+      announcements: 'Announcements',
+      credits: 'Credit accounts',
+      media: 'Media assets',
+      models: 'Models',
+      orders: 'Print orders',
+      payments: 'Payments',
+      platform: 'Platform',
+      posts: 'Posts & events',
+      settings: 'Site settings',
+      users: 'Users',
+    },
+    quickLinks: 'Quick links',
+    queues: {
+      failedTasks: 'Failed task queue',
+      highBalance: 'High-balance accounts',
+      lowBalance: 'Low-balance accounts',
+      pendingOrders: 'Orders needing follow-up',
+      paymentExceptions: 'Payment exceptions',
+    },
+    recent: {
+      credits: 'Top credit accounts',
+      orders: 'Recent orders',
+      payments: 'Recent payments',
+      tasks: 'Recent tasks',
+    },
+    statuses: {
+      order: {
+        cancelled: 'Cancelled',
+        completed: 'Completed',
+        inProduction: 'In production',
+        paid: 'Paid',
+        pendingPayment: 'Pending payment',
+        shipped: 'Shipped',
+        unknown: 'Unknown',
+      },
+      payment: {
+        failed: 'Failed',
+        paid: 'Paid',
+        pending: 'Pending',
+        refunded: 'Refunded',
+        unknown: 'Unknown',
+      },
+      task: {
+        failed: 'Failed',
+        processing: 'Processing',
+        queued: 'Queued',
+        succeeded: 'Succeeded',
+        timeout: 'Timed out',
+        unknown: 'Unknown',
+      },
+    },
+    subtitle: 'Tasks, orders, payments, and credits',
+    title: 'Operations dashboard',
+    viewAll: 'View all',
+  },
+  zh: {
+    accountFallback: '未知用户',
+    dashboard: '运营总览',
+    generatedAt: '生成时间',
+    intro: '把任务、支付、订单和积分放到同一张看板上，方便运营优先处理异常。',
+    metrics: {
+      failedTasks: '失败任务',
+      highBalanceAccounts: '高余额账户',
+      newTasksToday: '今日新任务',
+      pendingOrders: '待推进订单',
+      processingTasks: '当前队列',
+    },
+    nav: {
+      ai: 'AI 生产',
+      aiProviders: 'AI 提供方设置',
+      announcements: '公告',
+      credits: '积分账户',
+      media: '媒体资源',
+      models: '模型',
+      orders: '打印订单',
+      payments: '支付记录',
+      platform: '平台',
+      posts: '文章与活动',
+      settings: '站点设置',
+      users: '用户',
+    },
+    quickLinks: '快捷入口',
+    queues: {
+      failedTasks: '失败任务队列',
+      highBalance: '高余额账户',
+      lowBalance: '低余额账户',
+      pendingOrders: '待跟进订单',
+      paymentExceptions: '支付异常',
+    },
+    recent: {
+      credits: '高余额账户',
+      orders: '最近订单',
+      payments: '最近支付',
+      tasks: '最近任务',
+    },
+    statuses: {
+      order: {
+        cancelled: '已取消',
+        completed: '已完成',
+        inProduction: '生产中',
+        paid: '已支付',
+        pendingPayment: '待支付',
+        shipped: '已发货',
+        unknown: '未知',
+      },
+      payment: {
+        failed: '失败',
+        paid: '已支付',
+        pending: '待支付',
+        refunded: '已退款',
+        unknown: '未知',
+      },
+      task: {
+        failed: '失败',
+        processing: '处理中',
+        queued: '排队中',
+        succeeded: '已完成',
+        timeout: '超时',
+        unknown: '未知',
+      },
+    },
+    subtitle: '任务、订单、支付与积分',
+    title: '运营仪表板',
+    viewAll: '查看全部',
+  },
+} as const
+
+type DashboardProps = {
+  i18n?: {
+    language?: null | string
+  } | null
 }
 
-function formatTaskStatus(status?: string) {
-  switch (status) {
-    case 'queued':
-      return '排队中'
-    case 'processing':
-      return '处理中'
-    case 'succeeded':
-      return '已完成'
-    case 'failed':
-      return '失败'
-    case 'timeout':
-      return '超时'
-    default:
-      return status || '未知'
+const formatDateTime = (value?: null | string, language: 'en' | 'zh' = 'en') => {
+  if (!value) {
+    return language === 'zh' ? '刚刚' : 'Just now'
   }
-}
-
-function formatInputMode(mode?: string) {
-  switch (mode) {
-    case 'image':
-      return '图生 3D'
-    case 'text':
-      return '文生 3D'
-    case 'hybrid':
-      return '图文混合'
-    default:
-      return mode || '未知模式'
-  }
-}
-
-function formatOrderStatus(status?: string) {
-  switch (status) {
-    case 'pending-payment':
-    case 'pending':
-      return '待支付'
-    case 'paid':
-      return '已支付'
-    case 'in-production':
-    case 'printing':
-      return '生产中'
-    case 'shipped':
-      return '已发货'
-    case 'completed':
-      return '已完成'
-    case 'cancelled':
-      return '已取消'
-    case 'failed':
-      return '失败'
-    case 'refunded':
-      return '已退款'
-    default:
-      return status || '未知'
-  }
-}
-
-function formatDateTime(value?: string) {
-  if (!value) return '刚刚'
 
   const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
 
-  return new Intl.DateTimeFormat('zh-CN', {
+  if (Number.isNaN(date.getTime())) {
+    return value
+  }
+
+  return new Intl.DateTimeFormat(language === 'zh' ? 'zh-CN' : 'en-US', {
+    day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
     month: '2-digit',
-    day: '2-digit',
   }).format(date)
 }
 
-function getStatusTone(status?: string) {
+const formatTaskStatus = (status?: null | string, language: 'en' | 'zh' = 'en') => {
+  const source = copy[language].statuses.task
+
   switch (status) {
-    case 'succeeded':
-    case 'completed':
-    case 'paid':
-      return { background: colors.greenSoft, color: colors.green }
-    case 'processing':
-    case 'in-production':
     case 'queued':
-    case 'pending':
-    case 'pending-payment':
-      return { background: colors.blueSoft, color: colors.blue }
+      return source.queued
+    case 'processing':
+      return source.processing
+    case 'succeeded':
+      return source.succeeded
     case 'failed':
+      return source.failed
     case 'timeout':
-    case 'cancelled':
-    case 'refunded':
-      return { background: '#fee2e2', color: '#dc2626' }
+      return source.timeout
     default:
-      return { background: colors.violetSoft, color: colors.violet }
+      return source.unknown
   }
 }
 
-function getTaskStatusLabel(status: string) {
-  return formatTaskStatus(status)
+const formatOrderStatus = (status?: null | string, language: 'en' | 'zh' = 'en') => {
+  const source = copy[language].statuses.order
+
+  switch (status) {
+    case 'pending-payment':
+      return source.pendingPayment
+    case 'paid':
+      return source.paid
+    case 'in-production':
+      return source.inProduction
+    case 'shipped':
+      return source.shipped
+    case 'completed':
+      return source.completed
+    case 'cancelled':
+      return source.cancelled
+    default:
+      return source.unknown
+  }
 }
 
-function getTaskModeLabel(mode: string) {
-  return formatInputMode(mode)
-}
+const formatPaymentStatus = (status?: null | string, language: 'en' | 'zh' = 'en') => {
+  const source = copy[language].statuses.payment
 
-function getOrderStatusLabel(status: string) {
-  return formatOrderStatus(status)
-}
-
-function getPaymentStatusLabel(status: string) {
   switch (status) {
     case 'pending':
-      return '待支付'
+      return source.pending
     case 'paid':
-      return '已支付'
+      return source.paid
     case 'failed':
-      return '失败'
+      return source.failed
     case 'refunded':
-      return '已退款'
+      return source.refunded
     default:
-      return status || '未知'
+      return source.unknown
   }
 }
 
-function StatusBadge({ label, tone }: { label: string; tone: { background: string; color: string } }) {
+function MetricCard({ label, note, value }: { label: string; note: string; value: number }) {
   return (
-    <span
+    <div
       style={{
-        background: tone.background,
-        borderRadius: 999,
-        color: tone.color,
-        display: 'inline-flex',
-        fontSize: 12,
-        fontWeight: 700,
-        padding: '5px 10px',
+        ...panelStyle,
+        padding: 18,
       }}
     >
-      {label}
-    </span>
-  )
-}
-
-function MetricCard({
-  accent,
-  label,
-  note,
-  value,
-}: {
-  accent: string
-  label: string
-  note: string
-  value: number
-}) {
-  return (
-    <div style={cardStyle}>
-      <div
-        style={{
-          alignItems: 'center',
-          display: 'inline-flex',
-          gap: 8,
-        }}
-      >
-        <span
-          style={{
-            background: accent,
-            borderRadius: 999,
-            display: 'inline-block',
-            height: 10,
-            width: 10,
-          }}
-        />
-        <span style={{ color: colors.slate, fontSize: 12 }}>{note}</span>
-      </div>
-      <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-0.04em', marginTop: 12 }}>{value}</div>
-      <div style={{ color: colors.foreground, fontSize: 14, fontWeight: 600, marginTop: 6 }}>{label}</div>
-    </div>
-  )
-}
-
-function TrendChart({
-  bars,
-  lines,
-  title,
-}: {
-  bars: Array<{ count: number; label: string }>
-  lines: Array<{ count: number; label: string }>
-  title: string
-}) {
-  const maxValue = Math.max(1, ...bars.map((item) => item.count), ...lines.map((item) => item.count))
-
-  return (
-    <div style={{ display: 'grid', gap: 14 }}>
-      <div>
-        <h3 style={{ fontSize: 20, margin: 0 }}>{title}</h3>
-        <p style={{ color: colors.slate, fontSize: 13, lineHeight: 1.7, margin: '6px 0 0' }}>
-          用最近 7 天的任务提交与已支付订单走势，判断后台当前更偏向“流量增长”还是“交付推进”。
-        </p>
-      </div>
-
-      <div
-        style={{
-          background: colors.subtle,
-          border: `1px solid ${colors.border}`,
-          borderRadius: 16,
-          display: 'grid',
-          gap: 12,
-          padding: 16,
-        }}
-      >
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-          <div style={{ alignItems: 'center', display: 'inline-flex', gap: 8 }}>
-            <span style={{ background: colors.blue, borderRadius: 999, height: 10, width: 10 }} />
-            <span style={{ color: colors.slate, fontSize: 12 }}>任务提交</span>
-          </div>
-          <div style={{ alignItems: 'center', display: 'inline-flex', gap: 8 }}>
-            <span style={{ background: colors.green, borderRadius: 999, height: 10, width: 10 }} />
-            <span style={{ color: colors.slate, fontSize: 12 }}>已支付订单</span>
-          </div>
-        </div>
-
-        <div style={{ alignItems: 'end', display: 'grid', gap: 12, gridTemplateColumns: `repeat(${bars.length}, minmax(0, 1fr))`, minHeight: 180 }}>
-          {bars.map((bar, index) => {
-            const line = lines[index]
-            const barHeight = `${Math.max(10, (bar.count / maxValue) * 100)}%`
-            const lineHeight = `${Math.max(10, (line.count / maxValue) * 100)}%`
-
-            return (
-              <div key={bar.label} style={{ display: 'grid', gap: 8, justifyItems: 'center' }}>
-                <div style={{ alignItems: 'end', display: 'flex', gap: 6, height: 130, width: '100%' }}>
-                  <div style={{ background: colors.blue, borderRadius: 999, flex: 1, height: barHeight, minWidth: 18 }} />
-                  <div style={{ background: colors.green, borderRadius: 999, flex: 1, height: lineHeight, minWidth: 18 }} />
-                </div>
-                <div style={{ color: colors.slate, fontSize: 12, textAlign: 'center' }}>{bar.label}</div>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function DistributionCard({
-  color,
-  items,
-  labelFormatter,
-  title,
-}: {
-  color: string
-  items: Array<{ count: number; key: string }>
-  labelFormatter: (value: string) => string
-  title: string
-}) {
-  const total = Math.max(1, items.reduce((sum, item) => sum + item.count, 0))
-
-  return (
-    <div style={{ display: 'grid', gap: 12 }}>
-      <div>
-        <h3 style={{ fontSize: 18, margin: 0 }}>{title}</h3>
-      </div>
-      <div style={{ display: 'grid', gap: 10 }}>
-        {items.map((item) => {
-          const percentage = Math.round((item.count / total) * 100)
-
-          return (
-            <div
-              key={item.key}
-              style={{
-                background: colors.subtle,
-                border: `1px solid ${colors.border}`,
-                borderRadius: 14,
-                display: 'grid',
-                gap: 8,
-                padding: '12px 14px',
-              }}
-            >
-              <div style={{ alignItems: 'center', display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                <span style={{ fontSize: 14, fontWeight: 600 }}>{labelFormatter(item.key)}</span>
-                <span style={{ color: colors.slate, fontSize: 12 }}>
-                  {item.count} / {percentage}%
-                </span>
-              </div>
-              <div style={{ background: '#e2e8f0', borderRadius: 999, height: 8, overflow: 'hidden' }}>
-                <div style={{ background: color, borderRadius: 999, height: '100%', width: `${percentage}%` }} />
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-function InsightPanel({ items }: { items: string[] }) {
-  return (
-    <div style={{ display: 'grid', gap: 10 }}>
-      {items.map((item, index) => (
-        <div
-          key={item}
-          style={{
-            alignItems: 'center',
-            background: index === 0 ? colors.blueSoft : colors.subtle,
-            border: `1px solid ${colors.border}`,
-            borderRadius: 14,
-            color: colors.foreground,
-            display: 'flex',
-            gap: 12,
-            padding: '12px 14px',
-          }}
-        >
-          <span
-            style={{
-              alignItems: 'center',
-              background: index === 0 ? colors.blue : '#cbd5e1',
-              borderRadius: 999,
-              color: index === 0 ? '#fff' : colors.foreground,
-              display: 'inline-flex',
-              fontSize: 12,
-              fontWeight: 800,
-              height: 24,
-              justifyContent: 'center',
-              minWidth: 24,
-            }}
-          >
-            {index + 1}
-          </span>
-          <span style={{ fontSize: 14, lineHeight: 1.7 }}>{item}</span>
-        </div>
-      ))}
+      <div style={{ color: colors.slate, fontSize: 12 }}>{note}</div>
+      <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-0.04em', marginTop: 10 }}>{value}</div>
+      <div style={{ color: colors.text, fontSize: 14, fontWeight: 700, marginTop: 6 }}>{label}</div>
     </div>
   )
 }
@@ -396,116 +290,102 @@ function InsightPanel({ items }: { items: string[] }) {
 function QueueList({
   emptyText,
   items,
-  linkLabel,
   linkPrefix,
+  locale,
   renderMeta,
   title,
+  viewAll,
 }: {
   emptyText: string
   items: any[]
-  linkLabel: string
   linkPrefix: string
+  locale: 'en' | 'zh'
   renderMeta: (item: any) => string
   title: string
+  viewAll: string
 }) {
   return (
     <div style={{ display: 'grid', gap: 12 }}>
       <div style={{ alignItems: 'center', display: 'flex', justifyContent: 'space-between' }}>
         <h3 style={{ fontSize: 18, margin: 0 }}>{title}</h3>
-        <Link href={linkPrefix} style={{ color: colors.blue, fontSize: 13, fontWeight: 700 }}>
-          {linkLabel}
+        <Link href={linkPrefix} style={{ color: '#2563eb', fontSize: 13, fontWeight: 700 }}>
+          {viewAll}
         </Link>
       </div>
-      <div style={{ display: 'grid', gap: 10 }}>
-        {items.length > 0 ? (
-          items.map((item) => (
-            <div
-              key={`${title}-${item.id}`}
-              style={{
-                background: colors.subtle,
-                border: `1px solid ${colors.border}`,
-                borderRadius: 14,
-                display: 'grid',
-                gap: 8,
-                padding: '12px 14px',
-              }}
-            >
-              <div style={{ alignItems: 'center', display: 'flex', gap: 12, justifyContent: 'space-between' }}>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700 }}>
-                    {item.taskCode || item.orderNumber || item.checkoutReference || item.user?.email || item.accountLabel || `#${item.id}`}
-                  </div>
-                  <div style={{ color: colors.slate, fontSize: 12, marginTop: 4 }}>{renderMeta(item)}</div>
-                </div>
-                <Link href={`${linkPrefix}/${item.id}`} style={linkPillStyle}>
-                  查看
-                </Link>
-              </div>
+
+      {items.length > 0 ? (
+        items.map((item) => (
+          <div
+            key={`${title}-${item.id}`}
+            style={{
+              background: colors.soft,
+              border: `1px solid ${colors.border}`,
+              borderRadius: 14,
+              display: 'grid',
+              gap: 8,
+              padding: '12px 14px',
+            }}
+          >
+            <div style={{ fontSize: 14, fontWeight: 700 }}>
+              {item.taskCode || item.orderNumber || item.checkoutReference || item.user?.email || item.accountLabel || `#${item.id}`}
             </div>
-          ))
-        ) : (
-          <div style={{ background: colors.subtle, border: `1px dashed ${colors.border}`, borderRadius: 14, color: colors.slate, padding: 18 }}>
-            {emptyText}
+            <div style={{ color: colors.slate, fontSize: 12 }}>{renderMeta(item)}</div>
+            <div>
+              <Link href={`${linkPrefix}/${item.id}`} style={pillStyle}>
+                {copy[locale].viewAll}
+              </Link>
+            </div>
           </div>
-        )}
-      </div>
+        ))
+      ) : (
+        <div
+          style={{
+            background: colors.soft,
+            border: `1px dashed ${colors.border}`,
+            borderRadius: 14,
+            color: colors.slate,
+            padding: 16,
+          }}
+        >
+          {emptyText}
+        </div>
+      )}
     </div>
   )
 }
 
-const groupedLinks = [
-  {
-    items: [
-      { href: '/admin/collections/generation-tasks', label: '任务管理' },
-      { href: '/admin/collections/task-events', label: '任务事件' },
-      { href: '/admin/collections/models', label: '模型库' },
-      { href: '/admin/globals/ai-provider-settings', label: 'AI 配置' },
-    ],
-    title: 'AI 生产',
-  },
-  {
-    items: [
-      { href: '/admin/collections/print-orders', label: '打印订单' },
-      { href: '/admin/collections/credit-products', label: '积分商品' },
-      { href: '/admin/collections/credit-transactions', label: '积分流水' },
-      { href: '/admin/collections/shopify-payments', label: '支付记录' },
-    ],
-    title: '商务',
-  },
-  {
-    items: [
-      { href: '/admin/collections/users', label: '用户' },
-      { href: '/admin/collections/media', label: '媒体资源' },
-      { href: '/admin/globals/site-settings', label: '站点设置' },
-      { href: '/admin/globals/homepage-content', label: '首页内容' },
-    ],
-    title: '平台',
-  },
-] as const
-
-export async function OpsDashboardView() {
+export async function OpsDashboardView(props: DashboardProps) {
+  const locale = getAdminLocale(props)
+  const text = copy[locale]
   const data = await getOpsDashboardData()
 
-  const cards = [
-    { accent: colors.blue, label: '今日新任务', note: '新增任务数', value: data.overview.newTasksToday },
-    { accent: colors.cyan, label: '处理中', note: '当前进行中', value: data.overview.processingTasks },
-    { accent: colors.yellow, label: '待履约订单', note: '待支付 / 生产', value: data.overview.pendingOrders },
-    { accent: colors.violet, label: '高余额账户', note: '余额 > 50', value: data.overview.highBalanceAccounts },
-  ]
-
-  const insights = [
-    data.overview.failedTasks > 0
-      ? `当前有 ${data.overview.failedTasks} 个失败任务，建议先查看任务事件与供应商配置。`
-      : '当前没有失败任务，任务主链路状态稳定。',
-    data.overview.pendingOrders > 0
-      ? `当前有 ${data.overview.pendingOrders} 个待推进订单，适合优先跟进支付与履约。`
-      : '当前没有堆积中的订单，履约节奏较为健康。',
-    data.overview.reservedCreditAccounts > 0
-      ? `有 ${data.overview.reservedCreditAccounts} 个积分账户存在预扣，建议留意异常任务是否需要退款。`
-      : '当前没有挂起的积分预扣，账务状态清晰。',
-    data.overview.lowBalanceAccounts > 0
-      ? `有 ${data.overview.lowBalanceAccounts} 个低余额账户，可考虑引导订阅或积分充值。`
-      : '用户余额分布尚可，当前不急需做充值提醒。',
+  const quickLinkGroups = [
+    {
+      links: [
+        { href: '/admin/collections/generation-tasks', label: text.nav.ai },
+        { href: '/admin/collections/models', label: text.nav.models },
+        { href: '/admin/globals/ai-provider-settings', label: text.nav.aiProviders },
+      ],
+      title: text.nav.ai,
+    },
+    {
+      links: [
+        { href: '/admin/collections/print-orders', label: text.nav.orders },
+        { href: '/admin/collections/shopify-payments', label: text.nav.payments },
+        { href: '/admin/collections/credits', label: text.nav.credits },
+      ],
+      title: locale === 'zh' ? '商务' : 'Commerce',
+    },
+    {
+      links: [
+        { href: '/admin/collections/users', label: text.nav.users },
+        { href: '/admin/collections/media', label: text.nav.media },
+        { href: '/admin/collections/posts', label: text.nav.posts },
+        { href: '/admin/collections/announcements', label: text.nav.announcements },
+        { href: '/admin/globals/site-settings', label: text.nav.settings },
+      ],
+      title: text.nav.platform,
+    },
   ]
 
   return (
@@ -514,95 +394,44 @@ export async function OpsDashboardView() {
         style={{
           ...panelStyle,
           background: 'linear-gradient(180deg, #ffffff 0%, #f8fbff 100%)',
-          padding: 24,
+          display: 'grid',
+          gap: 12,
         }}
       >
-        <div style={{ alignItems: 'start', display: 'flex', flexWrap: 'wrap', gap: 16, justifyContent: 'space-between' }}>
-          <div style={{ maxWidth: 960 }}>
-            <p style={headingMetaStyle}>运营后台 / 总览</p>
-            <h1 style={{ fontSize: 34, letterSpacing: '-0.04em', lineHeight: 1.08, margin: '10px 0 0' }}>AI 任务、订单与积分总览</h1>
-            <p style={{ color: colors.slate, lineHeight: 1.8, margin: '12px 0 0', maxWidth: 880 }}>
-              这一页只做运营看板：帮助你快速判断任务流量、订单推进、支付状态与积分健康度。核心功能入口保持不变，后台组件仅增强结构与可读性。
-            </p>
-          </div>
-
-          <div style={{ display: 'grid', gap: 10, minWidth: 240 }}>
-            {[
-              `任务总数 ${data.overview.tasks}`,
-              `订单总数 ${data.overview.totalOrders}`,
-              `支付记录 ${data.overview.payments}`,
-              `积分账户 ${data.overview.creditAccounts}`,
-              `更新时间 ${formatDateTime(data.generatedAt)}`,
-            ].map((item) => (
-              <div
-                key={item}
-                style={{
-                  background: '#ffffffcc',
-                  border: `1px solid ${colors.border}`,
-                  borderRadius: 14,
-                  color: colors.foreground,
-                  fontSize: 13,
-                  fontWeight: 600,
-                  padding: '10px 12px',
-                }}
-              >
-                {item}
-              </div>
-            ))}
-          </div>
+        <p style={headingStyle}>{text.dashboard}</p>
+        <div>
+          <h1 style={{ fontSize: 34, letterSpacing: '-0.04em', lineHeight: 1.08, margin: 0 }}>{text.title}</h1>
+          <p style={{ color: colors.text, fontSize: 16, fontWeight: 700, margin: '10px 0 0' }}>{text.subtitle}</p>
+          <p style={{ color: colors.slate, lineHeight: 1.8, margin: '12px 0 0', maxWidth: 920 }}>{text.intro}</p>
+        </div>
+        <div style={{ color: colors.slate, fontSize: 13 }}>
+          {text.generatedAt}: {formatDateTime(data.generatedAt, locale)}
         </div>
       </div>
 
-      <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' }}>
-        {cards.map((card) => (
-          <MetricCard key={card.label} {...card} />
-        ))}
-      </div>
-
-      <div style={{ display: 'grid', gap: 16, gridTemplateColumns: '1.2fr 0.8fr' }}>
-        <div style={panelStyle}>
-          <TrendChart bars={data.analytics.taskTrend} lines={data.analytics.paidOrderTrend} title="近 7 天任务 / 订单走势" />
-        </div>
-
-        <div style={{ display: 'grid', gap: 16 }}>
-          <div style={panelStyle}>
-            <DistributionCard
-              color={colors.blue}
-              items={data.analytics.taskStatusCounts}
-              labelFormatter={getTaskStatusLabel}
-              title="任务状态分布"
-            />
-          </div>
-
-          <div style={panelStyle}>
-            <DistributionCard
-              color={colors.violet}
-              items={data.analytics.paymentStatusCounts}
-              labelFormatter={getPaymentStatusLabel}
-              title="支付状态分布"
-            />
-          </div>
-        </div>
+      <div style={{ display: 'grid', gap: 16, gridTemplateColumns: 'repeat(5, minmax(0, 1fr))' }}>
+        <MetricCard label={text.metrics.newTasksToday} note={text.subtitle} value={data.overview.newTasksToday} />
+        <MetricCard label={text.metrics.processingTasks} note={text.nav.ai} value={data.overview.processingTasks} />
+        <MetricCard label={text.metrics.failedTasks} note={text.queues.failedTasks} value={data.overview.failedTasks} />
+        <MetricCard label={text.metrics.pendingOrders} note={text.nav.orders} value={data.overview.pendingOrders} />
+        <MetricCard
+          label={text.metrics.highBalanceAccounts}
+          note={text.nav.credits}
+          value={data.overview.highBalanceAccounts}
+        />
       </div>
 
       <div style={{ display: 'grid', gap: 16, gridTemplateColumns: '1fr 1fr' }}>
         <div style={panelStyle}>
-          <div style={{ alignItems: 'center', display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
-            <div>
-              <p style={headingMetaStyle}>工作入口</p>
-              <h2 style={{ fontSize: 26, margin: '6px 0 0' }}>快捷入口</h2>
-            </div>
-            <StatusBadge label={`支付记录 ${data.overview.payments}`} tone={{ background: colors.violetSoft, color: colors.violet }} />
-          </div>
-
-          <div style={{ display: 'grid', gap: 16 }}>
-            {groupedLinks.map((group) => (
+          <p style={headingStyle}>{text.quickLinks}</p>
+          <div style={{ display: 'grid', gap: 16, marginTop: 14 }}>
+            {quickLinkGroups.map((group) => (
               <div key={group.title}>
-                <p style={sectionTitleStyle}>{group.title}</p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 12 }}>
-                  {group.items.map((item) => (
-                    <Link key={item.href} href={item.href} style={linkPillStyle}>
-                      {item.label}
+                <h2 style={{ fontSize: 18, margin: 0 }}>{group.title}</h2>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 10 }}>
+                  {group.links.map((link) => (
+                    <Link key={link.href} href={link.href} style={pillStyle}>
+                      {link.label}
                     </Link>
                   ))}
                 </div>
@@ -612,257 +441,152 @@ export async function OpsDashboardView() {
         </div>
 
         <div style={panelStyle}>
-          <div style={{ marginBottom: 16 }}>
-            <p style={headingMetaStyle}>运营提示</p>
-            <h2 style={{ fontSize: 26, margin: '6px 0 0' }}>当前优先事项</h2>
+          <p style={headingStyle}>{locale === 'zh' ? '最近动态' : 'Recent activity'}</p>
+          <div style={{ display: 'grid', gap: 16, marginTop: 14 }}>
+            <QueueList
+              emptyText={locale === 'zh' ? '当前没有失败任务。' : 'No failed tasks right now.'}
+              items={data.operatorQueues.failedTasks.docs}
+              linkPrefix="/admin/collections/generation-tasks"
+              locale={locale}
+              renderMeta={(item) =>
+                `${formatTaskStatus(item.status, locale)} · ${formatDateTime(item.updatedAt, locale)} · ${item.user?.email || text.accountFallback}`
+              }
+              title={text.recent.tasks}
+              viewAll={text.viewAll}
+            />
           </div>
-          <InsightPanel items={insights} />
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gap: 16, gridTemplateColumns: '1fr 1fr' }}>
+        <div style={panelStyle}>
+          <QueueList
+            emptyText={text.queues.pendingOrders}
+            items={data.operatorQueues.pendingOrders.docs}
+            linkPrefix="/admin/collections/print-orders"
+            locale={locale}
+            renderMeta={(item) =>
+              `${formatOrderStatus(item.status, locale)} · ${formatPaymentStatus(item.paymentStatus, locale)} · ${item.user?.email || text.accountFallback}`
+            }
+            title={text.queues.pendingOrders}
+            viewAll={text.viewAll}
+          />
+        </div>
+
+        <div style={panelStyle}>
+          <QueueList
+            emptyText={text.queues.paymentExceptions}
+            items={data.operatorQueues.paymentExceptions.docs}
+            linkPrefix="/admin/collections/shopify-payments"
+            locale={locale}
+            renderMeta={(item) =>
+              `${formatPaymentStatus(item.status, locale)} · ${item.user?.email || text.accountFallback} · ${item.amount ?? 0} ${item.currency ?? 'USD'}`
+            }
+            title={text.queues.paymentExceptions}
+            viewAll={text.viewAll}
+          />
         </div>
       </div>
 
       <div style={{ display: 'grid', gap: 16, gridTemplateColumns: '1fr 1fr 1fr' }}>
         <div style={panelStyle}>
-          <DistributionCard
-            color={colors.cyan}
-            items={data.analytics.taskModeCounts}
-            labelFormatter={getTaskModeLabel}
-            title="任务输入模式"
+          <QueueList
+            emptyText={text.queues.lowBalance}
+            items={data.operatorQueues.lowBalanceAccounts.docs}
+            linkPrefix="/admin/collections/credits"
+            locale={locale}
+            renderMeta={(item) =>
+              `${text.nav.credits} · ${item.balance ?? 0} · ${item.user?.email || text.accountFallback}`
+            }
+            title={text.queues.lowBalance}
+            viewAll={text.viewAll}
           />
-        </div>
-        <div style={panelStyle}>
-          <DistributionCard
-            color={colors.green}
-            items={data.analytics.orderStatusCounts}
-            labelFormatter={getOrderStatusLabel}
-            title="订单履约阶段"
-          />
-        </div>
-        <div style={panelStyle}>
-          <div style={{ marginBottom: 14 }}>
-            <p style={headingMetaStyle}>操作路径</p>
-            <h2 style={{ fontSize: 22, margin: '6px 0 0' }}>任务流</h2>
-          </div>
-          <InsightPanel
-            items={[
-              '前台提交生成请求，后台立即落任务与事件记录。',
-              '根据后台积分规则决定是否预扣并记录流水。',
-              '任务成功后生成模型，失败或超时则进入异常处理。',
-              '订单、支付、积分与用户数据继续由后台统一追踪。',
-            ]}
-          />
-        </div>
-      </div>
-
-      <div style={{ display: 'grid', gap: 16, gridTemplateColumns: '1fr 1fr' }}>
-        <div style={panelStyle}>
-          <div style={{ marginBottom: 16 }}>
-            <p style={headingMetaStyle}>运营筛查</p>
-            <h2 style={{ fontSize: 26, margin: '6px 0 0' }}>异常任务与订单</h2>
-            <p style={{ color: colors.slate, fontSize: 13, lineHeight: 1.7, margin: '8px 0 0' }}>
-              优先把失败任务、待支付订单、退款/失败支付放到同一块，减少运营在多个集合之间来回切换。
-            </p>
-          </div>
-          <div style={{ display: 'grid', gap: 16 }}>
-            <QueueList
-              emptyText="当前没有失败或超时任务。"
-              items={data.operatorQueues.failedTasks.docs}
-              linkLabel={`失败任务 ${data.operatorQueues.failedTasks.count}`}
-              linkPrefix="/admin/collections/generation-tasks"
-              renderMeta={(item) => `${formatTaskStatus(item.status)} · ${formatDateTime(item.updatedAt)} · ${item.user?.email || '未关联用户'}`}
-              title="失败任务队列"
-            />
-            <QueueList
-              emptyText="当前没有待跟进订单。"
-              items={data.operatorQueues.pendingOrders.docs}
-              linkLabel={`异常订单 ${data.operatorQueues.pendingOrders.count}`}
-              linkPrefix="/admin/collections/print-orders"
-              renderMeta={(item) =>
-                `${formatOrderStatus(item.status)} / ${getPaymentStatusLabel(item.paymentStatus)} · ${item.user?.email || '未关联用户'}`
-              }
-              title="订单异常队列"
-            />
-          </div>
         </div>
 
         <div style={panelStyle}>
-          <div style={{ marginBottom: 16 }}>
-            <p style={headingMetaStyle}>运营筛查</p>
-            <h2 style={{ fontSize: 26, margin: '6px 0 0' }}>支付与余额关注名单</h2>
-            <p style={{ color: colors.slate, fontSize: 13, lineHeight: 1.7, margin: '8px 0 0' }}>
-              运营可直接查看支付异常和高/低余额账户，优先做人工排查、提醒和后续跟进。
-            </p>
-          </div>
-          <div style={{ display: 'grid', gap: 16 }}>
-            <QueueList
-              emptyText="当前没有支付异常记录。"
-              items={data.operatorQueues.paymentExceptions.docs}
-              linkLabel={`支付异常 ${data.operatorQueues.paymentExceptions.count}`}
-              linkPrefix="/admin/collections/shopify-payments"
-              renderMeta={(item) => `${getPaymentStatusLabel(item.status)} · ${item.user?.email || '未关联用户'} · ${item.amount ?? 0} ${item.currency ?? 'USD'}`}
-              title="支付异常队列"
-            />
-            <div style={{ display: 'grid', gap: 16, gridTemplateColumns: '1fr 1fr' }}>
-              <QueueList
-                emptyText="当前没有低余额账户。"
-                items={data.operatorQueues.lowBalanceAccounts.docs}
-                linkLabel={`低余额 ${data.operatorQueues.lowBalanceAccounts.count}`}
-                linkPrefix="/admin/collections/credits"
-                renderMeta={(item) => `余额 ${item.balance ?? 0} · 预扣 ${item.reservedBalance ?? 0} · ${item.user?.email || '未关联用户'}`}
-                title="低余额账户"
-              />
-              <QueueList
-                emptyText="当前没有高余额账户。"
-                items={data.operatorQueues.highBalanceAccounts.docs}
-                linkLabel={`高余额 ${data.operatorQueues.highBalanceAccounts.count}`}
-                linkPrefix="/admin/collections/credits"
-                renderMeta={(item) => `余额 ${item.balance ?? 0} · 预扣 ${item.reservedBalance ?? 0} · ${item.user?.email || '未关联用户'}`}
-                title="高余额账户"
-              />
-            </div>
+          <QueueList
+            emptyText={text.queues.highBalance}
+            items={data.operatorQueues.highBalanceAccounts.docs}
+            linkPrefix="/admin/collections/credits"
+            locale={locale}
+            renderMeta={(item) =>
+              `${text.nav.credits} · ${item.balance ?? 0} · ${item.user?.email || text.accountFallback}`
+            }
+            title={text.queues.highBalance}
+            viewAll={text.viewAll}
+          />
+        </div>
+
+        <div style={panelStyle}>
+          <div style={{ display: 'grid', gap: 12 }}>
+            <p style={headingStyle}>{locale === 'zh' ? '关键数字' : 'Key totals'}</p>
+            {[
+              `${locale === 'zh' ? '任务总数' : 'Tasks'}: ${data.overview.tasks}`,
+              `${locale === 'zh' ? '订单总数' : 'Orders'}: ${data.overview.totalOrders}`,
+              `${locale === 'zh' ? '支付记录' : 'Payments'}: ${data.overview.payments}`,
+              `${locale === 'zh' ? '积分账户' : 'Credit accounts'}: ${data.overview.creditAccounts}`,
+              `${locale === 'zh' ? '模型数量' : 'Models'}: ${data.overview.models}`,
+            ].map((line) => (
+              <div
+                key={line}
+                style={{
+                  background: colors.soft,
+                  border: `1px solid ${colors.border}`,
+                  borderRadius: 12,
+                  color: colors.text,
+                  fontSize: 14,
+                  fontWeight: 600,
+                  padding: '12px 14px',
+                }}
+              >
+                {line}
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gap: 16, gridTemplateColumns: '1fr 1fr' }}>
+      <div style={{ display: 'grid', gap: 16, gridTemplateColumns: '1fr 1fr 1fr' }}>
         <div style={panelStyle}>
-          <div style={{ alignItems: 'center', display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-            <div>
-              <p style={headingMetaStyle}>商务</p>
-              <h2 style={{ fontSize: 24, margin: '6px 0 0' }}>订单运营面板</h2>
-            </div>
-            <Link href="/admin/collections/print-orders" style={{ color: colors.blue, fontSize: 13, fontWeight: 700 }}>
-              进入订单管理
-            </Link>
-          </div>
-          <div style={{ display: 'grid', gap: 12 }}>
-            {data.recentOrders.length > 0 ? (
-              data.recentOrders.map((order: any) => (
-                <div key={order.id} style={{ border: `1px solid ${colors.border}`, borderRadius: 14, padding: 14 }}>
-                  <div style={{ alignItems: 'start', display: 'flex', gap: 12, justifyContent: 'space-between' }}>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 15, fontWeight: 700 }}>{order.orderNumber}</div>
-                      <div style={{ color: colors.slate, fontSize: 13, marginTop: 6 }}>{order.model?.title || '未关联模型'}</div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <StatusBadge label={formatOrderStatus(order.status)} tone={getStatusTone(order.status)} />
-                      <div style={{ color: colors.slate, fontSize: 13, marginTop: 8 }}>
-                        {order.amount ?? 0} {order.currency ?? 'USD'}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div style={{ background: colors.subtle, border: `1px dashed ${colors.border}`, borderRadius: 14, color: colors.slate, padding: 20 }}>
-                暂无订单
-              </div>
-            )}
-          </div>
+          <QueueList
+            emptyText={locale === 'zh' ? '暂无最近订单。' : 'No recent orders yet.'}
+            items={data.recentOrders}
+            linkPrefix="/admin/collections/print-orders"
+            locale={locale}
+            renderMeta={(item) =>
+              `${formatOrderStatus(item.status, locale)} · ${item.amount ?? 0} ${item.currency ?? 'USD'}`
+            }
+            title={text.recent.orders}
+            viewAll={text.viewAll}
+          />
         </div>
 
         <div style={panelStyle}>
-          <div style={{ alignItems: 'center', display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-            <div>
-              <p style={headingMetaStyle}>积分</p>
-              <h2 style={{ fontSize: 24, margin: '6px 0 0' }}>用户积分面板</h2>
-            </div>
-            <Link href="/admin/collections/credits" style={{ color: colors.blue, fontSize: 13, fontWeight: 700 }}>
-              进入积分账户
-            </Link>
-          </div>
-          <div style={{ display: 'grid', gap: 12 }}>
-            {data.topCreditAccounts.length > 0 ? (
-              data.topCreditAccounts.map((account: any) => (
-                <div key={account.id} style={{ border: `1px solid ${colors.border}`, borderRadius: 14, padding: 14 }}>
-                  <div style={{ alignItems: 'start', display: 'flex', gap: 12, justifyContent: 'space-between' }}>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 15, fontWeight: 700 }}>{account.user?.email || account.accountLabel}</div>
-                      <div style={{ color: colors.slate, fontSize: 13, marginTop: 6 }}>预扣：{account.reservedBalance ?? 0}</div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.04em' }}>{account.balance ?? 0}</div>
-                      <div style={{ color: colors.slate, fontSize: 13, marginTop: 6 }}>累计消费：{account.lifetimeSpent ?? 0}</div>
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div style={{ background: colors.subtle, border: `1px dashed ${colors.border}`, borderRadius: 14, color: colors.slate, padding: 20 }}>
-                暂无积分账户
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div style={{ display: 'grid', gap: 16, gridTemplateColumns: '1fr 1fr' }}>
-        <div style={panelStyle}>
-          <div style={{ alignItems: 'center', display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-            <div>
-              <p style={headingMetaStyle}>AI 生产</p>
-              <h2 style={{ fontSize: 24, margin: '6px 0 0' }}>最近任务</h2>
-            </div>
-            <Link href="/admin/collections/generation-tasks" style={{ color: colors.blue, fontSize: 13, fontWeight: 700 }}>
-              查看全部
-            </Link>
-          </div>
-          <div style={{ display: 'grid', gap: 12 }}>
-            {data.recentTasks.length > 0 ? (
-              data.recentTasks.map((task: any) => (
-                <div key={task.id} style={{ border: `1px solid ${colors.border}`, borderRadius: 14, padding: 14 }}>
-                  <div style={{ alignItems: 'start', display: 'flex', gap: 12, justifyContent: 'space-between' }}>
-                    <div>
-                      <div style={{ fontSize: 15, fontWeight: 700 }}>{task.taskCode}</div>
-                      <div style={{ color: colors.slate, fontSize: 13, marginTop: 6 }}>
-                        {formatInputMode(task.inputMode)} · {task.progress ?? 0}%
-                      </div>
-                    </div>
-                    <StatusBadge label={formatTaskStatus(task.status)} tone={getStatusTone(task.status)} />
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div style={{ background: colors.subtle, border: `1px dashed ${colors.border}`, borderRadius: 14, color: colors.slate, padding: 20 }}>
-                暂无任务
-              </div>
-            )}
-          </div>
+          <QueueList
+            emptyText={locale === 'zh' ? '暂无最近支付。' : 'No recent payments yet.'}
+            items={data.recentPayments}
+            linkPrefix="/admin/collections/shopify-payments"
+            locale={locale}
+            renderMeta={(item) =>
+              `${formatPaymentStatus(item.status, locale)} · ${item.amount ?? 0} ${item.currency ?? 'USD'}`
+            }
+            title={text.recent.payments}
+            viewAll={text.viewAll}
+          />
         </div>
 
         <div style={panelStyle}>
-          <div style={{ alignItems: 'center', display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-            <div>
-              <p style={headingMetaStyle}>支付</p>
-              <h2 style={{ fontSize: 24, margin: '6px 0 0' }}>最近支付</h2>
-            </div>
-            <Link href="/admin/collections/shopify-payments" style={{ color: colors.blue, fontSize: 13, fontWeight: 700 }}>
-              查看全部
-            </Link>
-          </div>
-          <div style={{ display: 'grid', gap: 12 }}>
-            {data.recentPayments.length > 0 ? (
-              data.recentPayments.map((payment: any) => (
-                <div key={payment.id} style={{ border: `1px solid ${colors.border}`, borderRadius: 14, padding: 14 }}>
-                  <div style={{ alignItems: 'start', display: 'flex', gap: 12, justifyContent: 'space-between' }}>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 15, fontWeight: 700 }}>{payment.checkoutReference}</div>
-                      <div style={{ color: colors.slate, fontSize: 13, marginTop: 6 }}>{payment.user?.email || '未知用户'}</div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <StatusBadge label={getPaymentStatusLabel(payment.status)} tone={getStatusTone(payment.status)} />
-                      <div style={{ color: colors.slate, fontSize: 13, marginTop: 8 }}>
-                        {payment.amount ?? 0} {payment.currency ?? 'USD'}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div style={{ background: colors.subtle, border: `1px dashed ${colors.border}`, borderRadius: 14, color: colors.slate, padding: 20 }}>
-                暂无支付记录
-              </div>
-            )}
-          </div>
+          <QueueList
+            emptyText={locale === 'zh' ? '暂无高余额账户。' : 'No top credit accounts yet.'}
+            items={data.topCreditAccounts}
+            linkPrefix="/admin/collections/credits"
+            locale={locale}
+            renderMeta={(item) =>
+              `${locale === 'zh' ? '余额' : 'Balance'} ${item.balance ?? 0} · ${item.user?.email || text.accountFallback}`
+            }
+            title={text.recent.credits}
+            viewAll={text.viewAll}
+          />
         </div>
       </div>
     </div>

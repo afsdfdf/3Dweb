@@ -1,19 +1,20 @@
 import type { PayloadRequest } from "payload";
 
 import { rejectRateLimitedEndpoint } from "@/lib/endpointRateLimit";
+import { ensurePayloadRequestUser } from "@/lib/payloadAuthFallback";
 import { createPrintOrder, syncPrintOrder } from "@/lib/printOrderFlow";
 import { getPaymentCheckoutUrl } from "@/lib/paymentRecords";
 import { rejectDisallowedMutationOrigin } from "@/lib/requestSecurity";
 
 const unauthorized = () =>
-  Response.json({ message: "请先登录" }, { status: 401 });
+  Response.json({ message: "Please sign in first." }, { status: 401 });
 
 const getErrorMessage = (error: unknown) => {
   if (error instanceof Error) {
     return error.message;
   }
 
-  return "订单处理失败";
+  return "Order request failed.";
 };
 
 export const createPrintOrderEndpoint = {
@@ -23,6 +24,7 @@ export const createPrintOrderEndpoint = {
     const blocked = await rejectDisallowedMutationOrigin(req);
     if (blocked) return blocked;
 
+    await ensurePayloadRequestUser(req);
     if (!req.user) return unauthorized();
 
     const rateLimited = await rejectRateLimitedEndpoint({
@@ -46,7 +48,7 @@ export const createPrintOrderEndpoint = {
 
       return Response.json({
         checkoutUrl: getPaymentCheckoutUrl(order),
-        message: "订单已创建，正在进入 Stripe Checkout。",
+        message: "Order created. Redirecting to Stripe Checkout.",
         order,
       });
     } catch (error) {
@@ -65,6 +67,7 @@ export const syncPrintOrderEndpoint = {
     const blocked = await rejectDisallowedMutationOrigin(req);
     if (blocked) return blocked;
 
+    await ensurePayloadRequestUser(req);
     if (!req.user) return unauthorized();
 
     const rateLimited = await rejectRateLimitedEndpoint({
@@ -104,7 +107,7 @@ export const syncPrintOrderEndpoint = {
       }
 
       const order = await syncPrintOrder({ orderId, req });
-      return Response.json({ message: "订单同步完成", order });
+      return Response.json({ message: "Order sync completed.", order });
     } catch (error) {
       return Response.json(
         { message: getErrorMessage(error) },

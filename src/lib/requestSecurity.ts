@@ -1,4 +1,4 @@
-import type { Payload, PayloadRequest } from 'payload'
+import type { PayloadRequest } from 'payload'
 
 import {
   getAllowedOriginsFromEnv,
@@ -15,6 +15,13 @@ const normalizeIP = (value: null | string | undefined) => {
 }
 
 const shouldTrustProxyHeaders = () => process.env.TRUST_PROXY_HEADERS === 'true'
+
+const normalizeUserAgent = (value: null | string | undefined) => {
+  return String(value || '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase()
+}
 
 const normalizeOrigin = (value: null | string | undefined) => {
   if (!value) return ''
@@ -85,7 +92,6 @@ export function getRequestIP(headers: Headers) {
     const proxyHeaders = [
       headers.get('cf-connecting-ip'),
       headers.get('x-real-ip'),
-      headers.get('x-forwarded-for'),
     ]
 
     for (const headerValue of proxyHeaders) {
@@ -97,6 +103,20 @@ export function getRequestIP(headers: Headers) {
   }
 
   return 'unknown'
+}
+
+export function getRequestRateLimitKey(headers: Headers) {
+  const ip = getRequestIP(headers)
+  if (ip !== 'unknown') {
+    return `ip:${ip}`
+  }
+
+  const userAgent = normalizeUserAgent(headers.get('user-agent'))
+  if (userAgent) {
+    return `ua:${userAgent}`
+  }
+
+  return 'anonymous'
 }
 
 export function extractRequestToken(headers: Headers) {
@@ -163,12 +183,13 @@ export function applySecurityHeaders(headers: Headers) {
   const contentSecurityPolicy = isProduction()
     ? [
         "default-src 'self'",
-        "script-src 'self' 'unsafe-inline'",
+        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
         "style-src 'self' 'unsafe-inline'",
         "img-src 'self' data: blob: https:",
         "connect-src 'self' https:",
         "font-src 'self' data: https:",
         "media-src 'self' blob: https:",
+        "worker-src 'self' blob: https://cdn.jsdelivr.net",
         "object-src 'none'",
         "frame-ancestors 'none'",
         "base-uri 'self'",
@@ -176,12 +197,13 @@ export function applySecurityHeaders(headers: Headers) {
       ].join('; ')
     : [
         "default-src 'self' data: blob: https: http:",
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://cdn.jsdelivr.net",
         "style-src 'self' 'unsafe-inline'",
         "img-src 'self' data: blob: https: http:",
         "connect-src 'self' https: http: ws: wss:",
         "font-src 'self' data: https:",
         "media-src 'self' blob: https: http:",
+        "worker-src 'self' blob: https://cdn.jsdelivr.net",
         "object-src 'none'",
         "frame-ancestors 'none'",
         "base-uri 'self'",

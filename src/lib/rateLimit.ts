@@ -1,8 +1,8 @@
 /**
- * 速率限制模块 — 基于 KVStore 抽象层
+ * Rate-limit module built on top of the shared KVStore abstraction.
  *
- * M-04: 生产环境可通过 REDIS_URL 切换到 Redis 共享存储，
- * 解决多实例/容器化部署时内存限速不共享的问题。
+ * Production deployments can switch to Redis through REDIS_URL so limits are shared
+ * across multiple instances and survive container restarts.
  */
 
 import { getKVStore } from '@/lib/kvStore'
@@ -28,7 +28,7 @@ export async function enforceRateLimit(args: {
   const store = getKVStore()
   const kvKey = `${KV_PREFIX}${args.key}`
 
-  // 定期清理
+  // Periodically clean up expired keys in the active KV backend.
   await store.cleanup()
 
   const raw = await store.get(kvKey)

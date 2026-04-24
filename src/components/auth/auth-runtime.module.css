@@ -1,0 +1,422 @@
+.root {
+  width: 380px;
+  height: 676px;
+}
+
+.surface {
+  position: relative;
+  height: 100%;
+  background: #040405;
+  overflow: hidden;
+}
+
+.surfaceFrame {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.surfaceContent {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  background: #040405;
+  padding: 22px 26px 20px;
+}
+
+.surfaceDecor {
+  --auth-decor-gap: 4px;
+  --auth-decor-line-offset: 6px;
+  --auth-decor-motif-size: 48px;
+  pointer-events: none;
+  position: absolute;
+  inset: var(--auth-decor-gap);
+  z-index: 0;
+}
+
+.surfaceDecor > span {
+  position: absolute;
+}
+
+.decorTop,
+.decorBottom {
+  height: 1px;
+  background: #262626;
+}
+
+.decorTop {
+  top: calc(var(--auth-decor-line-offset) + 23px);
+  left: calc(var(--auth-decor-line-offset) + var(--auth-decor-motif-size));
+  right: calc(var(--auth-decor-line-offset) + var(--auth-decor-motif-size));
+}
+
+.decorBottom {
+  bottom: calc(var(--auth-decor-line-offset) + 24px);
+  left: calc(var(--auth-decor-line-offset) + var(--auth-decor-motif-size));
+  right: calc(var(--auth-decor-line-offset) + var(--auth-decor-motif-size));
+}
+
+.decorLeft,
+.decorRight {
+  width: 1px;
+  background: #262626;
+}
+
+.decorLeft {
+  left: calc(var(--auth-decor-line-offset) + 23px);
+  top: calc(var(--auth-decor-line-offset) + var(--auth-decor-motif-size));
+  bottom: calc(var(--auth-decor-line-offset) + var(--auth-decor-motif-size));
+}
+
+.decorRight {
+  right: calc(var(--auth-decor-line-offset) + 24px);
+  top: calc(var(--auth-decor-line-offset) + var(--auth-decor-motif-size));
+  bottom: calc(var(--auth-decor-line-offset) + var(--auth-decor-motif-size));
+}
+
+.decorTopLeft,
+.decorTopRight,
+.decorBottomLeft,
+.decorBottomRight {
+  width: var(--auth-decor-motif-size);
+  height: var(--auth-decor-motif-size);
+}
+
+.decorTopLeft {
+  top: var(--auth-decor-line-offset);
+  left: var(--auth-decor-line-offset);
+}
+
+.decorTopRight {
+  top: var(--auth-decor-line-offset);
+  right: var(--auth-decor-line-offset);
+}
+
+.decorBottomRight {
+  right: var(--auth-decor-line-offset);
+  bottom: var(--auth-decor-line-offset);
+}
+
+.decorBottomLeft {
+  bottom: var(--auth-decor-line-offset);
+  left: var(--auth-decor-line-offset);
+}
+
+.decorMotifSvg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  position: relative;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.brandLogo {
+  width: 196px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.closeButton {
+  position: absolute;
+  right: 0;
+  top: -4px;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.66);
+  font-size: 24px;
+  line-height: 1;
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  margin-top: 4px;
+}
+
+.twoColumnFields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.fieldLabel {
+  font-family: "PingFang SC", "PingFangSC", "Hiragino Sans GB", sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 22px;
+  color: #fff;
+  letter-spacing: 0;
+  text-align: left;
+  font-style: normal;
+}
+
+.input {
+  width: 100%;
+  height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  padding: 0 12px;
+  color: #fff;
+  font-size: 12px;
+}
+
+.input::placeholder {
+  font-family: "PingFang SC", "PingFangSC", "Hiragino Sans GB", sans-serif;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 18px;
+  letter-spacing: 0;
+  text-align: left;
+  font-style: normal;
+}
+
+.inputWithIcon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0 12px;
+}
+
+.inputWithIcon input {
+  width: 100%;
+  height: 40px;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  outline: none;
+  font-size: 12px;
+}
+
+.inputWithIcon input::placeholder {
+  font-family: "PingFang SC", "PingFangSC", "Hiragino Sans GB", sans-serif;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 18px;
+  letter-spacing: 0;
+  text-align: left;
+  font-style: normal;
+}
+
+.codeRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px;
+}
+
+.codeInput {
+  width: 100%;
+  height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-right: 0;
+  background: transparent;
+  padding: 0 12px;
+  color: #fff;
+  font-size: 12px;
+}
+
+.codeInput::placeholder {
+  font-family: "PingFang SC", "PingFangSC", "Hiragino Sans GB", sans-serif;
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 18px;
+  letter-spacing: 0;
+  text-align: left;
+  font-style: normal;
+}
+
+.codeButton {
+  height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.splitGroup {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px;
+}
+
+.splitInput {
+  height: 50px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  padding: 0 16px;
+  color: #fff;
+}
+
+.splitInput::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.splitButton {
+  height: 50px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-left: 0;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.checkboxRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 0;
+}
+
+.checkbox {
+  width: 14px;
+  height: 14px;
+  border: 1px solid #f6d49e;
+  margin-top: 2px;
+  background: transparent;
+  flex: 0 0 14px;
+}
+
+.checkboxChecked {
+  background: #f6d49e;
+}
+
+.checkboxText {
+  font-size: 10px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.message {
+  min-height: 32px;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.messageError {
+  color: #ffb5b5;
+}
+
+.messageSuccess {
+  color: #9fe2b3;
+}
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 10px;
+}
+
+.actionStack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.actionStack :global(button) {
+  width: 92%;
+}
+
+.footer > :global(button) {
+  align-self: center;
+  width: 92%;
+}
+
+.footerDivider {
+  align-self: stretch;
+  height: 1px;
+  margin-bottom: 4px;
+  background: rgba(38, 38, 38, 0.9);
+}
+
+.footerLink {
+  font-family: "PingFang SC", "PingFangSC", "Hiragino Sans GB", sans-serif;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 500;
+  color: #d1b97f;
+  line-height: 18px;
+  letter-spacing: 0;
+  font-style: normal;
+  align-self: center;
+}
+
+.footerHint {
+  text-align: center;
+  font-size: 11px;
+  line-height: 1.4;
+  color: rgba(209, 185, 127, 0.78);
+}
+
+.successState {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.successTitle {
+  font-size: 24px;
+  font-weight: 600;
+  color: #f6d49e;
+}
+
+.successText {
+  margin-top: 16px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+@media (max-width: 767px) {
+  .root {
+    width: min(380px, 100%);
+    height: auto;
+  }
+
+  .surface {
+  }
+
+  .surfaceContent {
+    padding: 18px 20px;
+  }
+
+  .body {
+    margin-top: 10px;
+  }
+
+  .twoColumnFields {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,7 +1,8 @@
 /**
- * Webhook 签名验证模块 — replayCache 使用 KVStore 抽象层
+ * Webhook signature verification built on the shared KVStore abstraction for replay protection.
  *
- * I-01: 生产环境通过 REDIS_URL 切换 Redis，解决重启后重放检测窗口丢失的问题。
+ * Production deployments can switch to Redis through REDIS_URL so replay tracking
+ * survives restarts and can be shared across multiple instances.
  */
 
 import crypto from 'crypto'
@@ -53,7 +54,7 @@ export async function verifyWebhookSignature(args: {
     return { code: 'EXPIRED', ok: false }
   }
 
-  // 重放检测 — 使用 KVStore
+  // Replay protection uses the shared KV store backend.
   const store = getKVStore()
   const replayKey = `${REPLAY_PREFIX}${timestamp}:${signature}`
 
@@ -78,7 +79,7 @@ export async function verifyWebhookSignature(args: {
     return { code: 'SIGNATURE_MISMATCH', ok: false }
   }
 
-  // 记录已使用的签名，TTL = 容差窗口
+  // Record the consumed signature for the tolerance window duration.
   await store.set(replayKey, String(now), tolerance * 1000)
   return { ok: true }
 }

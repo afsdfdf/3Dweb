@@ -1,14 +1,16 @@
 import type { GlobalConfig } from 'payload'
 
 import { isAdmin } from '@/access'
+import { adminTextKey } from '@/lib/adminText'
+
+const text = (en: string, zh: string) => ({ en, zh })
 
 export const SecuritySettings: GlobalConfig = {
   slug: 'security-settings',
-  label: 'Security Settings',
+  label: adminTextKey('globals.securitySettings.label'),
   admin: {
-    description:
-      'Manage non-sensitive request origin and remote asset allowlists here. Runtime security checks prefer this global when values are present, then fall back to legacy environment allowlists for migration.',
-    group: 'Platform',
+    description: adminTextKey('globals.securitySettings.description'),
+    group: adminTextKey('groups.platform'),
   },
   access: {
     read: isAdmin,
@@ -19,22 +21,24 @@ export const SecuritySettings: GlobalConfig = {
       type: 'tabs',
       tabs: [
         {
-          label: 'Mutation Origins',
+          label: text('Mutation Origins', '变更来源'),
           fields: [
             {
               name: 'allowedMutationOrigins',
               type: 'array',
-              label: 'Allowed origins',
+              label: text('Allowed origins', '允许的来源'),
               admin: {
-                description:
+                description: text(
                   'Default: empty. Add one absolute origin per row, for example https://app.example.com. Local development still allows requests without Origin outside production.',
+                  '默认留空。每行填写一个完整来源，例如 https://app.example.com。非生产环境下，本地开发仍允许没有 Origin 的请求。',
+                ),
               },
               fields: [
                 {
                   name: 'origin',
                   type: 'text',
                   required: true,
-                  label: 'Origin',
+                  label: text('Origin', '来源'),
                 },
               ],
               defaultValue: [],
@@ -42,22 +46,24 @@ export const SecuritySettings: GlobalConfig = {
           ],
         },
         {
-          label: 'Remote Assets',
+          label: text('Remote Assets', '远程资源'),
           fields: [
             {
               name: 'allowedRemoteAssetHosts',
               type: 'array',
-              label: 'Allowed host patterns',
+              label: text('Allowed host patterns', '允许的主机模式'),
               admin: {
-                description:
+                description: text(
                   'Default: empty. Add hostnames such as cdn.example.com or example.com. Subdomains are matched automatically.',
+                  '默认留空。填写 cdn.example.com 或 example.com 这样的主机名，子域名会自动匹配。',
+                ),
               },
               fields: [
                 {
                   name: 'host',
                   type: 'text',
                   required: true,
-                  label: 'Host pattern',
+                  label: text('Host pattern', '主机模式'),
                 },
               ],
               defaultValue: [],

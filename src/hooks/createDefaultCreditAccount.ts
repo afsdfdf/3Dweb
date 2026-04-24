@@ -1,4 +1,4 @@
-﻿import type { CollectionAfterChangeHook } from 'payload'
+import type { CollectionAfterChangeHook } from 'payload'
 
 import { ensureCreditAccount, grantCredits } from '@/lib/creditLedger'
 
@@ -23,7 +23,7 @@ export const createDefaultCreditAccount: CollectionAfterChangeHook = async ({ do
       metadata: {
         source: 'user-signup',
       },
-      notes: '新用户注册赠送演示积分。',
+      notes: 'Signup welcome credits granted.',
       referencePrefix: 'INIT',
       req,
       userId: doc.id,

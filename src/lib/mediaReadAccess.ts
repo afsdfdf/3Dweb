@@ -1,5 +1,7 @@
 import type { Access, Where } from 'payload'
 
+import { buildGuestReadableMediaWhere } from '@/lib/mediaVisibility'
+
 type UserWithRole = {
   id: number | string
   role?: 'admin' | 'customer' | 'operator'
@@ -13,11 +15,7 @@ export const mediaReadAccess: Access = ({ req }) => {
   }
 
   if (!user) {
-    return {
-      purpose: {
-        equals: 'preview',
-      },
-    } as Where
+    return buildGuestReadableMediaWhere()
   }
 
   return {
@@ -25,6 +23,11 @@ export const mediaReadAccess: Access = ({ req }) => {
       {
         owner: {
           equals: user.id,
+        },
+      },
+      {
+        publicAccess: {
+          equals: true,
         },
       },
       {

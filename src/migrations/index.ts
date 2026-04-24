@@ -2,6 +2,10 @@ import * as migration_20260413_094128_add_stripe_subscriptions from './20260413_
 import * as migration_20260417_023000_database_baseline_reconciliation from './20260417_023000_database_baseline_reconciliation';
 import * as migration_20260417_030000_database_performance_indexes from './20260417_030000_database_performance_indexes';
 import * as migration_20260417_031000_generation_tasks_active_index from './20260417_031000_generation_tasks_active_index';
+import * as migration_20260420_160000_homepage_rails_and_public_preview from './20260420_160000_homepage_rails_and_public_preview';
+import * as migration_20260420_194500_gemini_image_generation_and_media_public_access from './20260420_194500_gemini_image_generation_and_media_public_access';
+import * as migration_20260420_201800_account_profiles_milestone_a from './20260420_201800_account_profiles_milestone_a';
+import * as migration_20260423_150000_social_constraints_and_indexes from './20260423_150000_social_constraints_and_indexes';
 
 export const migrations = [
   {
@@ -23,5 +27,25 @@ export const migrations = [
     up: migration_20260417_031000_generation_tasks_active_index.up,
     down: migration_20260417_031000_generation_tasks_active_index.down,
     name: '20260417_031000_generation_tasks_active_index'
+  },
+  {
+    up: migration_20260420_160000_homepage_rails_and_public_preview.up,
+    down: migration_20260420_160000_homepage_rails_and_public_preview.down,
+    name: '20260420_160000_homepage_rails_and_public_preview'
+  },
+  {
+    up: migration_20260420_194500_gemini_image_generation_and_media_public_access.up,
+    down: migration_20260420_194500_gemini_image_generation_and_media_public_access.down,
+    name: '20260420_194500_gemini_image_generation_and_media_public_access'
+  },
+  {
+    up: migration_20260420_201800_account_profiles_milestone_a.up,
+    down: migration_20260420_201800_account_profiles_milestone_a.down,
+    name: '20260420_201800_account_profiles_milestone_a'
+  },
+  {
+    up: migration_20260423_150000_social_constraints_and_indexes.up,
+    down: migration_20260423_150000_social_constraints_and_indexes.down,
+    name: '20260423_150000_social_constraints_and_indexes'
   },
 ];

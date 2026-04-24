@@ -2,16 +2,14 @@
 
 import { ownerOrStaff } from '@/access'
 import { assignCurrentUser } from '@/hooks/assignCurrentUser'
+import { adminLabelsKey, adminTextKey } from '@/lib/adminText'
 
 export const Addresses: CollectionConfig = {
   slug: 'addresses',
-  labels: {
-    plural: '地址簿',
-    singular: '地址',
-  },
+  labels: adminLabelsKey('collections.addresses'),
   admin: {
     defaultColumns: ['recipientName', 'user', 'city', 'country', 'isDefault'],
-    group: '商务',
+    group: adminTextKey('groups.commerce'),
     useAsTitle: 'recipientName',
   },
   access: {

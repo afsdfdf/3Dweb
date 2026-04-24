@@ -1,8 +1,9 @@
-import type { Access, CollectionConfig } from 'payload'
+﻿import type { Access, CollectionConfig } from 'payload'
 
 import { isStaff } from '@/access'
 import { assignCurrentUser } from '@/hooks/assignCurrentUser'
 import { fillPublishAtOnPublish } from '@/hooks/fillPublishAtOnPublish'
+import { adminLabelsKey, adminTextKey } from '@/lib/adminText'
 
 const publicReadOrStaff: Access = ({ req }) => {
   if (req.user?.role === 'admin' || req.user?.role === 'operator') {
@@ -18,14 +19,11 @@ const publicReadOrStaff: Access = ({ req }) => {
 
 export const Posts: CollectionConfig = {
   slug: 'posts',
-  labels: {
-    plural: '文章与活动',
-    singular: '文章',
-  },
+  labels: adminLabelsKey('collections.posts'),
   admin: {
     defaultColumns: ['title', 'category', '_status', 'createdBy', 'publishedAt', 'isPinned', 'sortOrder', 'updatedAt'],
-    description: '管理首页活动帖、博客文章与公告型长内容。',
-    group: '内容',
+    description: adminTextKey('collections.posts.description'),
+    group: adminTextKey('groups.content'),
     useAsTitle: 'title',
   },
   access: {
@@ -138,3 +136,4 @@ export const Posts: CollectionConfig = {
     drafts: true,
   },
 }
+

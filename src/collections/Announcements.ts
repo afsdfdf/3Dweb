@@ -1,8 +1,9 @@
-import type { Access, CollectionConfig, Where } from 'payload'
+﻿import type { Access, CollectionConfig, Where } from 'payload'
 
 import { isStaff } from '@/access'
 import { assignCurrentUser } from '@/hooks/assignCurrentUser'
 import { fillPublishAtOnPublish } from '@/hooks/fillPublishAtOnPublish'
+import { adminLabelsKey, adminTextKey } from '@/lib/adminText'
 
 const visibleReadOrStaff: Access = ({ req }) => {
   if (req.user?.role === 'admin' || req.user?.role === 'operator') {
@@ -29,14 +30,11 @@ const visibleReadOrStaff: Access = ({ req }) => {
 
 export const Announcements: CollectionConfig = {
   slug: 'announcements',
-  labels: {
-    plural: '公告',
-    singular: '公告',
-  },
+  labels: adminLabelsKey('collections.announcements'),
   admin: {
     defaultColumns: ['title', '_status', 'createdBy', 'publishAt', 'isPinned', 'isVisible', 'updatedAt'],
-    description: '管理首页公告、系统通知与短内容提示。',
-    group: '内容',
+    description: adminTextKey('collections.announcements.description'),
+    group: adminTextKey('groups.content'),
     useAsTitle: 'title',
   },
   access: {
@@ -117,3 +115,4 @@ export const Announcements: CollectionConfig = {
     drafts: true,
   },
 }
+

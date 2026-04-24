@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { getSupabaseBrowserClient } from '@/lib/supabase/browser'
 import type { GenerationPricing } from '@/lib/taskBilling'
 
 type GenerateFormProps = {
@@ -25,16 +26,26 @@ type GenerateFormProps = {
   initialMode?: 'hybrid' | 'image' | 'text'
 }
 
+type SourceImageAsset = {
+  bucket: string
+  contentType: string
+  fileName: string
+  path: string
+  publicUrl: string
+}
+
+const maxUploadBytes = Math.max(1, Number(process.env.NEXT_PUBLIC_MAX_UPLOAD_BYTES || 8 * 1024 * 1024))
+
 const qualityPresets = [
-  { label: '标准', value: 'standard', note: '适合快速出稿' },
-  { label: '高质量', value: 'high', note: '默认推荐档位' },
-  { label: '超高质量', value: 'ultra', note: '适合打印前确认' },
+  { label: '标准', note: '适合快速出样', value: 'standard' },
+  { label: '高质量', note: '默认推荐档位', value: 'high' },
+  { label: '超高质量', note: '适合打印前确认', value: 'ultra' },
 ] as const
 
 const inputModes = [
-  { label: '图生 3D', value: 'image', note: '从概念图、草图或照片开始' },
-  { label: '文生 3D', value: 'text', note: '从提示词与角色设定开始' },
-  { label: '图文混合', value: 'hybrid', note: '同时结合参考图与文字控制' },
+  { label: '图生 3D', note: '从概念图、照片或草图开始', value: 'image' },
+  { label: '文生 3D', note: '从提示词与角色设定开始', value: 'text' },
+  { label: '图文混合', note: '同时结合参考图与文字控制', value: 'hybrid' },
 ] as const
 
 export function GenerateForm({ generationPricing, initialMode = 'image' }: GenerateFormProps) {
@@ -68,39 +79,62 @@ export function GenerateForm({ generationPricing, initialMode = 'image' }: Gener
     }
   }, [generationPricing.hybridCredits, generationPricing.imageCredits, generationPricing.textCredits, selectedMode])
 
+  const uploadSourceImage = async (file: File): Promise<SourceImageAsset> => {
+    const configResp = await fetch('/api/media/upload-url', {
+      body: JSON.stringify({
+        contentType: file.type || 'application/octet-stream',
+        filename: file.name || 'reference-image',
+        purpose: 'input',
+        size: file.size,
+      }),
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    })
+
+    if (!configResp.ok) {
+      const payload = await configResp.json().catch(() => ({}))
+      throw new Error(payload.message || '图片上传失败，请先登录后再试。')
+    }
+
+    const config = await configResp.json()
+    const supabase = getSupabaseBrowserClient()
+    const uploadResp = await supabase.storage.from(config.bucket).uploadToSignedUrl(config.path, config.token, file, {
+      contentType: file.type || config.contentType || 'application/octet-stream',
+    })
+
+    if (uploadResp.error) {
+      throw new Error(uploadResp.error.message || '图片上传失败。')
+    }
+
+    return {
+      bucket: config.bucket,
+      contentType: file.type || config.contentType || 'application/octet-stream',
+      fileName: file.name || 'reference-image',
+      path: config.path,
+      publicUrl: config.publicUrl,
+    }
+  }
+
   const handleSubmit = async (formData: FormData) => {
     setError('')
     setIsSubmitting(true)
 
     try {
       let sourceImage: number | undefined
+      let sourceImageAsset: SourceImageAsset | undefined
       const file = formData.get('sourceImage')
 
       if (file instanceof File && file.size > 0) {
-        setUploading(true)
-        const mediaForm = new FormData()
-        mediaForm.append('file', file)
-        mediaForm.append('alt', file.name || '参考图')
-        mediaForm.append('purpose', 'input')
-
-        const mediaResp = await fetch('/api/media', {
-          method: 'POST',
-          credentials: 'include',
-          body: mediaForm,
-        })
-
-        if (!mediaResp.ok) {
-          throw new Error('图片上传失败，请先登录后再试。')
+        if (file.size > maxUploadBytes) {
+          throw new Error(`上传图片不能超过 ${Math.round(maxUploadBytes / (1024 * 1024))}MB。`)
         }
 
-        const mediaJson = await mediaResp.json()
-        sourceImage = mediaJson.doc?.id
+        setUploading(true)
+        sourceImageAsset = await uploadSourceImage(file)
       }
 
       const resp = await fetch('/api/studio/ai/tasks', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           inputMode: formData.get('inputMode'),
           parameterSnapshot: {
@@ -110,7 +144,11 @@ export function GenerateForm({ generationPricing, initialMode = 'image' }: Gener
           },
           prompt: formData.get('prompt'),
           sourceImage,
+          sourceImageAsset,
         }),
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
       })
 
       if (resp.status === 401) {
@@ -155,7 +193,7 @@ export function GenerateForm({ generationPricing, initialMode = 'image' }: Gener
           <FieldGroup>
             <FieldSet>
               <FieldLegend>输入方式</FieldLegend>
-              <FieldDescription>首页负责入口，Studio 页面负责真正开始任务。</FieldDescription>
+              <FieldDescription>参考图会直接上传到 Supabase Storage，不再经过服务器中转。</FieldDescription>
               <ToggleGroup
                 className="grid w-full grid-cols-1 gap-3 md:grid-cols-3"
                 onValueChange={(value) => {
@@ -214,14 +252,14 @@ export function GenerateForm({ generationPricing, initialMode = 'image' }: Gener
                     </SelectGroup>
                   </SelectContent>
                 </Select>
-                <FieldDescription>结果页与模型库都会沿用当前输出格式选择。</FieldDescription>
+                <FieldDescription>生成完成后，结果页和模型库会优先使用这个格式。</FieldDescription>
                 <input name="targetFormat" type="hidden" value={selectedFormat} />
               </Field>
             </div>
 
             <FieldSet>
               <FieldLegend>质量档位</FieldLegend>
-              <FieldDescription>当前版本的生成积分由后台统一配置，质量档位不额外加价。</FieldDescription>
+              <FieldDescription>质量档位用于引导输入，不额外叠加积分。</FieldDescription>
               <ToggleGroup
                 className="grid w-full grid-cols-1 gap-3 md:grid-cols-3"
                 onValueChange={(value) => {
@@ -250,7 +288,7 @@ export function GenerateForm({ generationPricing, initialMode = 'image' }: Gener
             <Field>
               <FieldLabel htmlFor="sourceImage">参考图片</FieldLabel>
               <Input
-                accept="image/*"
+                accept="image/jpeg,image/png"
                 id="sourceImage"
                 name="sourceImage"
                 onChange={(event) => {
@@ -263,16 +301,25 @@ export function GenerateForm({ generationPricing, initialMode = 'image' }: Gener
                     return
                   }
 
+                  if (file.type !== 'image/jpeg' && file.type !== 'image/png') {
+                    setError('Meshy 图生 3D 目前只支持 JPEG 或 PNG 参考图。')
+                    event.target.value = ''
+                    if (previewUrl) {
+                      URL.revokeObjectURL(previewUrl)
+                    }
+                    setPreviewUrl('')
+                    return
+                  }
+
                   if (previewUrl) {
                     URL.revokeObjectURL(previewUrl)
                   }
 
-                  const url = URL.createObjectURL(file)
-                  setPreviewUrl(url)
+                  setPreviewUrl(URL.createObjectURL(file))
                 }}
                 type="file"
               />
-              <FieldDescription>支持角色立绘、氛围图、草图或任意概念参考图。</FieldDescription>
+              <FieldDescription>支持立绘、照片、草图等参考图。上传后会直接进入 Supabase Storage。</FieldDescription>
             </Field>
 
             {previewUrl ? (
@@ -283,7 +330,9 @@ export function GenerateForm({ generationPricing, initialMode = 'image' }: Gener
                   </div>
                   <div className="flex flex-col gap-2">
                     <strong className="block text-base font-medium">参考图已就绪</strong>
-                    <p className="text-sm leading-6 text-muted-foreground">系统会把这张图片与提示词一起作为模型生成的输入参考。</p>
+                    <p className="text-sm leading-6 text-muted-foreground">
+                      提交任务时，这张图片会从浏览器直传到 Supabase Storage，再由 Meshy 直接拉取。
+                    </p>
                   </div>
                 </div>
               </div>
@@ -292,7 +341,7 @@ export function GenerateForm({ generationPricing, initialMode = 'image' }: Gener
             <Field>
               <FieldLabel htmlFor="prompt">文字描述</FieldLabel>
               <Textarea
-                defaultValue="一个持盾的矮人战士，厚重盔甲、符文细节、宽大战锤，整体比例适合 32mm 桌游打印。"
+                defaultValue="一个持盾的矮人士兵，厚重盔甲、符文细节、宽大战锤，整体比例适合 32mm 桌游打印。"
                 id="prompt"
                 name="prompt"
                 rows={8}

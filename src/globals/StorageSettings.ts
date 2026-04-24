@@ -1,14 +1,16 @@
 import type { GlobalConfig } from 'payload'
 
 import { isAdmin } from '@/access'
+import { adminTextKey } from '@/lib/adminText'
+
+const text = (en: string) => ({ en, zh: en })
 
 export const StorageSettings: GlobalConfig = {
   slug: 'storage-settings',
-  label: 'Storage Settings',
+  label: adminTextKey('globals.storageSettings.label'),
   admin: {
-    description:
-      'Manage non-sensitive object storage settings here. Runtime code reads bucket / region / prefix / baseURL / signedDownloads from this global only. Keep AWS access key ID and secret access key in environment variables. Build-time S3 plugin bootstrap may still use env values during migration, but operators should treat this global as the single runtime source of truth.',
-    group: 'Platform',
+    description: adminTextKey('globals.storageSettings.description'),
+    group: adminTextKey('groups.platform'),
   },
   access: {
     read: isAdmin,
@@ -19,79 +21,79 @@ export const StorageSettings: GlobalConfig = {
       name: 'enabled',
       type: 'checkbox',
       defaultValue: false,
-      label: 'Enable storage integration',
+      label: text('Enable storage integration'),
       admin: {
-        description: 'Default: disabled. Turn this on only after bucket, region, and environment secrets are configured.',
+        description: text('Default: disabled. Turn this on only after bucket, region, and environment secrets are configured.'),
       },
     },
     {
       name: 'bucket',
       type: 'text',
       defaultValue: '',
-      label: 'Bucket name',
+      label: text('Bucket name'),
       admin: {
-        description: 'Default: empty. Example: media-assets-prod.',
+        description: text('Default: empty. Example: media-assets-prod.'),
       },
     },
     {
       name: 'region',
       type: 'text',
       defaultValue: 'us-east-1',
-      label: 'Region',
+      label: text('Region'),
       admin: {
-        description: 'Default: us-east-1.',
+        description: text('Default: us-east-1.'),
       },
     },
     {
       name: 'prefix',
       type: 'text',
       defaultValue: 'media',
-      label: 'Object prefix',
+      label: text('Object prefix'),
       admin: {
-        description: 'Default: media. Files are stored under this logical folder prefix.',
+        description: text('Default: media. Files are stored under this logical folder prefix.'),
       },
     },
     {
       name: 'baseURL',
       type: 'text',
       defaultValue: '',
-      label: 'CDN / base URL',
+      label: text('CDN / base URL'),
       admin: {
-        description: 'Default: empty. Optional public CDN domain used for media access URLs.',
+        description: text('Default: empty. Optional public CDN domain used for media access URLs.'),
       },
     },
     {
       name: 'signedDownloads',
       type: 'checkbox',
       defaultValue: true,
-      label: 'Use signed downloads',
+      label: text('Use signed downloads'),
       admin: {
-        description: 'Default: enabled. When disabled, absolute media URLs are returned without signing.',
+        description: text('Default: enabled. When disabled, absolute media URLs are returned without signing.'),
       },
     },
     {
       name: 'credentialsSource',
       type: 'text',
       defaultValue: 'environment',
-      label: 'Credentials source',
+      label: text('Credentials source'),
       admin: {
-        description: 'Default: environment. This is a note for operators; real secrets still live in environment variables.',
+        description: text('Default: environment. This is an operator note only. Real secrets still live in environment variables.'),
       },
     },
     {
       name: 'lastValidatedAt',
       type: 'date',
-      label: 'Last validated at',
+      label: text('Last validated at'),
       admin: {
-        description: 'Optional operator timestamp for the last successful storage validation.',
+        description: text('Optional operator timestamp for the last successful storage validation.'),
       },
     },
     {
       name: 'lastRotatedAt',
       type: 'date',
-      label: 'Last rotated at',
+      label: text('Last rotated at'),
       admin: {
-        description: 'Optional operator timestamp for the last key rotation event recorded outside Payload.',
+        description: text('Optional operator timestamp for the last key rotation event recorded outside Payload.'),
       },
     },
   ],

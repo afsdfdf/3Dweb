@@ -61,7 +61,7 @@ export function HomeInspirationSection({ items }: { items: PublicModelThumbnailC
 
           <div className="mt-3 h-px bg-[linear-gradient(90deg,#403f46_0%,#2b2a32_45%,#424149_100%)]" />
 
-          <div className="mt-5 grid grid-cols-6 gap-x-8 gap-y-8">
+          <div className="mt-5 grid justify-between gap-y-8 [grid-template-columns:repeat(2,228px)] md:[grid-template-columns:repeat(3,228px)] xl:[grid-template-columns:repeat(4,228px)] 2xl:[grid-template-columns:repeat(6,228px)]">
             {items.map((item) => (
               <ModelThumbnailCard
                 authorAvatarUrl={item.authorAvatarUrl}

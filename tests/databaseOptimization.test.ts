@@ -83,6 +83,24 @@ test('resolveDatabaseRuntimeConfig returns postgres mode with pool config when D
   )
 })
 
+test('resolveDatabaseRuntimeConfig accepts Supabase database URLs as the single runtime source', async () => {
+  await withEnv(
+    {
+      DATABASE_PROVIDER: 'postgres',
+      DATABASE_URL: undefined,
+      SUPABASE_DB_URL: 'postgresql://user:pass@db.supabase.example:5432/postgres?sslmode=require',
+    },
+    async () => {
+      const result = resolveDatabaseRuntimeConfig()
+
+      assert.equal(result.provider, 'postgres')
+      if (result.provider === 'postgres') {
+        assert.equal(result.connectionString.includes('db.supabase.example'), true)
+      }
+    },
+  )
+})
+
 test('task detail query depth is limited to direct relations only', () => {
   assert.equal(TASK_DETAIL_QUERY_DEPTH, 1)
 })

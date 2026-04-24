@@ -22,9 +22,18 @@ test('mediaReadAccess limits anonymous access to preview media', async () => {
   } as never)
 
   assert.deepEqual(result, {
-    purpose: {
-      equals: 'preview',
-    },
+    or: [
+      {
+        publicAccess: {
+          equals: true,
+        },
+      },
+      {
+        purpose: {
+          equals: 'preview',
+        },
+      },
+    ],
   })
 })
 
@@ -43,6 +52,11 @@ test('mediaReadAccess allows owners and public preview media for signed-in custo
       {
         owner: {
           equals: 7,
+        },
+      },
+      {
+        publicAccess: {
+          equals: true,
         },
       },
       {

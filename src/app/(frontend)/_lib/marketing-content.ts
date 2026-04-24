@@ -67,9 +67,22 @@ export type MarketingSiteSettings = {
 }
 
 export type MarketingHomepageContent = {
+  collectionShelf: {
+    allLabel: string
+    hotLabel: string
+    moreLabel: string
+    newLabel: string
+    title: string
+  }
   entrySection: {
     eyebrow: string
     text: string
+    title: string
+  }
+  featuredRail: {
+    eyebrow: string
+    moreLabel: string
+    searchLabel: string
     title: string
   }
   faq: {
@@ -213,11 +226,24 @@ const siteSettings = localized<MarketingSiteSettings>(
 
 const homepageContent = localized<MarketingHomepageContent>(
   {
+    collectionShelf: {
+      allLabel: 'All Followed',
+      hotLabel: 'Hot',
+      moreLabel: 'More',
+      newLabel: 'New',
+      title: 'Followed',
+    },
     entrySection: {
       eyebrow: 'Entry points',
       text:
         'Once visitors understand the product value, they should move naturally into generation, downloads, and print workflows without first decoding internal admin language.',
       title: 'Build trust first, then guide users into the workflow.',
+    },
+    featuredRail: {
+      eyebrow: 'Featured images',
+      moreLabel: 'More',
+      searchLabel: 'Search',
+      title: 'New Product',
     },
     faq: [
       {
@@ -284,11 +310,24 @@ const homepageContent = localized<MarketingHomepageContent>(
     ],
   },
   {
+    collectionShelf: {
+      allLabel: 'All Followed',
+      hotLabel: 'Hot',
+      moreLabel: 'More',
+      newLabel: 'New',
+      title: 'Followed',
+    },
     entrySection: {
       eyebrow: '进入方式',
       text:
         '如果访客已经理解产品价值，就应该能自然地进入生成、下载与打印流程，而不是一上来就被迫理解后台术语。',
       title: '先建立信任与认知，再引导用户进入操作流。',
+    },
+    featuredRail: {
+      eyebrow: 'Featured images',
+      moreLabel: 'More',
+      searchLabel: 'Search',
+      title: 'New Product',
     },
     faq: [
       {

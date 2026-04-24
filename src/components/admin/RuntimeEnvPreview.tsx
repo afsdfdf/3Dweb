@@ -17,7 +17,7 @@ export function RuntimeEnvPreview() {
   const awsRdsUsername = String(fields.awsRdsUsername?.value || 'payload_admin')
   const awsRdsSslMode = String(fields.awsRdsSslMode?.value || 'require')
   const awsRdsSslRejectUnauthorized = String(Boolean(fields.awsRdsSslRejectUnauthorized?.value))
-  const nextPublicAppUrl = String(fields.nextPublicAppUrl?.value || 'http://127.0.0.1:3000')
+  const nextPublicAppUrl = String(fields.nextPublicAppUrl?.value || 'http://localhost:3000')
 
   const envLines =
     connectionMode === 'database-url'

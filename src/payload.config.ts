@@ -1,7 +1,6 @@
 import { en } from 'payload/i18n/en'
 import { zh } from 'payload/i18n/zh'
 import { postgresAdapter } from '@payloadcms/db-postgres'
-import { sqliteAdapter } from '@payloadcms/db-sqlite'
 import { nodemailerAdapter } from '@payloadcms/email-nodemailer'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { s3Storage } from '@payloadcms/storage-s3'
@@ -124,25 +123,18 @@ export default buildConfig({
     ShopifyPayments,
   ],
   db:
-    dbConfig.provider === 'postgres'
-      ? postgresAdapter({
-          migrationDir: path.resolve(dirname, 'migrations'),
-          pool: {
-            connectionString: dbConfig.connectionString,
-            connectionTimeoutMillis: dbConfig.pool.connectionTimeoutMillis,
-            idleTimeoutMillis: dbConfig.pool.idleTimeoutMillis,
-            max: dbConfig.pool.max,
-            min: dbConfig.pool.min,
-            ssl: dbConfig.ssl,
-          },
-          push: false,
-        })
-      : sqliteAdapter({
-          client: {
-            url: dbConfig.url,
-          },
-          push: false,
-        }),
+    postgresAdapter({
+      migrationDir: path.resolve(dirname, 'migrations'),
+      pool: {
+        connectionString: dbConfig.connectionString,
+        connectionTimeoutMillis: dbConfig.pool.connectionTimeoutMillis,
+        idleTimeoutMillis: dbConfig.pool.idleTimeoutMillis,
+        max: dbConfig.pool.max,
+        min: dbConfig.pool.min,
+        ssl: dbConfig.ssl,
+      },
+      push: false,
+    }),
   editor: lexicalEditor(),
   email: emailAdapter,
   endpoints: [

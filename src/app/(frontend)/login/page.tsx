@@ -1,51 +1,48 @@
 import { redirect } from 'next/navigation'
 
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { AuthFlowCard } from '@/components/auth/AuthFlowCard'
+import { AuthPageLayout } from '@/components/auth/AuthPageLayout'
 
-import { AuthForm } from '../_components/AuthForm'
 import { SiteShell } from '../_components/SiteShell'
 import { getCurrentUser } from '../_lib/session'
 
-export default async function LoginPage() {
+const safeRedirect = (value?: null | string) => {
+  if (!value || typeof value !== 'string') return '/dashboard/tasks'
+  return value.startsWith('/') ? value : '/dashboard/tasks'
+}
+
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ redirect?: string }>
+}) {
+  const query = await searchParams
+  const fallbackRedirect = safeRedirect(query.redirect)
   const user = await getCurrentUser()
 
   if (user) {
-    redirect('/dashboard')
+    redirect(fallbackRedirect)
   }
 
   return (
-    <SiteShell currentPath="/login">
-      <section className="mx-auto grid max-w-7xl gap-6 px-4 py-10 sm:px-6 sm:py-14 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
-        <div className="flex flex-col justify-center gap-6">
-          <div className="max-w-2xl">
-            <Badge variant="secondary">登录</Badge>
-            <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">登录后继续进入工作流</h1>
-            <p className="mt-4 text-base leading-7 text-muted-foreground sm:text-lg">
-              登录后可继续查看任务、模型、订单与积分，并直接回到 Studio 开始新的生成流程。
-            </p>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Card className="border-border/60 bg-card/80 shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-xl tracking-tight">继续当前任务</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm leading-6 text-muted-foreground">进入结果页、模型库与订单中心，继续处理你已经创建的资产。</CardContent>
-            </Card>
-            <Card className="border-border/60 bg-card/80 shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-xl tracking-tight">回到 Studio</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm leading-6 text-muted-foreground">从图生 3D、文生 3D 或图文混合模式继续发起新的生成任务。</CardContent>
-            </Card>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-center xl:justify-end">
-          <AuthForm mode="login" />
-        </div>
-      </section>
+    <SiteShell currentPath="/login" showAuthEntry={false} showFooter={false} showLocaleSwitcher={false} showUtilityNav={false}>
+      <AuthPageLayout
+        badge="Account Access"
+        description="Sign in to reopen active generation jobs, review your model library, and jump back into Studio without losing momentum."
+        highlights={[
+          {
+            title: 'Resume active work',
+            description: 'Pick up tasks, results, orders, and saved models from the same place you left them.',
+          },
+          {
+            title: 'Return to Studio fast',
+            description: 'Go straight from authentication into image-to-3D, text-to-3D, or hybrid generation flows.',
+          },
+        ]}
+        title="Sign in and return to your production workflow"
+      >
+        <AuthFlowCard initialMode="login" redirectTo={fallbackRedirect} />
+      </AuthPageLayout>
     </SiteShell>
   )
 }

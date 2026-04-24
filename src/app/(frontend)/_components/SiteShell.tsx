@@ -1,4 +1,4 @@
-﻿import Link from 'next/link'
+import Link from 'next/link'
 import type { ReactNode } from 'react'
 
 import { Bell, ShoppingCart } from 'lucide-react'
@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import type { FooterContent, NavigationItem } from '../_lib/marketing-content'
 import { getDefaultFooter, getDefaultSiteSettings } from '../_lib/marketing-content'
 import { getCurrentLocale } from '../_lib/locale-server'
+import { getCurrentNavUser } from '../_lib/session'
 import { FooterBar } from './shell/FooterBar'
 import { TopNavBar } from './shell/TopNavBar'
 
@@ -17,6 +18,9 @@ type SiteShellProps = {
   currentPath?: string
   footer?: FooterContent | null
   navigation?: NavigationItem[] | null
+  showAuthEntry?: boolean
+  showFooter?: boolean
+  showLocaleSwitcher?: boolean
   showUtilityNav?: boolean
   user?: null | {
     email?: string | null
@@ -38,10 +42,14 @@ export async function SiteShell({
   currentPath,
   footer,
   navigation,
+  showAuthEntry = true,
+  showFooter = true,
+  showLocaleSwitcher = true,
   showUtilityNav = true,
   user,
 }: SiteShellProps) {
   const locale = await getCurrentLocale()
+  const navUser = await getCurrentNavUser()
   const defaultSiteSettings = getDefaultSiteSettings(locale)
   const footerContent = { ...getDefaultFooter(locale), ...footer }
   const links = navigation?.length
@@ -63,7 +71,23 @@ export async function SiteShell({
         </div>
       ) : null}
 
-      <TopNavBar currentPath={currentPath} locale={locale} navigation={links} user={user} />
+      <TopNavBar
+        currentPath={currentPath}
+        locale={locale}
+        navigation={links}
+        showAuthEntry={showAuthEntry}
+        showLocaleSwitcher={showLocaleSwitcher}
+        user={
+          navUser
+            ? {
+                avatarUrl: navUser.avatarUrl,
+                creditsBalance: navUser.creditsBalance,
+                displayName: navUser.displayName,
+                email: navUser.email,
+              }
+            : user
+        }
+      />
 
       {showUtilityNav ? (
         <div className="border-b border-[#403f46] bg-[#181818]">
@@ -89,11 +113,13 @@ export async function SiteShell({
 
       <main>{children}</main>
 
-      <FooterBar
-        footerContent={footerContent}
-        siteDescription={defaultSiteSettings.siteDescription}
-        supportEmail={defaultSiteSettings.supportEmail}
-      />
+      {showFooter ? (
+        <FooterBar
+          footerContent={footerContent}
+          siteDescription={defaultSiteSettings.siteDescription}
+          supportEmail={defaultSiteSettings.supportEmail}
+        />
+      ) : null}
     </div>
   )
 }

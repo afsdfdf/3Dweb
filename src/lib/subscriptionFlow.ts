@@ -294,7 +294,7 @@ export async function createSubscriptionCheckout(args: { planKey: SubscriptionPl
 
   const providers = await getPaymentProviderSettings(req)
   if (providers.subscriptionProvider !== 'stripe') {
-    throw new Error('当前站点订阅支付通道为 Shopify 预留模式，暂未启用在线订阅结算。')
+    throw new Error('The current site configuration uses Shopify reserved mode for subscriptions, so online subscription checkout is disabled.')
   }
 
   const existing = await req.payload.find({
@@ -455,7 +455,7 @@ export async function createSubscriptionPortal(args: { req: PayloadRequest }) {
 
   const providers = await getPaymentProviderSettings(req)
   if (providers.subscriptionProvider !== 'stripe') {
-    throw new Error('当前站点未启用 Stripe 订阅管理入口。')
+    throw new Error('The current site configuration does not enable the Stripe subscription management portal.')
   }
 
   const userCustomerId =

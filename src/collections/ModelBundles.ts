@@ -1,8 +1,9 @@
-import type { Access, CollectionConfig, Where } from 'payload'
+﻿import type { Access, CollectionConfig, Where } from 'payload'
 
 import { isStaff } from '@/access'
 import { assignCurrentUser } from '@/hooks/assignCurrentUser'
 import { fillPublishAtOnPublish } from '@/hooks/fillPublishAtOnPublish'
+import { adminLabelsKey, adminTextKey } from '@/lib/adminText'
 
 const publicBundleReadOrStaff: Access = ({ req }) => {
   if (req.user?.role === 'admin' || req.user?.role === 'operator') {
@@ -29,14 +30,11 @@ const publicBundleReadOrStaff: Access = ({ req }) => {
 
 export const ModelBundles: CollectionConfig = {
   slug: 'model-bundles',
-  labels: {
-    plural: '模型专题包',
-    singular: '模型专题包',
-  },
+  labels: adminLabelsKey('collections.modelBundles'),
   admin: {
     defaultColumns: ['title', '_status', 'createdBy', 'isVisible', 'isFeatured', 'sortOrder', 'updatedAt'],
-    description: '管理员可从用户模型中挑选多个模型组成专题包或合集。',
-    group: '内容',
+    description: adminTextKey('collections.modelBundles.description'),
+    group: adminTextKey('groups.content'),
     useAsTitle: 'title',
   },
   access: {
@@ -141,3 +139,4 @@ export const ModelBundles: CollectionConfig = {
     drafts: true,
   },
 }
+

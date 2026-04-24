@@ -68,10 +68,14 @@ export interface Config {
   blocks: {};
   collections: {
     users: User;
+    'user-follows': UserFollow;
     media: Media;
     'generation-tasks': GenerationTask;
     'task-events': TaskEvent;
     models: Model;
+    'model-comments': ModelComment;
+    'model-likes': ModelLike;
+    'model-favorites': ModelFavorite;
     'homepage-items': HomepageItem;
     posts: Post;
     announcements: Announcement;
@@ -79,6 +83,7 @@ export interface Config {
     credits: Credit;
     'credit-transactions': CreditTransaction;
     'credit-products': CreditProduct;
+    'engagement-views': EngagementView;
     'billing-subscriptions': BillingSubscription;
     addresses: Address;
     'print-orders': PrintOrder;
@@ -91,10 +96,14 @@ export interface Config {
   collectionsJoins: {};
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
+    'user-follows': UserFollowsSelect<false> | UserFollowsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     'generation-tasks': GenerationTasksSelect<false> | GenerationTasksSelect<true>;
     'task-events': TaskEventsSelect<false> | TaskEventsSelect<true>;
     models: ModelsSelect<false> | ModelsSelect<true>;
+    'model-comments': ModelCommentsSelect<false> | ModelCommentsSelect<true>;
+    'model-likes': ModelLikesSelect<false> | ModelLikesSelect<true>;
+    'model-favorites': ModelFavoritesSelect<false> | ModelFavoritesSelect<true>;
     'homepage-items': HomepageItemsSelect<false> | HomepageItemsSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
     announcements: AnnouncementsSelect<false> | AnnouncementsSelect<true>;
@@ -102,6 +111,7 @@ export interface Config {
     credits: CreditsSelect<false> | CreditsSelect<true>;
     'credit-transactions': CreditTransactionsSelect<false> | CreditTransactionsSelect<true>;
     'credit-products': CreditProductsSelect<false> | CreditProductsSelect<true>;
+    'engagement-views': EngagementViewsSelect<false> | EngagementViewsSelect<true>;
     'billing-subscriptions': BillingSubscriptionsSelect<false> | BillingSubscriptionsSelect<true>;
     addresses: AddressesSelect<false> | AddressesSelect<true>;
     'print-orders': PrintOrdersSelect<false> | PrintOrdersSelect<true>;
@@ -160,7 +170,7 @@ export interface UserAuthOperations {
   };
 }
 /**
- * 平台用户、角色、资料与账户总览。
+ * Manage platform users, roles, profile data, and account status.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
@@ -168,12 +178,23 @@ export interface UserAuthOperations {
 export interface User {
   id: number;
   fullName?: string | null;
+  displayName?: string | null;
+  /**
+   * Short public profile introduction for creator pages and model detail sidebars.
+   */
+  bio?: string | null;
   role: 'admin' | 'operator' | 'customer';
   avatar?: (number | null) | Media;
+  profileBackground?: (number | null) | Media;
+  avatarFrame?: ('none' | 'ember' | 'kick' | 'emerald') | null;
+  profileVisibility?: ('private' | 'public') | null;
   phone?: string | null;
   shopifyCustomerId?: string | null;
   stripeCustomerId?: string | null;
   creditsBalance?: number | null;
+  profileViewCount?: number | null;
+  followersCount?: number | null;
+  followingCount?: number | null;
   lastActiveAt?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -197,7 +218,7 @@ export interface User {
   collection: 'users';
 }
 /**
- * 图片、预览图和 3D 文件统一存放处。
+ * Store images, previews, and 3D files in one place.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media".
@@ -206,7 +227,14 @@ export interface Media {
   id: number;
   alt: string;
   owner?: (number | null) | User;
+  /**
+   * Use preview for guest-readable images. Keep model files as model and source assets as input.
+   */
   purpose?: ('input' | 'preview' | 'model' | 'document' | 'asset') | null;
+  /**
+   * Enable this when administrators want guests to access this exact asset, including example files or public 3D files.
+   */
+  publicAccess?: boolean | null;
   prefix?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -221,7 +249,20 @@ export interface Media {
   focalY?: number | null;
 }
 /**
- * 跟踪 AI 生成任务的排队、状态、回调和结果。
+ * Track creator follow relationships between users.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "user-follows".
+ */
+export interface UserFollow {
+  id: number;
+  follower: number | User;
+  followee: number | User;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Track AI generation queueing, status, callbacks, and outputs.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "generation-tasks".
@@ -233,7 +274,7 @@ export interface GenerationTask {
   inputMode: 'image' | 'text' | 'hybrid';
   prompt?: string | null;
   sourceImage?: (number | null) | Media;
-  provider?: ('meshy' | 'tripo' | 'custom') | null;
+  provider?: ('meshy' | 'tripo' | 'gemini-official' | 'gemini-third-party' | 'custom') | null;
   providerTaskId?: string | null;
   status: 'queued' | 'processing' | 'succeeded' | 'failed' | 'timeout';
   progress?: number | null;
@@ -266,7 +307,7 @@ export interface GenerationTask {
   createdAt: string;
 }
 /**
- * 管理生成后的模型资产、文件格式和打印属性。
+ * Manage generated model assets, file formats, and print properties.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "models".
@@ -278,10 +319,13 @@ export interface Model {
   sourceTask?: (number | null) | GenerationTask;
   status?: ('draft' | 'ready' | 'archived') | null;
   visibility?: ('private' | 'team' | 'public') | null;
+  /**
+   * Required for public models. The linked media should use purpose = preview.
+   */
   previewImage?: (number | null) | Media;
   formats?:
     | {
-        format: 'glb' | 'fbx' | 'obj' | 'stl' | 'usdz';
+        format: 'glb' | 'fbx' | 'obj' | 'stl' | 'usdz' | '3mf';
         file?: (number | null) | Media;
         downloadCredits?: number | null;
         fileSizeMb?: number | null;
@@ -290,6 +334,10 @@ export interface Model {
     | null;
   viewerUrl?: string | null;
   printReady?: boolean | null;
+  viewCount?: number | null;
+  commentsCount?: number | null;
+  likesCount?: number | null;
+  favoritesCount?: number | null;
   dimensions?: {
     widthMm?: number | null;
     heightMm?: number | null;
@@ -329,7 +377,48 @@ export interface TaskEvent {
   createdAt: string;
 }
 /**
- * 管理首页展示卡片、板块内容、排序、显示隐藏和发布时间。
+ * Store lightweight public comments for public model detail pages.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "model-comments".
+ */
+export interface ModelComment {
+  id: number;
+  model: number | Model;
+  author: number | User;
+  status: 'visible' | 'hidden';
+  content: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Track per-user likes on public models.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "model-likes".
+ */
+export interface ModelLike {
+  id: number;
+  user: number | User;
+  model: number | Model;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Track per-user saved models for later access.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "model-favorites".
+ */
+export interface ModelFavorite {
+  id: number;
+  user: number | User;
+  model: number | Model;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Manage homepage cards, placements, sorting, visibility, and publish timing.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "homepage-items".
@@ -338,19 +427,31 @@ export interface HomepageItem {
   id: number;
   title: string;
   /**
-   * 首页内容项的唯一标识，便于后续内容查询或外部同步。
+   * Stable unique key for homepage item lookup and future sync flows.
    */
   slug: string;
-  placement: 'hero-secondary' | 'featured' | 'bundles' | 'announcements' | 'articles';
+  placement:
+    | 'hero-secondary'
+    | 'featured-rail'
+    | 'featured'
+    | 'collection-shelf'
+    | 'bundles'
+    | 'announcements'
+    | 'articles';
   contentType: 'custom' | 'model' | 'post' | 'announcement' | 'bundle';
   summary?: string | null;
+  railVariant?: ('standard' | 'wide') | null;
+  /**
+   * Example: Products x5. Used for collection shelf cards.
+   */
+  itemCountLabel?: string | null;
   coverImage?: (number | null) | Media;
   linkedModel?: (number | null) | Model;
   linkedPost?: (number | null) | Post;
   linkedAnnouncement?: (number | null) | Announcement;
   linkedBundle?: (number | null) | ModelBundle;
   /**
-   * 当内容类型为自定义卡片时使用，用于跳转到任意站内或站外链接。
+   * Used when content type is custom. Supports internal or external destinations.
    */
   customHref?: string | null;
   createdBy?: (number | null) | User;
@@ -363,7 +464,7 @@ export interface HomepageItem {
   _status?: ('draft' | 'published') | null;
 }
 /**
- * 管理首页活动帖、博客文章与公告型长内容。
+ * Manage articles, event posts, and detail-page content.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "posts".
@@ -407,7 +508,7 @@ export interface Post {
   _status?: ('draft' | 'published') | null;
 }
 /**
- * 管理首页公告、系统通知与短内容提示。
+ * Manage homepage announcements, system notices, and short-form prompts.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "announcements".
@@ -442,7 +543,7 @@ export interface Announcement {
   _status?: ('draft' | 'published') | null;
 }
 /**
- * 管理员可从用户模型中挑选多个模型组成专题包或合集。
+ * Combine multiple models into bundles, curated sets, and featured series.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "model-bundles".
@@ -473,7 +574,7 @@ export interface ModelBundle {
   _status?: ('draft' | 'published') | null;
 }
 /**
- * 管理用户积分余额、预扣与累计消费。
+ * Manage user credit balances, reserved credits, and lifetime usage.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "credits".
@@ -492,7 +593,7 @@ export interface Credit {
   createdAt: string;
 }
 /**
- * 记录每一笔积分变动。
+ * Record every credit balance change.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "credit-transactions".
@@ -530,7 +631,7 @@ export interface CreditTransaction {
   createdAt: string;
 }
 /**
- * 管理模型打印订单、收货信息和生产状态。
+ * Manage model print orders, shipping information, and production status.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "print-orders".
@@ -586,7 +687,24 @@ export interface CreditProduct {
   createdAt: string;
 }
 /**
- * 记录 Stripe 订阅、当前周期和积分发放状态。
+ * Deduplicated lightweight view records for public creator and model pages.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "engagement-views".
+ */
+export interface EngagementView {
+  id: number;
+  targetType: 'creator-profile' | 'model';
+  targetUser?: (number | null) | User;
+  targetModel?: (number | null) | Model;
+  viewer?: (number | null) | User;
+  viewerKeyHash: string;
+  lastViewedAt: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Track Stripe subscriptions, billing periods, and credit grant status.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "billing-subscriptions".
@@ -640,7 +758,7 @@ export interface Address {
   createdAt: string;
 }
 /**
- * 统一记录平台支付流水。当前线上支付主通道为 Stripe，保留 Shopify 兼容字段以支持未来迁移。
+ * Centralize platform payment records. Stripe is the active payment rail while Shopify compatibility fields remain for future migration.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "shopify-payments".
@@ -704,6 +822,10 @@ export interface PayloadLockedDocument {
         value: number | User;
       } | null)
     | ({
+        relationTo: 'user-follows';
+        value: number | UserFollow;
+      } | null)
+    | ({
         relationTo: 'media';
         value: number | Media;
       } | null)
@@ -718,6 +840,18 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'models';
         value: number | Model;
+      } | null)
+    | ({
+        relationTo: 'model-comments';
+        value: number | ModelComment;
+      } | null)
+    | ({
+        relationTo: 'model-likes';
+        value: number | ModelLike;
+      } | null)
+    | ({
+        relationTo: 'model-favorites';
+        value: number | ModelFavorite;
       } | null)
     | ({
         relationTo: 'homepage-items';
@@ -746,6 +880,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'credit-products';
         value: number | CreditProduct;
+      } | null)
+    | ({
+        relationTo: 'engagement-views';
+        value: number | EngagementView;
       } | null)
     | ({
         relationTo: 'billing-subscriptions';
@@ -811,12 +949,20 @@ export interface PayloadMigration {
  */
 export interface UsersSelect<T extends boolean = true> {
   fullName?: T;
+  displayName?: T;
+  bio?: T;
   role?: T;
   avatar?: T;
+  profileBackground?: T;
+  avatarFrame?: T;
+  profileVisibility?: T;
   phone?: T;
   shopifyCustomerId?: T;
   stripeCustomerId?: T;
   creditsBalance?: T;
+  profileViewCount?: T;
+  followersCount?: T;
+  followingCount?: T;
   lastActiveAt?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -839,12 +985,23 @@ export interface UsersSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "user-follows_select".
+ */
+export interface UserFollowsSelect<T extends boolean = true> {
+  follower?: T;
+  followee?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "media_select".
  */
 export interface MediaSelect<T extends boolean = true> {
   alt?: T;
   owner?: T;
   purpose?: T;
+  publicAccess?: T;
   prefix?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -920,6 +1077,10 @@ export interface ModelsSelect<T extends boolean = true> {
       };
   viewerUrl?: T;
   printReady?: T;
+  viewCount?: T;
+  commentsCount?: T;
+  likesCount?: T;
+  favoritesCount?: T;
   dimensions?:
     | T
     | {
@@ -939,6 +1100,38 @@ export interface ModelsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "model-comments_select".
+ */
+export interface ModelCommentsSelect<T extends boolean = true> {
+  model?: T;
+  author?: T;
+  status?: T;
+  content?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "model-likes_select".
+ */
+export interface ModelLikesSelect<T extends boolean = true> {
+  user?: T;
+  model?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "model-favorites_select".
+ */
+export interface ModelFavoritesSelect<T extends boolean = true> {
+  user?: T;
+  model?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "homepage-items_select".
  */
 export interface HomepageItemsSelect<T extends boolean = true> {
@@ -947,6 +1140,8 @@ export interface HomepageItemsSelect<T extends boolean = true> {
   placement?: T;
   contentType?: T;
   summary?: T;
+  railVariant?: T;
+  itemCountLabel?: T;
   coverImage?: T;
   linkedModel?: T;
   linkedPost?: T;
@@ -1084,6 +1279,20 @@ export interface CreditProductsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "engagement-views_select".
+ */
+export interface EngagementViewsSelect<T extends boolean = true> {
+  targetType?: T;
+  targetUser?: T;
+  targetModel?: T;
+  viewer?: T;
+  viewerKeyHash?: T;
+  lastViewedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "billing-subscriptions_select".
  */
 export interface BillingSubscriptionsSelect<T extends boolean = true> {
@@ -1210,7 +1419,7 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   createdAt?: T;
 }
 /**
- * 统一管理站点品牌、导航、定价、积分套餐与邮件通知文案。
+ * Manage site brand settings, navigation, pricing, credit plans, and notification copy from one place.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "site-settings".
@@ -1365,6 +1574,12 @@ export interface HomepageContent {
     title?: string | null;
     text?: string | null;
   };
+  featuredRail?: {
+    eyebrow?: string | null;
+    title?: string | null;
+    searchLabel?: string | null;
+    moreLabel?: string | null;
+  };
   featuredWorks?:
     | {
         category: string;
@@ -1378,6 +1593,13 @@ export interface HomepageContent {
     eyebrow?: string | null;
     title?: string | null;
     text?: string | null;
+  };
+  collectionShelf?: {
+    title?: string | null;
+    hotLabel?: string | null;
+    newLabel?: string | null;
+    moreLabel?: string | null;
+    allLabel?: string | null;
   };
   serviceBlocks?:
     | {
@@ -1467,6 +1689,26 @@ export interface AiProviderSetting {
         id?: string | null;
       }[]
     | null;
+  imageGeneration?: {
+    defaultProvider?: ('gemini-official' | 'gemini-third-party') | null;
+    timeoutSeconds?: number | null;
+    official?: {
+      baseURL?: string | null;
+      model?: string | null;
+      /**
+       * Optional. If empty, runtime falls back to GEMINI_IMAGE_API_KEY.
+       */
+      apiKey?: string | null;
+    };
+    thirdParty?: {
+      baseURL?: string | null;
+      model?: string | null;
+      /**
+       * Optional. If empty, runtime falls back to GEMINI_IMAGE_THIRD_PARTY_API_KEY.
+       */
+      apiKey?: string | null;
+    };
+  };
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -1503,7 +1745,7 @@ export interface StorageSetting {
    */
   signedDownloads?: boolean | null;
   /**
-   * Default: environment. This is a note for operators; real secrets still live in environment variables.
+   * Default: environment. This is an operator note only. Real secrets still live in environment variables.
    */
   credentialsSource?: string | null;
   /**
@@ -1772,6 +2014,14 @@ export interface HomepageContentSelect<T extends boolean = true> {
         title?: T;
         text?: T;
       };
+  featuredRail?:
+    | T
+    | {
+        eyebrow?: T;
+        title?: T;
+        searchLabel?: T;
+        moreLabel?: T;
+      };
   featuredWorks?:
     | T
     | {
@@ -1787,6 +2037,15 @@ export interface HomepageContentSelect<T extends boolean = true> {
         eyebrow?: T;
         title?: T;
         text?: T;
+      };
+  collectionShelf?:
+    | T
+    | {
+        title?: T;
+        hotLabel?: T;
+        newLabel?: T;
+        moreLabel?: T;
+        allLabel?: T;
       };
   serviceBlocks?:
     | T
@@ -1885,6 +2144,26 @@ export interface AiProviderSettingsSelect<T extends boolean = true> {
         apiKeyHint?: T;
         enabled?: T;
         id?: T;
+      };
+  imageGeneration?:
+    | T
+    | {
+        defaultProvider?: T;
+        timeoutSeconds?: T;
+        official?:
+          | T
+          | {
+              baseURL?: T;
+              model?: T;
+              apiKey?: T;
+            };
+        thirdParty?:
+          | T
+          | {
+              baseURL?: T;
+              model?: T;
+              apiKey?: T;
+            };
       };
   updatedAt?: T;
   createdAt?: T;

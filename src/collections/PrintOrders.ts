@@ -1,16 +1,14 @@
 ﻿import type { CollectionConfig } from 'payload'
 
 import { isStaff, ownerOrStaff } from '@/access'
+import { adminLabelsKey, adminTextKey } from '@/lib/adminText'
 
 export const PrintOrders: CollectionConfig = {
   slug: 'print-orders',
-  labels: {
-    plural: '打印订单',
-    singular: '打印订单',
-  },
+  labels: adminLabelsKey('collections.printOrders'),
   admin: {
-    description: '管理模型打印订单、收货信息和生产状态。',
-    group: '商务',
+    description: adminTextKey('collections.printOrders.description'),
+    group: adminTextKey('groups.commerce'),
     useAsTitle: 'orderNumber',
     defaultColumns: ['orderNumber', 'user', 'status', 'paymentStatus', 'amount', 'updatedAt'],
   },

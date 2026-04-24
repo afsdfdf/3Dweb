@@ -2,7 +2,7 @@ import type { PayloadRequest } from 'payload'
 
 import { getEmailSettings } from '@/lib/emailSettings'
 
-const getAppURL = () => process.env.NEXT_PUBLIC_APP_URL || 'http://127.0.0.1:3000'
+const getAppURL = () => process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
 const renderShell = (title: string, content: string) => `
   <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #0f172a; max-width: 640px; margin: 0 auto; padding: 24px;">
@@ -29,10 +29,10 @@ export async function sendSubscriptionSuccessEmail(args: {
     html: renderShell(
       settings.templates.subscriptionSuccess.subject,
       `
-        <p>你的 <strong>${planLabel}</strong> 已经开通成功。</p>
+        <p>Your <strong>${planLabel}</strong> subscription is active.</p>
         <p>${settings.templates.subscriptionSuccess.intro}</p>
-        <p>本期已到账积分：<strong>${monthlyCredits}</strong></p>
-        <p>当前周期结束时间：${currentPeriodEnd || '—'}</p>
+        <p>Credits added this period: <strong>${monthlyCredits}</strong></p>
+        <p>Current period ends at: ${currentPeriodEnd || '--'}</p>
         <p>
           <a href="${appURL}/dashboard/credits" style="display:inline-block;padding:10px 16px;background:#111827;color:#fff;text-decoration:none;border-radius:8px;">
             ${settings.templates.subscriptionSuccess.ctaLabel}
@@ -64,10 +64,10 @@ export async function sendOrderPaidEmail(args: {
     html: renderShell(
       settings.templates.orderPaid.subject,
       `
-        <p>你的打印订单 <strong>${orderNumber}</strong> 已支付成功。</p>
+        <p>Your print order <strong>${orderNumber}</strong> has been paid successfully.</p>
         <p>${settings.templates.orderPaid.intro}</p>
-        <p>模型：${modelTitle || '未命名模型'}</p>
-        <p>支付金额：${amount} ${currency || 'USD'}</p>
+        <p>Model: ${modelTitle || 'Unnamed model'}</p>
+        <p>Payment amount: ${amount} ${currency || 'USD'}</p>
         <p>
           <a href="${appURL}/dashboard/orders/${orderId}" style="display:inline-block;padding:10px 16px;background:#111827;color:#fff;text-decoration:none;border-radius:8px;">
             ${settings.templates.orderPaid.ctaLabel}

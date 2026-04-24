@@ -2,7 +2,7 @@ import type { PayloadRequest } from 'payload'
 
 import { getEmailSettings } from '@/lib/emailSettings'
 
-const getAppURL = () => process.env.NEXT_PUBLIC_APP_URL || 'http://127.0.0.1:3000'
+const getAppURL = () => process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
 const renderEmailShell = (args: { body: string; footerText: string; title: string }) => {
   const { body, footerText, title } = args

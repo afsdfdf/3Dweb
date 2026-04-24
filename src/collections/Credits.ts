@@ -1,16 +1,14 @@
-﻿import type { CollectionConfig } from 'payload'
+import type { CollectionConfig } from 'payload'
 
 import { isAdmin, ownerOrStaff } from '@/access'
+import { adminLabelsKey, adminTextKey } from '@/lib/adminText'
 
 export const Credits: CollectionConfig = {
   slug: 'credits',
-  labels: {
-    plural: '积分账户',
-    singular: '积分账户',
-  },
+  labels: adminLabelsKey('collections.credits'),
   admin: {
-    description: '管理用户积分余额、预扣与累计消费。',
-    group: '商务',
+    description: adminTextKey('collections.credits.description'),
+    group: adminTextKey('groups.commerce'),
     useAsTitle: 'accountLabel',
     defaultColumns: ['accountLabel', 'user', 'balance', 'reservedBalance', 'status'],
   },
@@ -22,24 +20,24 @@ export const Credits: CollectionConfig = {
   },
   timestamps: true,
   fields: [
-    { name: 'accountLabel', type: 'text', required: true, defaultValue: '主积分账户', label: '账户名称' },
-    { name: 'user', type: 'relationship', relationTo: 'users', required: true, unique: true, label: '用户' },
-    { name: 'balance', type: 'number', required: true, defaultValue: 0, label: '余额' },
-    { name: 'reservedBalance', type: 'number', required: true, defaultValue: 0, label: '预扣' },
-    { name: 'lifetimePurchased', type: 'number', required: true, defaultValue: 0, label: '累计购入' },
-    { name: 'lifetimeSpent', type: 'number', required: true, defaultValue: 0, label: '累计消耗' },
+    { name: 'accountLabel', type: 'text', required: true, defaultValue: 'Primary credits account', label: 'Account label' },
+    { name: 'user', type: 'relationship', relationTo: 'users', required: true, unique: true, label: 'User' },
+    { name: 'balance', type: 'number', required: true, defaultValue: 0, label: 'Balance' },
+    { name: 'reservedBalance', type: 'number', required: true, defaultValue: 0, label: 'Reserved balance' },
+    { name: 'lifetimePurchased', type: 'number', required: true, defaultValue: 0, label: 'Lifetime purchased' },
+    { name: 'lifetimeSpent', type: 'number', required: true, defaultValue: 0, label: 'Lifetime spent' },
     {
       name: 'status',
       type: 'select',
       required: true,
       defaultValue: 'active',
-      label: '状态',
+      label: 'Status',
       options: [
-        { label: '正常', value: 'active' },
-        { label: '暂停', value: 'suspended' },
-        { label: '关闭', value: 'closed' },
+        { label: 'Active', value: 'active' },
+        { label: 'Suspended', value: 'suspended' },
+        { label: 'Closed', value: 'closed' },
       ],
     },
-    { name: 'billingNotes', type: 'textarea', label: '账务备注' },
+    { name: 'billingNotes', type: 'textarea', label: 'Billing notes' },
   ],
 }

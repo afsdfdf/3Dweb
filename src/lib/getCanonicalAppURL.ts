@@ -1,4 +1,4 @@
-const DEFAULT_APP_URL = 'http://127.0.0.1:3000'
+const DEFAULT_APP_URL = 'http://localhost:3000'
 
 const trimTrailingSlash = (value: string) => value.replace(/\/+$/, '')
 

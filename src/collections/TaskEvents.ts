@@ -1,16 +1,14 @@
-﻿import type { CollectionConfig } from 'payload'
+import type { CollectionConfig } from 'payload'
 
 import { ownerOrStaff } from '@/access'
+import { adminLabelsKey, adminTextKey } from '@/lib/adminText'
 
 export const TaskEvents: CollectionConfig = {
   slug: 'task-events',
-  labels: {
-    plural: '任务事件',
-    singular: '任务事件',
-  },
+  labels: adminLabelsKey('collections.taskEvents'),
   admin: {
     defaultColumns: ['eventType', 'task', 'provider', 'createdAt'],
-    group: 'AI 生产',
+    group: adminTextKey('groups.aiProduction'),
     useAsTitle: 'eventType',
   },
   access: {
@@ -22,24 +20,24 @@ export const TaskEvents: CollectionConfig = {
   defaultSort: '-createdAt',
   timestamps: true,
   fields: [
-    { name: 'task', type: 'relationship', relationTo: 'generation-tasks', required: true, label: '任务' },
-    { name: 'user', type: 'relationship', relationTo: 'users', required: true, label: '用户' },
+    { name: 'task', type: 'relationship', relationTo: 'generation-tasks', required: true, label: 'Task' },
+    { name: 'user', type: 'relationship', relationTo: 'users', required: true, label: 'User' },
     {
       name: 'eventType',
       type: 'select',
       required: true,
-      label: '事件类型',
+      label: 'Event type',
       options: [
-        { label: '已排队', value: 'queued' },
-        { label: '已提交', value: 'submitted' },
-        { label: '轮询', value: 'polling' },
-        { label: '回调', value: 'callback' },
-        { label: '完成', value: 'completed' },
-        { label: '失败', value: 'failed' },
+        { label: 'Queued', value: 'queued' },
+        { label: 'Submitted', value: 'submitted' },
+        { label: 'Polling', value: 'polling' },
+        { label: 'Callback', value: 'callback' },
+        { label: 'Completed', value: 'completed' },
+        { label: 'Failed', value: 'failed' },
       ],
     },
-    { name: 'provider', type: 'text', label: '供应商' },
-    { name: 'message', type: 'textarea', label: '说明' },
-    { name: 'payload', type: 'json', label: '原始载荷' },
+    { name: 'provider', type: 'text', label: 'Provider' },
+    { name: 'message', type: 'textarea', label: 'Message' },
+    { name: 'payload', type: 'json', label: 'Raw payload' },
   ],
 }

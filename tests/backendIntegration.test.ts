@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { aiWebhookEndpoint, __setAITasksEndpointTestHooks } from '../src/endpoints/aiTasks.ts'
+import { aiWebhookEndpoint, meshyWebhookEndpoint, __setAITasksEndpointTestHooks } from '../src/endpoints/aiTasks.ts'
 import { __setMockDownloadEndpointTestHooks, mockModelDownloadEndpoint } from '../src/endpoints/mockDownloads.ts'
 import { __setStripeWebhookTestHooks, stripeWebhookEndpoint } from '../src/endpoints/stripeWebhook.ts'
 import { __setSubscriptionFlowTestHooks, syncStripeSubscriptionState } from '../src/lib/subscriptionFlow.ts'
@@ -245,7 +245,7 @@ test('model download failure triggers automatic credit refund', async () => {
 
     assert.equal(response.status, 502)
     assert.equal(refundCalls, 1)
-    assert.match(body.message, /自动退款|下载失败/)
+    assert.match(body.message, /refunded automatically|download failed/i)
   } finally {
     __setMockDownloadEndpointTestHooks(null)
   }
@@ -294,6 +294,60 @@ test('AI webhook verifies signature and updates task state', async () => {
     assert.equal(handledProviderTaskId, 'provider-task-1')
     assert.equal(body.result.taskId, 99)
   } finally {
+    __setAITasksEndpointTestHooks(null)
+  }
+})
+
+test('Meshy webhook accepts token and schedules provider sync after response', async () => {
+  const previousToken = process.env.MESHY_WEBHOOK_TOKEN
+  let handledProviderTaskId = ''
+  let scheduledTask: (() => Promise<void>) | null = null
+
+  process.env.MESHY_WEBHOOK_TOKEN = 'meshy-secret'
+  __setAITasksEndpointTestHooks({
+    handleMeshyWebhook: async ({ payloadData }) => {
+      handledProviderTaskId = String(payloadData.id)
+      return {
+        providerTaskId: handledProviderTaskId,
+        status: 'succeeded',
+        taskId: 101,
+      }
+    },
+    scheduleAfterResponse: (task) => {
+      scheduledTask = task
+    },
+  })
+
+  try {
+    const response = await meshyWebhookEndpoint.handler({
+      headers: new Headers(),
+      payload: {
+        logger: createLogger(),
+      },
+      text: async () =>
+        JSON.stringify({
+          id: 'meshy-task-1',
+          status: 'SUCCEEDED',
+        }),
+      url: 'http://localhost/api/platform/ai/webhooks/meshy?token=meshy-secret',
+    } as never)
+    const body = await response.json()
+
+    assert.equal(response.status, 202)
+    assert.equal(body.message, 'Meshy webhook accepted.')
+    assert.equal(handledProviderTaskId, '')
+    assert.ok(scheduledTask)
+
+    await scheduledTask()
+
+    assert.equal(handledProviderTaskId, 'meshy-task-1')
+  } finally {
+    if (previousToken === undefined) {
+      delete process.env.MESHY_WEBHOOK_TOKEN
+    } else {
+      process.env.MESHY_WEBHOOK_TOKEN = previousToken
+    }
+
     __setAITasksEndpointTestHooks(null)
   }
 })

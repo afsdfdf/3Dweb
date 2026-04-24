@@ -1,25 +1,31 @@
-export type DatabaseRuntimeConfig =
-  | {
-      connectionString: string
-      pool: {
-        connectionTimeoutMillis: number
-        idleTimeoutMillis: number
-        max: number
-        min: number
+export type DatabaseRuntimeConfig = {
+  connectionString: string
+  pool: {
+    connectionTimeoutMillis: number
+    idleTimeoutMillis: number
+    max: number
+    min: number
+  }
+  provider: 'postgres'
+  ssl:
+    | false
+    | {
+        rejectUnauthorized: boolean
       }
-      provider: 'postgres'
-      ssl:
-        | false
-        | {
-            rejectUnauthorized: boolean
-          }
-    }
-  | {
-      provider: 'sqlite'
-      url: string
-    }
+}
 
 const isTruthy = (value: string | undefined) => ['1', 'true', 'yes', 'on'].includes(String(value || '').toLowerCase())
+
+function readDirectPostgresUrl() {
+  return (
+    process.env.DATABASE_URL ||
+    process.env.SUPABASE_DB_URL ||
+    process.env.SUPABASE_DATABASE_URL ||
+    process.env.POSTGRES_URL ||
+    process.env.POSTGRES_URL_NON_POOLING ||
+    ''
+  )
+}
 
 export function buildAwsRdsConnectionString() {
   const host = process.env.AWS_RDS_HOST || ''
@@ -58,7 +64,7 @@ export function readPostgresPoolConfig() {
 
 export function resolveDatabaseRuntimeConfig(): DatabaseRuntimeConfig {
   const explicitProvider = String(process.env.DATABASE_PROVIDER || process.env.DB_PROVIDER || '').toLowerCase()
-  const directUrl = process.env.DATABASE_URL || ''
+  const directUrl = readDirectPostgresUrl()
   const awsRdsUrl = buildAwsRdsConnectionString()
   const connectionString = directUrl || awsRdsUrl
   const shouldUsePostgres =
@@ -81,8 +87,8 @@ export function resolveDatabaseRuntimeConfig(): DatabaseRuntimeConfig {
     }
   }
 
-  return {
-    provider: 'sqlite',
-    url: process.env.DATABASE_URL || 'file:./payload.db',
-  }
+  throw new Error(
+    'Postgres runtime is required. Set DATABASE_PROVIDER=postgres and provide a valid DATABASE_URL (or AWS_RDS_* connection fields). ' +
+      'SQLite fallback has been removed from this project runtime.',
+  )
 }

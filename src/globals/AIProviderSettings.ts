@@ -1,14 +1,14 @@
 import type { GlobalConfig } from 'payload'
 
 import { isAdmin } from '@/access'
+import { adminTextKey } from '@/lib/adminText'
 
 export const AIProviderSettings: GlobalConfig = {
   slug: 'ai-provider-settings',
-  label: 'AI Provider Settings',
+  label: adminTextKey('globals.aiProviderSettings.label'),
   admin: {
-    description:
-      'Manage non-sensitive AI provider metadata here. Storage settings now live in the dedicated Storage Settings global, while real secrets must stay in hosting environment variables.',
-    group: 'AI Production',
+    description: adminTextKey('globals.aiProviderSettings.description'),
+    group: adminTextKey('groups.aiProduction'),
   },
   access: {
     read: isAdmin,
@@ -130,6 +130,73 @@ export const AIProviderSettings: GlobalConfig = {
         { name: 'statusPath', type: 'text', label: 'Status path' },
         { name: 'apiKeyHint', type: 'text', label: 'Environment variable hint' },
         { name: 'enabled', type: 'checkbox', defaultValue: true, label: 'Enabled' },
+      ],
+    },
+    {
+      name: 'imageGeneration',
+      type: 'group',
+      label: 'Image generation',
+      fields: [
+        {
+          name: 'defaultProvider',
+          type: 'select',
+          defaultValue: 'gemini-official',
+          label: 'Default provider',
+          options: [
+            { label: 'Gemini official', value: 'gemini-official' },
+            { label: 'Gemini third-party', value: 'gemini-third-party' },
+          ],
+        },
+        {
+          name: 'timeoutSeconds',
+          type: 'number',
+          defaultValue: 60,
+          label: 'Provider timeout seconds',
+        },
+        {
+          name: 'official',
+          type: 'group',
+          label: 'Gemini official',
+          fields: [
+            {
+              name: 'baseURL',
+              type: 'text',
+              defaultValue: 'https://generativelanguage.googleapis.com',
+              label: 'Base URL',
+            },
+            {
+              name: 'model',
+              type: 'text',
+              defaultValue: 'gemini-2.5-flash-image-preview',
+              label: 'Model',
+            },
+            {
+              name: 'apiKey',
+              type: 'text',
+              label: 'API key',
+              admin: {
+                description: 'Optional. If empty, runtime falls back to GEMINI_IMAGE_API_KEY.',
+              },
+            },
+          ],
+        },
+        {
+          name: 'thirdParty',
+          type: 'group',
+          label: 'Gemini third-party',
+          fields: [
+            { name: 'baseURL', type: 'text', label: 'Base URL' },
+            { name: 'model', type: 'text', label: 'Model' },
+            {
+              name: 'apiKey',
+              type: 'text',
+              label: 'API key',
+              admin: {
+                description: 'Optional. If empty, runtime falls back to GEMINI_IMAGE_THIRD_PARTY_API_KEY.',
+              },
+            },
+          ],
+        },
       ],
     },
   ],

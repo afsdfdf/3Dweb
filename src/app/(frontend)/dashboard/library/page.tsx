@@ -7,17 +7,17 @@ import type { GenerationTask, Model } from '@/payload-types'
 
 import { CreatePrintOrderButton } from '../../_components/CreatePrintOrderButton'
 import { DashboardShell } from '../../_components/DashboardShell'
-import { ModelViewer } from '../../_components/ModelViewer'
 import { getCurrentUserModels, requireUser } from '../../_lib/session'
 import { formatDateTime, formatModelStatus } from '../../_lib/ui-text'
+
 function formatVisibility(visibility: Model['visibility']) {
   switch (visibility) {
     case 'public':
-      return '公开'
+      return 'Public'
     case 'team':
-      return '团队'
+      return 'Team'
     default:
-      return '私有'
+      return 'Private'
   }
 }
 
@@ -33,10 +33,10 @@ function formatDimensions(model: Model) {
   const dimensions = model.dimensions
 
   if (dimensions?.widthMm && dimensions.heightMm && dimensions.depthMm) {
-    return `${dimensions.widthMm} × ${dimensions.heightMm} × ${dimensions.depthMm} mm`
+    return `${dimensions.widthMm} x ${dimensions.heightMm} x ${dimensions.depthMm} mm`
   }
 
-  return '生成后补充'
+  return 'Available after processing'
 }
 
 function getStatusVariant(status?: string | null) {
@@ -45,16 +45,42 @@ function getStatusVariant(status?: string | null) {
   return 'outline' as const
 }
 
-function getPrimaryModelURL(model: Model) {
+function hasRenderableModelFile(model: Model) {
+  const sourceTask =
+    model?.sourceTask && typeof model.sourceTask === 'object' && !Array.isArray(model.sourceTask) ? model.sourceTask : null
+  const callbackPayload =
+    sourceTask?.callbackPayload && typeof sourceTask.callbackPayload === 'object' && !Array.isArray(sourceTask.callbackPayload)
+      ? sourceTask.callbackPayload
+      : null
+  const callbackModelUrls =
+    callbackPayload?.modelUrls && typeof callbackPayload.modelUrls === 'object' && !Array.isArray(callbackPayload.modelUrls)
+      ? (callbackPayload.modelUrls as Record<string, unknown>)
+      : null
+
+  if (callbackModelUrls && typeof callbackModelUrls.glb === 'string') {
+    return true
+  }
+
   const formats = Array.isArray(model.formats) ? model.formats : []
   const preferred = formats.find((item) => String(item.format).toLowerCase() === 'glb') || formats[0]
   const file = preferred?.file
 
-  if (file && typeof file === 'object' && 'url' in file && typeof file.url === 'string') {
-    return file.url
-  }
+  return Boolean(file && typeof file === 'object' && 'url' in file && typeof file.url === 'string')
+}
 
-  return null
+function getModelThumbnailURL(model: Model) {
+  const previewImage = model.previewImage && typeof model.previewImage === 'object' ? model.previewImage : null
+  if (previewImage?.thumbnailURL) return previewImage.thumbnailURL
+  if (previewImage?.url) return previewImage.url
+
+  const sourceTask =
+    model?.sourceTask && typeof model.sourceTask === 'object' && !Array.isArray(model.sourceTask) ? model.sourceTask : null
+  const callbackPayload =
+    sourceTask?.callbackPayload && typeof sourceTask.callbackPayload === 'object' && !Array.isArray(sourceTask.callbackPayload)
+      ? sourceTask.callbackPayload
+      : null
+
+  return callbackPayload && typeof callbackPayload.thumbnailUrl === 'string' ? callbackPayload.thumbnailUrl : null
 }
 
 export default async function DashboardLibraryPage() {
@@ -64,8 +90,8 @@ export default async function DashboardLibraryPage() {
   return (
     <DashboardShell
       currentPath="/dashboard/library"
-      description="集中管理已生成模型，继续下载交付文件，或将可打印资产推进到订单流程。"
-      title="模型库"
+      description="Manage generated model assets, continue into downloads, and push print-ready files into the order workflow."
+      title="Model Library"
     >
       {models.docs.length > 0 ? (
         <section className="grid gap-4 xl:grid-cols-2">
@@ -73,18 +99,31 @@ export default async function DashboardLibraryPage() {
             const formats = Array.isArray(model.formats) ? model.formats : []
             const tags = Array.isArray(model.tags) ? model.tags : []
             const sourceTaskCode = getSourceTaskCode(model.sourceTask)
-            const previewURL = getPrimaryModelURL(model)
-              ? `/api/platform/mock/models/${model.id}/download?format=glb&inline=1&preview=1`
-              : null
+            const thumbnailURL = getModelThumbnailURL(model)
+            const hasModelFile = hasRenderableModelFile(model)
 
             return (
               <Card className="overflow-hidden border-border/60 bg-card/80 shadow-sm" key={model.id}>
                 <CardContent className="p-4">
-                  <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-black">
-                    <ModelViewer className="h-[340px] w-full" label={model.title} src={previewURL} />
+                  <div className="relative aspect-[16/10] overflow-hidden rounded-2xl border border-border/60 bg-muted">
+                    {thumbnailURL ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img alt={model.title} className="h-full w-full object-cover" src={thumbnailURL} />
+                    ) : (
+                      <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-gradient-to-br from-muted to-background p-6 text-center">
+                        <span className="text-sm font-medium text-foreground">Preview image pending</span>
+                        <span className="max-w-xs text-xs leading-5 text-muted-foreground">
+                          Once processing finishes, the preview image will appear here and the detail view can load the 3D asset.
+                        </span>
+                      </div>
+                    )}
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/65 to-transparent" />
                     <div className="pointer-events-none absolute left-4 top-4 flex flex-wrap gap-2">
                       <Badge variant={getStatusVariant(model.status)}>{formatModelStatus(model.status)}</Badge>
-                      <Badge variant="outline">{model.printReady ? '可打印' : '可下载'}</Badge>
+                      <Badge variant="outline">{model.printReady ? 'Print ready' : 'Download only'}</Badge>
+                    </div>
+                    <div className="pointer-events-none absolute bottom-4 left-4 rounded-full bg-background/90 px-3 py-1 text-xs text-foreground shadow-sm">
+                      {hasModelFile ? 'Model file available' : 'Model file pending'}
                     </div>
                   </div>
                 </CardContent>
@@ -94,7 +133,7 @@ export default async function DashboardLibraryPage() {
                     <div>
                       <CardTitle className="text-2xl tracking-tight">{model.title}</CardTitle>
                       <CardDescription className="mt-2">
-                        这里集中展示真实模型预览、状态、权限、可下载格式与打印就绪信息。
+                        Review the model preview, status, visibility, downloadable formats, and print-readiness in one place.
                       </CardDescription>
                     </div>
                     <Badge variant="outline">{formatVisibility(model.visibility)}</Badge>
@@ -103,21 +142,21 @@ export default async function DashboardLibraryPage() {
 
                 <CardContent className="grid gap-4 md:grid-cols-2">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">格式</p>
+                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Formats</p>
                     <p className="mt-2 text-sm font-medium">
                       {formats.length > 0 ? formats.map((item) => String(item.format).toUpperCase()).join(' / ') : 'GLB / STL'}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">尺寸</p>
+                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Dimensions</p>
                     <p className="mt-2 text-sm font-medium">{formatDimensions(model)}</p>
                   </div>
                   <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">可见范围</p>
+                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Visibility</p>
                     <p className="mt-2 text-sm font-medium">{formatVisibility(model.visibility)}</p>
                   </div>
                   <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">更新时间</p>
+                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Updated</p>
                     <p className="mt-2 text-sm font-medium">{formatDateTime(model.updatedAt)}</p>
                   </div>
                 </CardContent>
@@ -126,7 +165,7 @@ export default async function DashboardLibraryPage() {
                   <CardContent className="flex flex-wrap gap-2">
                     {tags.map((tag, index) => (
                       <Badge key={`${model.id}-${index}`} variant="outline">
-                        {tag.label || '未命名标签'}
+                        {tag.label || 'Untitled tag'}
                       </Badge>
                     ))}
                   </CardContent>
@@ -134,14 +173,14 @@ export default async function DashboardLibraryPage() {
 
                 <CardFooter className="flex flex-wrap gap-3">
                   <Button asChild>
-                    <a href={`/api/platform/mock/models/${model.id}/download?format=glb`}>下载 GLB</a>
+                    <a href={`/api/platform/mock/models/${model.id}/download?format=glb`}>Download GLB</a>
                   </Button>
                   <Button asChild variant="outline">
-                    <a href={`/api/platform/mock/models/${model.id}/download?format=stl`}>下载 STL</a>
+                    <a href={`/api/platform/mock/models/${model.id}/download?format=stl`}>Download STL</a>
                   </Button>
                   {model.printReady ? <CreatePrintOrderButton modelId={Number(model.id)} variant="ghost" /> : null}
                   <Button asChild variant="ghost">
-                    <Link href={sourceTaskCode ? `/results/${sourceTaskCode}` : '/dashboard/library'}>查看来源任务</Link>
+                    <Link href={sourceTaskCode ? `/results/${sourceTaskCode}` : '/dashboard/library'}>Open source task</Link>
                   </Button>
                 </CardFooter>
               </Card>
@@ -151,13 +190,15 @@ export default async function DashboardLibraryPage() {
       ) : (
         <Card className="border-border/60 bg-card/80 shadow-sm">
           <CardHeader>
-            <Badge variant="outline">模型库为空</Badge>
-            <CardTitle className="mt-3 text-2xl tracking-tight">还没有可管理的模型</CardTitle>
-            <CardDescription>生成成功后的资产会自动进入这里，供后续下载、归档或打印。</CardDescription>
+            <Badge variant="outline">Library empty</Badge>
+            <CardTitle className="mt-3 text-2xl tracking-tight">No models to manage yet</CardTitle>
+            <CardDescription>
+              Successful generation outputs will appear here for download, archiving, and print operations.
+            </CardDescription>
           </CardHeader>
           <CardFooter>
             <Button asChild>
-              <Link href="/generate">创建第一个模型</Link>
+              <Link href="/generate">Create your first model</Link>
             </Button>
           </CardFooter>
         </Card>

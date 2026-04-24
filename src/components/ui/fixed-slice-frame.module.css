@@ -1,0 +1,90 @@
+.frame {
+  --fixed-slice-content-padding: 0px;
+  --fixed-slice-edge-overlap: 0px;
+  --fixed-slice-size: 96px;
+  position: relative;
+  isolation: isolate;
+  min-width: 0;
+}
+
+.centerFill {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.frameLayer {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
+.slice {
+  position: absolute;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+
+.cornerTopLeft {
+  top: 0;
+  left: 0;
+  width: var(--fixed-slice-size);
+  height: var(--fixed-slice-size);
+}
+
+.cornerTopRight {
+  top: 0;
+  right: 0;
+  width: var(--fixed-slice-size);
+  height: var(--fixed-slice-size);
+}
+
+.cornerBottomLeft {
+  bottom: 0;
+  left: 0;
+  width: var(--fixed-slice-size);
+  height: var(--fixed-slice-size);
+}
+
+.cornerBottomRight {
+  right: 0;
+  bottom: 0;
+  width: var(--fixed-slice-size);
+  height: var(--fixed-slice-size);
+}
+
+.edgeTop {
+  top: 0;
+  left: var(--fixed-slice-size);
+  right: var(--fixed-slice-size);
+  height: calc(var(--fixed-slice-size) + var(--fixed-slice-edge-overlap));
+}
+
+.edgeBottom {
+  right: var(--fixed-slice-size);
+  bottom: 0;
+  left: var(--fixed-slice-size);
+  height: calc(var(--fixed-slice-size) + var(--fixed-slice-edge-overlap));
+}
+
+.edgeLeft {
+  top: calc(var(--fixed-slice-size) - var(--fixed-slice-edge-overlap));
+  bottom: calc(var(--fixed-slice-size) - var(--fixed-slice-edge-overlap));
+  left: 0;
+  width: var(--fixed-slice-size);
+}
+
+.edgeRight {
+  top: calc(var(--fixed-slice-size) - var(--fixed-slice-edge-overlap));
+  right: 0;
+  bottom: calc(var(--fixed-slice-size) - var(--fixed-slice-edge-overlap));
+  width: var(--fixed-slice-size);
+}
+
+.content {
+  position: relative;
+  z-index: 1;
+  min-height: 100%;
+  padding: var(--fixed-slice-content-padding);
+}

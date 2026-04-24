@@ -26,7 +26,7 @@ async function ensurePortalConfiguration(stripe: Stripe) {
 
   return stripe.billingPortal.configurations.create({
     business_profile: {
-      headline: 'MiniForge 订阅管理',
+      headline: 'MiniForge Subscription Management',
     },
     features: {
       customer_update: {
@@ -102,7 +102,7 @@ export async function ensureStripePlanPrice(plan: SubscriptionPlanDefinition) {
       creditsPerMonth: String(plan.creditsPerMonth),
       planKey: plan.key,
     },
-    name: `MiniForge ${plan.name} 月度订阅`,
+    name: `MiniForge ${plan.name} Monthly Subscription`,
   })
 
   return stripe.prices.create({
@@ -126,12 +126,12 @@ export async function createSubscriptionCheckout(args: { planKey: SubscriptionPl
   const providers = await getPaymentProviderSettings(req)
 
   if (providers.subscriptionProvider !== 'stripe') {
-    throw new Error('当前后台已将订阅支付通道切换为 Shopify 预留模式，Stripe 订阅暂不可创建。')
+    throw new Error('The active subscription provider is set to Shopify reserved mode, so Stripe subscription checkout is currently disabled.')
   }
 
   const plan = await getSubscriptionPlan(planKey, req)
   if (!plan) {
-    throw new Error('未找到对应的订阅方案。')
+    throw new Error('Subscription plan not found.')
   }
 
   if (!req.user) {
@@ -192,7 +192,7 @@ export async function createBillingPortalSession(args: { customerId: string; req
   const providers = await getPaymentProviderSettings(req)
 
   if (providers.subscriptionProvider !== 'stripe') {
-    throw new Error('当前订阅支付通道不是 Stripe，暂不支持打开 Stripe Billing Portal。')
+    throw new Error('The active subscription provider is not Stripe, so Stripe Billing Portal is unavailable.')
   }
 
   const stripe = getStripeClient()

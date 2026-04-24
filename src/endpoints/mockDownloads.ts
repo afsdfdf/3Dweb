@@ -1,4 +1,4 @@
-﻿import type { PayloadRequest } from 'payload'
+import type { PayloadRequest } from 'payload'
 
 import { InsufficientCreditsError, refundDownloadCredits, spendDownloadCredits } from '@/lib/creditLedger'
 import { isAllowedRemoteAssetURL } from '@/lib/remoteAssetSecurity'
@@ -17,7 +17,7 @@ export function __setMockDownloadEndpointTestHooks(hooks: MockDownloadEndpointTe
   mockDownloadEndpointTestHooks = hooks
 }
 
-const unauthorized = () => Response.json({ message: '请先登录' }, { status: 401 })
+const unauthorized = () => Response.json({ message: 'Please sign in first.' }, { status: 401 })
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
@@ -51,52 +51,28 @@ export const mockModelDownloadEndpoint = {
     const modelId = String(req.routeParams?.modelId ?? '')
     const format = String(req.query?.format ?? 'glb').toLowerCase()
     const inline = String(req.query?.inline ?? '') === '1'
-    const preview = String(req.query?.preview ?? '') === '1'
-    const allowAnonymousPreview = inline && preview
 
-    if (!req.user && !allowAnonymousPreview) return unauthorized()
+    if (!req.user) return unauthorized()
 
     let model: any = null
     try {
-      if (allowAnonymousPreview) {
-        // M-02: 匿名预览使用 find + where 约束，不绕过集合访问控制
-        const results = await req.payload.find({
-          collection: 'models',
-          depth: 2,
-          limit: 1,
-          overrideAccess: false,
-          pagination: false,
-          req,
-          where: {
-            and: [
-              { id: { equals: Number(modelId) } },
-              { visibility: { equals: 'public' } },
-            ],
-          },
-        })
-        model = results.docs[0] || null
-        if (!model) {
-          return Response.json({ message: '模型不存在或未开放预览' }, { status: 404 })
-        }
-      } else {
-        model = await req.payload.findByID({
-          collection: 'models',
-          depth: 2,
-          id: Number(modelId),
-          overrideAccess: false,
-          req,
-          user: req.user,
-        })
-      }
+      model = await req.payload.findByID({
+        collection: 'models',
+        depth: 2,
+        id: Number(modelId),
+        overrideAccess: false,
+        req,
+        user: req.user,
+      })
     } catch {
-      return Response.json({ message: '模型不存在或你无权下载该资源' }, { status: 404 })
+      return Response.json({ message: 'Model not found or you do not have access to this resource.' }, { status: 404 })
     }
 
     const formats = Array.isArray(model.formats) ? model.formats : []
     const selectedFormat = formats.find((item: any) => String(item.format || '').toLowerCase() === format)
 
     if (!selectedFormat) {
-      return Response.json({ message: '当前模型不提供所选格式' }, { status: 400 })
+      return Response.json({ message: 'The selected format is not available for this model.' }, { status: 400 })
     }
 
     const downloadCredits = Math.max(0, Number(selectedFormat.downloadCredits || 0))
@@ -126,11 +102,11 @@ export const mockModelDownloadEndpoint = {
           remoteURL,
         })
 
-        return Response.json({ message: '模型资源来源未被允许，下载已被拒绝' }, { status: 403 })
+        return Response.json({ message: 'The model asset source is not allowed for download.' }, { status: 403 })
       }
     }
 
-    const shouldCharge = !inline && !preview
+    const shouldCharge = true
     let chargeResult: { applied?: boolean } | null = null
 
     if (shouldCharge) {
@@ -161,7 +137,7 @@ export const mockModelDownloadEndpoint = {
       if (remoteURL) {
         const accessURL = await (mockDownloadEndpointTestHooks?.getMediaAccessURL || getMediaAccessURL)({
           payload: req.payload,
-          ttlSeconds: inline || preview ? 3600 : 600,
+          ttlSeconds: inline ? 3600 : 600,
           url: remoteURL,
         })
         if (!accessURL) {
@@ -179,7 +155,7 @@ export const mockModelDownloadEndpoint = {
           throw new Error('ASSET_HOST_NOT_ALLOWED')
         }
 
-        if (!inline && !preview) {
+        if (!inline) {
           return Response.redirect(fetchURL, 307)
         }
 
@@ -193,7 +169,6 @@ export const mockModelDownloadEndpoint = {
             ? fileRelation.mimeType
             : 'application/octet-stream'
 
-        // L-06: 清理文件名中的特殊字符，防止 header injection
         const safeName = String(model.title || `model-${model.id}`).replace(/["\r\n\\]/g, '')
         return new Response(upstream.body, {
           headers: {
@@ -207,7 +182,7 @@ export const mockModelDownloadEndpoint = {
       const content = `# Mock 3D File\nmodel=${modelId}\nformat=${format}\ngenerated_at=${new Date().toISOString()}\n`
       return new Response(content, {
         headers: {
-          'Content-Disposition': `${inline || preview ? 'inline' : 'attachment'}; filename="mock-model-${modelId}.${format}"`,
+          'Content-Disposition': `${inline ? 'inline' : 'attachment'}; filename="mock-model-${modelId}.${format}"`,
           'Content-Type': 'application/octet-stream',
         },
         status: 200,
@@ -225,18 +200,18 @@ export const mockModelDownloadEndpoint = {
       }
 
       if (error instanceof Error && error.message.startsWith('ASSET_FETCH_FAILED:')) {
-        return Response.json({ message: '模型资源暂时不可用，未完成下载扣费或已自动退款' }, { status: 502 })
+        return Response.json({ message: 'The model asset is temporarily unavailable. Charges were not applied or were refunded automatically.' }, { status: 502 })
       }
 
       if (error instanceof Error && error.message === 'ASSET_HOST_NOT_ALLOWED') {
-        return Response.json({ message: '模型资源来源未被允许，未完成下载扣费或已自动退款' }, { status: 403 })
+        return Response.json({ message: 'The model asset source is not allowed. Charges were not applied or were refunded automatically.' }, { status: 403 })
       }
 
       if (error instanceof Error && error.message === 'ASSET_URL_INVALID') {
-        return Response.json({ message: '模型资源地址无效或不完整，未完成下载扣费或已自动退款' }, { status: 502 })
+        return Response.json({ message: 'The model asset URL is invalid or incomplete. Charges were not applied or were refunded automatically.' }, { status: 502 })
       }
 
-      return Response.json({ message: '模型下载失败，请稍后重试' }, { status: 500 })
+      return Response.json({ message: 'Model download failed. Please try again later.' }, { status: 500 })
     }
   },
   method: 'get' as const,

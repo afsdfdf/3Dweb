@@ -1,6 +1,7 @@
 import type { PayloadRequest } from 'payload'
 
 import { getCanonicalAppURL } from '@/lib/getCanonicalAppURL'
+import { getMediaAccessURL } from '@/lib/s3SignedURL'
 
 export type MeshyImageTask = {
   id: string
@@ -9,7 +10,7 @@ export type MeshyImageTask = {
   status?: string | null
   task_error?: { message?: string | null } | null
   thumbnail_url?: string | null
-  texture_urls?: Record<string, string | null | undefined>
+  texture_urls?: unknown
 }
 
 export type MeshyTextTask = MeshyImageTask & {
@@ -40,8 +41,34 @@ const DEFAULT_MESHY_SETTINGS: MeshySettings = {
   textTo3DAiModel: 'latest',
 }
 
+export class MeshyAPIError extends Error {
+  detail: string
+  status: number
+
+  constructor(args: { detail: string; status: number }) {
+    super(`Meshy API error (${args.status}): ${args.detail}`)
+    this.name = 'MeshyAPIError'
+    this.detail = args.detail
+    this.status = args.status
+  }
+}
+
+export function isMeshyConcurrencyError(error: unknown): error is MeshyAPIError {
+  return (
+    error instanceof MeshyAPIError &&
+    error.status === 429 &&
+    /NoMoreConcurrentTasks|concurrent|rate|limit/i.test(error.detail)
+  )
+}
+
 const normalizeBaseURL = (value: string) => {
   return value.replace(/\/+$/, '')
+}
+
+const normalizeConfiguredBaseURL = (value: string) => {
+  const normalized = normalizeBaseURL(value.trim())
+
+  return normalized.replace(/\/openapi\/v[12]$/i, '')
 }
 
 const toRecord = (value: unknown): Record<string, unknown> => {
@@ -66,6 +93,7 @@ async function requestMeshy<T>(args: {
   settings: MeshySettings
 }) {
   const { body, method = 'GET', path, settings } = args
+  const timeoutMs = Math.max(1000, Number(process.env.PROVIDER_REQUEST_TIMEOUT_MS || 30000))
 
   const response = await fetch(`${normalizeBaseURL(settings.baseURL)}${path}`, {
     body: body ? JSON.stringify(body) : undefined,
@@ -74,11 +102,12 @@ async function requestMeshy<T>(args: {
       'Content-Type': 'application/json',
     },
     method,
+    signal: AbortSignal.timeout(timeoutMs),
   })
 
   if (!response.ok) {
     const detail = await parseErrorMessage(response)
-    throw new Error(`Meshy API error (${response.status}): ${detail}`)
+    throw new MeshyAPIError({ detail, status: response.status })
   }
 
   return (await response.json()) as T
@@ -108,10 +137,12 @@ export async function getMeshySettings(req: PayloadRequest): Promise<MeshySettin
 
   const meshy = toRecord(config?.meshy)
   const apiKey = (process.env.MESHY_API_KEY || '').trim()
+  const envBaseURL = (process.env.MESHY_API_BASE_URL || '').trim()
+  const globalBaseURL = typeof meshy.baseURL === 'string' && meshy.baseURL.trim() ? meshy.baseURL.trim() : ''
 
   return {
     apiKey,
-    baseURL: typeof meshy.baseURL === 'string' && meshy.baseURL.trim() ? meshy.baseURL.trim() : DEFAULT_MESHY_SETTINGS.baseURL,
+    baseURL: normalizeConfiguredBaseURL(envBaseURL || globalBaseURL || DEFAULT_MESHY_SETTINGS.baseURL),
     enablePBR: typeof meshy.enablePBR === 'boolean' ? meshy.enablePBR : DEFAULT_MESHY_SETTINGS.enablePBR,
     imageEnhancement:
       typeof meshy.imageEnhancement === 'boolean' ? meshy.imageEnhancement : DEFAULT_MESHY_SETTINGS.imageEnhancement,
@@ -134,9 +165,18 @@ export function isMeshyConfigured(settings: MeshySettings) {
 }
 
 export async function resolveMeshyImageURL(args: {
-  mediaId: number
+  sourceImageAsset?: { publicUrl?: string | null } | null
+  mediaId?: number
   req: PayloadRequest
 }) {
+  if (args.sourceImageAsset?.publicUrl && typeof args.sourceImageAsset.publicUrl === 'string') {
+    return args.sourceImageAsset.publicUrl
+  }
+
+  if (!args.mediaId) {
+    throw new Error('The selected source image does not have a public URL for Meshy.')
+  }
+
   const media = await args.req.payload.findByID({
     collection: 'media',
     depth: 0,
@@ -150,7 +190,14 @@ export async function resolveMeshyImageURL(args: {
     throw new Error('The selected source image does not have a public URL for Meshy.')
   }
 
-  return mediaURL.startsWith('http') ? mediaURL : `${getCanonicalAppURL()}${mediaURL}`
+  const absoluteURL = mediaURL.startsWith('http') ? mediaURL : `${getCanonicalAppURL()}${mediaURL}`
+  const accessURL = await getMediaAccessURL({
+    payload: args.req.payload,
+    ttlSeconds: 3600,
+    url: absoluteURL,
+  })
+
+  return accessURL || absoluteURL
 }
 
 export async function createMeshyTextPreviewTask(args: {
@@ -185,8 +232,9 @@ export async function createMeshyTextRefineTask(args: {
   previewTaskId: string
   prompt?: string
   settings: MeshySettings
+  targetFormats?: string[]
 }) {
-  const { previewTaskId, prompt, settings } = args
+  const { previewTaskId, prompt, settings, targetFormats } = args
 
   const body: Record<string, unknown> = {
     ai_model: settings.textTo3DAiModel,
@@ -198,6 +246,10 @@ export async function createMeshyTextRefineTask(args: {
 
   if (prompt && prompt.trim()) {
     body.texture_prompt = prompt.trim()
+  }
+
+  if (targetFormats?.length) {
+    body.target_formats = targetFormats
   }
 
   const created = await requestMeshy<MeshyTextTask & { result?: string }>({
@@ -224,8 +276,9 @@ export async function createMeshyImageTask(args: {
   imageURL: string
   prompt?: string
   settings: MeshySettings
+  targetFormats?: string[]
 }) {
-  const { imageURL, prompt, settings } = args
+  const { imageURL, prompt, settings, targetFormats } = args
 
   const body: Record<string, unknown> = {
     ai_model: settings.imageTo3DAiModel,
@@ -241,6 +294,10 @@ export async function createMeshyImageTask(args: {
 
   if (prompt && prompt.trim()) {
     body.texture_prompt = prompt.trim()
+  }
+
+  if (targetFormats?.length) {
+    body.target_formats = targetFormats
   }
 
   const created = await requestMeshy<MeshyImageTask & { result?: string }>({

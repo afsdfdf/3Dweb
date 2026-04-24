@@ -3,6 +3,7 @@ import type { Access, CollectionConfig, Where } from 'payload'
 import { isStaff } from '@/access'
 import { assignCurrentUser } from '@/hooks/assignCurrentUser'
 import { validateHomepageItem } from '@/hooks/validateHomepageItem'
+import { adminLabelsKey, adminTextKey } from '@/lib/adminText'
 
 const visibleReadOrStaff: Access = ({ req }) => {
   if (req.user?.role === 'admin' || req.user?.role === 'operator') {
@@ -29,15 +30,13 @@ const visibleReadOrStaff: Access = ({ req }) => {
 
 export const HomepageItems: CollectionConfig = {
   slug: 'homepage-items',
-  labels: {
-    plural: '首页内容项',
-    singular: '首页内容项',
-  },
+  labels: adminLabelsKey('collections.homepageItems'),
   admin: {
     defaultColumns: [
       'title',
       'placement',
       'contentType',
+      'railVariant',
       'linkedModel',
       'linkedPost',
       'linkedBundle',
@@ -48,8 +47,8 @@ export const HomepageItems: CollectionConfig = {
       'sortOrder',
       'updatedAt',
     ],
-    description: '管理首页展示卡片、板块内容、排序、显示隐藏和发布时间。',
-    group: '内容',
+    description: adminTextKey('collections.homepageItems.description'),
+    group: adminTextKey('groups.content'),
     useAsTitle: 'title',
   },
   access: {
@@ -68,7 +67,7 @@ export const HomepageItems: CollectionConfig = {
       type: 'text',
       localized: true,
       required: true,
-      label: '标题',
+      label: 'Title',
     },
     {
       name: 'slug',
@@ -78,7 +77,7 @@ export const HomepageItems: CollectionConfig = {
       unique: true,
       label: 'Slug',
       admin: {
-        description: '首页内容项的唯一标识，便于后续内容查询或外部同步。',
+        description: 'Stable unique key for homepage item lookup and future sync flows.',
       },
     },
     {
@@ -86,13 +85,15 @@ export const HomepageItems: CollectionConfig = {
       type: 'select',
       required: true,
       defaultValue: 'featured',
-      label: '首页板块',
+      label: 'Placement',
       options: [
-        { label: '主视觉下方', value: 'hero-secondary' },
-        { label: '精选内容', value: 'featured' },
-        { label: '专题推荐', value: 'bundles' },
-        { label: '公告位', value: 'announcements' },
-        { label: '文章流', value: 'articles' },
+        { label: 'Hero secondary', value: 'hero-secondary' },
+        { label: 'Featured rail', value: 'featured-rail' },
+        { label: 'Featured content', value: 'featured' },
+        { label: 'Collection shelf', value: 'collection-shelf' },
+        { label: 'Bundles', value: 'bundles' },
+        { label: 'Announcements', value: 'announcements' },
+        { label: 'Articles', value: 'articles' },
       ],
     },
     {
@@ -100,32 +101,55 @@ export const HomepageItems: CollectionConfig = {
       type: 'select',
       required: true,
       defaultValue: 'custom',
-      label: '内容来源类型',
+      label: 'Content type',
       options: [
-        { label: '自定义卡片', value: 'custom' },
-        { label: '单个模型', value: 'model' },
-        { label: '文章/活动', value: 'post' },
-        { label: '公告', value: 'announcement' },
-        { label: '专题包', value: 'bundle' },
+        { label: 'Custom card', value: 'custom' },
+        { label: 'Model', value: 'model' },
+        { label: 'Post / event', value: 'post' },
+        { label: 'Announcement', value: 'announcement' },
+        { label: 'Bundle', value: 'bundle' },
       ],
     },
     {
       name: 'summary',
       type: 'textarea',
       localized: true,
-      label: '摘要',
+      label: 'Summary',
+    },
+    {
+      name: 'railVariant',
+      type: 'select',
+      defaultValue: 'standard',
+      label: 'Rail card variant',
+      options: [
+        { label: 'Standard', value: 'standard' },
+        { label: 'Wide', value: 'wide' },
+      ],
+      admin: {
+        condition: (_, siblingData) => siblingData?.placement === 'featured-rail',
+      },
+    },
+    {
+      name: 'itemCountLabel',
+      type: 'text',
+      localized: true,
+      label: 'Item count label',
+      admin: {
+        condition: (_, siblingData) => siblingData?.placement === 'collection-shelf',
+        description: 'Example: Products x5. Used for collection shelf cards.',
+      },
     },
     {
       name: 'coverImage',
       type: 'upload',
       relationTo: 'media',
-      label: '封面图',
+      label: 'Cover image',
     },
     {
       name: 'linkedModel',
       type: 'relationship',
       relationTo: 'models',
-      label: '关联模型',
+      label: 'Linked model',
       admin: {
         condition: (_, siblingData) => siblingData?.contentType === 'model',
       },
@@ -134,7 +158,7 @@ export const HomepageItems: CollectionConfig = {
       name: 'linkedPost',
       type: 'relationship',
       relationTo: 'posts',
-      label: '关联文章/活动',
+      label: 'Linked post',
       admin: {
         condition: (_, siblingData) => siblingData?.contentType === 'post',
       },
@@ -143,7 +167,7 @@ export const HomepageItems: CollectionConfig = {
       name: 'linkedAnnouncement',
       type: 'relationship',
       relationTo: 'announcements',
-      label: '关联公告',
+      label: 'Linked announcement',
       admin: {
         condition: (_, siblingData) => siblingData?.contentType === 'announcement',
       },
@@ -152,7 +176,7 @@ export const HomepageItems: CollectionConfig = {
       name: 'linkedBundle',
       type: 'relationship',
       relationTo: 'model-bundles',
-      label: '关联专题包',
+      label: 'Linked bundle',
       admin: {
         condition: (_, siblingData) => siblingData?.contentType === 'bundle',
       },
@@ -160,17 +184,17 @@ export const HomepageItems: CollectionConfig = {
     {
       name: 'customHref',
       type: 'text',
-      label: '自定义链接',
+      label: 'Custom link',
       admin: {
         condition: (_, siblingData) => siblingData?.contentType === 'custom',
-        description: '当内容类型为自定义卡片时使用，用于跳转到任意站内或站外链接。',
+        description: 'Used when content type is custom. Supports internal or external destinations.',
       },
     },
     {
       name: 'createdBy',
       type: 'relationship',
       relationTo: 'users',
-      label: '创建人',
+      label: 'Created by',
       admin: {
         position: 'sidebar',
         readOnly: true,
@@ -179,7 +203,7 @@ export const HomepageItems: CollectionConfig = {
     {
       name: 'publishAt',
       type: 'date',
-      label: '发布时间',
+      label: 'Publish at',
       admin: {
         position: 'sidebar',
       },
@@ -188,19 +212,19 @@ export const HomepageItems: CollectionConfig = {
       name: 'isPinned',
       type: 'checkbox',
       defaultValue: false,
-      label: '置顶',
+      label: 'Pinned',
     },
     {
       name: 'isVisible',
       type: 'checkbox',
       defaultValue: true,
-      label: '显示在前台',
+      label: 'Visible on frontend',
     },
     {
       name: 'sortOrder',
       type: 'number',
       defaultValue: 0,
-      label: '排序',
+      label: 'Sort order',
     },
   ],
   timestamps: true,

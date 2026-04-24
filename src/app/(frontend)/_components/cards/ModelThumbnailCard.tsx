@@ -2,6 +2,8 @@ import Link from 'next/link'
 
 import { Eye, Heart, Star } from 'lucide-react'
 
+import { FixedSliceFrame } from '@/components/ui/fixed-slice-frame'
+
 type ModelThumbnailCardProps = {
   authorAvatarUrl?: null | string
   authorName?: null | string
@@ -16,11 +18,6 @@ type ModelThumbnailCardProps = {
   variant?: 'homepage' | 'showcase'
   viewsCount?: number | string
 }
-
-const FRAME_SRC = '/ui/frames/model-card-frame.png'
-const FRAME_HEIGHT_PX = 920
-const FRAME_TOP_INSET_PX = 18
-const FRAME_BOTTOM_INSET_PX = 18
 
 function buildInitials(name?: null | string) {
   if (!name) return 'MF'
@@ -95,54 +92,84 @@ export function ModelThumbnailCard({
   viewsCount = '2,3k',
 }: ModelThumbnailCardProps) {
   const compact = variant === 'homepage'
-  const verticalInset = `${((FRAME_TOP_INSET_PX / FRAME_HEIGHT_PX) * 100).toFixed(4)}%`
-  const cardAspectClass = compact ? 'aspect-[228/372] max-w-[228px]' : 'aspect-[420/670] max-w-[420px]'
+  const cardSize = compact
+    ? {
+        height: 372,
+        width: 228,
+      }
+    : {
+        height: 670,
+        width: 420,
+      }
+  const frameSize = compact ? 64 : 96
 
   return (
-    <Link className="group block w-full" href={href}>
-      <article
-        className={`relative mx-auto w-full overflow-hidden rounded-[4px] bg-[linear-gradient(180deg,#1a1b20_0%,#101114_100%)] shadow-[0_18px_44px_rgba(0,0,0,0.45)] transition-transform duration-200 group-hover:-translate-y-1 ${cardAspectClass}`}
+    <Link
+      className="group block shrink-0"
+      href={href}
+      style={{
+        width: cardSize.width,
+      }}
+    >
+      <FixedSliceFrame
+        className="overflow-hidden rounded-[4px] bg-[linear-gradient(180deg,#1a1b20_0%,#101114_100%)] shadow-[0_18px_44px_rgba(0,0,0,0.45)] transition-transform duration-200 group-hover:-translate-y-1"
+        fill="#101114"
+        frameSize={frameSize}
+        slices={{
+          bottom: '/ui/frames/workbench-panel-9slice/images/model-card-frame_08.png',
+          bottomLeft: '/ui/frames/workbench-panel-9slice/images/model-card-frame_07.png',
+          bottomRight: '/ui/frames/workbench-panel-9slice/images/model-card-frame_09.png',
+          left: '/ui/frames/workbench-panel-9slice/images/model-card-frame_04.png',
+          right: '/ui/frames/workbench-panel-9slice/images/model-card-frame_06.png',
+          top: '/ui/frames/workbench-panel-9slice/images/model-card-frame_02.png',
+          topLeft: '/ui/frames/workbench-panel-9slice/images/model-card-frame_01.png',
+          topRight: '/ui/frames/workbench-panel-9slice/images/model-card-frame_03.png',
+        }}
       >
-        {thumbnailUrl ? (
-          <div className="absolute inset-x-[2%] bottom-[1.9565%] left-[2%] right-[2%] top-[1.9565%] flex items-center justify-center">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img alt={title} className="h-full w-full object-contain" src={thumbnailUrl} />
-          </div>
-        ) : (
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,#141519_0%,#0d0e11_100%)]" />
-        )}
-
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,6,8,0.35)_0%,rgba(5,6,8,0.08)_26%,rgba(5,6,8,0.06)_64%,rgba(5,6,8,0.18)_100%)]" />
-
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img alt="" aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full select-none" src={FRAME_SRC} />
-
-        <div
-          className="absolute"
-          style={{
-            left: '7.2%',
-            right: '7.2%',
-            top: compact ? '5.6%' : '5.8%',
-          }}
+        <article
+          className="relative overflow-hidden rounded-[4px] bg-[linear-gradient(180deg,#1a1b20_0%,#101114_100%)]"
+          style={cardSize}
         >
-          <div className="flex items-start gap-3">
-            <Avatar authorAvatarUrl={authorAvatarUrl} authorName={authorName} compact={compact} />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 leading-none">
-                <span className={`truncate font-medium text-[#eceef4] ${compact ? 'text-[11px]' : 'text-[13px]'}`}>{authorName}</span>
-                <span className={`shrink-0 text-[#7f8591] ${compact ? 'text-[10px]' : 'text-[11px]'}`}>{createdLabel}</span>
-              </div>
+          {thumbnailUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              alt={title}
+              className="absolute inset-0 h-full w-full object-cover"
+              src={thumbnailUrl}
+            />
+          ) : (
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,#141519_0%,#0d0e11_100%)]" />
+          )}
 
-              <div className={`flex flex-wrap ${compact ? 'mt-1.5 gap-1.5' : 'mt-2 gap-2'}`}>
-                <MetricChip compact={compact} icon={<Eye className={compact ? 'size-2.5' : 'size-3'} />} value={viewsCount} />
-                <MetricChip compact={compact} icon={<Heart className={compact ? 'size-2.5' : 'size-3'} />} value={likesCount} />
-                <MetricChip compact={compact} icon={<Star className={compact ? 'size-2.5' : 'size-3'} />} value={commentsCount} />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,6,8,0.35)_0%,rgba(5,6,8,0.08)_26%,rgba(5,6,8,0.06)_64%,rgba(5,6,8,0.18)_100%)]" />
+
+          <div
+            className="absolute"
+            style={{
+              left: '7.2%',
+              right: '7.2%',
+              top: compact ? '5.6%' : '5.8%',
+            }}
+          >
+            <div className="flex items-start gap-3">
+              <Avatar authorAvatarUrl={authorAvatarUrl} authorName={authorName} compact={compact} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 leading-none">
+                  <span className={`truncate font-medium text-[#eceef4] ${compact ? 'text-[11px]' : 'text-[13px]'}`}>{authorName}</span>
+                  <span className={`shrink-0 text-[#7f8591] ${compact ? 'text-[10px]' : 'text-[11px]'}`}>{createdLabel}</span>
+                </div>
+
+                <div className={`flex flex-wrap ${compact ? 'mt-1.5 gap-1.5' : 'mt-2 gap-2'}`}>
+                  <MetricChip compact={compact} icon={<Eye className={compact ? 'size-2.5' : 'size-3'} />} value={viewsCount} />
+                  <MetricChip compact={compact} icon={<Heart className={compact ? 'size-2.5' : 'size-3'} />} value={likesCount} />
+                  <MetricChip compact={compact} icon={<Star className={compact ? 'size-2.5' : 'size-3'} />} value={commentsCount} />
+                </div>
               </div>
             </div>
+            <div className={`${compact ? 'mt-1.5' : 'mt-2'} h-px bg-[#3a3c43]`} />
           </div>
-          <div className={`${compact ? 'mt-1.5' : 'mt-2'} h-px bg-[#3a3c43]`} />
-        </div>
-      </article>
+        </article>
+      </FixedSliceFrame>
     </Link>
   )
 }

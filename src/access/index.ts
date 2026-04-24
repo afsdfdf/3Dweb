@@ -66,3 +66,38 @@ export const ownerOrStaff =
       },
     } satisfies Where
   }
+
+export const publicOwnerOrStaff =
+  (ownerField: string): Access =>
+  (args) => {
+    const user = getUser(args)
+
+    if (!user) {
+      return {
+        visibility: {
+          equals: 'public',
+        },
+      } satisfies Where
+    }
+
+    if (['admin', 'operator'].includes(user.role ?? 'customer')) {
+      return true
+    }
+
+    const ownershipOrPublic = {
+      or: [
+        {
+          visibility: {
+            equals: 'public',
+          },
+        },
+        {
+          [ownerField]: {
+            equals: user.id,
+          },
+        },
+      ],
+    } satisfies Where
+
+    return ownershipOrPublic
+  }

@@ -9,6 +9,14 @@ export type HomeCollectionShelfItem = {
   title: string
 }
 
+type HomeCollectionShelfCopy = {
+  allLabel?: null | string
+  hotLabel?: null | string
+  moreLabel?: null | string
+  newLabel?: null | string
+  title?: null | string
+}
+
 const HOT_ACTIVE = '/ui/frames/hot1.png'
 const HOT_IDLE = '/ui/frames/hot.png'
 const NEW_ACTIVE = '/ui/frames/new1.png'
@@ -135,7 +143,7 @@ function CollectionCard(item: HomeCollectionShelfItem) {
   )
 }
 
-export function HomeCollectionShelf({ items }: { items: readonly HomeCollectionShelfItem[] }) {
+export function HomeCollectionShelf({ copy, items }: { copy?: HomeCollectionShelfCopy; items: readonly HomeCollectionShelfItem[] }) {
   const [mode, setMode] = useState<ShelfMode>('hot')
   const [pageIndex, setPageIndex] = useState(0)
 
@@ -187,7 +195,7 @@ export function HomeCollectionShelf({ items }: { items: readonly HomeCollectionS
           <ToolbarImageButton
             active={mode === 'hot'}
             activeSrc={HOT_ACTIVE}
-            alt="Hot"
+            alt={copy?.hotLabel || 'Hot'}
             className="absolute"
             idleSrc={HOT_IDLE}
             onClick={() => setMode('hot')}
@@ -201,7 +209,7 @@ export function HomeCollectionShelf({ items }: { items: readonly HomeCollectionS
           <ToolbarImageButton
             active={mode === 'new'}
             activeSrc={NEW_ACTIVE}
-            alt="New"
+            alt={copy?.newLabel || 'New'}
             className="absolute"
             idleSrc={NEW_IDLE}
             onClick={() => setMode('new')}
@@ -247,7 +255,7 @@ export function HomeCollectionShelf({ items }: { items: readonly HomeCollectionS
                 isMore={item.isMore}
                 key={`${mode}-${pageIndex}-${item.title}-${index}`}
                 previewSrc={item.previewSrc}
-                title={item.title}
+                title={item.isMore ? copy?.moreLabel || item.title : item.title}
               />
             ))}
           </div>

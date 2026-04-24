@@ -6,18 +6,18 @@ This document defines the long-term migration standard for the project.
 
 It is written to support two environments safely:
 
-1. Local development on SQLite
-2. Future deployment on AWS PostgreSQL / RDS
+1. Supabase / PostgreSQL local and hosted runtime
+2. Forward-only formal migrations for schema evolution
 
 ## Current Reality
 
 The project originally drifted because:
 
 - the active Payload schema changed faster than formal migrations
-- local SQLite repairs were applied directly to keep Admin usable
-- some legacy tables stayed in the database even after the configuration changed
+- local SQLite repairs were applied directly before the Postgres cutover
+- some legacy tables stayed in historical databases even after the configuration changed
 
-This is now partially corrected by the baseline reconciliation migration:
+This is now partially corrected by the archived baseline reconciliation migration:
 
 - [20260417_023000_database_baseline_reconciliation.ts](/D:/web/payload-local-demo/src/migrations/20260417_023000_database_baseline_reconciliation.ts)
 
@@ -47,6 +47,7 @@ Current migration files:
 - [20260417_023000_database_baseline_reconciliation.ts](/D:/web/payload-local-demo/src/migrations/20260417_023000_database_baseline_reconciliation.ts)
 
 These files are the formal migration history and must become the only supported way to evolve schema.
+The SQLite reconciliation migration is now a Postgres no-op and should be treated as historical archive, not an active repair path.
 
 ### Layer 4: Legacy Repair Script
 

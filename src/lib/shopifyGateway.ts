@@ -1,4 +1,4 @@
-﻿export type ShopifyCreateCheckoutInput = {
+export type ShopifyCreateCheckoutInput = {
   amount: number
   currency: string
   orderId: number | string
@@ -39,7 +39,7 @@ class RealShopifyGateway implements ShopifyGateway {
     const storefrontDomain = process.env.SHOPIFY_STORE_DOMAIN
 
     if (!storefrontDomain) {
-      throw new Error('缺少 SHOPIFY_STORE_DOMAIN，无法创建真实 Shopify 结算会话')
+      throw new Error('SHOPIFY_STORE_DOMAIN is required to create a real Shopify checkout session.')
     }
 
     const checkoutReference = createCode('SHOPIFY')

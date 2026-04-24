@@ -11,8 +11,7 @@ It replaces temporary worklogs, dated audit notes, and one-off fix memos.
 - Next.js 16
 - Payload CMS 3
 - React 19
-- SQLite for local development
-- PostgreSQL for future AWS / RDS deployment target
+- Supabase / PostgreSQL runtime
 
 ## Important Paths
 
@@ -66,6 +65,7 @@ Migration note:
 
 - Treat [DATABASE_TABLE_REFERENCE.md](/D:/web/payload-local-demo/docs/DATABASE_TABLE_REFERENCE.md) as the current table inventory.
 - Treat [DATABASE_MIGRATION_STANDARD.md](/D:/web/payload-local-demo/docs/DATABASE_MIGRATION_STANDARD.md) as the migration policy.
+- Do not reintroduce SQLite runtime fallbacks or `payload.db`-based startup behavior.
 - For future schema changes:
   1. Update Payload config
   2. Generate schema
@@ -99,5 +99,12 @@ These migrations are now the authoritative baseline for future database evolutio
 ## Documentation Policy
 
 - Keep only evergreen documents in `docs/`.
+- Move dated reports, rollout checklists, one-off migration plans, and worklogs into `docs/archive/`.
 - Delete or archive temporary pentest notes, dated worklogs, and one-off repair notes once the guidance is folded into active docs.
 - Prefer updating a stable reference file over creating another dated report.
+
+## AI Memory
+
+- Treat [AI_PROJECT_MEMORY.md](/D:/web/payload-local-demo/docs/AI_PROJECT_MEMORY.md) as the persistent AI-readable knowledge base for the repository.
+- After important backend, content-architecture, routing, or admin changes, update that file in the same task.
+- Do not leave durable project decisions only in transient chat history.

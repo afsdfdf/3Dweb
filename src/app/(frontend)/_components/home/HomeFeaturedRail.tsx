@@ -6,6 +6,11 @@ export type FeaturedItem = {
   variant: 'standard' | 'wide'
 }
 
+type HomeFeaturedRailCopy = {
+  moreLabel?: null | string
+  title?: null | string
+}
+
 const FRAME_SRC = '/ui/frames/newproduct.png'
 
 const SLOT_CLASS_BY_VARIANT: Record<FeaturedItem['variant'], string> = {
@@ -13,12 +18,21 @@ const SLOT_CLASS_BY_VARIANT: Record<FeaturedItem['variant'], string> = {
   wide: 'relative h-full min-w-0 overflow-hidden rounded-[16px]',
 }
 
-export function HomeFeaturedRail({ items }: { items: FeaturedItem[] }) {
+export function HomeFeaturedRail({ copy, items }: { copy?: HomeFeaturedRailCopy; items: FeaturedItem[] }) {
   return (
     <section className="relative z-[2] mx-auto -mt-8 max-w-[1600px] bg-[linear-gradient(180deg,rgba(24,24,24,0)_0%,rgba(24,24,24,0.82)_42%,#181818_100%)] px-4 pt-2 sm:px-6">
       <div className="relative overflow-hidden rounded-[18px]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img alt="" aria-hidden="true" className="pointer-events-none block h-auto w-full select-none" src={FRAME_SRC} />
+
+        <div className="absolute inset-x-[2.2%] top-[5.3%] z-[2] flex items-center justify-between">
+          <div className="rounded-[8px] bg-black/45 px-4 py-2 text-sm font-semibold uppercase tracking-[0.12em] text-[#efe7da] shadow-[0_8px_18px_rgba(0,0,0,0.35)]">
+            {copy?.title || 'New Product'}
+          </div>
+          <div className="rounded-[8px] bg-black/45 px-4 py-2 text-sm font-semibold uppercase tracking-[0.12em] text-[#efe7da] shadow-[0_8px_18px_rgba(0,0,0,0.35)]">
+            {copy?.moreLabel || 'More'}
+          </div>
+        </div>
 
         <div className="absolute inset-x-[1.4%] bottom-[8.8%] top-[7.7%] grid grid-cols-[1.75fr_1fr_1fr_1fr] gap-[1.1%]">
           {items.map((item) => {

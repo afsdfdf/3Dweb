@@ -51,6 +51,10 @@ export async function getMarketingSiteData() {
       homepageContent: {
         ...defaultHomepageContent,
         ...homepageContent,
+        collectionShelf: {
+          ...defaultHomepageContent.collectionShelf,
+          ...homepageContent?.collectionShelf,
+        },
         entrySection: {
           ...defaultHomepageContent.entrySection,
           ...homepageContent?.entrySection,
@@ -59,6 +63,10 @@ export async function getMarketingSiteData() {
         faqSection: {
           ...defaultHomepageContent.faqSection,
           ...homepageContent?.faqSection,
+        },
+        featuredRail: {
+          ...defaultHomepageContent.featuredRail,
+          ...homepageContent?.featuredRail,
         },
         featuredWorks: pickArray(homepageContent?.featuredWorks, defaultHomepageContent.featuredWorks),
         hero: {

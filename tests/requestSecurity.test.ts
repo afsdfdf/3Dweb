@@ -5,6 +5,7 @@ import {
   applySecurityHeaders,
   containsGraphQLIntrospectionQuery,
   getAllowedRequestOrigins,
+  getRequestRateLimitKey,
   rejectDisallowedMutationOrigin,
 } from '../src/lib/requestSecurity.ts'
 
@@ -139,4 +140,39 @@ test('applySecurityHeaders adds baseline security headers', () => {
   assert.equal(headers.get('X-Content-Type-Options'), 'nosniff')
   assert.equal(headers.get('X-Frame-Options'), 'DENY')
   assert.ok(headers.get('Content-Security-Policy'))
+})
+
+test('getRequestRateLimitKey prefers trusted proxy ip when available', () => {
+  const previousTrustProxy = process.env.TRUST_PROXY_HEADERS
+  process.env.TRUST_PROXY_HEADERS = 'true'
+
+  try {
+    const key = getRequestRateLimitKey(
+      new Headers({
+        'x-real-ip': '203.0.113.10',
+        'user-agent': 'ExampleBrowser/1.0',
+      }),
+    )
+
+    assert.equal(key, 'ip:203.0.113.10')
+  } finally {
+    process.env.TRUST_PROXY_HEADERS = previousTrustProxy
+  }
+})
+
+test('getRequestRateLimitKey falls back to normalized user agent when ip is unavailable', () => {
+  const previousTrustProxy = process.env.TRUST_PROXY_HEADERS
+  process.env.TRUST_PROXY_HEADERS = 'false'
+
+  try {
+    const key = getRequestRateLimitKey(
+      new Headers({
+        'user-agent': 'Mozilla/5.0  Test Browser',
+      }),
+    )
+
+    assert.equal(key, 'ua:mozilla/5.0 test browser')
+  } finally {
+    process.env.TRUST_PROXY_HEADERS = previousTrustProxy
+  }
 })

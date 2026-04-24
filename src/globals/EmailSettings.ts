@@ -1,13 +1,14 @@
-import type { GlobalConfig } from 'payload'
+﻿import type { GlobalConfig } from 'payload'
 
 import { isAdmin, isStaff } from '@/access'
+import { adminTextKey } from '@/lib/adminText'
 
 export const EmailSettings: GlobalConfig = {
   slug: 'email-settings',
-  label: '邮箱设置',
+  label: adminTextKey('globals.emailSettings.label'),
   admin: {
-    description: '管理邮件品牌、发件显示信息与业务邮件文案。SMTP 账号密码仍通过环境变量配置。',
-    group: '平台',
+    description: adminTextKey('globals.emailSettings.description'),
+    group: adminTextKey('groups.platform'),
   },
   access: {
     read: isStaff,
@@ -153,3 +154,4 @@ export const EmailSettings: GlobalConfig = {
     },
   ],
 }
+

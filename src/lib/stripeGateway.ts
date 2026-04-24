@@ -36,7 +36,7 @@ export function getStripeClient() {
   const secretKey = process.env.STRIPE_SECRET_KEY
 
   if (!secretKey) {
-    throw new Error('未配置 STRIPE_SECRET_KEY，无法创建 Stripe 客户端。')
+    throw new Error('STRIPE_SECRET_KEY is not configured, so the Stripe client cannot be created.')
   }
 
   stripeClient = new Stripe(secretKey, {
@@ -71,8 +71,8 @@ export class StripeGateway {
           price_data: {
             currency,
             product_data: {
-              description: input.modelTitle ? `模型：${input.modelTitle}` : 'MiniForge Studio 3D 打印订单',
-              name: `3D 打印订单 ${input.orderNumber}`,
+              description: input.modelTitle ? `Model: ${input.modelTitle}` : 'MiniForge Studio 3D print order',
+              name: `3D Print Order ${input.orderNumber}`,
             },
             unit_amount: toMinorUnits(input.amount),
           },
@@ -90,7 +90,7 @@ export class StripeGateway {
     })
 
     if (!session.url) {
-      throw new Error('Stripe 未返回可用的结算链接。')
+      throw new Error('Stripe did not return a usable checkout URL.')
     }
 
     return {

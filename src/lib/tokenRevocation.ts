@@ -1,8 +1,8 @@
 /**
- * Token 吊销模块 — 基于 KVStore 抽象层
+ * Token revocation module built on top of the shared KVStore abstraction.
  *
- * M-05: 生产环境可通过 REDIS_URL 切换到 Redis 共享存储，
- * 解决进程重启后吊销列表丢失的问题。
+ * Production deployments can switch to Redis through REDIS_URL so revocation state
+ * survives process restarts and can be shared across multiple instances.
  */
 
 import { getKVStore } from '@/lib/kvStore'

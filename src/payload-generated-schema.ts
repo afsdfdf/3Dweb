@@ -6,31 +6,297 @@
  * and re-run `payload generate:db-schema` to regenerate this file.
  */
 
-import type {} from "@payloadcms/db-sqlite";
+import type {} from "@payloadcms/db-postgres";
 import {
-  sqliteTable,
+  pgTable,
   index,
   uniqueIndex,
   foreignKey,
   integer,
-  text,
-  type AnySQLiteColumn,
+  varchar,
+  timestamp,
+  serial,
+  type AnyPgColumn,
   numeric,
-} from "@payloadcms/db-sqlite/drizzle/sqlite-core";
-import { sql, relations } from "@payloadcms/db-sqlite/drizzle";
+  boolean,
+  jsonb,
+  pgEnum,
+} from "@payloadcms/db-postgres/drizzle/pg-core";
+import { sql, relations } from "@payloadcms/db-postgres/drizzle";
+export const enum__locales = pgEnum("enum__locales", ["en", "zh"]);
+export const enum_users_role = pgEnum("enum_users_role", [
+  "admin",
+  "operator",
+  "customer",
+]);
+export const enum_users_avatar_frame = pgEnum("enum_users_avatar_frame", [
+  "none",
+  "ember",
+  "kick",
+  "emerald",
+]);
+export const enum_users_profile_visibility = pgEnum(
+  "enum_users_profile_visibility",
+  ["private", "public"],
+);
+export const enum_media_purpose = pgEnum("enum_media_purpose", [
+  "input",
+  "preview",
+  "model",
+  "document",
+  "asset",
+]);
+export const enum_generation_tasks_input_mode = pgEnum(
+  "enum_generation_tasks_input_mode",
+  ["image", "text", "hybrid"],
+);
+export const enum_generation_tasks_provider = pgEnum(
+  "enum_generation_tasks_provider",
+  ["meshy", "tripo", "gemini-official", "gemini-third-party", "custom"],
+);
+export const enum_generation_tasks_status = pgEnum(
+  "enum_generation_tasks_status",
+  ["queued", "processing", "succeeded", "failed", "timeout"],
+);
+export const enum_task_events_event_type = pgEnum(
+  "enum_task_events_event_type",
+  ["queued", "submitted", "polling", "callback", "completed", "failed"],
+);
+export const enum_models_formats_format = pgEnum("enum_models_formats_format", [
+  "glb",
+  "fbx",
+  "obj",
+  "stl",
+  "usdz",
+  "3mf",
+]);
+export const enum_models_status = pgEnum("enum_models_status", [
+  "draft",
+  "ready",
+  "archived",
+]);
+export const enum_models_visibility = pgEnum("enum_models_visibility", [
+  "private",
+  "team",
+  "public",
+]);
+export const enum_model_comments_status = pgEnum("enum_model_comments_status", [
+  "visible",
+  "hidden",
+]);
+export const enum_homepage_items_placement = pgEnum(
+  "enum_homepage_items_placement",
+  [
+    "hero-secondary",
+    "featured-rail",
+    "featured",
+    "collection-shelf",
+    "bundles",
+    "announcements",
+    "articles",
+  ],
+);
+export const enum_homepage_items_content_type = pgEnum(
+  "enum_homepage_items_content_type",
+  ["custom", "model", "post", "announcement", "bundle"],
+);
+export const enum_homepage_items_rail_variant = pgEnum(
+  "enum_homepage_items_rail_variant",
+  ["standard", "wide"],
+);
+export const enum_homepage_items_status = pgEnum("enum_homepage_items_status", [
+  "draft",
+  "published",
+]);
+export const enum__homepage_items_v_version_placement = pgEnum(
+  "enum__homepage_items_v_version_placement",
+  [
+    "hero-secondary",
+    "featured-rail",
+    "featured",
+    "collection-shelf",
+    "bundles",
+    "announcements",
+    "articles",
+  ],
+);
+export const enum__homepage_items_v_version_content_type = pgEnum(
+  "enum__homepage_items_v_version_content_type",
+  ["custom", "model", "post", "announcement", "bundle"],
+);
+export const enum__homepage_items_v_version_rail_variant = pgEnum(
+  "enum__homepage_items_v_version_rail_variant",
+  ["standard", "wide"],
+);
+export const enum__homepage_items_v_version_status = pgEnum(
+  "enum__homepage_items_v_version_status",
+  ["draft", "published"],
+);
+export const enum__homepage_items_v_published_locale = pgEnum(
+  "enum__homepage_items_v_published_locale",
+  ["en", "zh"],
+);
+export const enum_posts_category = pgEnum("enum_posts_category", [
+  "article",
+  "event",
+  "announcement",
+]);
+export const enum_posts_status = pgEnum("enum_posts_status", [
+  "draft",
+  "published",
+]);
+export const enum__posts_v_version_category = pgEnum(
+  "enum__posts_v_version_category",
+  ["article", "event", "announcement"],
+);
+export const enum__posts_v_version_status = pgEnum(
+  "enum__posts_v_version_status",
+  ["draft", "published"],
+);
+export const enum__posts_v_published_locale = pgEnum(
+  "enum__posts_v_published_locale",
+  ["en", "zh"],
+);
+export const enum_announcements_status = pgEnum("enum_announcements_status", [
+  "draft",
+  "published",
+]);
+export const enum__announcements_v_version_status = pgEnum(
+  "enum__announcements_v_version_status",
+  ["draft", "published"],
+);
+export const enum__announcements_v_published_locale = pgEnum(
+  "enum__announcements_v_published_locale",
+  ["en", "zh"],
+);
+export const enum_model_bundles_status = pgEnum("enum_model_bundles_status", [
+  "draft",
+  "published",
+]);
+export const enum__model_bundles_v_version_status = pgEnum(
+  "enum__model_bundles_v_version_status",
+  ["draft", "published"],
+);
+export const enum__model_bundles_v_published_locale = pgEnum(
+  "enum__model_bundles_v_published_locale",
+  ["en", "zh"],
+);
+export const enum_credits_status = pgEnum("enum_credits_status", [
+  "active",
+  "suspended",
+  "closed",
+]);
+export const enum_credit_transactions_type = pgEnum(
+  "enum_credit_transactions_type",
+  [
+    "purchase",
+    "task_hold",
+    "task_spend",
+    "download_spend",
+    "refund",
+    "manual_adjustment",
+    "subscription_grant",
+  ],
+);
+export const enum_credit_products_product_type = pgEnum(
+  "enum_credit_products_product_type",
+  ["credit-topup", "print-package"],
+);
+export const enum_engagement_views_target_type = pgEnum(
+  "enum_engagement_views_target_type",
+  ["creator-profile", "model"],
+);
+export const enum_billing_subscriptions_status = pgEnum(
+  "enum_billing_subscriptions_status",
+  [
+    "incomplete",
+    "active",
+    "trialing",
+    "past_due",
+    "unpaid",
+    "canceled",
+    "incomplete_expired",
+  ],
+);
+export const enum_print_orders_status = pgEnum("enum_print_orders_status", [
+  "pending-payment",
+  "paid",
+  "in-production",
+  "shipped",
+  "completed",
+  "cancelled",
+]);
+export const enum_print_orders_payment_status = pgEnum(
+  "enum_print_orders_payment_status",
+  ["pending", "paid", "failed", "refunded"],
+);
+export const enum_shopify_payments_payment_type = pgEnum(
+  "enum_shopify_payments_payment_type",
+  ["credit-topup", "print-order"],
+);
+export const enum_shopify_payments_status = pgEnum(
+  "enum_shopify_payments_status",
+  ["pending", "paid", "failed", "refunded"],
+);
+export const enum_site_settings_payment_providers_subscription_provider =
+  pgEnum("enum_site_settings_payment_providers_subscription_provider", [
+    "stripe",
+    "shopify",
+  ]);
+export const enum_site_settings_payment_providers_order_provider = pgEnum(
+  "enum_site_settings_payment_providers_order_provider",
+  ["stripe", "shopify"],
+);
+export const enum_homepage_content_featured_works_tone = pgEnum(
+  "enum_homepage_content_featured_works_tone",
+  ["violet", "blue", "pink"],
+);
+export const enum_ai_provider_settings_providers_provider = pgEnum(
+  "enum_ai_provider_settings_providers_provider",
+  ["custom", "meshy", "tripo"],
+);
+export const enum_ai_provider_settings_default_provider = pgEnum(
+  "enum_ai_provider_settings_default_provider",
+  ["custom", "meshy", "tripo"],
+);
+export const enum_ai_provider_settings_meshy_text_to3_d_ai_model = pgEnum(
+  "enum_ai_provider_settings_meshy_text_to3_d_ai_model",
+  ["latest", "meshy-6", "meshy-5"],
+);
+export const enum_ai_provider_settings_meshy_image_to3_d_ai_model = pgEnum(
+  "enum_ai_provider_settings_meshy_image_to3_d_ai_model",
+  ["latest", "meshy-6", "meshy-5"],
+);
+export const enum_ai_provider_settings_image_generation_default_provider =
+  pgEnum("enum_ai_provider_settings_image_generation_default_provider", [
+    "gemini-official",
+    "gemini-third-party",
+  ]);
+export const enum_runtime_deployment_settings_database_connection_mode = pgEnum(
+  "enum_runtime_deployment_settings_database_connection_mode",
+  ["aws-rds-fields", "database-url"],
+);
+export const enum_runtime_deployment_settings_aws_rds_ssl_mode = pgEnum(
+  "enum_runtime_deployment_settings_aws_rds_ssl_mode",
+  ["require", "verify-full", "disable"],
+);
 
-export const users_sessions = sqliteTable(
+export const users_sessions = pgTable(
   "users_sessions",
   {
     _order: integer("_order").notNull(),
     _parentID: integer("_parent_id").notNull(),
-    id: text("id").primaryKey(),
-    createdAt: text("created_at").default(
-      sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-    ),
-    expiresAt: text("expires_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
+    id: varchar("id").primaryKey(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    expiresAt: timestamp("expires_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }).notNull(),
   },
   (columns) => [
     index("users_sessions_order_idx").on(columns._order),
@@ -43,46 +309,76 @@ export const users_sessions = sqliteTable(
   ],
 );
 
-export const users = sqliteTable(
+export const users = pgTable(
   "users",
   {
-    id: integer("id").primaryKey(),
-    fullName: text("full_name"),
-    role: text("role", { enum: ["admin", "operator", "customer"] })
-      .notNull()
-      .default("customer"),
-    avatar: integer("avatar_id").references((): AnySQLiteColumn => media.id, {
+    id: serial("id").primaryKey(),
+    fullName: varchar("full_name"),
+    displayName: varchar("display_name"),
+    bio: varchar("bio"),
+    role: enum_users_role("role").notNull().default("customer"),
+    avatar: integer("avatar_id").references((): AnyPgColumn => media.id, {
       onDelete: "set null",
     }),
-    phone: text("phone"),
-    shopifyCustomerId: text("shopify_customer_id"),
-    stripeCustomerId: text("stripe_customer_id"),
+    profileBackground: integer("profile_background_id").references(
+      (): AnyPgColumn => media.id,
+      {
+        onDelete: "set null",
+      },
+    ),
+    avatarFrame: enum_users_avatar_frame("avatar_frame").default("none"),
+    profileVisibility:
+      enum_users_profile_visibility("profile_visibility").default("private"),
+    phone: varchar("phone"),
+    shopifyCustomerId: varchar("shopify_customer_id"),
+    stripeCustomerId: varchar("stripe_customer_id"),
     creditsBalance: numeric("credits_balance", { mode: "number" }).default(0),
-    lastActiveAt: text("last_active_at").default(
-      sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
+    profileViewCount: numeric("profile_view_count", { mode: "number" }).default(
+      0,
     ),
-    updatedAt: text("updated_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
-    createdAt: text("created_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
-    email: text("email").notNull(),
-    resetPasswordToken: text("reset_password_token"),
-    resetPasswordExpiration: text("reset_password_expiration").default(
-      sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-    ),
-    salt: text("salt"),
-    hash: text("hash"),
-    _verified: integer("_verified", { mode: "boolean" }),
-    _verificationToken: text("_verificationtoken"),
+    followersCount: numeric("followers_count", { mode: "number" }).default(0),
+    followingCount: numeric("following_count", { mode: "number" }).default(0),
+    lastActiveAt: timestamp("last_active_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    email: varchar("email").notNull(),
+    resetPasswordToken: varchar("reset_password_token"),
+    resetPasswordExpiration: timestamp("reset_password_expiration", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    salt: varchar("salt"),
+    hash: varchar("hash"),
+    _verified: boolean("_verified"),
+    _verificationToken: varchar("_verificationtoken"),
     loginAttempts: numeric("login_attempts", { mode: "number" }).default(0),
-    lockUntil: text("lock_until").default(
-      sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-    ),
+    lockUntil: timestamp("lock_until", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
   },
   (columns) => [
+    index("users_display_name_idx").on(columns.displayName),
     index("users_avatar_idx").on(columns.avatar),
+    index("users_profile_background_idx").on(columns.profileBackground),
     index("users_stripe_customer_id_idx").on(columns.stripeCustomerId),
     index("users_updated_at_idx").on(columns.updatedAt),
     index("users_created_at_idx").on(columns.createdAt),
@@ -90,28 +386,72 @@ export const users = sqliteTable(
   ],
 );
 
-export const media = sqliteTable(
+export const user_follows = pgTable(
+  "user_follows",
+  {
+    id: serial("id").primaryKey(),
+    follower: integer("follower_id")
+      .notNull()
+      .references(() => users.id, {
+        onDelete: "set null",
+      }),
+    followee: integer("followee_id")
+      .notNull()
+      .references(() => users.id, {
+        onDelete: "set null",
+      }),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+  },
+  (columns) => [
+    index("user_follows_follower_idx").on(columns.follower),
+    index("user_follows_followee_idx").on(columns.followee),
+    index("user_follows_updated_at_idx").on(columns.updatedAt),
+    index("user_follows_created_at_idx").on(columns.createdAt),
+  ],
+);
+
+export const media = pgTable(
   "media",
   {
-    id: integer("id").primaryKey(),
-    alt: text("alt").notNull(),
-    owner: integer("owner_id").references((): AnySQLiteColumn => users.id, {
+    id: serial("id").primaryKey(),
+    alt: varchar("alt").notNull(),
+    owner: integer("owner_id").references((): AnyPgColumn => users.id, {
       onDelete: "set null",
     }),
-    purpose: text("purpose", {
-      enum: ["input", "preview", "model", "document", "asset"],
-    }).default("asset"),
-    prefix: text("prefix").default("media"),
-    updatedAt: text("updated_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
-    createdAt: text("created_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
-    url: text("url"),
-    thumbnailURL: text("thumbnail_u_r_l"),
-    filename: text("filename"),
-    mimeType: text("mime_type"),
+    purpose: enum_media_purpose("purpose").default("asset"),
+    publicAccess: boolean("public_access").default(false),
+    prefix: varchar("prefix").default("media"),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    url: varchar("url"),
+    thumbnailURL: varchar("thumbnail_u_r_l"),
+    filename: varchar("filename"),
+    mimeType: varchar("mime_type"),
     filesize: numeric("filesize", { mode: "number" }),
     width: numeric("width", { mode: "number" }),
     height: numeric("height", { mode: "number" }),
@@ -126,59 +466,61 @@ export const media = sqliteTable(
   ],
 );
 
-export const generation_tasks = sqliteTable(
+export const generation_tasks = pgTable(
   "generation_tasks",
   {
-    id: integer("id").primaryKey(),
-    taskCode: text("task_code").notNull(),
+    id: serial("id").primaryKey(),
+    taskCode: varchar("task_code").notNull(),
     user: integer("user_id")
       .notNull()
       .references(() => users.id, {
         onDelete: "set null",
       }),
-    inputMode: text("input_mode", {
-      enum: ["image", "text", "hybrid"],
-    }).notNull(),
-    prompt: text("prompt"),
+    inputMode: enum_generation_tasks_input_mode("input_mode").notNull(),
+    prompt: varchar("prompt"),
     sourceImage: integer("source_image_id").references(() => media.id, {
       onDelete: "set null",
     }),
-    provider: text("provider", { enum: ["meshy", "tripo", "custom"] }).default(
-      "custom",
-    ),
-    providerTaskId: text("provider_task_id"),
-    status: text("status", {
-      enum: ["queued", "processing", "succeeded", "failed", "timeout"],
-    })
-      .notNull()
-      .default("queued"),
+    provider: enum_generation_tasks_provider("provider").default("custom"),
+    providerTaskId: varchar("provider_task_id"),
+    status: enum_generation_tasks_status("status").notNull().default("queued"),
     progress: numeric("progress", { mode: "number" }).default(0),
-    parameterSnapshot: text("parameter_snapshot", { mode: "json" }),
+    parameterSnapshot: jsonb("parameter_snapshot"),
     creditsReserved: numeric("credits_reserved", { mode: "number" }).default(0),
     creditsSpent: numeric("credits_spent", { mode: "number" }).default(0),
     resultModel: integer("result_model_id").references(
-      (): AnySQLiteColumn => models.id,
+      (): AnyPgColumn => models.id,
       {
         onDelete: "set null",
       },
     ),
-    printRequested: integer("print_requested", { mode: "boolean" }).default(
-      false,
-    ),
-    startedAt: text("started_at").default(
-      sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-    ),
-    completedAt: text("completed_at").default(
-      sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-    ),
-    failureReason: text("failure_reason"),
-    callbackPayload: text("callback_payload", { mode: "json" }),
-    updatedAt: text("updated_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
-    createdAt: text("created_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
+    printRequested: boolean("print_requested").default(false),
+    startedAt: timestamp("started_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    completedAt: timestamp("completed_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    failureReason: varchar("failure_reason"),
+    callbackPayload: jsonb("callback_payload"),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
   },
   (columns) => [
     uniqueIndex("generation_tasks_task_code_idx").on(columns.taskCode),
@@ -191,10 +533,10 @@ export const generation_tasks = sqliteTable(
   ],
 );
 
-export const task_events = sqliteTable(
+export const task_events = pgTable(
   "task_events",
   {
-    id: integer("id").primaryKey(),
+    id: serial("id").primaryKey(),
     task: integer("task_id")
       .notNull()
       .references(() => generation_tasks.id, {
@@ -205,25 +547,24 @@ export const task_events = sqliteTable(
       .references(() => users.id, {
         onDelete: "set null",
       }),
-    eventType: text("event_type", {
-      enum: [
-        "queued",
-        "submitted",
-        "polling",
-        "callback",
-        "completed",
-        "failed",
-      ],
-    }).notNull(),
-    provider: text("provider"),
-    message: text("message"),
-    payload: text("payload", { mode: "json" }),
-    updatedAt: text("updated_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
-    createdAt: text("created_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
+    eventType: enum_task_events_event_type("event_type").notNull(),
+    provider: varchar("provider"),
+    message: varchar("message"),
+    payload: jsonb("payload"),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
   },
   (columns) => [
     index("task_events_task_idx").on(columns.task),
@@ -233,15 +574,13 @@ export const task_events = sqliteTable(
   ],
 );
 
-export const models_formats = sqliteTable(
+export const models_formats = pgTable(
   "models_formats",
   {
     _order: integer("_order").notNull(),
     _parentID: integer("_parent_id").notNull(),
-    id: text("id").primaryKey(),
-    format: text("format", {
-      enum: ["glb", "fbx", "obj", "stl", "usdz"],
-    }).notNull(),
+    id: varchar("id").primaryKey(),
+    format: enum_models_formats_format("format").notNull(),
     file: integer("file_id").references(() => media.id, {
       onDelete: "set null",
     }),
@@ -260,13 +599,13 @@ export const models_formats = sqliteTable(
   ],
 );
 
-export const models_tags = sqliteTable(
+export const models_tags = pgTable(
   "models_tags",
   {
     _order: integer("_order").notNull(),
     _parentID: integer("_parent_id").notNull(),
-    id: text("id").primaryKey(),
-    label: text("label"),
+    id: varchar("id").primaryKey(),
+    label: varchar("label"),
   },
   (columns) => [
     index("models_tags_order_idx").on(columns._order),
@@ -279,43 +618,51 @@ export const models_tags = sqliteTable(
   ],
 );
 
-export const models = sqliteTable(
+export const models = pgTable(
   "models",
   {
-    id: integer("id").primaryKey(),
-    title: text("title").notNull(),
+    id: serial("id").primaryKey(),
+    title: varchar("title").notNull(),
     owner: integer("owner_id")
       .notNull()
       .references(() => users.id, {
         onDelete: "set null",
       }),
     sourceTask: integer("source_task_id").references(
-      (): AnySQLiteColumn => generation_tasks.id,
+      (): AnyPgColumn => generation_tasks.id,
       {
         onDelete: "set null",
       },
     ),
-    status: text("status", { enum: ["draft", "ready", "archived"] }).default(
-      "ready",
-    ),
-    visibility: text("visibility", {
-      enum: ["private", "team", "public"],
-    }).default("private"),
+    status: enum_models_status("status").default("ready"),
+    visibility: enum_models_visibility("visibility").default("private"),
     previewImage: integer("preview_image_id").references(() => media.id, {
       onDelete: "set null",
     }),
-    viewerUrl: text("viewer_url"),
-    printReady: integer("print_ready", { mode: "boolean" }).default(false),
+    viewerUrl: varchar("viewer_url"),
+    printReady: boolean("print_ready").default(false),
+    viewCount: numeric("view_count", { mode: "number" }).default(0),
+    commentsCount: numeric("comments_count", { mode: "number" }).default(0),
+    likesCount: numeric("likes_count", { mode: "number" }).default(0),
+    favoritesCount: numeric("favorites_count", { mode: "number" }).default(0),
     dimensions_widthMm: numeric("dimensions_width_mm", { mode: "number" }),
     dimensions_heightMm: numeric("dimensions_height_mm", { mode: "number" }),
     dimensions_depthMm: numeric("dimensions_depth_mm", { mode: "number" }),
-    description: text("description"),
-    updatedAt: text("updated_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
-    createdAt: text("created_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
+    description: varchar("description"),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
   },
   (columns) => [
     index("models_owner_idx").on(columns.owner),
@@ -326,23 +673,129 @@ export const models = sqliteTable(
   ],
 );
 
-export const homepage_items = sqliteTable(
+export const model_comments = pgTable(
+  "model_comments",
+  {
+    id: serial("id").primaryKey(),
+    model: integer("model_id")
+      .notNull()
+      .references(() => models.id, {
+        onDelete: "set null",
+      }),
+    author: integer("author_id")
+      .notNull()
+      .references(() => users.id, {
+        onDelete: "set null",
+      }),
+    status: enum_model_comments_status("status").notNull().default("visible"),
+    content: varchar("content").notNull(),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+  },
+  (columns) => [
+    index("model_comments_model_idx").on(columns.model),
+    index("model_comments_author_idx").on(columns.author),
+    index("model_comments_updated_at_idx").on(columns.updatedAt),
+    index("model_comments_created_at_idx").on(columns.createdAt),
+  ],
+);
+
+export const model_likes = pgTable(
+  "model_likes",
+  {
+    id: serial("id").primaryKey(),
+    user: integer("user_id")
+      .notNull()
+      .references(() => users.id, {
+        onDelete: "set null",
+      }),
+    model: integer("model_id")
+      .notNull()
+      .references(() => models.id, {
+        onDelete: "set null",
+      }),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+  },
+  (columns) => [
+    index("model_likes_user_idx").on(columns.user),
+    index("model_likes_model_idx").on(columns.model),
+    index("model_likes_updated_at_idx").on(columns.updatedAt),
+    index("model_likes_created_at_idx").on(columns.createdAt),
+  ],
+);
+
+export const model_favorites = pgTable(
+  "model_favorites",
+  {
+    id: serial("id").primaryKey(),
+    user: integer("user_id")
+      .notNull()
+      .references(() => users.id, {
+        onDelete: "set null",
+      }),
+    model: integer("model_id")
+      .notNull()
+      .references(() => models.id, {
+        onDelete: "set null",
+      }),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+  },
+  (columns) => [
+    index("model_favorites_user_idx").on(columns.user),
+    index("model_favorites_model_idx").on(columns.model),
+    index("model_favorites_updated_at_idx").on(columns.updatedAt),
+    index("model_favorites_created_at_idx").on(columns.createdAt),
+  ],
+);
+
+export const homepage_items = pgTable(
   "homepage_items",
   {
-    id: integer("id").primaryKey(),
-    slug: text("slug"),
-    placement: text("placement", {
-      enum: [
-        "hero-secondary",
-        "featured",
-        "bundles",
-        "announcements",
-        "articles",
-      ],
-    }).default("featured"),
-    contentType: text("content_type", {
-      enum: ["custom", "model", "post", "announcement", "bundle"],
-    }).default("custom"),
+    id: serial("id").primaryKey(),
+    slug: varchar("slug"),
+    placement: enum_homepage_items_placement("placement").default("featured"),
+    contentType:
+      enum_homepage_items_content_type("content_type").default("custom"),
+    railVariant:
+      enum_homepage_items_rail_variant("rail_variant").default("standard"),
     coverImage: integer("cover_image_id").references(() => media.id, {
       onDelete: "set null",
     }),
@@ -364,23 +817,33 @@ export const homepage_items = sqliteTable(
         onDelete: "set null",
       },
     ),
-    customHref: text("custom_href"),
+    customHref: varchar("custom_href"),
     createdBy: integer("created_by_id").references(() => users.id, {
       onDelete: "set null",
     }),
-    publishAt: text("publish_at").default(
-      sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-    ),
-    isPinned: integer("is_pinned", { mode: "boolean" }).default(false),
-    isVisible: integer("is_visible", { mode: "boolean" }).default(true),
+    publishAt: timestamp("publish_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    isPinned: boolean("is_pinned").default(false),
+    isVisible: boolean("is_visible").default(true),
     sortOrder: numeric("sort_order", { mode: "number" }).default(0),
-    updatedAt: text("updated_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
-    createdAt: text("created_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
-    _status: text("_status", { enum: ["draft", "published"] }).default("draft"),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    _status: enum_homepage_items_status("_status").default("draft"),
   },
   (columns) => [
     uniqueIndex("homepage_items_slug_idx").on(columns.slug),
@@ -398,13 +861,14 @@ export const homepage_items = sqliteTable(
   ],
 );
 
-export const homepage_items_locales = sqliteTable(
+export const homepage_items_locales = pgTable(
   "homepage_items_locales",
   {
-    title: text("title"),
-    summary: text("summary"),
-    id: integer("id").primaryKey(),
-    _locale: text("_locale", { enum: ["en", "zh"] }).notNull(),
+    title: varchar("title"),
+    summary: varchar("summary"),
+    itemCountLabel: varchar("item_count_label"),
+    id: serial("id").primaryKey(),
+    _locale: enum__locales("_locale").notNull(),
     _parentID: integer("_parent_id").notNull(),
   },
   (columns) => [
@@ -420,26 +884,24 @@ export const homepage_items_locales = sqliteTable(
   ],
 );
 
-export const _homepage_items_v = sqliteTable(
+export const _homepage_items_v = pgTable(
   "_homepage_items_v",
   {
-    id: integer("id").primaryKey(),
+    id: serial("id").primaryKey(),
     parent: integer("parent_id").references(() => homepage_items.id, {
       onDelete: "set null",
     }),
-    version_slug: text("version_slug"),
-    version_placement: text("version_placement", {
-      enum: [
-        "hero-secondary",
+    version_slug: varchar("version_slug"),
+    version_placement:
+      enum__homepage_items_v_version_placement("version_placement").default(
         "featured",
-        "bundles",
-        "announcements",
-        "articles",
-      ],
-    }).default("featured"),
-    version_contentType: text("version_content_type", {
-      enum: ["custom", "model", "post", "announcement", "bundle"],
-    }).default("custom"),
+      ),
+    version_contentType: enum__homepage_items_v_version_content_type(
+      "version_content_type",
+    ).default("custom"),
+    version_railVariant: enum__homepage_items_v_version_rail_variant(
+      "version_rail_variant",
+    ).default("standard"),
     version_coverImage: integer("version_cover_image_id").references(
       () => media.id,
       {
@@ -469,43 +931,53 @@ export const _homepage_items_v = sqliteTable(
         onDelete: "set null",
       },
     ),
-    version_customHref: text("version_custom_href"),
+    version_customHref: varchar("version_custom_href"),
     version_createdBy: integer("version_created_by_id").references(
       () => users.id,
       {
         onDelete: "set null",
       },
     ),
-    version_publishAt: text("version_publish_at").default(
-      sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-    ),
-    version_isPinned: integer("version_is_pinned", { mode: "boolean" }).default(
-      false,
-    ),
-    version_isVisible: integer("version_is_visible", {
-      mode: "boolean",
-    }).default(true),
+    version_publishAt: timestamp("version_publish_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    version_isPinned: boolean("version_is_pinned").default(false),
+    version_isVisible: boolean("version_is_visible").default(true),
     version_sortOrder: numeric("version_sort_order", {
       mode: "number",
     }).default(0),
-    version_updatedAt: text("version_updated_at").default(
-      sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-    ),
-    version_createdAt: text("version_created_at").default(
-      sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-    ),
-    version__status: text("version__status", {
-      enum: ["draft", "published"],
-    }).default("draft"),
-    createdAt: text("created_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
-    updatedAt: text("updated_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
-    snapshot: integer("snapshot", { mode: "boolean" }),
-    publishedLocale: text("published_locale", { enum: ["en", "zh"] }),
-    latest: integer("latest", { mode: "boolean" }),
+    version_updatedAt: timestamp("version_updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    version_createdAt: timestamp("version_created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    version__status:
+      enum__homepage_items_v_version_status("version__status").default("draft"),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    snapshot: boolean("snapshot"),
+    publishedLocale:
+      enum__homepage_items_v_published_locale("published_locale"),
+    latest: boolean("latest"),
   },
   (columns) => [
     index("_homepage_items_v_parent_idx").on(columns.parent),
@@ -547,13 +1019,14 @@ export const _homepage_items_v = sqliteTable(
   ],
 );
 
-export const _homepage_items_v_locales = sqliteTable(
+export const _homepage_items_v_locales = pgTable(
   "_homepage_items_v_locales",
   {
-    version_title: text("version_title"),
-    version_summary: text("version_summary"),
-    id: integer("id").primaryKey(),
-    _locale: text("_locale", { enum: ["en", "zh"] }).notNull(),
+    version_title: varchar("version_title"),
+    version_summary: varchar("version_summary"),
+    version_itemCountLabel: varchar("version_item_count_label"),
+    id: serial("id").primaryKey(),
+    _locale: enum__locales("_locale").notNull(),
     _parentID: integer("_parent_id").notNull(),
   },
   (columns) => [
@@ -569,34 +1042,42 @@ export const _homepage_items_v_locales = sqliteTable(
   ],
 );
 
-export const posts = sqliteTable(
+export const posts = pgTable(
   "posts",
   {
-    id: integer("id").primaryKey(),
-    slug: text("slug"),
-    category: text("category", {
-      enum: ["article", "event", "announcement"],
-    }).default("article"),
+    id: serial("id").primaryKey(),
+    slug: varchar("slug"),
+    category: enum_posts_category("category").default("article"),
     coverImage: integer("cover_image_id").references(() => media.id, {
       onDelete: "set null",
     }),
-    videoUrl: text("video_url"),
+    videoUrl: varchar("video_url"),
     createdBy: integer("created_by_id").references(() => users.id, {
       onDelete: "set null",
     }),
-    publishedAt: text("published_at").default(
-      sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-    ),
-    isPinned: integer("is_pinned", { mode: "boolean" }).default(false),
-    isVisible: integer("is_visible", { mode: "boolean" }).default(true),
+    publishedAt: timestamp("published_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    isPinned: boolean("is_pinned").default(false),
+    isVisible: boolean("is_visible").default(true),
     sortOrder: numeric("sort_order", { mode: "number" }).default(0),
-    updatedAt: text("updated_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
-    createdAt: text("created_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
-    _status: text("_status", { enum: ["draft", "published"] }).default("draft"),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    _status: enum_posts_status("_status").default("draft"),
   },
   (columns) => [
     uniqueIndex("posts_slug_idx").on(columns.slug),
@@ -608,14 +1089,14 @@ export const posts = sqliteTable(
   ],
 );
 
-export const posts_locales = sqliteTable(
+export const posts_locales = pgTable(
   "posts_locales",
   {
-    title: text("title"),
-    excerpt: text("excerpt"),
-    content: text("content", { mode: "json" }),
-    id: integer("id").primaryKey(),
-    _locale: text("_locale", { enum: ["en", "zh"] }).notNull(),
+    title: varchar("title"),
+    excerpt: varchar("excerpt"),
+    content: jsonb("content"),
+    id: serial("id").primaryKey(),
+    _locale: enum__locales("_locale").notNull(),
     _parentID: integer("_parent_id").notNull(),
   },
   (columns) => [
@@ -631,60 +1112,68 @@ export const posts_locales = sqliteTable(
   ],
 );
 
-export const _posts_v = sqliteTable(
+export const _posts_v = pgTable(
   "_posts_v",
   {
-    id: integer("id").primaryKey(),
+    id: serial("id").primaryKey(),
     parent: integer("parent_id").references(() => posts.id, {
       onDelete: "set null",
     }),
-    version_slug: text("version_slug"),
-    version_category: text("version_category", {
-      enum: ["article", "event", "announcement"],
-    }).default("article"),
+    version_slug: varchar("version_slug"),
+    version_category:
+      enum__posts_v_version_category("version_category").default("article"),
     version_coverImage: integer("version_cover_image_id").references(
       () => media.id,
       {
         onDelete: "set null",
       },
     ),
-    version_videoUrl: text("version_video_url"),
+    version_videoUrl: varchar("version_video_url"),
     version_createdBy: integer("version_created_by_id").references(
       () => users.id,
       {
         onDelete: "set null",
       },
     ),
-    version_publishedAt: text("version_published_at").default(
-      sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-    ),
-    version_isPinned: integer("version_is_pinned", { mode: "boolean" }).default(
-      false,
-    ),
-    version_isVisible: integer("version_is_visible", {
-      mode: "boolean",
-    }).default(true),
+    version_publishedAt: timestamp("version_published_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    version_isPinned: boolean("version_is_pinned").default(false),
+    version_isVisible: boolean("version_is_visible").default(true),
     version_sortOrder: numeric("version_sort_order", {
       mode: "number",
     }).default(0),
-    version_updatedAt: text("version_updated_at").default(
-      sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-    ),
-    version_createdAt: text("version_created_at").default(
-      sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-    ),
-    version__status: text("version__status", {
-      enum: ["draft", "published"],
-    }).default("draft"),
-    createdAt: text("created_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
-    updatedAt: text("updated_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
-    snapshot: integer("snapshot", { mode: "boolean" }),
-    publishedLocale: text("published_locale", { enum: ["en", "zh"] }),
-    latest: integer("latest", { mode: "boolean" }),
+    version_updatedAt: timestamp("version_updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    version_createdAt: timestamp("version_created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    version__status:
+      enum__posts_v_version_status("version__status").default("draft"),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    snapshot: boolean("snapshot"),
+    publishedLocale: enum__posts_v_published_locale("published_locale"),
+    latest: boolean("latest"),
   },
   (columns) => [
     index("_posts_v_parent_idx").on(columns.parent),
@@ -710,14 +1199,14 @@ export const _posts_v = sqliteTable(
   ],
 );
 
-export const _posts_v_locales = sqliteTable(
+export const _posts_v_locales = pgTable(
   "_posts_v_locales",
   {
-    version_title: text("version_title"),
-    version_excerpt: text("version_excerpt"),
-    version_content: text("version_content", { mode: "json" }),
-    id: integer("id").primaryKey(),
-    _locale: text("_locale", { enum: ["en", "zh"] }).notNull(),
+    version_title: varchar("version_title"),
+    version_excerpt: varchar("version_excerpt"),
+    version_content: jsonb("version_content"),
+    id: serial("id").primaryKey(),
+    _locale: enum__locales("_locale").notNull(),
     _parentID: integer("_parent_id").notNull(),
   },
   (columns) => [
@@ -733,27 +1222,37 @@ export const _posts_v_locales = sqliteTable(
   ],
 );
 
-export const announcements = sqliteTable(
+export const announcements = pgTable(
   "announcements",
   {
-    id: integer("id").primaryKey(),
-    slug: text("slug"),
+    id: serial("id").primaryKey(),
+    slug: varchar("slug"),
     createdBy: integer("created_by_id").references(() => users.id, {
       onDelete: "set null",
     }),
-    publishAt: text("publish_at").default(
-      sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-    ),
-    isPinned: integer("is_pinned", { mode: "boolean" }).default(false),
-    isVisible: integer("is_visible", { mode: "boolean" }).default(true),
+    publishAt: timestamp("publish_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    isPinned: boolean("is_pinned").default(false),
+    isVisible: boolean("is_visible").default(true),
     sortOrder: numeric("sort_order", { mode: "number" }).default(0),
-    updatedAt: text("updated_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
-    createdAt: text("created_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
-    _status: text("_status", { enum: ["draft", "published"] }).default("draft"),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    _status: enum_announcements_status("_status").default("draft"),
   },
   (columns) => [
     uniqueIndex("announcements_slug_idx").on(columns.slug),
@@ -764,14 +1263,14 @@ export const announcements = sqliteTable(
   ],
 );
 
-export const announcements_locales = sqliteTable(
+export const announcements_locales = pgTable(
   "announcements_locales",
   {
-    title: text("title"),
-    summary: text("summary"),
-    content: text("content", { mode: "json" }),
-    id: integer("id").primaryKey(),
-    _locale: text("_locale", { enum: ["en", "zh"] }).notNull(),
+    title: varchar("title"),
+    summary: varchar("summary"),
+    content: jsonb("content"),
+    id: serial("id").primaryKey(),
+    _locale: enum__locales("_locale").notNull(),
     _parentID: integer("_parent_id").notNull(),
   },
   (columns) => [
@@ -787,50 +1286,59 @@ export const announcements_locales = sqliteTable(
   ],
 );
 
-export const _announcements_v = sqliteTable(
+export const _announcements_v = pgTable(
   "_announcements_v",
   {
-    id: integer("id").primaryKey(),
+    id: serial("id").primaryKey(),
     parent: integer("parent_id").references(() => announcements.id, {
       onDelete: "set null",
     }),
-    version_slug: text("version_slug"),
+    version_slug: varchar("version_slug"),
     version_createdBy: integer("version_created_by_id").references(
       () => users.id,
       {
         onDelete: "set null",
       },
     ),
-    version_publishAt: text("version_publish_at").default(
-      sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-    ),
-    version_isPinned: integer("version_is_pinned", { mode: "boolean" }).default(
-      false,
-    ),
-    version_isVisible: integer("version_is_visible", {
-      mode: "boolean",
-    }).default(true),
+    version_publishAt: timestamp("version_publish_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    version_isPinned: boolean("version_is_pinned").default(false),
+    version_isVisible: boolean("version_is_visible").default(true),
     version_sortOrder: numeric("version_sort_order", {
       mode: "number",
     }).default(0),
-    version_updatedAt: text("version_updated_at").default(
-      sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-    ),
-    version_createdAt: text("version_created_at").default(
-      sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-    ),
-    version__status: text("version__status", {
-      enum: ["draft", "published"],
-    }).default("draft"),
-    createdAt: text("created_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
-    updatedAt: text("updated_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
-    snapshot: integer("snapshot", { mode: "boolean" }),
-    publishedLocale: text("published_locale", { enum: ["en", "zh"] }),
-    latest: integer("latest", { mode: "boolean" }),
+    version_updatedAt: timestamp("version_updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    version_createdAt: timestamp("version_created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    version__status:
+      enum__announcements_v_version_status("version__status").default("draft"),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    snapshot: boolean("snapshot"),
+    publishedLocale: enum__announcements_v_published_locale("published_locale"),
+    latest: boolean("latest"),
   },
   (columns) => [
     index("_announcements_v_parent_idx").on(columns.parent),
@@ -855,14 +1363,14 @@ export const _announcements_v = sqliteTable(
   ],
 );
 
-export const _announcements_v_locales = sqliteTable(
+export const _announcements_v_locales = pgTable(
   "_announcements_v_locales",
   {
-    version_title: text("version_title"),
-    version_summary: text("version_summary"),
-    version_content: text("version_content", { mode: "json" }),
-    id: integer("id").primaryKey(),
-    _locale: text("_locale", { enum: ["en", "zh"] }).notNull(),
+    version_title: varchar("version_title"),
+    version_summary: varchar("version_summary"),
+    version_content: jsonb("version_content"),
+    id: serial("id").primaryKey(),
+    _locale: enum__locales("_locale").notNull(),
     _parentID: integer("_parent_id").notNull(),
   },
   (columns) => [
@@ -878,12 +1386,12 @@ export const _announcements_v_locales = sqliteTable(
   ],
 );
 
-export const model_bundles_tags = sqliteTable(
+export const model_bundles_tags = pgTable(
   "model_bundles_tags",
   {
     _order: integer("_order").notNull(),
     _parentID: integer("_parent_id").notNull(),
-    id: text("id").primaryKey(),
+    id: varchar("id").primaryKey(),
   },
   (columns) => [
     index("model_bundles_tags_order_idx").on(columns._order),
@@ -896,13 +1404,13 @@ export const model_bundles_tags = sqliteTable(
   ],
 );
 
-export const model_bundles_tags_locales = sqliteTable(
+export const model_bundles_tags_locales = pgTable(
   "model_bundles_tags_locales",
   {
-    label: text("label"),
-    id: integer("id").primaryKey(),
-    _locale: text("_locale", { enum: ["en", "zh"] }).notNull(),
-    _parentID: text("_parent_id").notNull(),
+    label: varchar("label"),
+    id: serial("id").primaryKey(),
+    _locale: enum__locales("_locale").notNull(),
+    _parentID: varchar("_parent_id").notNull(),
   },
   (columns) => [
     uniqueIndex("model_bundles_tags_locales_locale_parent_id_unique").on(
@@ -917,30 +1425,40 @@ export const model_bundles_tags_locales = sqliteTable(
   ],
 );
 
-export const model_bundles = sqliteTable(
+export const model_bundles = pgTable(
   "model_bundles",
   {
-    id: integer("id").primaryKey(),
-    slug: text("slug"),
+    id: serial("id").primaryKey(),
+    slug: varchar("slug"),
     coverImage: integer("cover_image_id").references(() => media.id, {
       onDelete: "set null",
     }),
     createdBy: integer("created_by_id").references(() => users.id, {
       onDelete: "set null",
     }),
-    publishAt: text("publish_at").default(
-      sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-    ),
-    isVisible: integer("is_visible", { mode: "boolean" }).default(true),
-    isFeatured: integer("is_featured", { mode: "boolean" }).default(false),
+    publishAt: timestamp("publish_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    isVisible: boolean("is_visible").default(true),
+    isFeatured: boolean("is_featured").default(false),
     sortOrder: numeric("sort_order", { mode: "number" }).default(0),
-    updatedAt: text("updated_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
-    createdAt: text("created_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
-    _status: text("_status", { enum: ["draft", "published"] }).default("draft"),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    _status: enum_model_bundles_status("_status").default("draft"),
   },
   (columns) => [
     uniqueIndex("model_bundles_slug_idx").on(columns.slug),
@@ -952,13 +1470,13 @@ export const model_bundles = sqliteTable(
   ],
 );
 
-export const model_bundles_locales = sqliteTable(
+export const model_bundles_locales = pgTable(
   "model_bundles_locales",
   {
-    title: text("title"),
-    summary: text("summary"),
-    id: integer("id").primaryKey(),
-    _locale: text("_locale", { enum: ["en", "zh"] }).notNull(),
+    title: varchar("title"),
+    summary: varchar("summary"),
+    id: serial("id").primaryKey(),
+    _locale: enum__locales("_locale").notNull(),
     _parentID: integer("_parent_id").notNull(),
   },
   (columns) => [
@@ -974,13 +1492,13 @@ export const model_bundles_locales = sqliteTable(
   ],
 );
 
-export const model_bundles_rels = sqliteTable(
+export const model_bundles_rels = pgTable(
   "model_bundles_rels",
   {
-    id: integer("id").primaryKey(),
+    id: serial("id").primaryKey(),
     order: integer("order"),
     parent: integer("parent_id").notNull(),
-    path: text("path").notNull(),
+    path: varchar("path").notNull(),
     modelsID: integer("models_id"),
   },
   (columns) => [
@@ -1001,13 +1519,13 @@ export const model_bundles_rels = sqliteTable(
   ],
 );
 
-export const _model_bundles_v_version_tags = sqliteTable(
+export const _model_bundles_v_version_tags = pgTable(
   "_model_bundles_v_version_tags",
   {
     _order: integer("_order").notNull(),
     _parentID: integer("_parent_id").notNull(),
-    id: integer("id").primaryKey(),
-    _uuid: text("_uuid"),
+    id: serial("id").primaryKey(),
+    _uuid: varchar("_uuid"),
   },
   (columns) => [
     index("_model_bundles_v_version_tags_order_idx").on(columns._order),
@@ -1020,12 +1538,12 @@ export const _model_bundles_v_version_tags = sqliteTable(
   ],
 );
 
-export const _model_bundles_v_version_tags_locales = sqliteTable(
+export const _model_bundles_v_version_tags_locales = pgTable(
   "_model_bundles_v_version_tags_locales",
   {
-    label: text("label"),
-    id: integer("id").primaryKey(),
-    _locale: text("_locale", { enum: ["en", "zh"] }).notNull(),
+    label: varchar("label"),
+    id: serial("id").primaryKey(),
+    _locale: enum__locales("_locale").notNull(),
     _parentID: integer("_parent_id").notNull(),
   },
   (columns) => [
@@ -1040,14 +1558,14 @@ export const _model_bundles_v_version_tags_locales = sqliteTable(
   ],
 );
 
-export const _model_bundles_v = sqliteTable(
+export const _model_bundles_v = pgTable(
   "_model_bundles_v",
   {
-    id: integer("id").primaryKey(),
+    id: serial("id").primaryKey(),
     parent: integer("parent_id").references(() => model_bundles.id, {
       onDelete: "set null",
     }),
-    version_slug: text("version_slug"),
+    version_slug: varchar("version_slug"),
     version_coverImage: integer("version_cover_image_id").references(
       () => media.id,
       {
@@ -1060,36 +1578,45 @@ export const _model_bundles_v = sqliteTable(
         onDelete: "set null",
       },
     ),
-    version_publishAt: text("version_publish_at").default(
-      sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-    ),
-    version_isVisible: integer("version_is_visible", {
-      mode: "boolean",
-    }).default(true),
-    version_isFeatured: integer("version_is_featured", {
-      mode: "boolean",
-    }).default(false),
+    version_publishAt: timestamp("version_publish_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    version_isVisible: boolean("version_is_visible").default(true),
+    version_isFeatured: boolean("version_is_featured").default(false),
     version_sortOrder: numeric("version_sort_order", {
       mode: "number",
     }).default(0),
-    version_updatedAt: text("version_updated_at").default(
-      sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-    ),
-    version_createdAt: text("version_created_at").default(
-      sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-    ),
-    version__status: text("version__status", {
-      enum: ["draft", "published"],
-    }).default("draft"),
-    createdAt: text("created_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
-    updatedAt: text("updated_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
-    snapshot: integer("snapshot", { mode: "boolean" }),
-    publishedLocale: text("published_locale", { enum: ["en", "zh"] }),
-    latest: integer("latest", { mode: "boolean" }),
+    version_updatedAt: timestamp("version_updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    version_createdAt: timestamp("version_created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    version__status:
+      enum__model_bundles_v_version_status("version__status").default("draft"),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    snapshot: boolean("snapshot"),
+    publishedLocale: enum__model_bundles_v_published_locale("published_locale"),
+    latest: boolean("latest"),
   },
   (columns) => [
     index("_model_bundles_v_parent_idx").on(columns.parent),
@@ -1117,13 +1644,13 @@ export const _model_bundles_v = sqliteTable(
   ],
 );
 
-export const _model_bundles_v_locales = sqliteTable(
+export const _model_bundles_v_locales = pgTable(
   "_model_bundles_v_locales",
   {
-    version_title: text("version_title"),
-    version_summary: text("version_summary"),
-    id: integer("id").primaryKey(),
-    _locale: text("_locale", { enum: ["en", "zh"] }).notNull(),
+    version_title: varchar("version_title"),
+    version_summary: varchar("version_summary"),
+    id: serial("id").primaryKey(),
+    _locale: enum__locales("_locale").notNull(),
     _parentID: integer("_parent_id").notNull(),
   },
   (columns) => [
@@ -1139,13 +1666,13 @@ export const _model_bundles_v_locales = sqliteTable(
   ],
 );
 
-export const _model_bundles_v_rels = sqliteTable(
+export const _model_bundles_v_rels = pgTable(
   "_model_bundles_v_rels",
   {
-    id: integer("id").primaryKey(),
+    id: serial("id").primaryKey(),
     order: integer("order"),
     parent: integer("parent_id").notNull(),
-    path: text("path").notNull(),
+    path: varchar("path").notNull(),
     modelsID: integer("models_id"),
   },
   (columns) => [
@@ -1166,11 +1693,13 @@ export const _model_bundles_v_rels = sqliteTable(
   ],
 );
 
-export const credits = sqliteTable(
+export const credits = pgTable(
   "credits",
   {
-    id: integer("id").primaryKey(),
-    accountLabel: text("account_label").notNull().default("主积分账户"),
+    id: serial("id").primaryKey(),
+    accountLabel: varchar("account_label")
+      .notNull()
+      .default("Primary credits account"),
     user: integer("user_id")
       .notNull()
       .references(() => users.id, {
@@ -1186,16 +1715,22 @@ export const credits = sqliteTable(
     lifetimeSpent: numeric("lifetime_spent", { mode: "number" })
       .notNull()
       .default(0),
-    status: text("status", { enum: ["active", "suspended", "closed"] })
-      .notNull()
-      .default("active"),
-    billingNotes: text("billing_notes"),
-    updatedAt: text("updated_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
-    createdAt: text("created_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
+    status: enum_credits_status("status").notNull().default("active"),
+    billingNotes: varchar("billing_notes"),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
   },
   (columns) => [
     uniqueIndex("credits_user_idx").on(columns.user),
@@ -1204,12 +1739,12 @@ export const credits = sqliteTable(
   ],
 );
 
-export const credit_transactions = sqliteTable(
+export const credit_transactions = pgTable(
   "credit_transactions",
   {
-    id: integer("id").primaryKey(),
-    referenceCode: text("reference_code").notNull(),
-    idempotencyKey: text("idempotency_key"),
+    id: serial("id").primaryKey(),
+    referenceCode: varchar("reference_code").notNull(),
+    idempotencyKey: varchar("idempotency_key"),
     user: integer("user_id")
       .notNull()
       .references(() => users.id, {
@@ -1220,19 +1755,9 @@ export const credit_transactions = sqliteTable(
       .references(() => credits.id, {
         onDelete: "set null",
       }),
-    type: text("type", {
-      enum: [
-        "purchase",
-        "task_hold",
-        "task_spend",
-        "download_spend",
-        "refund",
-        "manual_adjustment",
-        "subscription_grant",
-      ],
-    }).notNull(),
+    type: enum_credit_transactions_type("type").notNull(),
     amount: numeric("amount", { mode: "number" }).notNull(),
-    currency: text("currency").default("credits"),
+    currency: varchar("currency").default("credits"),
     balanceAfter: numeric("balance_after", { mode: "number" }),
     sourceTask: integer("source_task_id").references(
       () => generation_tasks.id,
@@ -1243,14 +1768,22 @@ export const credit_transactions = sqliteTable(
     sourceOrder: integer("source_order_id").references(() => print_orders.id, {
       onDelete: "set null",
     }),
-    notes: text("notes"),
-    metadata: text("metadata", { mode: "json" }),
-    updatedAt: text("updated_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
-    createdAt: text("created_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
+    notes: varchar("notes"),
+    metadata: jsonb("metadata"),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
   },
   (columns) => [
     uniqueIndex("credit_transactions_reference_code_idx").on(
@@ -1268,30 +1801,37 @@ export const credit_transactions = sqliteTable(
   ],
 );
 
-export const credit_products = sqliteTable(
+export const credit_products = pgTable(
   "credit_products",
   {
-    id: integer("id").primaryKey(),
-    title: text("title").notNull(),
-    slug: text("slug").notNull(),
-    productType: text("product_type", {
-      enum: ["credit-topup", "print-package"],
-    }).default("credit-topup"),
-    description: text("description"),
+    id: serial("id").primaryKey(),
+    title: varchar("title").notNull(),
+    slug: varchar("slug").notNull(),
+    productType:
+      enum_credit_products_product_type("product_type").default("credit-topup"),
+    description: varchar("description"),
     credits: numeric("credits", { mode: "number" }).default(0),
     price: numeric("price", { mode: "number" }).notNull(),
-    currency: text("currency").default("USD"),
-    shopifyProductId: text("shopify_product_id"),
-    shopifyVariantId: text("shopify_variant_id"),
-    isFeatured: integer("is_featured", { mode: "boolean" }).default(false),
-    isActive: integer("is_active", { mode: "boolean" }).default(true),
+    currency: varchar("currency").default("USD"),
+    shopifyProductId: varchar("shopify_product_id"),
+    shopifyVariantId: varchar("shopify_variant_id"),
+    isFeatured: boolean("is_featured").default(false),
+    isActive: boolean("is_active").default(true),
     sortOrder: numeric("sort_order", { mode: "number" }).default(0),
-    updatedAt: text("updated_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
-    createdAt: text("created_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
   },
   (columns) => [
     uniqueIndex("credit_products_slug_idx").on(columns.slug),
@@ -1300,52 +1840,97 @@ export const credit_products = sqliteTable(
   ],
 );
 
-export const billing_subscriptions = sqliteTable(
+export const engagement_views = pgTable(
+  "engagement_views",
+  {
+    id: serial("id").primaryKey(),
+    targetType: enum_engagement_views_target_type("target_type").notNull(),
+    targetUser: integer("target_user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    targetModel: integer("target_model_id").references(() => models.id, {
+      onDelete: "set null",
+    }),
+    viewer: integer("viewer_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    viewerKeyHash: varchar("viewer_key_hash").notNull(),
+    lastViewedAt: timestamp("last_viewed_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }).notNull(),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+  },
+  (columns) => [
+    index("engagement_views_target_user_idx").on(columns.targetUser),
+    index("engagement_views_target_model_idx").on(columns.targetModel),
+    index("engagement_views_viewer_idx").on(columns.viewer),
+    index("engagement_views_viewer_key_hash_idx").on(columns.viewerKeyHash),
+    index("engagement_views_updated_at_idx").on(columns.updatedAt),
+    index("engagement_views_created_at_idx").on(columns.createdAt),
+  ],
+);
+
+export const billing_subscriptions = pgTable(
   "billing_subscriptions",
   {
-    id: integer("id").primaryKey(),
+    id: serial("id").primaryKey(),
     user: integer("user_id")
       .notNull()
       .references(() => users.id, {
         onDelete: "set null",
       }),
-    planKey: text("plan_key").notNull(),
-    stripeCustomerId: text("stripe_customer_id").notNull(),
-    stripeSubscriptionId: text("stripe_subscription_id").notNull(),
-    stripePriceId: text("stripe_price_id").notNull(),
-    status: text("status", {
-      enum: [
-        "incomplete",
-        "active",
-        "trialing",
-        "past_due",
-        "unpaid",
-        "canceled",
-        "incomplete_expired",
-      ],
-    })
+    planKey: varchar("plan_key").notNull(),
+    stripeCustomerId: varchar("stripe_customer_id").notNull(),
+    stripeSubscriptionId: varchar("stripe_subscription_id").notNull(),
+    stripePriceId: varchar("stripe_price_id").notNull(),
+    status: enum_billing_subscriptions_status("status")
       .notNull()
       .default("incomplete"),
-    interval: text("interval").default("month"),
+    interval: varchar("interval").default("month"),
     monthlyCredits: numeric("monthly_credits", { mode: "number" }).default(0),
-    currentPeriodStart: text("current_period_start").default(
-      sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-    ),
-    currentPeriodEnd: text("current_period_end").default(
-      sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-    ),
-    cancelAtPeriodEnd: integer("cancel_at_period_end", {
-      mode: "boolean",
-    }).default(false),
-    lastGrantedPeriodKey: text("last_granted_period_key"),
-    lastCheckoutSessionId: text("last_checkout_session_id"),
-    metadata: text("metadata", { mode: "json" }),
-    updatedAt: text("updated_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
-    createdAt: text("created_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
+    currentPeriodStart: timestamp("current_period_start", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    currentPeriodEnd: timestamp("current_period_end", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    cancelAtPeriodEnd: boolean("cancel_at_period_end").default(false),
+    lastGrantedPeriodKey: varchar("last_granted_period_key"),
+    lastCheckoutSessionId: varchar("last_checkout_session_id"),
+    metadata: jsonb("metadata"),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
   },
   (columns) => [
     index("billing_subscriptions_user_idx").on(columns.user),
@@ -1360,32 +1945,40 @@ export const billing_subscriptions = sqliteTable(
   ],
 );
 
-export const addresses = sqliteTable(
+export const addresses = pgTable(
   "addresses",
   {
-    id: integer("id").primaryKey(),
+    id: serial("id").primaryKey(),
     user: integer("user_id")
       .notNull()
       .references(() => users.id, {
         onDelete: "set null",
       }),
-    label: text("label"),
-    recipientName: text("recipient_name").notNull(),
-    phone: text("phone"),
-    country: text("country").notNull().default("China"),
-    province: text("province"),
-    city: text("city").notNull(),
-    district: text("district"),
-    postalCode: text("postal_code"),
-    addressLine1: text("address_line1").notNull(),
-    addressLine2: text("address_line2"),
-    isDefault: integer("is_default", { mode: "boolean" }).default(false),
-    updatedAt: text("updated_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
-    createdAt: text("created_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
+    label: varchar("label"),
+    recipientName: varchar("recipient_name").notNull(),
+    phone: varchar("phone"),
+    country: varchar("country").notNull().default("China"),
+    province: varchar("province"),
+    city: varchar("city").notNull(),
+    district: varchar("district"),
+    postalCode: varchar("postal_code"),
+    addressLine1: varchar("address_line1").notNull(),
+    addressLine2: varchar("address_line2"),
+    isDefault: boolean("is_default").default(false),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
   },
   (columns) => [
     index("addresses_user_idx").on(columns.user),
@@ -1394,11 +1987,11 @@ export const addresses = sqliteTable(
   ],
 );
 
-export const print_orders = sqliteTable(
+export const print_orders = pgTable(
   "print_orders",
   {
-    id: integer("id").primaryKey(),
-    orderNumber: text("order_number").notNull(),
+    id: serial("id").primaryKey(),
+    orderNumber: varchar("order_number").notNull(),
     user: integer("user_id")
       .notNull()
       .references(() => users.id, {
@@ -1415,41 +2008,38 @@ export const print_orders = sqliteTable(
         onDelete: "set null",
       },
     ),
-    status: text("status", {
-      enum: [
-        "pending-payment",
-        "paid",
-        "in-production",
-        "shipped",
-        "completed",
-        "cancelled",
-      ],
-    })
+    status: enum_print_orders_status("status")
       .notNull()
       .default("pending-payment"),
-    paymentStatus: text("payment_status", {
-      enum: ["pending", "paid", "failed", "refunded"],
-    })
+    paymentStatus: enum_print_orders_payment_status("payment_status")
       .notNull()
       .default("pending"),
-    shopifyOrderId: text("shopify_order_id"),
+    shopifyOrderId: varchar("shopify_order_id"),
     amount: numeric("amount", { mode: "number" }).notNull().default(0),
-    currency: text("currency").default("USD"),
+    currency: varchar("currency").default("USD"),
     creditsUsed: numeric("credits_used", { mode: "number" }).default(0),
-    sizeOption: text("size_option"),
-    materialOption: text("material_option"),
-    shippingName: text("shipping_name"),
-    shippingPhone: text("shipping_phone"),
-    shippingAddress: text("shipping_address"),
-    trackingNumber: text("tracking_number"),
-    shopifyCheckoutUrl: text("shopify_checkout_url"),
-    internalNotes: text("internal_notes"),
-    updatedAt: text("updated_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
-    createdAt: text("created_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
+    sizeOption: varchar("size_option"),
+    materialOption: varchar("material_option"),
+    shippingName: varchar("shipping_name"),
+    shippingPhone: varchar("shipping_phone"),
+    shippingAddress: varchar("shipping_address"),
+    trackingNumber: varchar("tracking_number"),
+    shopifyCheckoutUrl: varchar("shopify_checkout_url"),
+    internalNotes: varchar("internal_notes"),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
   },
   (columns) => [
     uniqueIndex("print_orders_order_number_idx").on(columns.orderNumber),
@@ -1461,37 +2051,41 @@ export const print_orders = sqliteTable(
   ],
 );
 
-export const shopify_payments = sqliteTable(
+export const shopify_payments = pgTable(
   "shopify_payments",
   {
-    id: integer("id").primaryKey(),
-    checkoutReference: text("checkout_reference").notNull(),
+    id: serial("id").primaryKey(),
+    checkoutReference: varchar("checkout_reference").notNull(),
     user: integer("user_id")
       .notNull()
       .references(() => users.id, {
         onDelete: "set null",
       }),
-    paymentType: text("payment_type", {
-      enum: ["credit-topup", "print-order"],
-    }).notNull(),
-    status: text("status", {
-      enum: ["pending", "paid", "failed", "refunded"],
-    }).default("pending"),
-    shopifyOrderId: text("shopify_order_id"),
-    shopifyCheckoutId: text("shopify_checkout_id"),
+    paymentType: enum_shopify_payments_payment_type("payment_type").notNull(),
+    status: enum_shopify_payments_status("status").default("pending"),
+    shopifyOrderId: varchar("shopify_order_id"),
+    shopifyCheckoutId: varchar("shopify_checkout_id"),
     creditsGranted: numeric("credits_granted", { mode: "number" }).default(0),
     linkedOrder: integer("linked_order_id").references(() => print_orders.id, {
       onDelete: "set null",
     }),
     amount: numeric("amount", { mode: "number" }).notNull().default(0),
-    currency: text("currency").default("USD"),
-    rawWebhookPayload: text("raw_webhook_payload", { mode: "json" }),
-    updatedAt: text("updated_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
-    createdAt: text("created_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
+    currency: varchar("currency").default("USD"),
+    rawWebhookPayload: jsonb("raw_webhook_payload"),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
   },
   (columns) => [
     uniqueIndex("shopify_payments_checkout_reference_idx").on(
@@ -1507,27 +2101,35 @@ export const shopify_payments = sqliteTable(
   ],
 );
 
-export const payload_kv = sqliteTable(
+export const payload_kv = pgTable(
   "payload_kv",
   {
-    id: integer("id").primaryKey(),
-    key: text("key").notNull(),
-    data: text("data", { mode: "json" }).notNull(),
+    id: serial("id").primaryKey(),
+    key: varchar("key").notNull(),
+    data: jsonb("data").notNull(),
   },
   (columns) => [uniqueIndex("payload_kv_key_idx").on(columns.key)],
 );
 
-export const payload_locked_documents = sqliteTable(
+export const payload_locked_documents = pgTable(
   "payload_locked_documents",
   {
-    id: integer("id").primaryKey(),
-    globalSlug: text("global_slug"),
-    updatedAt: text("updated_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
-    createdAt: text("created_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
+    id: serial("id").primaryKey(),
+    globalSlug: varchar("global_slug"),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
   },
   (columns) => [
     index("payload_locked_documents_global_slug_idx").on(columns.globalSlug),
@@ -1536,18 +2138,22 @@ export const payload_locked_documents = sqliteTable(
   ],
 );
 
-export const payload_locked_documents_rels = sqliteTable(
+export const payload_locked_documents_rels = pgTable(
   "payload_locked_documents_rels",
   {
-    id: integer("id").primaryKey(),
+    id: serial("id").primaryKey(),
     order: integer("order"),
     parent: integer("parent_id").notNull(),
-    path: text("path").notNull(),
+    path: varchar("path").notNull(),
     usersID: integer("users_id"),
+    "user-followsID": integer("user_follows_id"),
     mediaID: integer("media_id"),
     "generation-tasksID": integer("generation_tasks_id"),
     "task-eventsID": integer("task_events_id"),
     modelsID: integer("models_id"),
+    "model-commentsID": integer("model_comments_id"),
+    "model-likesID": integer("model_likes_id"),
+    "model-favoritesID": integer("model_favorites_id"),
     "homepage-itemsID": integer("homepage_items_id"),
     postsID: integer("posts_id"),
     announcementsID: integer("announcements_id"),
@@ -1555,6 +2161,7 @@ export const payload_locked_documents_rels = sqliteTable(
     creditsID: integer("credits_id"),
     "credit-transactionsID": integer("credit_transactions_id"),
     "credit-productsID": integer("credit_products_id"),
+    "engagement-viewsID": integer("engagement_views_id"),
     "billing-subscriptionsID": integer("billing_subscriptions_id"),
     addressesID: integer("addresses_id"),
     "print-ordersID": integer("print_orders_id"),
@@ -1565,6 +2172,9 @@ export const payload_locked_documents_rels = sqliteTable(
     index("payload_locked_documents_rels_parent_idx").on(columns.parent),
     index("payload_locked_documents_rels_path_idx").on(columns.path),
     index("payload_locked_documents_rels_users_id_idx").on(columns.usersID),
+    index("payload_locked_documents_rels_user_follows_id_idx").on(
+      columns["user-followsID"],
+    ),
     index("payload_locked_documents_rels_media_id_idx").on(columns.mediaID),
     index("payload_locked_documents_rels_generation_tasks_id_idx").on(
       columns["generation-tasksID"],
@@ -1573,6 +2183,15 @@ export const payload_locked_documents_rels = sqliteTable(
       columns["task-eventsID"],
     ),
     index("payload_locked_documents_rels_models_id_idx").on(columns.modelsID),
+    index("payload_locked_documents_rels_model_comments_id_idx").on(
+      columns["model-commentsID"],
+    ),
+    index("payload_locked_documents_rels_model_likes_id_idx").on(
+      columns["model-likesID"],
+    ),
+    index("payload_locked_documents_rels_model_favorites_id_idx").on(
+      columns["model-favoritesID"],
+    ),
     index("payload_locked_documents_rels_homepage_items_id_idx").on(
       columns["homepage-itemsID"],
     ),
@@ -1589,6 +2208,9 @@ export const payload_locked_documents_rels = sqliteTable(
     ),
     index("payload_locked_documents_rels_credit_products_id_idx").on(
       columns["credit-productsID"],
+    ),
+    index("payload_locked_documents_rels_engagement_views_id_idx").on(
+      columns["engagement-viewsID"],
     ),
     index("payload_locked_documents_rels_billing_subscriptions_id_idx").on(
       columns["billing-subscriptionsID"],
@@ -1613,6 +2235,11 @@ export const payload_locked_documents_rels = sqliteTable(
       name: "payload_locked_documents_rels_users_fk",
     }).onDelete("cascade"),
     foreignKey({
+      columns: [columns["user-followsID"]],
+      foreignColumns: [user_follows.id],
+      name: "payload_locked_documents_rels_user_follows_fk",
+    }).onDelete("cascade"),
+    foreignKey({
       columns: [columns["mediaID"]],
       foreignColumns: [media.id],
       name: "payload_locked_documents_rels_media_fk",
@@ -1631,6 +2258,21 @@ export const payload_locked_documents_rels = sqliteTable(
       columns: [columns["modelsID"]],
       foreignColumns: [models.id],
       name: "payload_locked_documents_rels_models_fk",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["model-commentsID"]],
+      foreignColumns: [model_comments.id],
+      name: "payload_locked_documents_rels_model_comments_fk",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["model-likesID"]],
+      foreignColumns: [model_likes.id],
+      name: "payload_locked_documents_rels_model_likes_fk",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["model-favoritesID"]],
+      foreignColumns: [model_favorites.id],
+      name: "payload_locked_documents_rels_model_favorites_fk",
     }).onDelete("cascade"),
     foreignKey({
       columns: [columns["homepage-itemsID"]],
@@ -1668,6 +2310,11 @@ export const payload_locked_documents_rels = sqliteTable(
       name: "payload_locked_documents_rels_credit_products_fk",
     }).onDelete("cascade"),
     foreignKey({
+      columns: [columns["engagement-viewsID"]],
+      foreignColumns: [engagement_views.id],
+      name: "payload_locked_documents_rels_engagement_views_fk",
+    }).onDelete("cascade"),
+    foreignKey({
       columns: [columns["billing-subscriptionsID"]],
       foreignColumns: [billing_subscriptions.id],
       name: "payload_locked_documents_rels_billing_subscriptions_fk",
@@ -1690,18 +2337,26 @@ export const payload_locked_documents_rels = sqliteTable(
   ],
 );
 
-export const payload_preferences = sqliteTable(
+export const payload_preferences = pgTable(
   "payload_preferences",
   {
-    id: integer("id").primaryKey(),
-    key: text("key"),
-    value: text("value", { mode: "json" }),
-    updatedAt: text("updated_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
-    createdAt: text("created_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
+    id: serial("id").primaryKey(),
+    key: varchar("key"),
+    value: jsonb("value"),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
   },
   (columns) => [
     index("payload_preferences_key_idx").on(columns.key),
@@ -1710,13 +2365,13 @@ export const payload_preferences = sqliteTable(
   ],
 );
 
-export const payload_preferences_rels = sqliteTable(
+export const payload_preferences_rels = pgTable(
   "payload_preferences_rels",
   {
-    id: integer("id").primaryKey(),
+    id: serial("id").primaryKey(),
     order: integer("order"),
     parent: integer("parent_id").notNull(),
-    path: text("path").notNull(),
+    path: varchar("path").notNull(),
     usersID: integer("users_id"),
   },
   (columns) => [
@@ -1737,18 +2392,26 @@ export const payload_preferences_rels = sqliteTable(
   ],
 );
 
-export const payload_migrations = sqliteTable(
+export const payload_migrations = pgTable(
   "payload_migrations",
   {
-    id: integer("id").primaryKey(),
-    name: text("name"),
+    id: serial("id").primaryKey(),
+    name: varchar("name"),
     batch: numeric("batch", { mode: "number" }),
-    updatedAt: text("updated_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
-    createdAt: text("created_at")
-      .notNull()
-      .default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
   },
   (columns) => [
     index("payload_migrations_updated_at_idx").on(columns.updatedAt),
@@ -1756,14 +2419,14 @@ export const payload_migrations = sqliteTable(
   ],
 );
 
-export const site_settings_header_nav = sqliteTable(
+export const site_settings_header_nav = pgTable(
   "site_settings_header_nav",
   {
     _order: integer("_order").notNull(),
     _parentID: integer("_parent_id").notNull(),
-    id: text("id").primaryKey(),
-    label: text("label").notNull(),
-    href: text("href").notNull(),
+    id: varchar("id").primaryKey(),
+    label: varchar("label").notNull(),
+    href: varchar("href").notNull(),
   },
   (columns) => [
     index("site_settings_header_nav_order_idx").on(columns._order),
@@ -1776,13 +2439,13 @@ export const site_settings_header_nav = sqliteTable(
   ],
 );
 
-export const site_settings_subscription_plans_starter_features = sqliteTable(
+export const site_settings_subscription_plans_starter_features = pgTable(
   "site_settings_subscription_plans_starter_features",
   {
     _order: integer("_order").notNull(),
     _parentID: integer("_parent_id").notNull(),
-    id: text("id").primaryKey(),
-    label: text("label").notNull(),
+    id: varchar("id").primaryKey(),
+    label: varchar("label").notNull(),
   },
   (columns) => [
     index("site_settings_subscription_plans_starter_features_order_idx").on(
@@ -1799,13 +2462,13 @@ export const site_settings_subscription_plans_starter_features = sqliteTable(
   ],
 );
 
-export const site_settings_subscription_plans_pro_features = sqliteTable(
+export const site_settings_subscription_plans_pro_features = pgTable(
   "site_settings_subscription_plans_pro_features",
   {
     _order: integer("_order").notNull(),
     _parentID: integer("_parent_id").notNull(),
-    id: text("id").primaryKey(),
-    label: text("label").notNull(),
+    id: varchar("id").primaryKey(),
+    label: varchar("label").notNull(),
   },
   (columns) => [
     index("site_settings_subscription_plans_pro_features_order_idx").on(
@@ -1822,13 +2485,13 @@ export const site_settings_subscription_plans_pro_features = sqliteTable(
   ],
 );
 
-export const site_settings_subscription_plans_studio_features = sqliteTable(
+export const site_settings_subscription_plans_studio_features = pgTable(
   "site_settings_subscription_plans_studio_features",
   {
     _order: integer("_order").notNull(),
     _parentID: integer("_parent_id").notNull(),
-    id: text("id").primaryKey(),
-    label: text("label").notNull(),
+    id: varchar("id").primaryKey(),
+    label: varchar("label").notNull(),
   },
   (columns) => [
     index("site_settings_subscription_plans_studio_features_order_idx").on(
@@ -1845,17 +2508,17 @@ export const site_settings_subscription_plans_studio_features = sqliteTable(
   ],
 );
 
-export const site_settings_credit_packages = sqliteTable(
+export const site_settings_credit_packages = pgTable(
   "site_settings_credit_packages",
   {
     _order: integer("_order").notNull(),
     _parentID: integer("_parent_id").notNull(),
-    id: text("id").primaryKey(),
-    title: text("title").notNull(),
-    shopifyVariantId: text("shopify_variant_id"),
+    id: varchar("id").primaryKey(),
+    title: varchar("title").notNull(),
+    shopifyVariantId: varchar("shopify_variant_id"),
     credits: numeric("credits", { mode: "number" }).notNull(),
     price: numeric("price", { mode: "number" }).notNull(),
-    currency: text("currency").default("USD"),
+    currency: varchar("currency").default("USD"),
   },
   (columns) => [
     index("site_settings_credit_packages_order_idx").on(columns._order),
@@ -1868,52 +2531,53 @@ export const site_settings_credit_packages = sqliteTable(
   ],
 );
 
-export const site_settings = sqliteTable("site_settings", {
-  id: integer("id").primaryKey(),
-  siteName: text("site_name").notNull().default("MiniForge AI 3D"),
-  siteDescription: text("site_description").default(
+export const site_settings = pgTable("site_settings", {
+  id: serial("id").primaryKey(),
+  siteName: varchar("site_name").notNull().default("MiniForge AI 3D"),
+  siteDescription: varchar("site_description").default(
     "An AI 3D product platform for character creation, asset management, and print fulfillment.",
   ),
-  supportEmail: text("support_email").default("support@example.com"),
-  announcement: text("announcement").default(
+  supportEmail: varchar("support_email").default("support@example.com"),
+  announcement: varchar("announcement").default(
     "The beta now supports the marketing site, generation workspace, order flow, and credits. Public launch polish is in progress.",
   ),
-  footer_aboutEyebrow: text("footer_about_eyebrow").default(
+  footer_aboutEyebrow: varchar("footer_about_eyebrow").default(
     "About the product",
   ),
-  footer_aboutTitle: text("footer_about_title").default(
+  footer_aboutTitle: varchar("footer_about_title").default(
     "A unified platform for character creation, asset delivery, and print fulfillment",
   ),
-  footer_aboutText: text("footer_about_text").default(
+  footer_aboutText: varchar("footer_about_text").default(
     "MiniForge connects character generation, model management, digital delivery, and print orders into one product workflow so teams can operate 3D assets like a real business.",
   ),
-  footer_directionEyebrow: text("footer_direction_eyebrow").default(
+  footer_directionEyebrow: varchar("footer_direction_eyebrow").default(
     "Product direction",
   ),
-  footer_directionTitle: text("footer_direction_title").default(
+  footer_directionTitle: varchar("footer_direction_title").default(
     "Evolving from an AI generation tool into an operable product website",
   ),
-  footer_directionText: text("footer_direction_text").default(
+  footer_directionText: varchar("footer_direction_text").default(
     "The current release already includes accounts, tasks, models, orders, credits, and an admin structure. The next step is to keep polishing the public site, Studio, and platform APIs.",
   ),
-  paymentProviders_subscriptionProvider: text(
-    "payment_providers_subscription_provider",
-    { enum: ["stripe", "shopify"] },
-  ).default("stripe"),
-  paymentProviders_orderProvider: text("payment_providers_order_provider", {
-    enum: ["stripe", "shopify"],
-  }).default("stripe"),
-  paymentProviders_providerNotice: text(
+  paymentProviders_subscriptionProvider:
+    enum_site_settings_payment_providers_subscription_provider(
+      "payment_providers_subscription_provider",
+    ).default("stripe"),
+  paymentProviders_orderProvider:
+    enum_site_settings_payment_providers_order_provider(
+      "payment_providers_order_provider",
+    ).default("stripe"),
+  paymentProviders_providerNotice: varchar(
     "payment_providers_provider_notice",
   ).default(
-    "当前版本正式启用 Stripe 处理订阅与订单支付；Shopify 相关数据结构继续保留，用于未来扩展商城/变体/结算链路。",
+    "Stripe is the active rail for subscriptions and order payments. Shopify-compatible data structures remain in place for future commerce expansion.",
   ),
-  subscriptionPlans_starter_name: text(
+  subscriptionPlans_starter_name: varchar(
     "subscription_plans_starter_name",
   ).default("Starter"),
-  subscriptionPlans_starter_shortLabel: text(
+  subscriptionPlans_starter_shortLabel: varchar(
     "subscription_plans_starter_short_label",
-  ).default("入门订阅"),
+  ).default("Starter plan"),
   subscriptionPlans_starter_monthlyPrice: numeric(
     "subscription_plans_starter_monthly_price",
     { mode: "number" },
@@ -1922,15 +2586,17 @@ export const site_settings = sqliteTable("site_settings", {
     "subscription_plans_starter_credits_per_month",
     { mode: "number" },
   ).default(240),
-  subscriptionPlans_starter_description: text(
+  subscriptionPlans_starter_description: varchar(
     "subscription_plans_starter_description",
-  ).default("适合个人创作者持续生成角色、快速下载并维持轻量打印需求。"),
-  subscriptionPlans_pro_name: text("subscription_plans_pro_name").default(
+  ).default(
+    "Designed for individual creators who need steady character generation, fast downloads, and lightweight sampling.",
+  ),
+  subscriptionPlans_pro_name: varchar("subscription_plans_pro_name").default(
     "Pro",
   ),
-  subscriptionPlans_pro_shortLabel: text(
+  subscriptionPlans_pro_shortLabel: varchar(
     "subscription_plans_pro_short_label",
-  ).default("专业订阅"),
+  ).default("Pro plan"),
   subscriptionPlans_pro_monthlyPrice: numeric(
     "subscription_plans_pro_monthly_price",
     { mode: "number" },
@@ -1939,15 +2605,17 @@ export const site_settings = sqliteTable("site_settings", {
     "subscription_plans_pro_credits_per_month",
     { mode: "number" },
   ).default(760),
-  subscriptionPlans_pro_description: text(
+  subscriptionPlans_pro_description: varchar(
     "subscription_plans_pro_description",
-  ).default("适合高频创作、反复迭代与需要更稳定产能的小团队或工作室。"),
-  subscriptionPlans_studio_name: text("subscription_plans_studio_name").default(
-    "Studio",
+  ).default(
+    "Designed for high-frequency creation, repeated iteration, and smaller teams that need more stable output capacity.",
   ),
-  subscriptionPlans_studio_shortLabel: text(
+  subscriptionPlans_studio_name: varchar(
+    "subscription_plans_studio_name",
+  ).default("Studio"),
+  subscriptionPlans_studio_shortLabel: varchar(
     "subscription_plans_studio_short_label",
-  ).default("工作室订阅"),
+  ).default("Studio plan"),
   subscriptionPlans_studio_monthlyPrice: numeric(
     "subscription_plans_studio_monthly_price",
     { mode: "number" },
@@ -1956,9 +2624,11 @@ export const site_settings = sqliteTable("site_settings", {
     "subscription_plans_studio_credits_per_month",
     { mode: "number" },
   ).default(1680),
-  subscriptionPlans_studio_description: text(
+  subscriptionPlans_studio_description: varchar(
     "subscription_plans_studio_description",
-  ).default("适合把 AI 生成、资产沉淀与实体打样放进同一运营节奏的团队。"),
+  ).default(
+    "Designed for teams that need generation, asset retention, and physical sampling in one operating rhythm.",
+  ),
   generationPricing_imageCredits: numeric("generation_pricing_image_credits", {
     mode: "number",
   }).default(20),
@@ -1973,86 +2643,96 @@ export const site_settings = sqliteTable("site_settings", {
     "generation_pricing_download_credits",
     { mode: "number" },
   ).default(5),
-  emailSettings_sender_fromName: text(
+  emailSettings_sender_fromName: varchar(
     "email_settings_sender_from_name",
   ).default("MiniForge AI 3D"),
-  emailSettings_sender_fromAddress: text(
+  emailSettings_sender_fromAddress: varchar(
     "email_settings_sender_from_address",
   ).default("no-reply@miniforge.local"),
-  emailSettings_sender_replyTo: text("email_settings_sender_reply_to"),
-  emailSettings_branding_productName: text(
+  emailSettings_sender_replyTo: varchar("email_settings_sender_reply_to"),
+  emailSettings_branding_productName: varchar(
     "email_settings_branding_product_name",
   ).default("MiniForge AI 3D"),
-  emailSettings_branding_footerText: text(
+  emailSettings_branding_footerText: varchar(
     "email_settings_branding_footer_text",
   ).default("MiniForge AI 3D"),
-  emailSettings_templates_welcome_subject: text(
+  emailSettings_templates_welcome_subject: varchar(
     "email_settings_templates_welcome_subject",
-  ).default("欢迎加入 MiniForge"),
-  emailSettings_templates_welcome_intro: text(
+  ).default("Welcome to MiniForge"),
+  emailSettings_templates_welcome_intro: varchar(
     "email_settings_templates_welcome_intro",
   ).default(
-    "你的账号已经创建成功，现在可以开始使用 MiniForge 的生成、模型、订阅与订单能力。",
+    "Your account is ready. You can now start using MiniForge for generation, model management, subscriptions, and orders.",
   ),
-  emailSettings_templates_welcome_ctaLabel: text(
+  emailSettings_templates_welcome_ctaLabel: varchar(
     "email_settings_templates_welcome_cta_label",
-  ).default("进入 Studio"),
-  emailSettings_templates_verify_subject: text(
+  ).default("Open Studio"),
+  emailSettings_templates_verify_subject: varchar(
     "email_settings_templates_verify_subject",
-  ).default("验证你的 MiniForge 邮箱"),
-  emailSettings_templates_verify_intro: text(
+  ).default("Verify your MiniForge email"),
+  emailSettings_templates_verify_intro: varchar(
     "email_settings_templates_verify_intro",
   ).default(
-    "请点击下面的按钮完成邮箱验证，验证成功后即可登录并继续使用 MiniForge。",
+    "Use the button below to verify your email address before signing in.",
   ),
-  emailSettings_templates_verify_ctaLabel: text(
+  emailSettings_templates_verify_ctaLabel: varchar(
     "email_settings_templates_verify_cta_label",
-  ).default("验证邮箱"),
-  emailSettings_templates_forgotPassword_subject: text(
+  ).default("Verify email"),
+  emailSettings_templates_forgotPassword_subject: varchar(
     "email_settings_templates_forgot_password_subject",
-  ).default("MiniForge 密码重置"),
-  emailSettings_templates_forgotPassword_intro: text(
+  ).default("MiniForge password reset"),
+  emailSettings_templates_forgotPassword_intro: varchar(
     "email_settings_templates_forgot_password_intro",
-  ).default("我们收到了你的密码重置请求。点击下面按钮即可设置新密码。"),
-  emailSettings_templates_forgotPassword_ctaLabel: text(
+  ).default(
+    "We received a request to reset your password. Use the button below to continue.",
+  ),
+  emailSettings_templates_forgotPassword_ctaLabel: varchar(
     "email_settings_templates_forgot_password_cta_label",
-  ).default("重置密码"),
-  emailSettings_businessTemplates_subscriptionSuccess_subject: text(
+  ).default("Reset password"),
+  emailSettings_businessTemplates_subscriptionSuccess_subject: varchar(
     "email_settings_business_templates_subscription_success_subject",
-  ).default("MiniForge 订阅开通成功"),
-  emailSettings_businessTemplates_subscriptionSuccess_intro: text(
+  ).default("MiniForge subscription activated"),
+  emailSettings_businessTemplates_subscriptionSuccess_intro: varchar(
     "email_settings_business_templates_subscription_success_intro",
-  ).default("你的订阅已经开通成功，积分已按当前账期发放到账户。"),
-  emailSettings_businessTemplates_subscriptionSuccess_ctaLabel: text(
+  ).default(
+    "Your subscription is active and credits for the current period have been applied to your account.",
+  ),
+  emailSettings_businessTemplates_subscriptionSuccess_ctaLabel: varchar(
     "email_settings_business_templates_subscription_success_cta_label",
-  ).default("查看积分与订阅"),
-  emailSettings_businessTemplates_orderPaid_subject: text(
+  ).default("View credits and subscription"),
+  emailSettings_businessTemplates_orderPaid_subject: varchar(
     "email_settings_business_templates_order_paid_subject",
-  ).default("MiniForge 订单支付成功"),
-  emailSettings_businessTemplates_orderPaid_intro: text(
+  ).default("MiniForge order payment received"),
+  emailSettings_businessTemplates_orderPaid_intro: varchar(
     "email_settings_business_templates_order_paid_intro",
-  ).default("你的打印订单已支付成功，订单已经进入后续处理流程。"),
-  emailSettings_businessTemplates_orderPaid_ctaLabel: text(
+  ).default(
+    "Your print order has been paid successfully and moved into the next processing stage.",
+  ),
+  emailSettings_businessTemplates_orderPaid_ctaLabel: varchar(
     "email_settings_business_templates_order_paid_cta_label",
-  ).default("查看订单详情"),
-  updatedAt: text("updated_at").default(
-    sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-  ),
-  createdAt: text("created_at").default(
-    sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-  ),
+  ).default("View order details"),
+  updatedAt: timestamp("updated_at", {
+    mode: "string",
+    withTimezone: true,
+    precision: 3,
+  }),
+  createdAt: timestamp("created_at", {
+    mode: "string",
+    withTimezone: true,
+    precision: 3,
+  }),
 });
 
-export const homepage_content_featured_works = sqliteTable(
+export const homepage_content_featured_works = pgTable(
   "homepage_content_featured_works",
   {
     _order: integer("_order").notNull(),
     _parentID: integer("_parent_id").notNull(),
-    id: text("id").primaryKey(),
-    category: text("category").notNull(),
-    title: text("title").notNull(),
-    summary: text("summary"),
-    tone: text("tone", { enum: ["violet", "blue", "pink"] }).default("violet"),
+    id: varchar("id").primaryKey(),
+    category: varchar("category").notNull(),
+    title: varchar("title").notNull(),
+    summary: varchar("summary"),
+    tone: enum_homepage_content_featured_works_tone("tone").default("violet"),
   },
   (columns) => [
     index("homepage_content_featured_works_order_idx").on(columns._order),
@@ -2067,14 +2747,14 @@ export const homepage_content_featured_works = sqliteTable(
   ],
 );
 
-export const homepage_content_service_blocks = sqliteTable(
+export const homepage_content_service_blocks = pgTable(
   "homepage_content_service_blocks",
   {
     _order: integer("_order").notNull(),
     _parentID: integer("_parent_id").notNull(),
-    id: text("id").primaryKey(),
-    title: text("title").notNull(),
-    text: text("text").notNull(),
+    id: varchar("id").primaryKey(),
+    title: varchar("title").notNull(),
+    text: varchar("text").notNull(),
   },
   (columns) => [
     index("homepage_content_service_blocks_order_idx").on(columns._order),
@@ -2089,13 +2769,13 @@ export const homepage_content_service_blocks = sqliteTable(
   ],
 );
 
-export const homepage_content_use_cases = sqliteTable(
+export const homepage_content_use_cases = pgTable(
   "homepage_content_use_cases",
   {
     _order: integer("_order").notNull(),
     _parentID: integer("_parent_id").notNull(),
-    id: text("id").primaryKey(),
-    label: text("label").notNull(),
+    id: varchar("id").primaryKey(),
+    label: varchar("label").notNull(),
   },
   (columns) => [
     index("homepage_content_use_cases_order_idx").on(columns._order),
@@ -2108,15 +2788,15 @@ export const homepage_content_use_cases = sqliteTable(
   ],
 );
 
-export const homepage_content_process_steps = sqliteTable(
+export const homepage_content_process_steps = pgTable(
   "homepage_content_process_steps",
   {
     _order: integer("_order").notNull(),
     _parentID: integer("_parent_id").notNull(),
-    id: text("id").primaryKey(),
-    step: text("step").notNull(),
-    title: text("title").notNull(),
-    text: text("text").notNull(),
+    id: varchar("id").primaryKey(),
+    step: varchar("step").notNull(),
+    title: varchar("title").notNull(),
+    text: varchar("text").notNull(),
   },
   (columns) => [
     index("homepage_content_process_steps_order_idx").on(columns._order),
@@ -2129,14 +2809,14 @@ export const homepage_content_process_steps = sqliteTable(
   ],
 );
 
-export const homepage_content_faq = sqliteTable(
+export const homepage_content_faq = pgTable(
   "homepage_content_faq",
   {
     _order: integer("_order").notNull(),
     _parentID: integer("_parent_id").notNull(),
-    id: text("id").primaryKey(),
-    question: text("question").notNull(),
-    answer: text("answer").notNull(),
+    id: varchar("id").primaryKey(),
+    question: varchar("question").notNull(),
+    answer: varchar("answer").notNull(),
   },
   (columns) => [
     index("homepage_content_faq_order_idx").on(columns._order),
@@ -2149,76 +2829,104 @@ export const homepage_content_faq = sqliteTable(
   ],
 );
 
-export const homepage_content = sqliteTable("homepage_content", {
-  id: integer("id").primaryKey(),
-  hero_eyebrow: text("hero_eyebrow").default("MiniForge Studio"),
-  hero_title: text("hero_title").default(
+export const homepage_content = pgTable("homepage_content", {
+  id: serial("id").primaryKey(),
+  hero_eyebrow: varchar("hero_eyebrow").default("MiniForge Studio"),
+  hero_title: varchar("hero_title").default(
     "An AI 3D product site built for character creation, delivery, and print fulfillment.",
   ),
-  hero_subtitle: text("hero_subtitle").default(
+  hero_subtitle: varchar("hero_subtitle").default(
     "This is not a lonely feature entry. It is a complete product experience that moves naturally from discovery to generation, downloads, print orders, and delivery.",
   ),
-  hero_primaryCTA_label: text("hero_primary_c_t_a_label").default(
+  hero_primaryCTA_label: varchar("hero_primary_c_t_a_label").default(
     "Open Studio",
   ),
-  hero_primaryCTA_href: text("hero_primary_c_t_a_href").default("/generate"),
-  hero_secondaryCTA_label: text("hero_secondary_c_t_a_label").default(
+  hero_primaryCTA_href: varchar("hero_primary_c_t_a_href").default("/generate"),
+  hero_secondaryCTA_label: varchar("hero_secondary_c_t_a_label").default(
     "View showcase",
   ),
-  hero_secondaryCTA_href: text("hero_secondary_c_t_a_href").default(
+  hero_secondaryCTA_href: varchar("hero_secondary_c_t_a_href").default(
     "/showcase",
   ),
-  introBand_eyebrow: text("intro_band_eyebrow").default("Site positioning"),
-  introBand_title: text("intro_band_title").default(
+  introBand_eyebrow: varchar("intro_band_eyebrow").default("Site positioning"),
+  introBand_title: varchar("intro_band_title").default(
     "A real product website should explain value before it explains operations.",
   ),
-  introBand_text: text("intro_band_text").default(
+  introBand_text: varchar("intro_band_text").default(
     "The homepage should sell the work, services, and use cases first, then support action. It should not feel like an instruction sheet.",
   ),
-  serviceIntro_eyebrow: text("service_intro_eyebrow").default("What we do"),
-  serviceIntro_title: text("service_intro_title").default(
+  featuredRail_eyebrow: varchar("featured_rail_eyebrow").default(
+    "Featured images",
+  ),
+  featuredRail_title: varchar("featured_rail_title").default("New Product"),
+  featuredRail_searchLabel: varchar("featured_rail_search_label").default(
+    "Search",
+  ),
+  featuredRail_moreLabel: varchar("featured_rail_more_label").default("More"),
+  serviceIntro_eyebrow: varchar("service_intro_eyebrow").default("What we do"),
+  serviceIntro_title: varchar("service_intro_title").default(
     "Bring character creation, 3D outputs, and print delivery into one product surface.",
   ),
-  serviceIntro_text: text("service_intro_text").default(
+  serviceIntro_text: varchar("service_intro_text").default(
     "Externally, this should feel like a digital product brand website. Internally, the job is to help visitors understand what they can complete here.",
   ),
-  processSection_eyebrow: text("process_section_eyebrow").default("Workflow"),
-  processSection_title: text("process_section_title").default(
+  collectionShelf_title: varchar("collection_shelf_title").default("Followed"),
+  collectionShelf_hotLabel: varchar("collection_shelf_hot_label").default(
+    "Hot",
+  ),
+  collectionShelf_newLabel: varchar("collection_shelf_new_label").default(
+    "New",
+  ),
+  collectionShelf_moreLabel: varchar("collection_shelf_more_label").default(
+    "More",
+  ),
+  collectionShelf_allLabel: varchar("collection_shelf_all_label").default(
+    "All Followed",
+  ),
+  processSection_eyebrow: varchar("process_section_eyebrow").default(
+    "Workflow",
+  ),
+  processSection_title: varchar("process_section_title").default(
     "From creative input to delivery, and then to physical production.",
   ),
-  entrySection_eyebrow: text("entry_section_eyebrow").default("Entry points"),
-  entrySection_title: text("entry_section_title").default(
+  entrySection_eyebrow: varchar("entry_section_eyebrow").default(
+    "Entry points",
+  ),
+  entrySection_title: varchar("entry_section_title").default(
     "Build trust first, then guide users into the workflow.",
   ),
-  entrySection_text: text("entry_section_text").default(
+  entrySection_text: varchar("entry_section_text").default(
     "Once visitors understand the product value, they should move naturally into generation, downloads, and print workflows without first decoding internal admin language.",
   ),
-  faqSection_eyebrow: text("faq_section_eyebrow").default("FAQ"),
-  faqSection_title: text("faq_section_title").default(
+  faqSection_eyebrow: varchar("faq_section_eyebrow").default("FAQ"),
+  faqSection_title: varchar("faq_section_title").default(
     "Clarify the product boundary, delivery model, and use cases.",
   ),
-  updatedAt: text("updated_at").default(
-    sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-  ),
-  createdAt: text("created_at").default(
-    sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-  ),
+  updatedAt: timestamp("updated_at", {
+    mode: "string",
+    withTimezone: true,
+    precision: 3,
+  }),
+  createdAt: timestamp("created_at", {
+    mode: "string",
+    withTimezone: true,
+    precision: 3,
+  }),
 });
 
-export const ai_provider_settings_providers = sqliteTable(
+export const ai_provider_settings_providers = pgTable(
   "ai_provider_settings_providers",
   {
     _order: integer("_order").notNull(),
     _parentID: integer("_parent_id").notNull(),
-    id: text("id").primaryKey(),
-    provider: text("provider", {
-      enum: ["custom", "meshy", "tripo"],
-    }).notNull(),
-    baseURL: text("base_u_r_l"),
-    submitPath: text("submit_path"),
-    statusPath: text("status_path"),
-    apiKeyHint: text("api_key_hint"),
-    enabled: integer("enabled", { mode: "boolean" }).default(true),
+    id: varchar("id").primaryKey(),
+    provider:
+      enum_ai_provider_settings_providers_provider("provider").notNull(),
+    baseURL: varchar("base_u_r_l"),
+    submitPath: varchar("submit_path"),
+    statusPath: varchar("status_path"),
+    apiKeyHint: varchar("api_key_hint"),
+    enabled: boolean("enabled").default(true),
   },
   (columns) => [
     index("ai_provider_settings_providers_order_idx").on(columns._order),
@@ -2231,101 +2939,127 @@ export const ai_provider_settings_providers = sqliteTable(
   ],
 );
 
-export const ai_provider_settings = sqliteTable("ai_provider_settings", {
-  id: integer("id").primaryKey(),
-  defaultProvider: text("default_provider", {
-    enum: ["custom", "meshy", "tripo"],
-  }).default("custom"),
-  mockMode: integer("mock_mode", { mode: "boolean" }).default(true),
-  credentialsNotice: text("credentials_notice").default(
+export const ai_provider_settings = pgTable("ai_provider_settings", {
+  id: serial("id").primaryKey(),
+  defaultProvider:
+    enum_ai_provider_settings_default_provider("default_provider").default(
+      "custom",
+    ),
+  mockMode: boolean("mock_mode").default(true),
+  credentialsNotice: varchar("credentials_notice").default(
     "Meshy API key, AI webhook secret, S3 access key ID, and S3 secret access key are no longer stored in Payload globals. Configure them in your hosting environment or secret manager instead.",
   ),
-  polling_enabled: integer("polling_enabled", { mode: "boolean" }).default(
-    true,
-  ),
+  polling_enabled: boolean("polling_enabled").default(true),
   polling_intervalSeconds: numeric("polling_interval_seconds", {
     mode: "number",
   }).default(20),
   polling_timeoutMinutes: numeric("polling_timeout_minutes", {
     mode: "number",
   }).default(8),
-  creditRules_reserveOnSubmit: integer("credit_rules_reserve_on_submit", {
-    mode: "boolean",
-  }).default(true),
-  creditRules_refundOnFailure: integer("credit_rules_refund_on_failure", {
-    mode: "boolean",
-  }).default(true),
-  meshy_credentialsSource: text("meshy_credentials_source").default(
+  creditRules_reserveOnSubmit: boolean(
+    "credit_rules_reserve_on_submit",
+  ).default(true),
+  creditRules_refundOnFailure: boolean(
+    "credit_rules_refund_on_failure",
+  ).default(true),
+  meshy_credentialsSource: varchar("meshy_credentials_source").default(
     "environment",
   ),
-  meshy_baseURL: text("meshy_base_u_r_l").default("https://api.meshy.ai"),
-  meshy_textTo3DAiModel: text("meshy_text_to3_d_ai_model", {
-    enum: ["latest", "meshy-6", "meshy-5"],
-  }).default("latest"),
-  meshy_imageTo3DAiModel: text("meshy_image_to3_d_ai_model", {
-    enum: ["latest", "meshy-6", "meshy-5"],
-  }).default("latest"),
-  meshy_shouldTexture: integer("meshy_should_texture", {
-    mode: "boolean",
-  }).default(true),
-  meshy_enablePBR: integer("meshy_enable_p_b_r", { mode: "boolean" }).default(
-    false,
+  meshy_baseURL: varchar("meshy_base_u_r_l").default("https://api.meshy.ai"),
+  meshy_textTo3DAiModel: enum_ai_provider_settings_meshy_text_to3_d_ai_model(
+    "meshy_text_to3_d_ai_model",
+  ).default("latest"),
+  meshy_imageTo3DAiModel: enum_ai_provider_settings_meshy_image_to3_d_ai_model(
+    "meshy_image_to3_d_ai_model",
+  ).default("latest"),
+  meshy_shouldTexture: boolean("meshy_should_texture").default(true),
+  meshy_enablePBR: boolean("meshy_enable_p_b_r").default(false),
+  meshy_moderation: boolean("meshy_moderation").default(false),
+  meshy_imageEnhancement: boolean("meshy_image_enhancement").default(true),
+  meshy_removeLighting: boolean("meshy_remove_lighting").default(true),
+  meshy_lastValidatedAt: timestamp("meshy_last_validated_at", {
+    mode: "string",
+    withTimezone: true,
+    precision: 3,
+  }),
+  meshy_lastRotatedAt: timestamp("meshy_last_rotated_at", {
+    mode: "string",
+    withTimezone: true,
+    precision: 3,
+  }),
+  imageGeneration_defaultProvider:
+    enum_ai_provider_settings_image_generation_default_provider(
+      "image_generation_default_provider",
+    ).default("gemini-official"),
+  imageGeneration_timeoutSeconds: numeric("image_generation_timeout_seconds", {
+    mode: "number",
+  }).default(60),
+  imageGeneration_official_baseURL: varchar(
+    "image_generation_official_base_u_r_l",
+  ).default("https://generativelanguage.googleapis.com"),
+  imageGeneration_official_model: varchar(
+    "image_generation_official_model",
+  ).default("gemini-2.5-flash-image-preview"),
+  imageGeneration_official_apiKey: varchar("image_generation_official_api_key"),
+  imageGeneration_thirdParty_baseURL: varchar(
+    "image_generation_third_party_base_u_r_l",
   ),
-  meshy_moderation: integer("meshy_moderation", { mode: "boolean" }).default(
-    false,
+  imageGeneration_thirdParty_model: varchar(
+    "image_generation_third_party_model",
   ),
-  meshy_imageEnhancement: integer("meshy_image_enhancement", {
-    mode: "boolean",
-  }).default(true),
-  meshy_removeLighting: integer("meshy_remove_lighting", {
-    mode: "boolean",
-  }).default(true),
-  meshy_lastValidatedAt: text("meshy_last_validated_at").default(
-    sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
+  imageGeneration_thirdParty_apiKey: varchar(
+    "image_generation_third_party_api_key",
   ),
-  meshy_lastRotatedAt: text("meshy_last_rotated_at").default(
-    sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-  ),
-  updatedAt: text("updated_at").default(
-    sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-  ),
-  createdAt: text("created_at").default(
-    sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-  ),
+  updatedAt: timestamp("updated_at", {
+    mode: "string",
+    withTimezone: true,
+    precision: 3,
+  }),
+  createdAt: timestamp("created_at", {
+    mode: "string",
+    withTimezone: true,
+    precision: 3,
+  }),
 });
 
-export const storage_settings = sqliteTable("storage_settings", {
-  id: integer("id").primaryKey(),
-  enabled: integer("enabled", { mode: "boolean" }).default(false),
-  bucket: text("bucket").default(""),
-  region: text("region").default("us-east-1"),
-  prefix: text("prefix").default("media"),
-  baseURL: text("base_u_r_l").default(""),
-  signedDownloads: integer("signed_downloads", { mode: "boolean" }).default(
-    true,
-  ),
-  credentialsSource: text("credentials_source").default("environment"),
-  lastValidatedAt: text("last_validated_at").default(
-    sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-  ),
-  lastRotatedAt: text("last_rotated_at").default(
-    sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-  ),
-  updatedAt: text("updated_at").default(
-    sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-  ),
-  createdAt: text("created_at").default(
-    sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-  ),
+export const storage_settings = pgTable("storage_settings", {
+  id: serial("id").primaryKey(),
+  enabled: boolean("enabled").default(false),
+  bucket: varchar("bucket").default(""),
+  region: varchar("region").default("us-east-1"),
+  prefix: varchar("prefix").default("media"),
+  baseURL: varchar("base_u_r_l").default(""),
+  signedDownloads: boolean("signed_downloads").default(true),
+  credentialsSource: varchar("credentials_source").default("environment"),
+  lastValidatedAt: timestamp("last_validated_at", {
+    mode: "string",
+    withTimezone: true,
+    precision: 3,
+  }),
+  lastRotatedAt: timestamp("last_rotated_at", {
+    mode: "string",
+    withTimezone: true,
+    precision: 3,
+  }),
+  updatedAt: timestamp("updated_at", {
+    mode: "string",
+    withTimezone: true,
+    precision: 3,
+  }),
+  createdAt: timestamp("created_at", {
+    mode: "string",
+    withTimezone: true,
+    precision: 3,
+  }),
 });
 
-export const security_settings_allowed_mutation_origins = sqliteTable(
+export const security_settings_allowed_mutation_origins = pgTable(
   "security_settings_allowed_mutation_origins",
   {
     _order: integer("_order").notNull(),
     _parentID: integer("_parent_id").notNull(),
-    id: text("id").primaryKey(),
-    origin: text("origin").notNull(),
+    id: varchar("id").primaryKey(),
+    origin: varchar("origin").notNull(),
   },
   (columns) => [
     index("security_settings_allowed_mutation_origins_order_idx").on(
@@ -2342,13 +3076,13 @@ export const security_settings_allowed_mutation_origins = sqliteTable(
   ],
 );
 
-export const security_settings_allowed_remote_asset_hosts = sqliteTable(
+export const security_settings_allowed_remote_asset_hosts = pgTable(
   "security_settings_allowed_remote_asset_hosts",
   {
     _order: integer("_order").notNull(),
     _parentID: integer("_parent_id").notNull(),
-    id: text("id").primaryKey(),
-    host: text("host").notNull(),
+    id: varchar("id").primaryKey(),
+    host: varchar("host").notNull(),
   },
   (columns) => [
     index("security_settings_allowed_remote_asset_hosts_order_idx").on(
@@ -2365,47 +3099,57 @@ export const security_settings_allowed_remote_asset_hosts = sqliteTable(
   ],
 );
 
-export const security_settings = sqliteTable("security_settings", {
-  id: integer("id").primaryKey(),
-  updatedAt: text("updated_at").default(
-    sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-  ),
-  createdAt: text("created_at").default(
-    sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-  ),
+export const security_settings = pgTable("security_settings", {
+  id: serial("id").primaryKey(),
+  updatedAt: timestamp("updated_at", {
+    mode: "string",
+    withTimezone: true,
+    precision: 3,
+  }),
+  createdAt: timestamp("created_at", {
+    mode: "string",
+    withTimezone: true,
+    precision: 3,
+  }),
 });
 
-export const runtime_deployment_settings = sqliteTable(
+export const runtime_deployment_settings = pgTable(
   "runtime_deployment_settings",
   {
-    id: integer("id").primaryKey(),
-    databaseConnectionMode: text("database_connection_mode", {
-      enum: ["aws-rds-fields", "database-url"],
-    })
-      .notNull()
-      .default("aws-rds-fields"),
-    databaseUrlTemplate: text("database_url_template"),
-    awsRdsHost: text("aws_rds_host"),
+    id: serial("id").primaryKey(),
+    databaseConnectionMode:
+      enum_runtime_deployment_settings_database_connection_mode(
+        "database_connection_mode",
+      )
+        .notNull()
+        .default("aws-rds-fields"),
+    databaseUrlTemplate: varchar("database_url_template"),
+    awsRdsHost: varchar("aws_rds_host"),
     awsRdsPort: numeric("aws_rds_port", { mode: "number" }).default(5432),
-    awsRdsDbName: text("aws_rds_db_name").default("payload_local_demo"),
-    awsRdsUsername: text("aws_rds_username").default("payload_admin"),
-    awsRdsSslMode: text("aws_rds_ssl_mode", {
-      enum: ["require", "verify-full", "disable"],
-    }).default("require"),
-    awsRdsSslRejectUnauthorized: integer("aws_rds_ssl_reject_unauthorized", {
-      mode: "boolean",
-    }).default(false),
-    databaseSecurityChecklist: text("database_security_checklist"),
-    nextPublicAppUrl: text("next_public_app_url").default(
-      "http://127.0.0.1:3000",
+    awsRdsDbName: varchar("aws_rds_db_name").default("payload_local_demo"),
+    awsRdsUsername: varchar("aws_rds_username").default("payload_admin"),
+    awsRdsSslMode:
+      enum_runtime_deployment_settings_aws_rds_ssl_mode(
+        "aws_rds_ssl_mode",
+      ).default("require"),
+    awsRdsSslRejectUnauthorized: boolean(
+      "aws_rds_ssl_reject_unauthorized",
+    ).default(false),
+    databaseSecurityChecklist: varchar("database_security_checklist"),
+    nextPublicAppUrl: varchar("next_public_app_url").default(
+      "http://localhost:3000",
     ),
-    payloadSecretRotationNote: text("payload_secret_rotation_note"),
-    updatedAt: text("updated_at").default(
-      sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-    ),
-    createdAt: text("created_at").default(
-      sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`,
-    ),
+    payloadSecretRotationNote: varchar("payload_secret_rotation_note"),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
   },
 );
 
@@ -2425,8 +3169,25 @@ export const relations_users = relations(users, ({ one, many }) => ({
     references: [media.id],
     relationName: "avatar",
   }),
+  profileBackground: one(media, {
+    fields: [users.profileBackground],
+    references: [media.id],
+    relationName: "profileBackground",
+  }),
   sessions: many(users_sessions, {
     relationName: "sessions",
+  }),
+}));
+export const relations_user_follows = relations(user_follows, ({ one }) => ({
+  follower: one(users, {
+    fields: [user_follows.follower],
+    references: [users.id],
+    relationName: "follower",
+  }),
+  followee: one(users, {
+    fields: [user_follows.followee],
+    references: [users.id],
+    relationName: "followee",
   }),
 }));
 export const relations_media = relations(media, ({ one }) => ({
@@ -2513,6 +3274,48 @@ export const relations_models = relations(models, ({ one, many }) => ({
     relationName: "tags",
   }),
 }));
+export const relations_model_comments = relations(
+  model_comments,
+  ({ one }) => ({
+    model: one(models, {
+      fields: [model_comments.model],
+      references: [models.id],
+      relationName: "model",
+    }),
+    author: one(users, {
+      fields: [model_comments.author],
+      references: [users.id],
+      relationName: "author",
+    }),
+  }),
+);
+export const relations_model_likes = relations(model_likes, ({ one }) => ({
+  user: one(users, {
+    fields: [model_likes.user],
+    references: [users.id],
+    relationName: "user",
+  }),
+  model: one(models, {
+    fields: [model_likes.model],
+    references: [models.id],
+    relationName: "model",
+  }),
+}));
+export const relations_model_favorites = relations(
+  model_favorites,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [model_favorites.user],
+      references: [users.id],
+      relationName: "user",
+    }),
+    model: one(models, {
+      fields: [model_favorites.model],
+      references: [models.id],
+      relationName: "model",
+    }),
+  }),
+);
 export const relations_homepage_items_locales = relations(
   homepage_items_locales,
   ({ one }) => ({
@@ -2899,6 +3702,26 @@ export const relations_credit_transactions = relations(
   }),
 );
 export const relations_credit_products = relations(credit_products, () => ({}));
+export const relations_engagement_views = relations(
+  engagement_views,
+  ({ one }) => ({
+    targetUser: one(users, {
+      fields: [engagement_views.targetUser],
+      references: [users.id],
+      relationName: "targetUser",
+    }),
+    targetModel: one(models, {
+      fields: [engagement_views.targetModel],
+      references: [models.id],
+      relationName: "targetModel",
+    }),
+    viewer: one(users, {
+      fields: [engagement_views.viewer],
+      references: [users.id],
+      relationName: "viewer",
+    }),
+  }),
+);
 export const relations_billing_subscriptions = relations(
   billing_subscriptions,
   ({ one }) => ({
@@ -2962,6 +3785,11 @@ export const relations_payload_locked_documents_rels = relations(
       references: [users.id],
       relationName: "users",
     }),
+    "user-followsID": one(user_follows, {
+      fields: [payload_locked_documents_rels["user-followsID"]],
+      references: [user_follows.id],
+      relationName: "user-follows",
+    }),
     mediaID: one(media, {
       fields: [payload_locked_documents_rels.mediaID],
       references: [media.id],
@@ -2981,6 +3809,21 @@ export const relations_payload_locked_documents_rels = relations(
       fields: [payload_locked_documents_rels.modelsID],
       references: [models.id],
       relationName: "models",
+    }),
+    "model-commentsID": one(model_comments, {
+      fields: [payload_locked_documents_rels["model-commentsID"]],
+      references: [model_comments.id],
+      relationName: "model-comments",
+    }),
+    "model-likesID": one(model_likes, {
+      fields: [payload_locked_documents_rels["model-likesID"]],
+      references: [model_likes.id],
+      relationName: "model-likes",
+    }),
+    "model-favoritesID": one(model_favorites, {
+      fields: [payload_locked_documents_rels["model-favoritesID"]],
+      references: [model_favorites.id],
+      relationName: "model-favorites",
     }),
     "homepage-itemsID": one(homepage_items, {
       fields: [payload_locked_documents_rels["homepage-itemsID"]],
@@ -3016,6 +3859,11 @@ export const relations_payload_locked_documents_rels = relations(
       fields: [payload_locked_documents_rels["credit-productsID"]],
       references: [credit_products.id],
       relationName: "credit-products",
+    }),
+    "engagement-viewsID": one(engagement_views, {
+      fields: [payload_locked_documents_rels["engagement-viewsID"]],
+      references: [engagement_views.id],
+      relationName: "engagement-views",
     }),
     "billing-subscriptionsID": one(billing_subscriptions, {
       fields: [payload_locked_documents_rels["billing-subscriptionsID"]],
@@ -3276,14 +4124,70 @@ export const relations_runtime_deployment_settings = relations(
 );
 
 type DatabaseSchema = {
+  enum__locales: typeof enum__locales;
+  enum_users_role: typeof enum_users_role;
+  enum_users_avatar_frame: typeof enum_users_avatar_frame;
+  enum_users_profile_visibility: typeof enum_users_profile_visibility;
+  enum_media_purpose: typeof enum_media_purpose;
+  enum_generation_tasks_input_mode: typeof enum_generation_tasks_input_mode;
+  enum_generation_tasks_provider: typeof enum_generation_tasks_provider;
+  enum_generation_tasks_status: typeof enum_generation_tasks_status;
+  enum_task_events_event_type: typeof enum_task_events_event_type;
+  enum_models_formats_format: typeof enum_models_formats_format;
+  enum_models_status: typeof enum_models_status;
+  enum_models_visibility: typeof enum_models_visibility;
+  enum_model_comments_status: typeof enum_model_comments_status;
+  enum_homepage_items_placement: typeof enum_homepage_items_placement;
+  enum_homepage_items_content_type: typeof enum_homepage_items_content_type;
+  enum_homepage_items_rail_variant: typeof enum_homepage_items_rail_variant;
+  enum_homepage_items_status: typeof enum_homepage_items_status;
+  enum__homepage_items_v_version_placement: typeof enum__homepage_items_v_version_placement;
+  enum__homepage_items_v_version_content_type: typeof enum__homepage_items_v_version_content_type;
+  enum__homepage_items_v_version_rail_variant: typeof enum__homepage_items_v_version_rail_variant;
+  enum__homepage_items_v_version_status: typeof enum__homepage_items_v_version_status;
+  enum__homepage_items_v_published_locale: typeof enum__homepage_items_v_published_locale;
+  enum_posts_category: typeof enum_posts_category;
+  enum_posts_status: typeof enum_posts_status;
+  enum__posts_v_version_category: typeof enum__posts_v_version_category;
+  enum__posts_v_version_status: typeof enum__posts_v_version_status;
+  enum__posts_v_published_locale: typeof enum__posts_v_published_locale;
+  enum_announcements_status: typeof enum_announcements_status;
+  enum__announcements_v_version_status: typeof enum__announcements_v_version_status;
+  enum__announcements_v_published_locale: typeof enum__announcements_v_published_locale;
+  enum_model_bundles_status: typeof enum_model_bundles_status;
+  enum__model_bundles_v_version_status: typeof enum__model_bundles_v_version_status;
+  enum__model_bundles_v_published_locale: typeof enum__model_bundles_v_published_locale;
+  enum_credits_status: typeof enum_credits_status;
+  enum_credit_transactions_type: typeof enum_credit_transactions_type;
+  enum_credit_products_product_type: typeof enum_credit_products_product_type;
+  enum_engagement_views_target_type: typeof enum_engagement_views_target_type;
+  enum_billing_subscriptions_status: typeof enum_billing_subscriptions_status;
+  enum_print_orders_status: typeof enum_print_orders_status;
+  enum_print_orders_payment_status: typeof enum_print_orders_payment_status;
+  enum_shopify_payments_payment_type: typeof enum_shopify_payments_payment_type;
+  enum_shopify_payments_status: typeof enum_shopify_payments_status;
+  enum_site_settings_payment_providers_subscription_provider: typeof enum_site_settings_payment_providers_subscription_provider;
+  enum_site_settings_payment_providers_order_provider: typeof enum_site_settings_payment_providers_order_provider;
+  enum_homepage_content_featured_works_tone: typeof enum_homepage_content_featured_works_tone;
+  enum_ai_provider_settings_providers_provider: typeof enum_ai_provider_settings_providers_provider;
+  enum_ai_provider_settings_default_provider: typeof enum_ai_provider_settings_default_provider;
+  enum_ai_provider_settings_meshy_text_to3_d_ai_model: typeof enum_ai_provider_settings_meshy_text_to3_d_ai_model;
+  enum_ai_provider_settings_meshy_image_to3_d_ai_model: typeof enum_ai_provider_settings_meshy_image_to3_d_ai_model;
+  enum_ai_provider_settings_image_generation_default_provider: typeof enum_ai_provider_settings_image_generation_default_provider;
+  enum_runtime_deployment_settings_database_connection_mode: typeof enum_runtime_deployment_settings_database_connection_mode;
+  enum_runtime_deployment_settings_aws_rds_ssl_mode: typeof enum_runtime_deployment_settings_aws_rds_ssl_mode;
   users_sessions: typeof users_sessions;
   users: typeof users;
+  user_follows: typeof user_follows;
   media: typeof media;
   generation_tasks: typeof generation_tasks;
   task_events: typeof task_events;
   models_formats: typeof models_formats;
   models_tags: typeof models_tags;
   models: typeof models;
+  model_comments: typeof model_comments;
+  model_likes: typeof model_likes;
+  model_favorites: typeof model_favorites;
   homepage_items: typeof homepage_items;
   homepage_items_locales: typeof homepage_items_locales;
   _homepage_items_v: typeof _homepage_items_v;
@@ -3309,6 +4213,7 @@ type DatabaseSchema = {
   credits: typeof credits;
   credit_transactions: typeof credit_transactions;
   credit_products: typeof credit_products;
+  engagement_views: typeof engagement_views;
   billing_subscriptions: typeof billing_subscriptions;
   addresses: typeof addresses;
   print_orders: typeof print_orders;
@@ -3340,12 +4245,16 @@ type DatabaseSchema = {
   runtime_deployment_settings: typeof runtime_deployment_settings;
   relations_users_sessions: typeof relations_users_sessions;
   relations_users: typeof relations_users;
+  relations_user_follows: typeof relations_user_follows;
   relations_media: typeof relations_media;
   relations_generation_tasks: typeof relations_generation_tasks;
   relations_task_events: typeof relations_task_events;
   relations_models_formats: typeof relations_models_formats;
   relations_models_tags: typeof relations_models_tags;
   relations_models: typeof relations_models;
+  relations_model_comments: typeof relations_model_comments;
+  relations_model_likes: typeof relations_model_likes;
+  relations_model_favorites: typeof relations_model_favorites;
   relations_homepage_items_locales: typeof relations_homepage_items_locales;
   relations_homepage_items: typeof relations_homepage_items;
   relations__homepage_items_v_locales: typeof relations__homepage_items_v_locales;
@@ -3371,6 +4280,7 @@ type DatabaseSchema = {
   relations_credits: typeof relations_credits;
   relations_credit_transactions: typeof relations_credit_transactions;
   relations_credit_products: typeof relations_credit_products;
+  relations_engagement_views: typeof relations_engagement_views;
   relations_billing_subscriptions: typeof relations_billing_subscriptions;
   relations_addresses: typeof relations_addresses;
   relations_print_orders: typeof relations_print_orders;
@@ -3402,7 +4312,7 @@ type DatabaseSchema = {
   relations_runtime_deployment_settings: typeof relations_runtime_deployment_settings;
 };
 
-declare module "@payloadcms/db-sqlite" {
+declare module "@payloadcms/db-postgres" {
   export interface GeneratedDatabaseSchema {
     schema: DatabaseSchema;
   }

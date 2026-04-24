@@ -115,3 +115,32 @@ test("rejectRateLimitedEndpoint falls back to IP when the user is anonymous", as
     process.env.TRUST_PROXY_HEADERS = previousTrustProxy;
   }
 });
+
+test("rejectRateLimitedEndpoint supports social write scopes", async () => {
+  const previousLimit = process.env.SOCIAL_REACTION_WRITE_RATE_LIMIT_MAX;
+  const previousWindow = process.env.SOCIAL_REACTION_WRITE_RATE_LIMIT_WINDOW_MS;
+
+  process.env.SOCIAL_REACTION_WRITE_RATE_LIMIT_MAX = "1";
+  process.env.SOCIAL_REACTION_WRITE_RATE_LIMIT_WINDOW_MS = "60000";
+
+  try {
+    const req = createRequest({
+      user: { id: 42 },
+    });
+
+    const first = await rejectRateLimitedEndpoint({
+      req,
+      scope: "social-reaction-write",
+    });
+    const second = await rejectRateLimitedEndpoint({
+      req,
+      scope: "social-reaction-write",
+    });
+
+    assert.equal(first, null);
+    assert.equal(second?.status, 429);
+  } finally {
+    process.env.SOCIAL_REACTION_WRITE_RATE_LIMIT_MAX = previousLimit;
+    process.env.SOCIAL_REACTION_WRITE_RATE_LIMIT_WINDOW_MS = previousWindow;
+  }
+});

@@ -455,6 +455,53 @@ export async function grantCredits(args: {
   })
 }
 
+export async function adjustCreditsManually(args: {
+  amountDelta: number
+  idempotencyKey?: string
+  metadata?: Record<string, unknown>
+  notes: string
+  req: PayloadRequest
+  userId: number | string
+}) {
+  const { amountDelta, idempotencyKey, metadata, notes, req, userId } = args
+  const normalizedUserId = normalizeUserId(userId)
+  const normalizedDelta = Number(amountDelta || 0)
+
+  if (!Number.isFinite(normalizedDelta) || normalizedDelta === 0) {
+    return {
+      account: await ensureCreditAccount({ req, userId: normalizedUserId }),
+      applied: false,
+      idempotencyKey,
+    } satisfies LedgerMutationResult
+  }
+
+  return runAtomicLedgerMutation({
+    amount: normalizedDelta,
+    idempotencyKey,
+    metadata,
+    mutate: (current) => {
+      const nextBalance = current.balance + normalizedDelta
+      if (nextBalance < 0) {
+        throw new InsufficientCreditsError({
+          available: current.balance,
+          required: Math.abs(normalizedDelta),
+          message: `Manual adjustment would make balance negative. Current balance is ${current.balance}.`,
+        })
+      }
+
+      return {
+        ...current,
+        balance: nextBalance,
+      }
+    },
+    notes,
+    referencePrefix: 'MANUAL',
+    req,
+    transactionType: 'manual_adjustment',
+    userId: normalizedUserId,
+  })
+}
+
 export async function reserveTaskCredits(args: {
   amount: number
   notes: string

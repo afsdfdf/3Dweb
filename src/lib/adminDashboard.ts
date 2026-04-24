@@ -48,203 +48,174 @@ export async function getOpsDashboardData() {
   const today = toISO(startOfToday())
   const ranges = buildDateRanges(7)
 
-  const [
-    tasks,
-    models,
-    orders,
-    payments,
-    creditAccounts,
-    recentTasks,
-    recentOrders,
-    recentPayments,
-    topCreditAccounts,
-    failedTaskQueue,
-    pendingOrderQueue,
-    paymentExceptionQueue,
-    lowBalanceQueue,
-    highBalanceQueue,
-  ] = await Promise.all([
-    payload.count({ collection: 'generation-tasks', where: {} }),
-    payload.count({ collection: 'models', where: {} }),
-    payload.count({ collection: 'print-orders', where: {} }),
-    payload.count({ collection: 'shopify-payments', where: {} }),
-    payload.count({ collection: 'credits', where: {} }),
-    payload.find({ collection: 'generation-tasks', depth: 1, limit: 5, sort: '-updatedAt' }),
-    payload.find({ collection: 'print-orders', depth: 2, limit: 5, sort: '-updatedAt' }),
-    payload.find({ collection: 'shopify-payments', depth: 2, limit: 5, sort: '-updatedAt' }),
-    payload.find({ collection: 'credits', depth: 1, limit: 5, sort: '-balance' }),
-    payload.find({
-      collection: 'generation-tasks',
-      depth: 1,
-      limit: 6,
-      sort: '-updatedAt',
-      where: {
-        status: { in: ['failed', 'timeout'] },
-      },
-    }),
-    payload.find({
-      collection: 'print-orders',
-      depth: 2,
-      limit: 6,
-      sort: '-updatedAt',
-      where: {
-        or: [{ status: { equals: 'pending-payment' } }, { paymentStatus: { in: ['failed', 'refunded'] } }, { status: { equals: 'cancelled' } }],
-      },
-    }),
-    payload.find({
-      collection: 'shopify-payments',
-      depth: 2,
-      limit: 6,
-      sort: '-updatedAt',
-      where: {
-        status: { in: ['failed', 'refunded', 'pending'] },
-      },
-    }),
-    payload.find({
-      collection: 'credits',
-      depth: 1,
-      limit: 6,
-      sort: 'balance',
-      where: {
-        balance: { less_than_equal: 20 },
-      },
-    }),
-    payload.find({
-      collection: 'credits',
-      depth: 1,
-      limit: 6,
-      sort: '-balance',
-      where: {
-        balance: { greater_than: 50 },
-      },
-    }),
-  ])
+  const countDocs = async (args: Parameters<typeof payload.count>[0]) => {
+    const result = await payload.count(args)
+    return result.totalDocs
+  }
 
-  const [
-    newTasksToday,
-    processingTasks,
-    failedTasks,
-    paidOrdersToday,
-    pendingOrders,
-    highBalanceAccounts,
-    lowBalanceAccounts,
-    reservedCreditAccounts,
-    taskStatusCounts,
-    taskModeCounts,
-    orderStatusCounts,
-    paymentStatusCounts,
-    taskTrend,
-    paidOrderTrend,
-  ] = await Promise.all([
-    payload.count({
+  const tasks = await countDocs({ collection: 'generation-tasks', where: {} })
+  const models = await countDocs({ collection: 'models', where: {} })
+  const orders = await countDocs({ collection: 'print-orders', where: {} })
+  const payments = await countDocs({ collection: 'shopify-payments', where: {} })
+  const creditAccounts = await countDocs({ collection: 'credits', where: {} })
+  const recentTasks = await payload.find({ collection: 'generation-tasks', depth: 1, limit: 5, sort: '-updatedAt' })
+  const recentOrders = await payload.find({ collection: 'print-orders', depth: 2, limit: 5, sort: '-updatedAt' })
+  const recentPayments = await payload.find({ collection: 'shopify-payments', depth: 2, limit: 5, sort: '-updatedAt' })
+  const topCreditAccounts = await payload.find({ collection: 'credits', depth: 1, limit: 5, sort: '-balance' })
+  const failedTaskQueue = await payload.find({
+    collection: 'generation-tasks',
+    depth: 1,
+    limit: 6,
+    sort: '-updatedAt',
+    where: {
+      status: { in: ['failed', 'timeout'] },
+    },
+  })
+  const pendingOrderQueue = await payload.find({
+    collection: 'print-orders',
+    depth: 2,
+    limit: 6,
+    sort: '-updatedAt',
+    where: {
+      or: [{ status: { equals: 'pending-payment' } }, { paymentStatus: { in: ['failed', 'refunded'] } }, { status: { equals: 'cancelled' } }],
+    },
+  })
+  const paymentExceptionQueue = await payload.find({
+    collection: 'shopify-payments',
+    depth: 2,
+    limit: 6,
+    sort: '-updatedAt',
+    where: {
+      status: { in: ['failed', 'refunded', 'pending'] },
+    },
+  })
+  const lowBalanceQueue = await payload.find({
+    collection: 'credits',
+    depth: 1,
+    limit: 6,
+    sort: 'balance',
+    where: {
+      balance: { less_than_equal: 20 },
+    },
+  })
+  const highBalanceQueue = await payload.find({
+    collection: 'credits',
+    depth: 1,
+    limit: 6,
+    sort: '-balance',
+    where: {
+      balance: { greater_than: 50 },
+    },
+  })
+
+  const newTasksToday = await countDocs({
       collection: 'generation-tasks',
       where: { createdAt: { greater_than_equal: today } },
-    }),
-    payload.count({
+    })
+  const processingTasks = await countDocs({
       collection: 'generation-tasks',
       where: { status: { in: ['queued', 'processing'] } },
-    }),
-    payload.count({
+    })
+  const failedTasks = await countDocs({
       collection: 'generation-tasks',
       where: { status: { equals: 'failed' } },
-    }),
-    payload.count({
+    })
+  const paidOrdersToday = await countDocs({
       collection: 'print-orders',
       where: {
         and: [{ createdAt: { greater_than_equal: today } }, { status: { in: ['paid', 'in-production', 'shipped', 'completed'] } }],
       },
-    }),
-    payload.count({
+    })
+  const pendingOrders = await countDocs({
       collection: 'print-orders',
       where: { status: { in: ['pending-payment', 'paid', 'in-production'] } },
-    }),
-    payload.count({
+    })
+  const highBalanceAccounts = await countDocs({
       collection: 'credits',
       where: { balance: { greater_than: 50 } },
-    }),
-    payload.count({
+    })
+  const lowBalanceAccounts = await countDocs({
       collection: 'credits',
       where: { balance: { less_than_equal: 20 } },
-    }),
-    payload.count({
+    })
+  const reservedCreditAccounts = await countDocs({
       collection: 'credits',
       where: { reservedBalance: { greater_than: 0 } },
-    }),
-    Promise.all(
-      taskStatuses.map(async (status) => ({
-        count: (
-          await payload.count({
-            collection: 'generation-tasks',
-            where: { status: { equals: status } },
-          })
-        ).totalDocs,
-        key: status,
-      })),
-    ),
-    Promise.all(
-      taskModes.map(async (mode) => ({
-        count: (
-          await payload.count({
-            collection: 'generation-tasks',
-            where: { inputMode: { equals: mode } },
-          })
-        ).totalDocs,
-        key: mode,
-      })),
-    ),
-    Promise.all(
-      orderStatuses.map(async (status) => ({
-        count: (
-          await payload.count({
-            collection: 'print-orders',
-            where: { status: { equals: status } },
-          })
-        ).totalDocs,
-        key: status,
-      })),
-    ),
-    Promise.all(
-      paymentStatuses.map(async (status) => ({
-        count: (
-          await payload.count({
-            collection: 'shopify-payments',
-            where: { status: { equals: status } },
-          })
-        ).totalDocs,
-        key: status,
-      })),
-    ),
-    Promise.all(
-      ranges.map(async (range) => ({
-        count: (
-          await payload.count({
-            collection: 'generation-tasks',
-            where: {
-              and: [{ createdAt: { greater_than_equal: range.start } }, { createdAt: { less_than: range.end } }],
-            },
-          })
-        ).totalDocs,
-        label: range.label,
-      })),
-    ),
-    Promise.all(
-      ranges.map(async (range) => ({
-        count: (
-          await payload.count({
-            collection: 'print-orders',
-            where: {
-              and: [
-                { createdAt: { greater_than_equal: range.start } },
-                { createdAt: { less_than: range.end } },
-                { status: { in: ['paid', 'in-production', 'shipped', 'completed'] } },
-              ],
-            },
-          })
-        ).totalDocs,
-        label: range.label,
-      })),
-    ),
-  ])
+    })
+
+  const taskStatusCounts = []
+  for (const status of taskStatuses) {
+    taskStatusCounts.push({
+      count: await countDocs({
+        collection: 'generation-tasks',
+        where: { status: { equals: status } },
+      }),
+      key: status,
+    })
+  }
+
+  const taskModeCounts = []
+  for (const mode of taskModes) {
+    taskModeCounts.push({
+      count: await countDocs({
+        collection: 'generation-tasks',
+        where: { inputMode: { equals: mode } },
+      }),
+      key: mode,
+    })
+  }
+
+  const orderStatusCounts = []
+  for (const status of orderStatuses) {
+    orderStatusCounts.push({
+      count: await countDocs({
+        collection: 'print-orders',
+        where: { status: { equals: status } },
+      }),
+      key: status,
+    })
+  }
+
+  const paymentStatusCounts = []
+  for (const status of paymentStatuses) {
+    paymentStatusCounts.push({
+      count: await countDocs({
+        collection: 'shopify-payments',
+        where: { status: { equals: status } },
+      }),
+      key: status,
+    })
+  }
+
+  const taskTrend = []
+  for (const range of ranges) {
+    taskTrend.push({
+      count: await countDocs({
+        collection: 'generation-tasks',
+        where: {
+          and: [{ createdAt: { greater_than_equal: range.start } }, { createdAt: { less_than: range.end } }],
+        },
+      }),
+      label: range.label,
+    })
+  }
+
+  const paidOrderTrend = []
+  for (const range of ranges) {
+    paidOrderTrend.push({
+      count: await countDocs({
+        collection: 'print-orders',
+        where: {
+          and: [
+            { createdAt: { greater_than_equal: range.start } },
+            { createdAt: { less_than: range.end } },
+            { status: { in: ['paid', 'in-production', 'shipped', 'completed'] } },
+          ],
+        },
+      }),
+      label: range.label,
+    })
+  }
 
   return {
     analytics: {
@@ -257,19 +228,19 @@ export async function getOpsDashboardData() {
     },
     generatedAt: new Date().toISOString(),
     overview: {
-      creditAccounts: creditAccounts.totalDocs,
-      failedTasks: failedTasks.totalDocs,
-      highBalanceAccounts: highBalanceAccounts.totalDocs,
-      lowBalanceAccounts: lowBalanceAccounts.totalDocs,
-      models: models.totalDocs,
-      newTasksToday: newTasksToday.totalDocs,
-      paidOrdersToday: paidOrdersToday.totalDocs,
-      payments: payments.totalDocs,
-      pendingOrders: pendingOrders.totalDocs,
-      processingTasks: processingTasks.totalDocs,
-      reservedCreditAccounts: reservedCreditAccounts.totalDocs,
-      tasks: tasks.totalDocs,
-      totalOrders: orders.totalDocs,
+      creditAccounts,
+      failedTasks,
+      highBalanceAccounts,
+      lowBalanceAccounts,
+      models,
+      newTasksToday,
+      paidOrdersToday,
+      payments,
+      pendingOrders,
+      processingTasks,
+      reservedCreditAccounts,
+      tasks,
+      totalOrders: orders,
     },
     operatorQueues: {
       failedTasks: {

@@ -11,7 +11,7 @@ export type PaymentProviderSettings = {
 const defaults: PaymentProviderSettings = {
   orderProvider: 'stripe',
   providerNotice:
-    '当前版本正式启用 Stripe 处理订阅与订单支付；Shopify 相关数据结构继续保留，用于未来扩展商品、变体与结算链路。',
+    'Stripe is the active rail for subscriptions and order payments. Shopify-compatible data structures remain in place for future commerce expansion.',
   subscriptionProvider: 'stripe',
 }
 

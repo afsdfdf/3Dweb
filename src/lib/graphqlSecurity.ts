@@ -3,6 +3,7 @@ import { parse, visit, type DocumentNode, type FragmentDefinitionNode } from 'gr
 type GraphQLSecurityLimits = {
   maxComplexity: number
   maxDepth: number
+  maxTopLevelSelections: number
 }
 
 type GraphQLSecurityResult =
@@ -12,10 +13,13 @@ type GraphQLSecurityResult =
 export function getGraphQLSecurityLimits(): GraphQLSecurityLimits {
   const parsedDepth = Number(process.env.GRAPHQL_MAX_DEPTH || 8)
   const parsedComplexity = Number(process.env.GRAPHQL_MAX_COMPLEXITY || 250)
+  const parsedTopLevelSelections = Number(process.env.GRAPHQL_MAX_TOP_LEVEL_SELECTIONS || 20)
 
   return {
     maxComplexity: Number.isFinite(parsedComplexity) && parsedComplexity > 0 ? parsedComplexity : 250,
     maxDepth: Number.isFinite(parsedDepth) && parsedDepth > 0 ? parsedDepth : 8,
+    maxTopLevelSelections:
+      Number.isFinite(parsedTopLevelSelections) && parsedTopLevelSelections > 0 ? parsedTopLevelSelections : 20,
   }
 }
 
@@ -35,6 +39,7 @@ function calculateDepthAndComplexity(document: DocumentNode) {
   const fragmentMap = buildFragmentMap(document)
   let maxDepth = 0
   let complexity = 0
+  let maxTopLevelSelections = 0
 
   const visitSelection = (selectionSet: any, depth: number) => {
     if (!selectionSet?.selections) {
@@ -66,6 +71,7 @@ function calculateDepthAndComplexity(document: DocumentNode) {
 
   visit(document, {
     OperationDefinition(node) {
+      maxTopLevelSelections = Math.max(maxTopLevelSelections, node.selectionSet.selections.length)
       visitSelection(node.selectionSet, 1)
     },
   })
@@ -73,13 +79,14 @@ function calculateDepthAndComplexity(document: DocumentNode) {
   return {
     complexity,
     maxDepth,
+    maxTopLevelSelections,
   }
 }
 
 export function validateGraphQLQuerySecurity(query: string): GraphQLSecurityResult {
   try {
     const document = parse(query)
-    const { complexity, maxDepth } = calculateDepthAndComplexity(document)
+    const { complexity, maxDepth, maxTopLevelSelections } = calculateDepthAndComplexity(document)
     const limits = getGraphQLSecurityLimits()
 
     if (maxDepth > limits.maxDepth) {
@@ -92,6 +99,13 @@ export function validateGraphQLQuerySecurity(query: string): GraphQLSecurityResu
     if (complexity > limits.maxComplexity) {
       return {
         message: `GraphQL query complexity limit exceeded. Max complexity is ${limits.maxComplexity}.`,
+        ok: false,
+      }
+    }
+
+    if (maxTopLevelSelections > limits.maxTopLevelSelections) {
+      return {
+        message: `GraphQL top-level selection limit exceeded. Max selections is ${limits.maxTopLevelSelections}.`,
         ok: false,
       }
     }

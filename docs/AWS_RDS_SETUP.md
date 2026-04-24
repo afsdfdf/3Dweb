@@ -2,7 +2,7 @@
 
 ## Goal
 - Run Payload against a real AWS RDS PostgreSQL database.
-- Keep local SQLite available as a fallback for development.
+- Do not keep SQLite as a runtime fallback. This project now runs against Postgres only.
 - Make the backend connect through environment variables only.
 
 ## Important note
@@ -57,9 +57,9 @@ AWS_RDS_SCHEMA=public
 - If you use Stripe webhook handling, also set `STRIPE_WEBHOOK_SECRET`
 
 ## Migration notes
-- This repo currently uses local SQLite in development.
-- Moving existing data from `payload.db` to PostgreSQL is a data migration task, not just a config switch.
-- The application code is now ready to talk to PostgreSQL, but existing SQLite data must still be exported and imported separately.
+- This repo should now use Postgres in both hosted and local runtime flows.
+- Historical SQLite references are legacy cleanup work, not an active development mode.
+- Any old `payload.db` data migration is a separate archival task, not part of runtime configuration.
 
 ## Validation
 After filling env vars:

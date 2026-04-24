@@ -1,16 +1,14 @@
 import type { CollectionConfig } from 'payload'
 
 import { isAdmin, ownerOrStaff } from '@/access'
+import { adminLabelsKey, adminTextKey } from '@/lib/adminText'
 
 export const CreditTransactions: CollectionConfig = {
   slug: 'credit-transactions',
-  labels: {
-    plural: '积分流水',
-    singular: '积分流水',
-  },
+  labels: adminLabelsKey('collections.creditTransactions'),
   admin: {
-    description: '记录每一笔积分变动。',
-    group: '商务',
+    description: adminTextKey('collections.creditTransactions.description'),
+    group: adminTextKey('groups.commerce'),
     useAsTitle: 'referenceCode',
     defaultColumns: ['referenceCode', 'type', 'amount', 'user', 'createdAt'],
   },
@@ -22,31 +20,31 @@ export const CreditTransactions: CollectionConfig = {
   defaultSort: '-createdAt',
   timestamps: true,
   fields: [
-    { name: 'referenceCode', type: 'text', required: true, unique: true, label: '流水号' },
-    { name: 'idempotencyKey', type: 'text', unique: true, label: '幂等键' },
-    { name: 'user', type: 'relationship', relationTo: 'users', required: true, label: '用户' },
-    { name: 'creditAccount', type: 'relationship', relationTo: 'credits', required: true, label: '积分账户' },
+    { name: 'referenceCode', type: 'text', required: true, unique: true, label: 'Reference code' },
+    { name: 'idempotencyKey', type: 'text', unique: true, label: 'Idempotency key' },
+    { name: 'user', type: 'relationship', relationTo: 'users', required: true, label: 'User' },
+    { name: 'creditAccount', type: 'relationship', relationTo: 'credits', required: true, label: 'Credit account' },
     {
       name: 'type',
       type: 'select',
       required: true,
-      label: '类型',
+      label: 'Type',
       options: [
-        { label: '购买', value: 'purchase' },
-        { label: '任务预扣', value: 'task_hold' },
-        { label: '任务扣费', value: 'task_spend' },
-        { label: '下载扣费', value: 'download_spend' },
-        { label: '退款', value: 'refund' },
-        { label: '手工调整', value: 'manual_adjustment' },
-        { label: '订阅发放', value: 'subscription_grant' },
+        { label: 'Purchase', value: 'purchase' },
+        { label: 'Task hold', value: 'task_hold' },
+        { label: 'Task charge', value: 'task_spend' },
+        { label: 'Download charge', value: 'download_spend' },
+        { label: 'Refund', value: 'refund' },
+        { label: 'Manual adjustment', value: 'manual_adjustment' },
+        { label: 'Subscription grant', value: 'subscription_grant' },
       ],
     },
-    { name: 'amount', type: 'number', required: true, label: '数量' },
-    { name: 'currency', type: 'text', defaultValue: 'credits', label: '单位' },
-    { name: 'balanceAfter', type: 'number', label: '变动后余额' },
-    { name: 'sourceTask', type: 'relationship', relationTo: 'generation-tasks', label: '来源任务' },
-    { name: 'sourceOrder', type: 'relationship', relationTo: 'print-orders', label: '来源订单' },
-    { name: 'notes', type: 'textarea', label: '备注' },
-    { name: 'metadata', type: 'json', label: '扩展信息' },
+    { name: 'amount', type: 'number', required: true, label: 'Amount' },
+    { name: 'currency', type: 'text', defaultValue: 'credits', label: 'Currency' },
+    { name: 'balanceAfter', type: 'number', label: 'Balance after' },
+    { name: 'sourceTask', type: 'relationship', relationTo: 'generation-tasks', label: 'Source task' },
+    { name: 'sourceOrder', type: 'relationship', relationTo: 'print-orders', label: 'Source order' },
+    { name: 'notes', type: 'textarea', label: 'Notes' },
+    { name: 'metadata', type: 'json', label: 'Metadata' },
   ],
 }

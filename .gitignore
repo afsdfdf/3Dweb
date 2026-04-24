@@ -29,6 +29,13 @@ yarn-debug.log*
 yarn-error.log*
 .dev*.log
 .payload-dev*.log
+dev-server*.log
+*.err.log
+*.out.log
+.tmp-*.log
+admin-audit-results.json
+temp_addresses.txt
+参考代码
 
 # local env files
 .env*.local

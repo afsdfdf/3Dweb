@@ -17,7 +17,7 @@ Primary sources:
 - [src/payload.config.ts](/D:/web/payload-local-demo/src/payload.config.ts)
 - [src/payload-generated-schema.ts](/D:/web/payload-local-demo/src/payload-generated-schema.ts)
 - [src/payload-types.ts](/D:/web/payload-local-demo/src/payload-types.ts)
-- [payload.db](/D:/web/payload-local-demo/payload.db)
+- active Supabase / Postgres schema managed by Payload runtime plus formal migrations
 
 Compatibility / repair sources:
 
@@ -30,9 +30,9 @@ Formal migration process reference:
 
 ## Important Notes
 
-- The project currently uses SQLite in local development.
-- Some schema changes were previously repaired manually in the local SQLite file instead of being represented as formal Payload migrations.
-- The baseline reconciliation migration now captures the active schema required by the current codebase.
+- The active runtime is now Supabase / PostgreSQL only.
+- Historical SQLite references in migrations and archived docs are legacy context, not an active development mode.
+- The baseline reconciliation migration is preserved only as an archived no-op to prevent legacy SQLite repair SQL from running against Postgres.
 
 ## Naming Rules
 

@@ -1,0 +1,82 @@
+.button {
+  --frame-button-height: 38px;
+  --frame-button-slice: 12;
+  --frame-button-width: auto;
+  position: relative;
+  display: inline-flex;
+  box-sizing: border-box;
+  width: var(--frame-button-width);
+  min-width: 0;
+  height: var(--frame-button-height);
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  padding: 0 18px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: calc(var(--frame-button-slice) * 1px) solid transparent;
+  border-image-source: var(--frame-button-normal);
+  border-image-slice: var(--frame-button-slice) fill;
+  border-image-width: calc(var(--frame-button-slice) * 1px);
+  border-image-repeat: stretch;
+}
+
+.button:hover:not(:disabled):not([data-selected='true'])::before {
+  border-image-source: var(--frame-button-hover);
+}
+
+.button:active:not(:disabled)::before,
+.button[data-selected='true']::before {
+  border-image-source: var(--frame-button-pressed);
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.label {
+  position: relative;
+  z-index: 1;
+  white-space: nowrap;
+}
+
+.slate {
+  --frame-button-normal: url('/ui/buttons/framed/slate-normal.png');
+  --frame-button-hover: url('/ui/buttons/framed/slate-hover.png');
+  --frame-button-pressed: url('/ui/buttons/framed/slate-pressed.png');
+  color: #f1ecdf;
+  text-shadow: 0 1px 0 rgba(22, 20, 29, 0.5);
+}
+
+.gold {
+  --frame-button-normal: url('/ui/buttons/framed/gold-normal.png');
+  --frame-button-hover: url('/ui/buttons/framed/gold-hover.png');
+  --frame-button-pressed: url('/ui/buttons/framed/gold-pressed.png');
+  color: #fff9ea;
+  text-shadow: 0 1px 0 rgba(96, 45, 16, 0.45);
+}
+
+.fullWidth {
+  --frame-button-width: 100%;
+}
+
+.compact {
+  min-width: 100px;
+}
+
+.regular {
+  min-width: 138px;
+}

@@ -1,16 +1,14 @@
 ﻿import type { CollectionConfig } from 'payload'
 
 import { isAdmin, ownerOrStaff } from '@/access'
+import { adminLabelsKey, adminTextKey } from '@/lib/adminText'
 
 export const ShopifyPayments: CollectionConfig = {
   slug: 'shopify-payments',
-  labels: {
-    plural: '支付记录',
-    singular: '支付记录',
-  },
+  labels: adminLabelsKey('collections.payments'),
   admin: {
-    description: '统一记录平台支付流水。当前线上支付主通道为 Stripe，保留 Shopify 兼容字段以支持未来迁移。',
-    group: '商务',
+    description: adminTextKey('collections.payments.description'),
+    group: adminTextKey('groups.commerce'),
     useAsTitle: 'checkoutReference',
     defaultColumns: ['checkoutReference', 'user', 'paymentType', 'status', 'amount'],
   },

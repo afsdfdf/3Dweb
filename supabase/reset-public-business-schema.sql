@@ -1,0 +1,65 @@
+begin;
+
+drop trigger if exists on_auth_user_created on auth.users;
+
+drop function if exists public.handle_new_auth_user() cascade;
+drop function if exists public.apply_credit_ledger_entry(uuid, text, numeric, numeric, text, text, text, uuid, uuid, text, jsonb) cascade;
+drop function if exists public.current_app_role() cascade;
+drop function if exists public.is_staff() cascade;
+drop function if exists public.is_admin() cascade;
+drop function if exists public.set_current_timestamp_updated_at() cascade;
+
+drop schema if exists app_private cascade;
+
+drop table if exists public.data_reconciliation_reports cascade;
+drop table if exists public.migration_runs cascade;
+drop table if exists public.runtime_deployment_settings cascade;
+drop table if exists public.security_allowed_remote_asset_hosts cascade;
+drop table if exists public.security_allowed_mutation_origins cascade;
+drop table if exists public.security_settings cascade;
+drop table if exists public.storage_settings cascade;
+drop table if exists public.ai_provider_integrations cascade;
+drop table if exists public.ai_provider_settings cascade;
+drop table if exists public.homepage_faq_items cascade;
+drop table if exists public.homepage_process_steps cascade;
+drop table if exists public.homepage_use_cases cascade;
+drop table if exists public.homepage_service_blocks cascade;
+drop table if exists public.homepage_featured_works cascade;
+drop table if exists public.homepage_content cascade;
+drop table if exists public.credit_packages cascade;
+drop table if exists public.subscription_plan_features cascade;
+drop table if exists public.subscription_plans cascade;
+drop table if exists public.site_email_templates cascade;
+drop table if exists public.site_footer_sections cascade;
+drop table if exists public.site_navigation_items cascade;
+drop table if exists public.site_settings cascade;
+drop table if exists public.audit_logs cascade;
+drop table if exists public.ai_task_events cascade;
+drop table if exists public.subscriptions cascade;
+drop table if exists public.order_payments cascade;
+drop table if exists public.print_orders cascade;
+drop table if exists public.addresses cascade;
+drop table if exists public.homepage_item_translations cascade;
+drop table if exists public.homepage_items cascade;
+drop table if exists public.model_bundle_tag_translations cascade;
+drop table if exists public.model_bundle_tags cascade;
+drop table if exists public.model_bundle_items cascade;
+drop table if exists public.model_bundle_translations cascade;
+drop table if exists public.model_bundles cascade;
+drop table if exists public.model_tag_assignments cascade;
+drop table if exists public.model_tag_translations cascade;
+drop table if exists public.model_tags cascade;
+drop table if exists public.model_assets cascade;
+drop table if exists public.models cascade;
+drop table if exists public.ai_tasks cascade;
+drop table if exists public.announcement_translations cascade;
+drop table if exists public.announcements cascade;
+drop table if exists public.post_translations cascade;
+drop table if exists public.posts cascade;
+drop table if exists public.credit_products cascade;
+drop table if exists public.credit_ledger_entries cascade;
+drop table if exists public.credit_accounts cascade;
+drop table if exists public.media cascade;
+drop table if exists public.profiles cascade;
+
+commit;

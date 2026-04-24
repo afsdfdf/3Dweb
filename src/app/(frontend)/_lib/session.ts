@@ -2,23 +2,75 @@ import { headers } from 'next/headers'
 import { unstable_noStore as noStore } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { getCachedPayload } from '@/lib/getCachedPayload'
+import { resolvePayloadUserFromHeaders } from '@/lib/payloadAuthFallback'
 
 async function getPayloadWithUser() {
   noStore()
   const payload = await getCachedPayload()
-  const authResult = await payload.auth({
-    headers: await headers(),
-  })
+  const requestHeaders = await headers()
+  const user =
+    (await resolvePayloadUserFromHeaders({
+      headers: new Headers(requestHeaders),
+      payload,
+    })) ?? null
 
   return {
     payload,
-    user: authResult.user,
+    user,
   }
+}
+
+function getMediaUrl(value: unknown) {
+  if (!value || typeof value !== 'object') return null
+  const record = value as Record<string, unknown>
+  const thumbnailURL = typeof record.thumbnailURL === 'string' && record.thumbnailURL ? record.thumbnailURL : null
+  const url = typeof record.url === 'string' && record.url ? record.url : null
+  return thumbnailURL || url
 }
 
 export async function getCurrentUser() {
   const { user } = await getPayloadWithUser()
   return user ?? null
+}
+
+export async function getCurrentNavUser() {
+  const { payload, user } = await getPayloadWithUser()
+  if (!user) return null
+
+  const [userDoc, creditAccount] = await Promise.all([
+    payload.findByID({
+      collection: 'users',
+      depth: 1,
+      id: user.id,
+      overrideAccess: false,
+      user,
+    }),
+    payload.find({
+      collection: 'credits',
+      depth: 0,
+      limit: 1,
+      overrideAccess: false,
+      pagination: false,
+      sort: '-updatedAt',
+      user,
+    }),
+  ])
+
+  const actualCredits = Number(creditAccount.docs?.[0]?.balance ?? userDoc.creditsBalance ?? 0)
+  const displayName =
+    (typeof userDoc.displayName === 'string' && userDoc.displayName.trim()) ||
+    (typeof userDoc.fullName === 'string' && userDoc.fullName.trim()) ||
+    (typeof userDoc.email === 'string' && userDoc.email.trim()) ||
+    'Account'
+
+  return {
+    avatarUrl: getMediaUrl(userDoc.avatar),
+    creditsBalance: actualCredits,
+    displayName,
+    email: typeof userDoc.email === 'string' ? userDoc.email : null,
+    id: Number(userDoc.id),
+    role: typeof userDoc.role === 'string' ? userDoc.role : 'customer',
+  }
 }
 
 export async function requireUser() {

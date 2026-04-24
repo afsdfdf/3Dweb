@@ -1,7 +1,5 @@
 import Link from 'next/link'
 
-import { Bell, ShoppingCart } from 'lucide-react'
-
 import { Button } from '@/components/ui/button'
 
 import { Locale } from '../../_lib/locale'
@@ -12,7 +10,12 @@ type TopNavBarProps = {
   currentPath?: string
   locale: Locale
   navigation: { href: string; label: string }[]
+  showAuthEntry?: boolean
+  showLocaleSwitcher?: boolean
   user?: null | {
+    avatarUrl?: string | null
+    creditsBalance?: number | null
+    displayName?: string | null
     email?: string | null
   }
 }
@@ -24,91 +27,144 @@ const isActivePath = (href: string, currentPath?: string) => {
 
 function HeaderBrand() {
   return (
-    <Link className="flex min-w-[220px] items-center gap-3" href="/">
-      <div className="relative flex size-9 items-center justify-center rounded-full border border-[#c79d4c] bg-[#151515] text-[9px] font-bold uppercase tracking-[0.18em] text-[#f0d188] shadow-[inset_0_0_0_2px_#2a1d0d,0_0_12px_rgba(226,181,97,0.16)]">
-        MF
-      </div>
-      <div className="font-serif text-[16px] font-black uppercase tracking-[0.04em] text-[#f1d99c] [text-shadow:0_1px_0_#4a2b16] sm:text-[17px]">
-        MiniForge Tavern
-      </div>
+    <Link className="flex shrink-0 items-center pr-4" href="/">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img alt="Thorns Tavern" className="h-[30px] w-auto object-contain" src="/ui/nav/brand-wordmark.png" />
     </Link>
   )
 }
 
-function HeaderFrameDecoration() {
+function NavOrnament() {
   return (
-    <>
-      <div className="pointer-events-none absolute left-[27%] top-1/2 hidden h-10 w-20 -translate-y-1/2 items-center justify-center lg:flex">
-        <div className="absolute inset-0 opacity-40 [clip-path:polygon(0_50%,28%_0,100%_0,72%_50%,100%_100%,28%_100%)] bg-[linear-gradient(90deg,transparent,rgba(214,171,89,0.14),transparent)]" />
-        <div className="size-2 rotate-45 border border-[#6b5731] bg-[#201b14]" />
-      </div>
-      <div className="pointer-events-none absolute right-[27%] top-1/2 hidden h-10 w-20 -translate-y-1/2 items-center justify-center lg:flex">
-        <div className="absolute inset-0 opacity-40 [clip-path:polygon(0_0,72%_0,100%_50%,72%_100%,0_100%,28%_50%)] bg-[linear-gradient(90deg,transparent,rgba(214,171,89,0.14),transparent)]" />
-        <div className="size-2 rotate-45 border border-[#6b5731] bg-[#201b14]" />
-      </div>
-    </>
+    <div className="pointer-events-none absolute inset-x-0 top-1/2 hidden h-[58px] -translate-y-1/2 lg:block">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img alt="" aria-hidden="true" className="h-full w-full object-fill opacity-68" src="/ui/nav/nav-ornament.png" />
+    </div>
   )
 }
 
-export function TopNavBar({ currentPath, locale, navigation, user }: TopNavBarProps) {
+function CreditsCounter() {
+  return <CreditsCounterValue value={560} />
+}
+
+function CreditsCounterValue({
+  value,
+}: {
+  value: null | number
+}) {
   return (
-    <header className="sticky top-0 z-40 border-b border-[#41331b] bg-[linear-gradient(180deg,#232323_0%,#181818_70%,#141414_100%)] shadow-[0_1px_0_rgba(255,214,141,0.07)]">
-      <div className="relative mx-auto grid max-w-[1600px] grid-cols-[minmax(220px,260px)_1fr_minmax(250px,430px)] items-center gap-4 px-4 py-2.5 sm:px-6">
+    <div className="flex items-center gap-1 text-[12px] font-semibold text-[#f4d48a]">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img alt="" aria-hidden="true" className="h-[26px] w-[26px] object-contain" src="/ui/nav/credits-badge.png" />
+      {typeof value === 'number' ? <span>{value}</span> : null}
+    </div>
+  )
+}
+
+function IconAction({
+  alt,
+  src,
+}: {
+  alt: string
+  src: string
+}) {
+  return (
+    <button className="flex h-5 w-5 items-center justify-center bg-transparent" type="button">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img alt={alt} className="h-[18px] w-[18px] object-contain opacity-86" src={src} />
+    </button>
+  )
+}
+
+function AuthEntry() {
+  return (
+    <Link className="relative flex h-[34px] min-w-[168px] items-center justify-center px-4 text-[12px] uppercase tracking-[0.08em] text-[#efe7da]" href="/login">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-fill" src="/ui/nav/auth-pill.png" />
+      <span className="relative z-10">Log in / Sign up</span>
+    </Link>
+  )
+}
+
+export function TopNavBar({ currentPath, locale, navigation, showAuthEntry = true, showLocaleSwitcher = true, user }: TopNavBarProps) {
+  return (
+    <header className="sticky top-0 z-40 h-[60px] overflow-hidden bg-[#1b1b1b]">
+      <div className="relative mx-auto flex h-[58px] max-w-[1872px] items-center px-6">
         <HeaderBrand />
-        <HeaderFrameDecoration />
 
-        <nav className="flex items-center justify-center gap-7 lg:gap-12" aria-label="Primary navigation">
-          {navigation.map((link) => {
-            const active = isActivePath(link.href, currentPath)
-            return (
-              <Link
-                className={`relative py-2 text-[12px] uppercase tracking-[0.16em] transition-colors ${
-                  active ? 'text-[#fff4c9]' : 'text-[#9f7f3e] hover:text-[#e0bb6a]'
-                }`}
-                href={link.href || '/'}
-                key={`${link.href}-${link.label}`}
-              >
-                {link.label}
-                {active ? <span className="absolute left-1/2 top-full mt-1 h-2 w-2 -translate-x-1/2 rotate-45 border-b border-r border-[#e6bd67]" /> : null}
-              </Link>
-            )
-          })}
-        </nav>
+        <div
+          className="absolute left-1/2 top-0 flex h-[58px] max-w-[970px] -translate-x-1/2 items-center justify-center"
+          style={{ width: 'min(970px, calc(100% - 560px))' }}
+        >
+          <NavOrnament />
 
-        <div className="flex items-center justify-end gap-2 text-[#f0d188]">
-          <div className="flex items-center gap-2 rounded-full border border-[#5a4523] bg-[#171717] px-2.5 py-1 text-[12px] text-[#ffe7a8] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-            <span className="inline-flex size-5 items-center justify-center rounded-full border border-[#b7832d] bg-[#2d220f] text-[9px] font-bold text-[#ffdd88]">
-              ✦
-            </span>
-            <span>560</span>
-          </div>
-          <button className="flex size-8 items-center justify-center rounded-full border border-[#49381b] bg-[#181818] text-[#dcb664]" type="button">
-            <Bell className="size-3.5" />
-          </button>
-          <button className="flex size-8 items-center justify-center rounded-full border border-[#49381b] bg-[#181818] text-[#dcb664]" type="button">
-            <ShoppingCart className="size-3.5" />
-          </button>
-          <LocaleSwitcher currentLocale={locale} currentPath={currentPath} />
+          <nav className="relative z-10 flex h-[58px] items-center gap-5" aria-label="Primary navigation">
+            {navigation.map((link, index) => {
+              const active = isActivePath(link.href, currentPath)
+              const widthClass =
+                index === 0 ? 'w-[102px]' : index === 1 ? 'w-[156px]' : index === 2 ? 'w-[126px]' : 'w-[108px]'
+
+              return (
+                <Link
+                  className={`group/navitem relative flex h-[58px] shrink-0 flex-col items-center justify-center ${widthClass} text-[15px] uppercase leading-[22px] transition-colors ${
+                    active ? 'font-medium text-white' : 'font-normal text-[rgba(233,175,85,0.58)] hover:text-[#d9b261]'
+                  }`}
+                  href={link.href || '/'}
+                  key={`${link.href}-${link.label}`}
+                >
+                  <span className="relative z-10">{link.label}</span>
+                  <span
+                    aria-hidden="true"
+                    className={`pointer-events-none absolute bottom-[12px] left-1/2 h-[10px] w-[48px] -translate-x-1/2 rounded-full bg-[#e9af55] blur-[6px] transition-opacity duration-150 ${
+                      active ? 'opacity-100' : 'opacity-0 group-hover/navitem:opacity-100'
+                    }`}
+                  />
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    alt=""
+                    aria-hidden="true"
+                    className={`pointer-events-none absolute bottom-[4px] left-1/2 h-[10px] w-[16px] -translate-x-1/2 object-contain transition-opacity duration-150 ${
+                      active ? 'opacity-100' : 'opacity-0 group-hover/navitem:opacity-100'
+                    }`}
+                    src="/ui/nav/active-chevron.png"
+                  />
+                </Link>
+              )
+            })}
+          </nav>
+        </div>
+
+        <div className="ml-auto flex shrink-0 items-center justify-end">
           {user ? (
-            <div className="ml-1 flex items-center gap-2 rounded-full border border-[#59411f] bg-[#181818] px-2.5 py-1 text-[12px] text-[#ece1c7]">
-              <div className="size-6 rounded-full border border-[#e2c78f] bg-[radial-gradient(circle_at_48%_35%,#f8eee8_0_26%,#eacfc8_27%_40%,transparent_41%),linear-gradient(135deg,#f6d9d0,#eee)]" />
-              <span className="max-w-[108px] truncate">{user.email || 'Account'}</span>
+            <div className="grid grid-cols-[76px_24px_24px_40px_minmax(0,1fr)] items-center justify-items-start gap-x-3">
+              <CreditsCounterValue value={typeof user.creditsBalance === 'number' ? Math.max(0, Number(user.creditsBalance)) : null} />
+              <IconAction alt="Notifications" src="/ui/nav/icon-bell.png" />
+              <IconAction alt="Cart" src="/ui/nav/icon-cart.png" />
+              {user.avatarUrl ? (
+                <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-[#2b2b2b]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img alt={user.displayName || user.email || 'Account avatar'} className="h-full w-full object-cover" src={user.avatarUrl} />
+                </div>
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img alt="" aria-hidden="true" className="h-10 w-10 object-contain opacity-88" src="/ui/nav/avatar-disc.png" />
+              )}
+              <span className="max-w-[140px] truncate text-[12px] text-white">{user.displayName || user.email || 'Account'}</span>
             </div>
-          ) : null}
-          {user ? (
-            <>
-              <Button asChild className="border border-[#7e5624] bg-[linear-gradient(180deg,#7b5a2c_0%,#473319_100%)] text-[#fff0c2] hover:bg-[linear-gradient(180deg,#8b6833_0%,#533b1d_100%)]" size="sm">
-                <Link href="/dashboard">Open workspace</Link>
-              </Button>
-              <LogoutButton className="border-[#5d4d37] bg-[#1a1b1f] text-[#e3d8be] hover:bg-[#23252a]" variant="outline" />
-            </>
           ) : (
-            <Button asChild className="border border-[#7e5624] bg-[linear-gradient(180deg,#7b5a2c_0%,#473319_100%)] text-[#fff0c2] hover:bg-[linear-gradient(180deg,#8b6833_0%,#533b1d_100%)]" size="sm">
-              <Link href="/login">Log in / Sign up</Link>
-            </Button>
+            <div className="grid grid-cols-[76px_24px_24px_40px_168px] items-center justify-items-start gap-x-3">
+              <div />
+              <IconAction alt="Notifications" src="/ui/nav/icon-bell.png" />
+              <IconAction alt="Cart" src="/ui/nav/icon-cart.png" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img alt="" aria-hidden="true" className="h-10 w-10 object-contain opacity-88" src="/ui/nav/avatar-disc.png" />
+              {showAuthEntry ? <AuthEntry /> : <div />}
+            </div>
           )}
         </div>
       </div>
+
+      <div className="h-[2px] w-full bg-[linear-gradient(45deg,rgba(233,175,85,0)_0%,rgba(233,175,85,0.3)_27.335938%,rgba(233,175,85,0.3)_50.716146%,rgba(233,175,85,0.3)_76.559896%,rgba(233,175,85,0)_100%)]" />
     </header>
   )
 }

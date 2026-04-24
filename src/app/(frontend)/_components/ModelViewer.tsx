@@ -1,6 +1,6 @@
 'use client'
 
-import { Bounds, Center, Environment, Float, OrbitControls, useGLTF } from '@react-three/drei'
+import { Bounds, Center, Float, OrbitControls, useGLTF } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { Component, Suspense, useEffect, useMemo } from 'react'
 import * as THREE from 'three'
@@ -133,6 +133,7 @@ function LoadedModel({ src }: { src: string }) {
 
 export function ModelViewer({ accent = 'violet', className, label, src }: ModelViewerProps) {
   const pointLightColor = accent === 'blue' ? '#67b4ff' : '#8b6cff'
+  const frameloop = src ? 'demand' : 'always'
 
   useEffect(() => {
     THREE.Cache.enabled = true
@@ -144,14 +145,23 @@ export function ModelViewer({ accent = 'violet', className, label, src }: ModelV
 
   return (
     <div className={className}>
-      <Canvas camera={{ fov: 36, position: [0, 1.6, 5.4] }} dpr={[1, 1.8]} shadows>
+      <Canvas
+        camera={{ fov: 36, position: [0, 1.6, 5.4] }}
+        dpr={src ? [1, 1.2] : [1, 1.5]}
+        frameloop={frameloop}
+        gl={{
+          antialias: true,
+          alpha: false,
+          powerPreference: 'low-power',
+          preserveDrawingBuffer: false,
+        }}
+      >
         <color attach="background" args={['#0a101b']} />
         <fog attach="fog" args={['#0a101b', 8, 14]} />
-        <ambientLight intensity={1.2} />
-        <directionalLight castShadow intensity={2.6} position={[4, 6, 5]} shadow-mapSize-height={1024} shadow-mapSize-width={1024} />
-        <pointLight color={pointLightColor} intensity={12} position={[-3, 2, 2]} />
-        <spotLight angle={0.45} color="#dfe8ff" intensity={20} penumbra={0.6} position={[0, 6, 2]} />
-        <Environment preset="city" />
+        <ambientLight intensity={1.35} />
+        <directionalLight intensity={2.1} position={[4, 6, 5]} />
+        <pointLight color={pointLightColor} intensity={6.5} position={[-3, 2, 2]} />
+        <spotLight angle={0.45} color="#dfe8ff" intensity={8} penumbra={0.55} position={[0, 6, 2]} />
 
         <ViewerErrorBoundary fallback={<CharacterFigure accent={accent} />}>
           <Suspense fallback={<CharacterFigure accent={accent} />}>
@@ -159,12 +169,12 @@ export function ModelViewer({ accent = 'violet', className, label, src }: ModelV
           </Suspense>
         </ViewerErrorBoundary>
 
-        <mesh position={[0, -1.2, 0]} receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
+        <mesh position={[0, -1.2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <circleGeometry args={[3.2, 64]} />
           <meshStandardMaterial color="#0e1728" />
         </mesh>
 
-        <OrbitControls autoRotate autoRotateSpeed={1.2} enablePan={false} maxDistance={7} minDistance={2.2} />
+        <OrbitControls autoRotate={false} enablePan={false} enableDamping={false} maxDistance={7} minDistance={2.2} />
       </Canvas>
 
       {label ? (

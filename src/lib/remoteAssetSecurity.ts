@@ -21,6 +21,7 @@ export async function getAllowedRemoteAssetHosts(payload: Payload) {
   const securitySettings = await getSecuritySettingsSnapshot(payload)
   const allowedHosts = new Set<string>()
   const canonicalHost = tryGetHostname(getCanonicalAppURL())
+  const meshyApiHost = tryGetHostname(process.env.MESHY_API_BASE_URL || '')
 
   if (canonicalHost) {
     allowedHosts.add(canonicalHost)
@@ -33,6 +34,14 @@ export async function getAllowedRemoteAssetHosts(payload: Payload) {
   const storageBaseHost = tryGetHostname(settings.baseURL)
   if (storageBaseHost) {
     allowedHosts.add(storageBaseHost)
+  }
+
+  if (meshyApiHost) {
+    allowedHosts.add(meshyApiHost)
+  }
+
+  if ((process.env.MESHY_API_KEY || '').trim()) {
+    allowedHosts.add('assets.meshy.ai')
   }
 
   const explicitHosts =

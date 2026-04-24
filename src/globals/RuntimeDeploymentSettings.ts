@@ -1,14 +1,16 @@
 import type { GlobalConfig } from 'payload'
 
 import { isAdmin } from '@/access'
+import { adminTextKey } from '@/lib/adminText'
+
+const text = (en: string, zh: string) => ({ en, zh })
 
 export const RuntimeDeploymentSettings: GlobalConfig = {
   slug: 'runtime-deployment-settings',
-  label: 'Runtime Deployment',
+  label: adminTextKey('globals.runtimeDeployment.label'),
   admin: {
-    description:
-      'Manage deployment-time database and app runtime variables. Secrets must still be stored in your hosting platform environment.',
-    group: 'Platform',
+    description: adminTextKey('globals.runtimeDeployment.description'),
+    group: adminTextKey('groups.platform'),
   },
   access: {
     read: isAdmin,
@@ -28,20 +30,20 @@ export const RuntimeDeploymentSettings: GlobalConfig = {
       type: 'tabs',
       tabs: [
         {
-          label: 'Database Runtime',
+          label: text('Database Runtime', '数据库运行时'),
           fields: [
             {
               name: 'databaseConnectionMode',
               type: 'select',
               defaultValue: 'aws-rds-fields',
-              label: 'Connection mode',
+              label: text('Connection mode', '连接模式'),
               options: [
                 {
-                  label: 'Compose from AWS RDS variables',
+                  label: text('Compose from AWS RDS variables', '根据 AWS RDS 变量拼接'),
                   value: 'aws-rds-fields',
                 },
                 {
-                  label: 'Use DATABASE_URL directly',
+                  label: text('Use DATABASE_URL directly', '直接使用 DATABASE_URL'),
                   value: 'database-url',
                 },
               ],
@@ -52,9 +54,12 @@ export const RuntimeDeploymentSettings: GlobalConfig = {
               type: 'text',
               admin: {
                 condition: (_, siblingData) => siblingData?.databaseConnectionMode === 'database-url',
-                description: 'Paste the deployment DATABASE_URL template without the real password if you want.',
+                description: text(
+                  'Paste the deployment DATABASE_URL template without the real password if you want.',
+                  '如有需要，可填写不含真实密码的部署 DATABASE_URL 模板。',
+                ),
               },
-              label: 'DATABASE_URL template',
+              label: text('DATABASE_URL template', 'DATABASE_URL 模板'),
             },
             {
               name: 'awsRdsHost',
@@ -112,10 +117,12 @@ export const RuntimeDeploymentSettings: GlobalConfig = {
               name: 'databaseSecurityChecklist',
               type: 'textarea',
               admin: {
-                description:
+                description: text(
                   'Optional operator notes such as current security group, public access status, or the production server IP to allow.',
+                  '可选。记录安全组、公网访问状态或需要放行的生产服务器 IP 等运维备注。',
+                ),
               },
-              label: 'Security checklist',
+              label: text('Security checklist', '安全检查清单'),
             },
             {
               name: 'databaseRuntimeEnvPreview',
@@ -129,22 +136,24 @@ export const RuntimeDeploymentSettings: GlobalConfig = {
           ],
         },
         {
-          label: 'App Runtime',
+          label: text('App Runtime', '应用运行时'),
           fields: [
             {
               name: 'nextPublicAppUrl',
               type: 'text',
-              defaultValue: 'http://127.0.0.1:3000',
+              defaultValue: 'http://localhost:3000',
               label: 'NEXT_PUBLIC_APP_URL',
             },
             {
               name: 'payloadSecretRotationNote',
               type: 'textarea',
               admin: {
-                description:
+                description: text(
                   'Optional note for operators about where the current PAYLOAD_SECRET lives and when it was rotated.',
+                  '可选。记录当前 PAYLOAD_SECRET 的存放位置和最近轮换时间。',
+                ),
               },
-              label: 'Secret rotation note',
+              label: text('Secret rotation note', '密钥轮换说明'),
             },
           ],
         },

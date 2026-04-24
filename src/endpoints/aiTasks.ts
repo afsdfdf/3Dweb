@@ -1,14 +1,17 @@
 import type { PayloadRequest } from 'payload'
 
-import { handleAIWebhook, submitAITask, syncAITask } from '@/lib/aiTaskFlow'
+import { handleAIWebhook, handleMeshyWebhook, submitAITask, syncAITask } from '@/lib/aiTaskFlow'
 import { writeAuditLog } from '@/lib/auditLog'
 import { InsufficientCreditsError } from '@/lib/creditLedger'
 import { rejectRateLimitedEndpoint } from '@/lib/endpointRateLimit'
+import { ensurePayloadRequestUser } from '@/lib/payloadAuthFallback'
 import { rejectDisallowedMutationOrigin } from '@/lib/requestSecurity'
 import { verifyWebhookSignature } from '@/lib/webhookSignature'
 
 type AITasksEndpointTestHooks = {
   handleAIWebhook?: typeof handleAIWebhook
+  handleMeshyWebhook?: typeof handleMeshyWebhook
+  scheduleAfterResponse?: (task: () => Promise<void>) => void
   verifyWebhookSignature?: typeof verifyWebhookSignature
 }
 
@@ -18,7 +21,53 @@ export function __setAITasksEndpointTestHooks(hooks: AITasksEndpointTestHooks | 
   aiTasksEndpointTestHooks = hooks
 }
 
-const unauthorized = () => Response.json({ message: '请先登录' }, { status: 401 })
+const unauthorized = () => Response.json({ message: 'Please sign in first.' }, { status: 401 })
+
+const getMeshyWebhookSecret = () =>
+  (process.env.MESHY_WEBHOOK_TOKEN || process.env.AI_WEBHOOK_SECRET || process.env.PAYLOAD_AI_WEBHOOK_SECRET || '').trim()
+
+const getMeshyWebhookToken = (req: PayloadRequest) => {
+  const headerToken = req.headers.get('x-meshy-webhook-token') || req.headers.get('x-webhook-token')
+
+  if (headerToken?.trim()) {
+    return headerToken.trim()
+  }
+
+  try {
+    return new URL(String((req as PayloadRequest & { url?: string }).url || 'http://localhost')).searchParams.get('token')?.trim() || ''
+  } catch {
+    return ''
+  }
+}
+
+const extractMeshyProviderTaskId = (body: Record<string, unknown>) => {
+  const candidates = [body.id, body.task_id, body.taskId, body.providerTaskId, body.result]
+
+  for (const candidate of candidates) {
+    if (typeof candidate === 'string' && candidate.trim()) {
+      return candidate.trim()
+    }
+  }
+
+  return ''
+}
+
+const scheduleWebhookWork = (task: () => Promise<void>) => {
+  if (aiTasksEndpointTestHooks?.scheduleAfterResponse) {
+    aiTasksEndpointTestHooks.scheduleAfterResponse(task)
+    return
+  }
+
+  void import('next/server')
+    .then(({ after }) => {
+      after(() => {
+        void task()
+      })
+    })
+    .catch(() => {
+      void task()
+    })
+}
 
 const validateWebhook = async (args: { payload: string; req: PayloadRequest }) => {
   const { payload, req } = args
@@ -41,6 +90,7 @@ export const submitAITaskEndpoint = {
     const blocked = await rejectDisallowedMutationOrigin(req)
     if (blocked) return blocked
 
+    await ensurePayloadRequestUser(req)
     if (!req.user) return unauthorized()
 
     const rateLimited = await rejectRateLimitedEndpoint({
@@ -52,17 +102,19 @@ export const submitAITaskEndpoint = {
     try {
       const body = req.json ? await req.json() : {}
       const task = await submitAITask({
+        dispatchProvider: false,
         inputMode: body.inputMode ?? 'text',
         parameterSnapshot: body.parameterSnapshot ?? {},
         printRequested: Boolean(body.printRequested ?? false),
         prompt: body.prompt,
         provider: body.provider ?? 'custom',
         req,
+        sourceImageAsset: body.sourceImageAsset ?? undefined,
         sourceImage: body.sourceImage,
       })
 
       return Response.json({
-        message: '任务已提交',
+        message: 'Task submitted successfully.',
         next: {
           syncEndpoint: `/api/studio/ai/tasks/${task.id}/sync`,
           webhookEndpoint: '/api/platform/ai/webhooks/provider',
@@ -70,7 +122,7 @@ export const submitAITaskEndpoint = {
         task,
       })
     } catch (error) {
-      const message = error instanceof Error ? error.message : '任务提交失败'
+      const message = error instanceof Error ? error.message : 'Task submission failed.'
       const status = error instanceof InsufficientCreditsError ? 402 : 400
       return Response.json({ message }, { status })
     }
@@ -84,6 +136,7 @@ export const syncAITaskEndpoint = {
     const blocked = await rejectDisallowedMutationOrigin(req)
     if (blocked) return blocked
 
+    await ensurePayloadRequestUser(req)
     if (!req.user) return unauthorized()
 
     const rateLimited = await rejectRateLimitedEndpoint({
@@ -122,7 +175,89 @@ export const syncAITaskEndpoint = {
     }
 
     const task = await syncAITask({ req, taskId })
-    return Response.json({ message: '任务同步完成', task })
+    return Response.json({ message: 'Task sync completed.', task })
+  },
+}
+
+export const meshyWebhookEndpoint = {
+  path: '/platform/ai/webhooks/meshy',
+  method: 'post' as const,
+  handler: async (req: PayloadRequest) => {
+    const expectedToken = getMeshyWebhookSecret()
+
+    if (!expectedToken) {
+      return Response.json({ message: 'Meshy webhook token is not configured.' }, { status: 503 })
+    }
+
+    if (getMeshyWebhookToken(req) !== expectedToken) {
+      writeAuditLog({
+        eventType: 'ai.webhook.verification',
+        provider: 'meshy',
+        req,
+        status: 'rejected',
+      })
+
+      return Response.json({ message: 'Meshy webhook token verification failed.' }, { status: 401 })
+    }
+
+    const rawBody = req.text ? await req.text() : ''
+    let body: Record<string, unknown> = {}
+
+    try {
+      body = rawBody ? (JSON.parse(rawBody) as Record<string, unknown>) : {}
+    } catch {
+      return Response.json({ message: 'Invalid Meshy webhook JSON payload.' }, { status: 400 })
+    }
+
+    const providerTaskId = extractMeshyProviderTaskId(body)
+
+    if (!providerTaskId) {
+      return Response.json({ message: 'Meshy task ID is required.' }, { status: 400 })
+    }
+
+    scheduleWebhookWork(async () => {
+      try {
+        const result = await (aiTasksEndpointTestHooks?.handleMeshyWebhook || handleMeshyWebhook)({
+          payloadData: body,
+          req,
+        })
+
+        writeAuditLog({
+          details: {
+            providerTaskId,
+          },
+          eventType: 'ai.webhook.processing',
+          provider: 'meshy',
+          req,
+          status: 'completed',
+          taskId: result.taskId,
+        })
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Meshy webhook processing failed.'
+
+        writeAuditLog({
+          details: {
+            message,
+            providerTaskId,
+          },
+          eventType: 'ai.webhook.processing',
+          level: 'error',
+          provider: 'meshy',
+          req,
+          status: 'failed',
+        })
+
+        req.payload.logger.error(
+          {
+            err: error,
+            providerTaskId,
+          },
+          'Meshy webhook processing failed.',
+        )
+      }
+    })
+
+    return Response.json({ message: 'Meshy webhook accepted.' }, { status: 202 })
   },
 }
 
@@ -145,7 +280,7 @@ export const aiWebhookEndpoint = {
       })
 
       if (verification.code === 'REPLAY') {
-        return Response.json({ message: 'Webhook replay detected' }, { status: 409 })
+        return Response.json({ message: 'Webhook replay detected.' }, { status: 409 })
       }
 
       return Response.json({ message: `Webhook verification failed: ${verification.code}` }, { status: 401 })
@@ -155,13 +290,13 @@ export const aiWebhookEndpoint = {
     try {
       body = rawBody ? (JSON.parse(rawBody) as Record<string, unknown>) : {}
     } catch {
-      return Response.json({ message: 'Invalid webhook JSON payload' }, { status: 400 })
+      return Response.json({ message: 'Invalid webhook JSON payload.' }, { status: 400 })
     }
 
     const providerTaskId = String(body?.providerTaskId ?? '').trim()
 
     if (!providerTaskId) {
-      return Response.json({ message: 'providerTaskId is required' }, { status: 400 })
+      return Response.json({ message: 'providerTaskId is required.' }, { status: 400 })
     }
 
     try {
@@ -177,9 +312,9 @@ export const aiWebhookEndpoint = {
         taskId: result.taskId,
       })
 
-      return Response.json({ message: '回调处理完成', result })
+      return Response.json({ message: 'Webhook processed successfully.', result })
     } catch (error) {
-      const message = error instanceof Error ? error.message : '回调处理失败'
+      const message = error instanceof Error ? error.message : 'Webhook processing failed.'
       writeAuditLog({
         details: {
           message,

@@ -1,13 +1,13 @@
 /**
- * M-04/M-05: 共享 KV 存储抽象层
+ * Shared KV storage abstraction used by rate limits, token revocation, and webhook replay protection.
  *
- * 为速率限制、Token 吊销、Webhook 重放检测提供统一的存储接口。
- * 默认使用进程内存，生产环境可通过 REDIS_URL 环境变量切换到 Redis。
+ * Default behavior uses in-memory storage. Production deployments can switch to Redis
+ * through REDIS_URL.
  *
- * 设计原则：
- * - 接口极简：get / set / delete / has / cleanup
- * - 自动过期：set 时指定 TTL（毫秒），过期条目在 cleanup 时自动清除
- * - 零依赖：内存实现不引入任何外部包，Redis 实现可选
+ * Design principles:
+ * - keep the interface minimal: get / set / delete / has / cleanup
+ * - support TTL-based expiry
+ * - keep the in-memory implementation dependency free
  */
 
 export interface KVStore {
@@ -15,17 +15,15 @@ export interface KVStore {
   set(key: string, value: string, ttlMs?: number): Promise<void>
   delete(key: string): Promise<void>
   has(key: string): Promise<boolean>
-  /** 清理所有已过期条目 */
+  /** Remove all expired entries. */
   cleanup(): Promise<void>
 }
 
-// ────────────────────────────────────────────
-// 内存实现（默认，开发 & 单实例部署）
-// ────────────────────────────────────────────
+// In-memory implementation used for development and single-instance deployments.
 
 type MemEntry = {
   value: string
-  expiresAt: number | null // null = 永不过期
+  expiresAt: number | null // null means no expiry
 }
 
 export class MemoryKVStore implements KVStore {
@@ -67,12 +65,10 @@ export class MemoryKVStore implements KVStore {
   }
 }
 
-// ────────────────────────────────────────────
-// Redis 实现（可选，多实例生产部署）
-// ────────────────────────────────────────────
+// Redis implementation for multi-instance production deployments.
 
 export class RedisKVStore implements KVStore {
-  private client: any // ioredis 或 node-redis 实例
+  private client: any // ioredis or node-redis instance
 
   constructor(client: any) {
     this.client = client
@@ -84,7 +80,7 @@ export class RedisKVStore implements KVStore {
 
   async set(key: string, value: string, ttlMs?: number): Promise<void> {
     if (ttlMs) {
-      // PX = 毫秒级 TTL（Redis SET 命令）
+      // PX configures millisecond-level TTL in Redis SET.
       await this.client.set(key, value, 'PX', ttlMs)
     } else {
       await this.client.set(key, value)
@@ -101,22 +97,20 @@ export class RedisKVStore implements KVStore {
   }
 
   async cleanup(): Promise<void> {
-    // Redis 自动过期，无需手动清理
+    // Redis handles TTL expiry automatically.
   }
 }
 
-// ────────────────────────────────────────────
-// 单例工厂
-// ────────────────────────────────────────────
+// Singleton factory.
 
 let _instance: KVStore | null = null
 
 /**
- * 获取全局 KV 存储实例。
- * - 无 REDIS_URL → 使用内存实现
- * - 有 REDIS_URL → 尝试连接 Redis（需安装 ioredis）
+ * Return the shared KV store instance.
+ * - without REDIS_URL: use the in-memory implementation
+ * - with REDIS_URL: try to connect to Redis
  *
- * 注意：Redis 连接是延迟的，只在首次调用时初始化。
+ * Redis initialization is lazy and happens on first use.
  */
 export function getKVStore(): KVStore {
   if (_instance) return _instance
@@ -131,8 +125,7 @@ export function getKVStore(): KVStore {
       return _instance
     } catch {
       console.warn(
-        '[kvStore] REDIS_URL is set but ioredis is not installed. Falling back to memory store. ' +
-          'Run `pnpm add ioredis` to enable Redis-backed storage.',
+        '[kvStore] REDIS_URL is set but ioredis is not installed. Falling back to memory store. Run `pnpm add ioredis` to enable Redis-backed storage.',
       )
     }
   }
@@ -142,7 +135,7 @@ export function getKVStore(): KVStore {
 }
 
 /**
- * 仅用于测试：重置单例以切换存储后端
+ * Test-only helper to reset the singleton instance.
  */
 export function _resetKVStore(): void {
   _instance = null

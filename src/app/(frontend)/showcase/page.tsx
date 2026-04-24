@@ -20,7 +20,18 @@ type ShowcaseModel = {
 
 function getPreviewURL(model: any) {
   const preview = model?.previewImage
-  return preview && typeof preview === 'object' && typeof preview.url === 'string' ? preview.url : null
+  if (preview && typeof preview === 'object' && typeof preview.url === 'string') {
+    return preview.url
+  }
+
+  const sourceTask =
+    model?.sourceTask && typeof model.sourceTask === 'object' && !Array.isArray(model.sourceTask) ? model.sourceTask : null
+  const callbackPayload =
+    sourceTask?.callbackPayload && typeof sourceTask.callbackPayload === 'object' && !Array.isArray(sourceTask.callbackPayload)
+      ? sourceTask.callbackPayload
+      : null
+
+  return callbackPayload && typeof callbackPayload.thumbnailUrl === 'string' ? callbackPayload.thumbnailUrl : null
 }
 
 function getFormats(model: any) {
@@ -34,7 +45,7 @@ async function getShowcaseModels(): Promise<ShowcaseModel[]> {
     collection: 'models',
     depth: 2,
     limit: 60,
-    overrideAccess: true,
+    overrideAccess: false,
     pagination: false,
     sort: '-id',
     where: {
