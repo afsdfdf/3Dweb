@@ -1,9 +1,4 @@
-import Link from 'next/link'
 import type { ReactNode } from 'react'
-
-import { Bell, ShoppingCart } from 'lucide-react'
-
-import { Button } from '@/components/ui/button'
 
 import type { FooterContent, NavigationItem } from '../_lib/marketing-content'
 import { getDefaultFooter, getDefaultSiteSettings } from '../_lib/marketing-content'
@@ -17,6 +12,7 @@ type SiteShellProps = {
   children: ReactNode
   currentPath?: string
   footer?: FooterContent | null
+  mobileChildren?: ReactNode
   navigation?: NavigationItem[] | null
   showAuthEntry?: boolean
   showFooter?: boolean
@@ -28,98 +24,73 @@ type SiteShellProps = {
   }
 }
 
-const utilityLinks = [
-  { href: '/generate', label: 'Studio' },
-  { href: '/dashboard/tasks', label: 'Tasks' },
-  { href: '/dashboard/library', label: 'Library' },
-  { href: '/dashboard/orders', label: 'Orders' },
-  { href: '/showcase', label: 'Showcase' },
-] as const
-
 export async function SiteShell({
   announcement,
   children,
   currentPath,
   footer,
-  navigation,
+  mobileChildren,
   showAuthEntry = true,
   showFooter = true,
   showLocaleSwitcher = true,
-  showUtilityNav = true,
   user,
 }: SiteShellProps) {
   const locale = await getCurrentLocale()
   const navUser = await getCurrentNavUser()
   const defaultSiteSettings = getDefaultSiteSettings(locale)
   const footerContent = { ...getDefaultFooter(locale), ...footer }
-  const links = navigation?.length
-    ? navigation.map((item) => ({ href: item.href, label: item.label || '' }))
-    : [
-        { href: '/', label: 'Home' },
-        { href: '/generate', label: 'Workbench' },
-        { href: '/dashboard', label: 'Account' },
-        { href: '/admin', label: 'Admin' },
-      ]
+
+  const fixedStageStyle = {
+    '--app-stage-scale': 'max(calc(100vw / 1920px), calc(100vh / 1080px))',
+  } as React.CSSProperties
 
   return (
-    <div className="min-h-screen bg-[#181818] text-[#ededee]">
-      {announcement ? (
-        <div className="border-b border-[#403f46] bg-[#181818]">
-          <div className="mx-auto max-w-[1600px] px-4 py-2 text-center text-[10px] uppercase tracking-[0.3em] text-[#8f9199] sm:px-6">
-            {announcement}
+    <>
+      {mobileChildren ? <div className="h-screen w-screen overflow-y-auto bg-[#181818] text-[#ededee] md:hidden">{mobileChildren}</div> : null}
+      <div className={`${mobileChildren ? 'hidden md:block' : ''} h-screen w-screen overflow-hidden bg-[#181818] text-[#ededee]`} style={fixedStageStyle}>
+      <div
+        className="absolute left-1/2 top-1/2 h-[1080px] w-[1920px] origin-center bg-[#181818]"
+        style={{
+          transform: 'translate(-50%, -50%) scale(var(--app-stage-scale))',
+        }}
+      >
+        {announcement ? (
+          <div className="border-b border-[#403f46] bg-[#181818]">
+            <div className="mx-auto max-w-[1600px] px-4 py-2 text-center text-[10px] uppercase tracking-[0.3em] text-[#8f9199] sm:px-6">
+              {announcement}
+            </div>
           </div>
-        </div>
-      ) : null}
+        ) : null}
 
-      <TopNavBar
-        currentPath={currentPath}
-        locale={locale}
-        navigation={links}
-        showAuthEntry={showAuthEntry}
-        showLocaleSwitcher={showLocaleSwitcher}
-        user={
-          navUser
-            ? {
-                avatarUrl: navUser.avatarUrl,
-                creditsBalance: navUser.creditsBalance,
-                displayName: navUser.displayName,
-                email: navUser.email,
-              }
-            : user
-        }
-      />
-
-      {showUtilityNav ? (
-        <div className="border-b border-[#403f46] bg-[#181818]">
-          <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-2 px-4 py-3 sm:px-6">
-            {utilityLinks.map((link) => (
-              <Button
-                asChild
-                className={`rounded-full px-4 ${
-                  currentPath?.startsWith(link.href)
-                    ? 'border-[#403f46] bg-[#2b2a32] text-[#ffe7a8]'
-                    : 'border-[#403f46] bg-[#2b2a32] text-[#bcb4a1] hover:bg-[#424149] hover:text-[#f0d188]'
-                }`}
-                key={`${link.href}-${link.label}`}
-                size="sm"
-                variant="outline"
-              >
-                <Link href={link.href}>{link.label}</Link>
-              </Button>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      <main>{children}</main>
-
-      {showFooter ? (
-        <FooterBar
-          footerContent={footerContent}
-          siteDescription={defaultSiteSettings.siteDescription}
-          supportEmail={defaultSiteSettings.supportEmail}
+        <TopNavBar
+          currentPath={currentPath}
+          locale={locale}
+          navigation={[]}
+          showAuthEntry={showAuthEntry}
+          showLocaleSwitcher={showLocaleSwitcher}
+          user={
+            navUser
+              ? {
+                  avatarUrl: navUser.avatarUrl,
+                  creditsBalance: navUser.creditsBalance,
+                  displayName: navUser.displayName,
+                  email: navUser.email,
+                }
+              : user
+          }
         />
-      ) : null}
+
+        <main className="h-[1020px] overflow-hidden">{children}</main>
+
+        {showFooter ? (
+          <FooterBar
+            footerContent={footerContent}
+            siteDescription={defaultSiteSettings.siteDescription}
+            supportEmail={defaultSiteSettings.supportEmail}
+          />
+        ) : null}
+      </div>
     </div>
+    </>
   )
 }

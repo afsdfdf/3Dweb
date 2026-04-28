@@ -3,9 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
-import { Button } from '@/components/ui/button'
-
-import { useLocale } from './LocaleProvider'
+import { OrangeMediumActionButton } from '@/components/ui-lab/action-buttons'
 
 type SubscribePlanButtonProps = {
   disabled?: boolean
@@ -13,7 +11,6 @@ type SubscribePlanButtonProps = {
 }
 
 export function SubscribePlanButton({ disabled = false, planKey }: SubscribePlanButtonProps) {
-  const locale = useLocale()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -37,7 +34,7 @@ export function SubscribePlanButton({ disabled = false, planKey }: SubscribePlan
       const json = await response.json()
 
       if (!response.ok) {
-        throw new Error(json.message || (locale === 'zh' ? '创建订阅结算失败' : 'Failed to create subscription checkout'))
+        throw new Error(json.message || 'Failed to create subscription checkout')
       }
 
       if (json.checkoutUrl && typeof window !== 'undefined') {
@@ -47,17 +44,17 @@ export function SubscribePlanButton({ disabled = false, planKey }: SubscribePlan
 
       router.refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : locale === 'zh' ? '创建订阅结算失败' : 'Failed to create subscription checkout')
+      setError(err instanceof Error ? err.message : 'Failed to create subscription checkout')
     } finally {
       setLoading(false)
     }
   }
 
+  const label = disabled ? 'Unavailable' : loading ? 'Redirecting' : 'Subscribe'
+
   return (
-    <div className="flex flex-col gap-2">
-      <Button className="w-full" disabled={disabled || loading} onClick={onSubscribe} type="button">
-        {disabled ? (locale === 'zh' ? '暂未启用' : 'Unavailable') : loading ? (locale === 'zh' ? '正在跳转结算...' : 'Redirecting to checkout...') : locale === 'zh' ? '立即订阅' : 'Subscribe now'}
-      </Button>
+    <div className="flex flex-col items-center gap-2">
+      <OrangeMediumActionButton disabled={disabled || loading} label={label} onClick={onSubscribe} type="button" />
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
     </div>
   )
