@@ -54,7 +54,11 @@ export function SubscribePlanButton({ disabled = false, planKey }: SubscribePlan
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <OrangeMediumActionButton disabled={disabled || loading} label={label} onClick={onSubscribe} type="button" />
+      <div className="flex h-[58px] w-full items-center justify-center">
+        <div className="relative h-[36.54px] w-[95.21px]">
+          <OrangeMediumActionButton disabled={disabled || loading} label={label} onClick={onSubscribe} type="button" />
+        </div>
+      </div>
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
     </div>
   )

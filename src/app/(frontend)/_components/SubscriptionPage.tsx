@@ -3,12 +3,12 @@ import Link from 'next/link'
 import { BorderComboFrame1 } from '@/components/ui-lab/border-combo-frame-1'
 import { BorderComboFrame2Variant } from '@/components/ui-lab/border-combo-frame-2'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import type { SubscriptionPlanDefinition } from '@/lib/subscriptionPlans'
 
 import { FooterBar } from './shell/FooterBar'
 import { ManageSubscriptionButton } from './ManageSubscriptionButton'
+import { PricingLoginButton } from './PricingLoginButton'
 import { SubscribePlanButton } from './SubscribePlanButton'
 import { SubscriptionStatusSync } from './SubscriptionStatusSync'
 import type { FooterContent } from '../_lib/marketing-content'
@@ -61,17 +61,6 @@ function PlanAction({
   }
 
   return <SubscribePlanButton disabled={!stripeSubscriptionsEnabled} planKey={plan.key} />
-}
-
-function PricingLoginButton() {
-  return (
-    <Button
-      asChild
-      className="h-[46px] w-full shrink-0 border border-[#b77a2f] bg-[linear-gradient(180deg,#e9b35b_0%,#b77528_48%,#6f3a15_100%)] font-semibold text-[#fff9ea] shadow-[inset_0_1px_0_rgba(255,255,255,0.32),0_8px_18px_rgba(0,0,0,0.28)] hover:bg-[linear-gradient(180deg,#f0c06a_0%,#c48231_48%,#7a4219_100%)]"
-    >
-      <Link href="/login">Sign in to subscribe</Link>
-    </Button>
-  )
 }
 
 function BillingComparison({ plan }: { plan: SubscriptionPlanDefinition }) {
@@ -275,8 +264,8 @@ export function SubscriptionPage(props: SubscriptionPageProps) {
                 const isCurrentPlan = activeSubscription?.planKey === plan.key
 
                 return (
-                  <BorderComboFrame1 className="min-h-[472px] bg-[#1c1c20]" key={plan.key} style={{ pointerEvents: 'auto' }}>
-                    <article className="flex h-[404px] flex-col gap-3 p-1">
+                  <BorderComboFrame1 className="min-h-[500px] bg-[#1c1c20]" key={plan.key} style={{ pointerEvents: 'auto' }}>
+                    <article className="flex h-[432px] flex-col gap-3 p-1">
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="text-xs uppercase tracking-[0.24em] text-[#8f7a4a]">{plan.shortLabel}</p>
@@ -296,7 +285,7 @@ export function SubscriptionPage(props: SubscriptionPageProps) {
                           <li key={feature}>{feature}</li>
                         ))}
                       </ul>
-                      <div className="mt-auto">
+                      <div className="mt-auto pt-4">
                         <PlanAction {...props} isCurrentPlan={isCurrentPlan} plan={plan} />
                       </div>
                     </article>
