@@ -291,7 +291,7 @@ export function WorkbenchActions({
                 asChild
                 className="border-[#c45e1f] bg-[linear-gradient(180deg,#ff8d37_0%,#e75e1d_55%,#b93412_100%)] text-white hover:bg-[linear-gradient(180deg,#ff9a49_0%,#ef6828_55%,#c64017_100%)]"
               >
-                <a href={`/api/platform/mock/models/${selectedModel.id}/download?format=glb`}>Download GLB</a>
+                <a href={`/api/platform/models/${selectedModel.id}/download?format=glb`}>Download GLB</a>
               </Button>
 
               {selectedModel.isOwnedByCurrentUser ? (

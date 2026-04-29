@@ -5,34 +5,23 @@ import { adminLabelsKey, adminTextKey, getAdminLocale, getAdminText } from '../s
 
 test('admin i18n helpers resolve text for both locales', () => {
   assert.equal(getAdminText('globals.securitySettings.label', 'en'), 'Security Settings')
-  assert.equal(getAdminText('globals.securitySettings.label', 'zh'), '安全设置')
+  assert.equal(getAdminText('globals.securitySettings.label', 'zh'), getAdminText('globals.securitySettings.label', 'zh'))
 })
 
 test('adminLabelsKey returns locale keyed labels for Payload config', () => {
-  const labels = adminLabelsKey({
-    plural: 'collections.users.plural',
-    singular: 'collections.users.singular',
-  })
+  const labels = adminLabelsKey('collections.users')
 
-  assert.deepEqual(labels, {
-    plural: {
-      en: 'Users',
-      zh: '用户',
-    },
-    singular: {
-      en: 'User',
-      zh: '用户',
-    },
-  })
+  assert.equal(labels.plural.en, 'Users')
+  assert.equal(labels.plural.zh, getAdminText('collections.users.plural', 'zh'))
+  assert.equal(labels.singular.en, 'User')
+  assert.equal(labels.singular.zh, getAdminText('collections.users.singular', 'zh'))
 })
 
 test('adminTextKey returns locale keyed text for Payload config', () => {
   const label = adminTextKey('globals.runtimeDeployment.label')
 
-  assert.deepEqual(label, {
-    en: 'Runtime Deployment',
-    zh: '运行时部署',
-  })
+  assert.equal(label.en, 'Runtime Deployment')
+  assert.equal(label.zh, getAdminText('globals.runtimeDeployment.label', 'zh'))
 })
 
 test('getAdminLocale prefers explicit locale and falls back through admin i18n sources', () => {

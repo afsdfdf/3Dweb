@@ -90,7 +90,7 @@ Registered Payload endpoints:
 - `POST /api/studio/ai/tasks/:taskId/sync`
 - `POST /api/platform/ai/webhooks/provider`
 - `GET /api/platform/models/:modelId/viewer`
-- `GET /api/platform/mock/models/:modelId/download`
+- `GET /api/platform/models/:modelId/download`
 - `POST /api/commerce/print-orders`
 - `POST /api/commerce/print-orders/:orderId/sync`
 - `POST /api/billing/subscriptions/checkout`
@@ -107,7 +107,7 @@ Registered Payload endpoints:
 - `POST /api/account/auth/verify-email`
 - `POST /api/account/auth/resend-verification`
 
-Endpoint modules present but not registered:
+Additional active endpoint modules registered in `src/payload.config.ts`:
 
 - `src/endpoints/account.ts`
 - `src/endpoints/adminRepair.ts`
@@ -119,7 +119,7 @@ Endpoint modules present but not registered:
 
 Important implication:
 
-- Frontend code must not assume dormant account, social, image-generation, or admin-repair endpoints are live until they are registered in `src/payload.config.ts`.
+- Account, social, image-generation, model detail, engagement, and admin-repair endpoints are active production surface. Treat them as live backend APIs, keep origin checks and endpoint-level rate limits on mutations, and do not describe them as dormant.
 
 ## Core Guardrails
 
@@ -128,7 +128,7 @@ Important implication:
 When passing `user` to Payload Local API, always set:
 
 ```ts
-overrideAccess: false
+overrideAccess: false;
 ```
 
 Administrative internal operations may intentionally bypass access, but keep those operations in service-owned flows and document the reason.
@@ -255,7 +255,7 @@ Rules:
 
 ## Known Drift And Cleanup Items
 
-Social table/config drift:
+Social collection status:
 
 - `user-follows`
 - `model-comments`
@@ -263,14 +263,14 @@ Social table/config drift:
 - `model-favorites`
 - `engagement-views`
 
-These appear in generated schema, migrations, services, or dormant endpoint files, but matching active collection configs are not registered in `src/payload.config.ts`.
+These collections are active in `src/payload.config.ts`. Follow, like, and favorite relations have database-level unique indexes in Postgres migrations. Engagement views are publicly writable through the registered endpoint and rely on endpoint rate limiting plus service-level hash/window dedupe.
 
-Do not build new frontend integration against these until collection configs, generated types, migrations, services, and endpoint registration are aligned.
+Do not describe these social modules as dormant. Future changes must preserve endpoint auth/origin/rate-limit guards and keep migrations aligned with collection config.
 
 Other cleanup items:
 
 - Remove hardcoded localhost media fallback URLs from homepage.
-- Confirm or remove dormant endpoint modules before exposing related frontend flows.
+- Keep active endpoint documentation aligned with `src/payload.config.ts`.
 - Keep product docs aligned with registered Payload config, not generated-schema leftovers.
 
 ## Database And Migration Rules
@@ -330,10 +330,10 @@ Current evergreen references:
 - Root docs were consolidated into evergreen documents plus `docs/archive/`.
 - AI memory was compacted into guardrails and active registration facts.
 - Detailed collection documentation moved to `docs/COLLECTIONS_REFERENCE.md`.
-- Frontend integration must not assume dormant endpoint modules are registered.
+- Account, social, model detail, model viewer, image generation, engagement, and admin repair endpoint modules are registered. Frontend integration can use their public `/api/...` paths while preserving the documented security contracts.
 - Workbench model viewing is currently stabilized through the controlled `/api/platform/models/:modelId/viewer` path plus frontend/service-worker caching. After the formal frontend flow is complete, plan a production delivery refactor around a manifest/signing layer, Supabase Storage delivery for public hot assets, short-lived signed access for private assets, and durable cache keys for models and images.
 - Public model discovery/detail and Workbench ownership are separate. `/model-detail?id=<modelId>` is the formal public detail route; Workbench library panels should keep showing only the current user's own models, with other users' public models used only as read-only references.
-- Backend UI development memo added for formal page wiring. Current findings: `users.avatarFrame` and `accountService` support a basic avatar frame value, but there is no admin-managed style catalog; `src/endpoints/account.ts` defines profile/dashboard endpoints but they are not registered in `src/payload.config.ts`; model detail sidebar banner is still static and needs a backend promotion slot; the homepage featured strip and collection shelf are mostly covered by `homepage-items`, with a possible missing editable ribbon/badge label.
+- Backend UI development memo added for formal page wiring. Current findings: `users.avatarFrame` and `accountService` support a basic avatar frame value, but there is no admin-managed style catalog; account profile/dashboard/password endpoints are registered; model detail sidebar banner is still static and needs a backend promotion slot; the homepage featured strip and collection shelf are mostly covered by `homepage-items`, with a possible missing editable ribbon/badge label.
 - `/account` now uses existing server-side current-user Local API helpers for display name, email, avatar, credit balance, and credit transaction history. Client-side account editing remains blocked on registered profile/password endpoints and the future avatar-frame style catalog.
 - Formal page UI closeout kept the migrated layout intact while improving data stability: the homepage now short-circuits local `/api/media/file/...` URLs, public owner card lookups select only required fields, and runtime S3 storage settings use a brief in-process cache to avoid repeated global reads during media-heavy renders. `/model-detail` still depends on `/api/platform/models/:modelId/viewer`; dev delivery of local GLB media can be slow and should be handled in the later media/cache backend pass rather than by changing UI layout.
 - Formal frontend route replacement points `/`, `/workbench`, `/model-detail`, and `/account` at the validated migrated UI implementations. Formal navigation should link to formal paths. The shared security header allows `blob:` in `connect-src` because `ModelViewer` creates browser object URLs before Three.js parses GLB assets.
@@ -368,6 +368,16 @@ Current evergreen references:
 - Vercel/Supabase cutover check found that social service code depends on `user-follows`, `model-comments`, `model-likes`, `model-favorites`, and `engagement-views`. These collections must stay registered in `src/payload.config.ts`, and empty/new Supabase databases must include the 2026-04-29 social baseline migration so comments, likes, favorites, follows, and view dedupe do not fail at runtime.
 - `D:\py\thornstavern_downloads` was imported into the new Supabase-backed database after the first admin account was created. Import owner is `admin@thornstavern.com`; `42` public `models`, `42` GLB `models_formats`, and `123` `media` rows were created. Assets are stored in Supabase Storage bucket `media` under `media/imports/thornstavern-downloads-20260429`; do not re-import this set through AWS S3. Three optional source images referenced by the manifest were absent, but every model has a GLB and preview image.
 - Current imported public model previews and downloads do not require credit charging. Future backend work should keep preview credit cost and download credit cost independently configurable from admin/runtime settings, with charging performed server-side and download refunds issued automatically when asset delivery fails.
-- Public Workbench previews must not depend on login state. `/workbench` should show public model cards to anonymous visitors, and `/api/platform/models/:modelId/viewer` should resolve the GLB after access passes without requiring a second direct-SQL lookup to succeed.
+- Workbench is an authenticated workspace, not a public gallery. `/workbench`, `/workbench/history`, and `/workbench/models/:id` should require login and keep the library scoped to the current user's own models. Anonymous public model preview belongs on `/model-detail?id=<modelId>` through `/api/platform/models/:modelId/viewer`.
 - Model detail should reuse the same `ModelViewer` canvas when selecting creator-rail models. Do not key `ModelViewer` by `viewerURL` on that page; forcing a remount creates new WebGL contexts and browsers can stop loading models after roughly six selections even though the viewer endpoint and GLB files are healthy.
 - `ModelViewer` should keep GLTF/Draco loading resources singleton-style where possible. Reuse the shared Draco decoder loader instead of creating a new `DRACOLoader` per selected model, and release WebGL renderers on unmount so route changes or dev remounts do not leak contexts. On model detail, keep the slide key stable too; keying the parent slide by preview image URL still remounts the canvas even if `ModelViewer` itself has no key.
+
+### 2026-04-29
+
+- Backend architecture audit cleanup formalized model downloads at `GET /api/platform/models/:modelId/download`; do not use the old mock download namespace in production UI.
+- Sensitive account auth mutations, follow/unfollow mutations, and engagement view writes now use endpoint-level rate limiting in addition to existing origin/auth checks.
+- `/test`, `/test-auth-preview`, and `/formal-components` remain available for local development but return `notFound()` in production builds.
+- Obsolete admin service tests for removed `src/lib/admin*.ts` modules were retired. The active unit test suite is 99/99 passing, and `pnpm exec tsc --noEmit` plus `pnpm run build` passed after the cleanup.
+- Public model preview latency is optimized in two layers: `/model-detail` should keep Payload reads narrow with `depth`, `select`, and parallel data preparation, while `/api/platform/models/:modelId/viewer` may use a read-only public fast path against `models -> models_formats -> media.url` before falling back to Payload access for non-public/authenticated cases. The fast path must still require `models.visibility = public`, keep endpoint rate limiting, and only bypass remote-asset global reads for configured Supabase public storage URLs.
+- Model preview performance work should use the shared measurement command `pnpm measure:model-preview -- --ids 1,20,42`. It records page HTML time, viewer endpoint 302 time, Supabase range probe time, browser GLB start/finish, final ready/error, and related thumbnail count so Model Detail and Workbench preview changes can be compared against the same baseline.
+- Model Detail and Workbench must keep the preview flow current-model-first: mount only one active `ModelViewer` canvas, request only the selected model's GLB, and load rail/library thumbnails by visible range instead of loading every card image immediately. The 2026-04-30 check for models `1,20,42` returned page `200`, viewer `302`, Supabase range `206`, one canvas, no visible errors, and only about `9-10` real related image requests instead of the previous full rail burst.

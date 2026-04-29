@@ -149,6 +149,36 @@
   width: calc(100% - 10px);
 }
 
+.modeTabsMountDual {
+  left: 15px;
+  right: 15px;
+}
+
+.modeTabsMountDual > div {
+  width: 226px;
+  min-width: 226px;
+  max-width: 226px;
+  flex-basis: 226px;
+}
+
+.modeTabsMountDual > div > div {
+  left: 9px;
+  right: auto;
+  width: 208px;
+}
+
+.modeTabsMountDual button {
+  width: 101px;
+}
+
+.modeTabsMountDual button:nth-child(2) {
+  left: 107px;
+}
+
+.modeTabsMountDual button:nth-child(3) {
+  left: auto;
+}
+
 .tabs {
   position: relative;
   z-index: 20;
@@ -992,4 +1022,10 @@
 .cardMenu span + span {
   border-top: 1px solid #222;
   color: rgba(255, 255, 255, 0.34);
+}
+
+.leftPanelCloneRight {
+  left: auto;
+  right: var(--panel-edge);
+  transform-origin: top right;
 }

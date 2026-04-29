@@ -57,7 +57,7 @@ import {
 import { aiWebhookEndpoint, meshyWebhookEndpoint, submitAITaskEndpoint, syncAITaskEndpoint } from './endpoints/aiTasks'
 import { recordEngagementViewEndpoint } from './endpoints/engagement'
 import { submitImageGenerationEndpoint } from './endpoints/imageGeneration'
-import { mockModelDownloadEndpoint } from './endpoints/mockDownloads'
+import { modelDownloadEndpoint } from './endpoints/modelDownloads'
 import {
   createModelCommentEndpoint,
   deleteModelCommentEndpoint,
@@ -231,7 +231,7 @@ export default buildConfig({
     meshyWebhookEndpoint,
     aiWebhookEndpoint,
     modelViewerEndpoint,
-    mockModelDownloadEndpoint,
+    modelDownloadEndpoint,
     createPrintOrderEndpoint,
     syncPrintOrderEndpoint,
     createSubscriptionCheckoutEndpoint,

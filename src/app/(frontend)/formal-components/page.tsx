@@ -1,3 +1,5 @@
+import { notFound } from "next/navigation";
+
 import {
   FormalComponentsRegistry,
   getFormalComponentId,
@@ -8,6 +10,10 @@ export default async function FormalComponentsPage({
 }: {
   searchParams: Promise<{ component?: string | string[] }>;
 }) {
+  if (process.env.NODE_ENV === "production") {
+    notFound();
+  }
+
   const params = await searchParams;
   return <FormalComponentsRegistry selectedId={getFormalComponentId(params.component)} />;
 }

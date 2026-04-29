@@ -10,6 +10,7 @@
     "generate:importmap": "cross-env NODE_OPTIONS=--no-deprecation payload generate:importmap",
     "generate:types": "cross-env NODE_OPTIONS=--no-deprecation payload generate:types",
     "lint": "cross-env NODE_OPTIONS=--no-deprecation eslint .",
+    "measure:model-preview": "node scripts/measure-model-preview.mjs",
     "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
     "cleanup:temp": "node scripts/cleanup-temp.cjs",
     "db:cleanup:user-resources": "node scripts/cleanup-user-resources.mjs",

@@ -4,34 +4,25 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-import { GenerateCtaButton } from "@/components/ui-lab/action-buttons";
 import { ModelLibraryPanel, type ModelLibraryPanelCard } from "@/components/ui-lab/model-library-panel";
-import { ModuleCommonFrame } from "@/components/ui-lab/module-common-frame";
-import { SmallButtonTriple } from "@/components/ui-lab/small-button-pair/small-button-pair";
 import { TopNavigation, migrationTestNavItems } from "@/components/ui-lab/top-navigation";
 import type { TopNavigationUser } from "@/components/ui-lab/top-navigation";
 
 import { ModelViewer } from "../_components/ModelViewer";
 import {
   clearWorkbenchDraft,
-  getWorkbenchUploadAccept,
   readWorkbenchDraft,
   uploadWorkbenchSourceImage,
   workbenchAllowedImageTypes,
   workbenchDefaultPrompt,
   workbenchMaxUploadBytes,
-  type WorkbenchSourceImageAsset,
 } from "../_lib/workbenchDraft";
+import {
+  WorkbenchLeftGenerationPanel,
+  type WorkbenchImageInput,
+  type WorkbenchMode,
+} from "./WorkbenchLeftGenerationPanel";
 import styles from "./page.module.css";
-
-type WorkbenchMode = "text3d" | "image3d" | "imageTools";
-
-type WorkbenchImageInput = {
-  file?: File;
-  id: string;
-  previewUrl: string;
-  sourceAsset?: WorkbenchSourceImageAsset;
-};
 
 type WorkbenchClientProps = {
   libraryCards: ModelLibraryPanelCard[];
@@ -52,12 +43,8 @@ export function WorkbenchClient({ libraryCards, navUser }: WorkbenchClientProps)
   const [modelTitle, setModelTitle] = useState("Monk");
   const [prompt, setPrompt] = useState(workbenchDefaultPrompt);
   const [selectedModelSrc, setSelectedModelSrc] = useState<null | string>(firstModelSrc);
-  const isImageInput = activeMode === "image3d";
-  const isImageTools = activeMode === "imageTools";
-  const showMultiView = activeMode === "image3d";
-  const activeModeButton = activeMode === "image3d" ? "purple" : activeMode === "text3d" ? "dark" : "button";
   const activeModelSrc = selectedModelSrc ?? firstModelSrc;
-  const showImageInputs = isImageInput || isImageTools;
+  const showImageInputs = activeMode === "image3d" || activeMode === "imageTools";
 
   useEffect(() => {
     imagesRef.current = images;
@@ -216,200 +203,26 @@ export function WorkbenchClient({ libraryCards, navUser }: WorkbenchClientProps)
             user={navUser}
           />
 
-          <aside className={styles.leftPanel}>
-            <ModuleCommonFrame
-              className={styles.panelFrameOverlay}
-              contentClassName={styles.panelFrameContent}
-              style={{ width: "100%", height: "100%" }}
-            />
-            <div className={styles.modeTabsMount}>
-              <SmallButtonTriple
-                labels={{
-                  purple: "Image To 3D",
-                  dark: "Text To 3D",
-                  button: "Image Tools",
-                }}
-                selected={activeModeButton}
-                onChange={(button) => {
-                  if (button === "purple") {
-                    setActiveMode("image3d");
-                    setMultiView(true);
-                    return;
-                  }
-                  if (button === "dark") {
-                    setActiveMode("text3d");
-                    setMultiView(false);
-                    return;
-                  }
-                  setActiveMode("imageTools");
-                  setMultiView(false);
-                }}
-              />
-            </div>
-
-          <section className={styles.formSection}>
-            <h2>{isImageTools ? "Image Tools" : isImageInput ? "Image + Prompt" : "Prompt"}</h2>
-            <div className={`${styles.imageBox} ${showImageInputs ? styles.imageToolsBox : ""}`}>
-              {showImageInputs ? (
-                <>
-                  <textarea
-                    className={styles.promptBox}
-                    onChange={(event) => setPrompt(event.target.value)}
-                    placeholder={workbenchDefaultPrompt}
-                    value={prompt}
-                  />
-                  <div className={styles.toolImageDivider} />
-                  <div className={styles.thumbGrid}>
-                    {images.map((image) => (
-                      <div className={styles.thumbCard} key={image.id}>
-                        <img alt={image.file?.name || image.sourceAsset?.fileName || "Input preview"} src={image.previewUrl} />
-                        <button
-                          aria-label="Remove image"
-                          onClick={() => removeImage(image.id)}
-                          type="button"
-                        >
-                          x
-                        </button>
-                      </div>
-                    ))}
-                    <label
-                      className={styles.addImageCard}
-                    >
-                      <span>+</span>
-                      Add Image
-                      <input
-                        accept={getWorkbenchUploadAccept()}
-                        className={styles.hiddenFileInput}
-                        multiple
-                        onChange={(event) => {
-                          handleImageFiles(event.target.files);
-                          event.target.value = "";
-                        }}
-                        type="file"
-                      />
-                    </label>
-                  </div>
-                </>
-              ) : (
-                <textarea
-                  className={styles.promptBox}
-                  onChange={(event) => setPrompt(event.target.value)}
-                  placeholder={workbenchDefaultPrompt}
-                  value={prompt}
-                />
-              )}
-            </div>
-          </section>
-
-          {!isImageInput ? (
-            <>
-              <label className={styles.fieldLabel} htmlFor="model-title">
-                Model Title
-              </label>
-            <div className={styles.inputWrap}>
-                <input
-                  id="model-title"
-                  maxLength={122}
-                  onChange={(event) => setModelTitle(event.target.value)}
-                  value={modelTitle}
-                />
-                <span>{modelTitle.length}/122</span>
-              </div>
-            </>
-          ) : null}
-
-          <div className={styles.fieldGroup}>
-            <label className={styles.fieldLabel}>Model Tag</label>
-            <div className={styles.tagRow}>
-              {tags.map((tag) => (
-                <span className={styles.tagChip} key={tag}>
-                  # {tag}
-                  <button
-                    aria-label={`Remove ${tag}`}
-                    onClick={() => setTags((items) => items.filter((item) => item !== tag))}
-                    type="button"
-                  >
-                    x
-                  </button>
-                </span>
-              ))}
-              <button
-                className={styles.addTag}
-                onClick={() => setTags((items) => [...items, `Tag ${items.length + 1}`].slice(0, 5))}
-                type="button"
-              >
-                +
-              </button>
-            </div>
-          </div>
-
-          {showMultiView ? (
-            <>
-              <div className={styles.multiHeader}>
-                <label className={styles.fieldLabel}>Multi-View</label>
-                <div>
-                  <span>{multiView ? "on" : "off"}</span>
-                  <button
-                    aria-label="Toggle multi-view"
-                    aria-pressed={multiView}
-                    className={styles.toggle}
-                    onClick={() => setMultiView((value) => !value)}
-                    type="button"
-                  >
-                    <span />
-                  </button>
-                </div>
-              </div>
-
-              <div className={`${styles.multiBox} ${!multiView ? styles.multiHidden : ""}`}>
-                {[0, 1, 2].map((slot) => (
-                  <label className={styles.multiCard} key={slot}>
-                    <span>+</span>
-                    Add Image
-                    <input
-                      accept={getWorkbenchUploadAccept()}
-                      className={styles.hiddenFileInput}
-                      disabled={!multiView}
-                      onChange={(event) => {
-                        handleImageFiles(event.target.files);
-                        event.target.value = "";
-                      }}
-                      type="file"
-                    />
-                  </label>
-                ))}
-              </div>
-            </>
-          ) : null}
-
-          <label className={styles.fieldLabel} htmlFor="model-license">
-            Model License
-          </label>
-          <div className={styles.selectWrap}>
-            <select
-              id="model-license"
-              onChange={(event) => setLicense(event.target.value === "Private" ? "Private" : "Public")}
-              value={license}
-            >
-              <option>Public</option>
-              <option>Private</option>
-            </select>
-          </div>
-
-          <div className={styles.bottomActions}>
-            <button className={styles.priceButton} type="button">
-              <img alt="" src="/ui-lab/model-detail-uicut/images/detail-bottom-icon-1.png" />
-              <span>20.00</span>
-            </button>
-            <GenerateCtaButton
-              className={styles.generateCta}
-              disabled={isSubmitting}
-              label={isSubmitting ? "SUBMITTING" : "GENERATE"}
-              onClick={handleGenerate}
-            />
-          </div>
-          {error ? <span className={styles.formError}>{error}</span> : null}
-          </aside>
+          <WorkbenchLeftGenerationPanel
+            activeMode={activeMode}
+            error={error}
+            images={images}
+            isSubmitting={isSubmitting}
+            license={license}
+            modelTitle={modelTitle}
+            multiView={multiView}
+            onAddImages={handleImageFiles}
+            onGenerate={handleGenerate}
+            onLicenseChange={setLicense}
+            onModeChange={setActiveMode}
+            onModelTitleChange={setModelTitle}
+            onMultiViewChange={setMultiView}
+            onPromptChange={setPrompt}
+            onRemoveImage={removeImage}
+            onTagsChange={setTags}
+            prompt={prompt}
+            tags={tags}
+          />
 
           <main className={styles.centerPanel}>
             <div className={styles.breadcrumbRow}>

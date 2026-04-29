@@ -53,7 +53,7 @@ test('getCanonicalAppURL falls back to local default in development when env is 
       NODE_ENV: 'development',
     },
     () => {
-      assert.equal(getCanonicalAppURL(), 'http://127.0.0.1:3000')
+      assert.equal(getCanonicalAppURL(), 'http://localhost:3000')
     },
   )
 })
@@ -66,7 +66,7 @@ test('getCanonicalAppURL falls back to local default in development when env is 
       NODE_ENV: 'development',
     },
     () => {
-      assert.equal(getCanonicalAppURL(), 'http://127.0.0.1:3000')
+      assert.equal(getCanonicalAppURL(), 'http://localhost:3000')
     },
   )
 })

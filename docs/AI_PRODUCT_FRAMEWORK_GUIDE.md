@@ -149,7 +149,7 @@ Currently registered in `src/payload.config.ts`:
 - `/api/studio/ai/tasks`
 - `/api/studio/ai/tasks/:taskId/sync`
 - `/api/platform/ai/webhooks/provider`
-- `/api/platform/mock/models/:modelId/download`
+- `/api/platform/models/:modelId/download`
 - `/api/commerce/print-orders`
 - `/api/commerce/print-orders/:orderId/sync`
 - `/api/billing/subscriptions/checkout`
@@ -159,7 +159,7 @@ Currently registered in `src/payload.config.ts`:
 - `/api/platform/billing/webhooks/stripe`
 - `/api/platform/ops/dashboard`
 
-Endpoint modules for account, social, model viewer, image generation, engagement, and admin repair exist but are not currently registered in the main Payload config.
+Endpoint modules for account, social, model viewer, image generation, engagement, and admin repair are registered in the main Payload config. Treat them as live API surface and keep auth, origin checks, input validation, and endpoint-level rate limits aligned with product changes.
 
 ## Security Rules
 

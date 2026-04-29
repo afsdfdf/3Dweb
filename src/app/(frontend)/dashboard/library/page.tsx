@@ -173,10 +173,10 @@ export default async function DashboardLibraryPage() {
 
                 <CardFooter className="flex flex-wrap gap-3">
                   <Button asChild>
-                    <a href={`/api/platform/mock/models/${model.id}/download?format=glb`}>Download GLB</a>
+                    <a href={`/api/platform/models/${model.id}/download?format=glb`}>Download GLB</a>
                   </Button>
                   <Button asChild variant="outline">
-                    <a href={`/api/platform/mock/models/${model.id}/download?format=stl`}>Download STL</a>
+                    <a href={`/api/platform/models/${model.id}/download?format=stl`}>Download STL</a>
                   </Button>
                   {model.printReady ? <CreatePrintOrderButton modelId={Number(model.id)} variant="ghost" /> : null}
                   <Button asChild variant="ghost">

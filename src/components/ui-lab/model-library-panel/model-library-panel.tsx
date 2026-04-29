@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ModelLibraryCard } from "@/components/ui-lab/model-library-card";
 import { ModuleCommonFrame } from "@/components/ui-lab/module-common-frame";
@@ -30,6 +30,11 @@ type ModelLibraryPanelProps = {
 const defaultCards: ModelLibraryPanelCard[] = [];
 
 const pages = ["<", "1", ">"];
+const transparentImageSrc =
+  "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
+const libraryGridColumns = 2;
+const libraryCardHeight = 323;
+const libraryInitialVisibleCount = 6;
 
 export function ModelLibraryPanel({
   cards = defaultCards,
@@ -41,10 +46,44 @@ export function ModelLibraryPanel({
   const [activePage, setActivePage] = useState("1");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCard, setSelectedCard] = useState(cards[0]?.id ?? 1);
+  const gridRef = useRef<HTMLDivElement | null>(null);
+  const [visiblePreviewCount, setVisiblePreviewCount] = useState(
+    libraryInitialVisibleCount,
+  );
   const isEmpty = cards.length === 0;
+  const selectedCardIndex = Math.max(
+    0,
+    cards.findIndex((card) => card.id === selectedCard),
+  );
+
+  const updateVisiblePreviews = useCallback(() => {
+    const grid = gridRef.current;
+    if (!grid) {
+      setVisiblePreviewCount(libraryInitialVisibleCount);
+      return;
+    }
+
+    const visibleRows = Math.ceil(
+      (grid.scrollTop + grid.clientHeight) / libraryCardHeight,
+    );
+    const nextCount = Math.max(
+      libraryInitialVisibleCount,
+      (visibleRows + 1) * libraryGridColumns,
+    );
+    setVisiblePreviewCount((current) => Math.max(current, nextCount));
+  }, []);
+
+  useEffect(() => {
+    setVisiblePreviewCount(libraryInitialVisibleCount);
+    setSelectedCard(cards[0]?.id ?? 1);
+    window.requestAnimationFrame(updateVisiblePreviews);
+  }, [cards, updateVisiblePreviews]);
 
   return (
-    <aside className={[styles.panel, className].filter(Boolean).join(" ")} style={style}>
+    <aside
+      className={[styles.panel, className].filter(Boolean).join(" ")}
+      style={style}
+    >
       <ModuleCommonFrame
         className={styles.frameOverlay}
         contentClassName={styles.frameContent}
@@ -89,8 +128,12 @@ export function ModelLibraryPanel({
         </div>
       ) : (
         <>
-          <div className={styles.cardGrid}>
-            {cards.map((card) => (
+          <div
+            className={styles.cardGrid}
+            onScroll={updateVisiblePreviews}
+            ref={gridRef}
+          >
+            {cards.map((card, index) => (
               <ModelLibraryCard
                 date={card.date}
                 key={card.id}
@@ -102,12 +145,19 @@ export function ModelLibraryPanel({
                   onSelectCard?.(card);
                 }}
                 previewAlt={card.previewAlt}
-                previewSrc={card.previewSrc || undefined}
+                previewSrc={
+                  index < visiblePreviewCount || index === selectedCardIndex
+                    ? card.previewSrc || undefined
+                    : transparentImageSrc
+                }
                 selected={selectedCard === card.id}
               />
             ))}
           </div>
-          <div className={styles.bottomPagination} aria-label="Library pagination summary">
+          <div
+            className={styles.bottomPagination}
+            aria-label="Library pagination summary"
+          >
             <span>10 Items / Page</span>
           </div>
         </>

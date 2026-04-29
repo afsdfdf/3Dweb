@@ -178,6 +178,11 @@ export const followCreatorEndpoint = {
   handler: async (req: PayloadRequest) => {
     const blocked = await rejectDisallowedMutationOrigin(req)
     if (blocked) return blocked
+    const rateLimited = await rejectRateLimitedEndpoint({
+      req,
+      scope: 'social-follow-write',
+    })
+    if (rateLimited) return rateLimited
 
     await ensurePayloadRequestUser(req)
     if (!req.user) return unauthorized()
@@ -210,6 +215,11 @@ export const unfollowCreatorEndpoint = {
   handler: async (req: PayloadRequest) => {
     const blocked = await rejectDisallowedMutationOrigin(req)
     if (blocked) return blocked
+    const rateLimited = await rejectRateLimitedEndpoint({
+      req,
+      scope: 'social-follow-write',
+    })
+    if (rateLimited) return rateLimited
 
     await ensurePayloadRequestUser(req)
     if (!req.user) return unauthorized()

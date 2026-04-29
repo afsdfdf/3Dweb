@@ -169,7 +169,7 @@ export function SketchExactPreview({
                     Cancel
                   </FrameButton>
                   <FrameButton asChild height={52} variant="gold">
-                    <a href={`/api/platform/mock/models/${selectedModel.id}/download?format=${downloadFormat}`}>OK</a>
+                    <a href={`/api/platform/models/${selectedModel.id}/download?format=${downloadFormat}`}>OK</a>
                   </FrameButton>
                 </div>
               </div>
@@ -340,7 +340,7 @@ export function SketchExactPreview({
 
             <div className="flex items-center gap-3">
               <FrameButton asChild height={58} variant="gold" width={262}>
-                <a href={`/api/platform/mock/models/${selectedModel.id}/download?format=${downloadFormat}`}>
+                <a href={`/api/platform/models/${selectedModel.id}/download?format=${downloadFormat}`}>
                   <span className="inline-flex items-center gap-2">
                     <Download className="size-4" />
                     Add To Cart

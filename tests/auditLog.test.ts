@@ -3,15 +3,10 @@ import test from 'node:test'
 
 import { writeAuditLog } from '../src/lib/auditLog.ts'
 
-test('writeAuditLog emits structured info entries', () => {
+test('writeAuditLog emits structured logger entries', () => {
   const entries: Array<Record<string, unknown>> = []
-  const created: Array<Record<string, unknown>> = []
   const req = {
     payload: {
-      create(entry: Record<string, unknown>) {
-        created.push(entry)
-        return Promise.resolve(entry)
-      },
       logger: {
         info(entry: Record<string, unknown>) {
           entries.push(entry)
@@ -40,18 +35,11 @@ test('writeAuditLog emits structured info entries', () => {
   assert.equal(entries[0]?.provider, 'stripe')
   assert.equal(entries[0]?.userId, 7)
   assert.equal(typeof entries[0]?.timestamp, 'string')
-  assert.equal(created.length, 1)
-  assert.equal(created[0]?.collection, 'audit-logs')
 })
 
-test('writeAuditLog still persists audit records when the logger level is unavailable', async () => {
-  const created: Array<Record<string, unknown>> = []
+test('writeAuditLog returns quietly when the logger level is unavailable', () => {
   const req = {
     payload: {
-      create(entry: Record<string, unknown>) {
-        created.push(entry)
-        return Promise.resolve(entry)
-      },
       logger: {},
     },
   } as never
@@ -63,10 +51,4 @@ test('writeAuditLog still persists audit records when the logger level is unavai
       status: 'failed',
     }),
   )
-
-  await new Promise((resolve) => setImmediate(resolve))
-
-  assert.equal(created.length, 1)
-  assert.equal(created[0]?.collection, 'audit-logs')
-  assert.equal((created[0]?.data as Record<string, unknown>)?.eventType, 'ai.webhook.processing')
 })

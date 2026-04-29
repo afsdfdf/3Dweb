@@ -19,7 +19,9 @@ type ButtonConfig = {
 
 type SmallButtonPairProps = {
   darkLabel?: string;
+  onChange?: (button: ButtonId) => void;
   purpleLabel?: string;
+  selected?: ButtonId;
 };
 
 const assetBase = "/ui-lab/formal-components/assets/small-button-pair";
@@ -54,8 +56,20 @@ function getButtonPosition(button: ButtonId, pressedButton: ButtonId) {
   return button === "purple" ? (isPressed ? styles.left : styles.right) : isPressed ? styles.right : styles.left;
 }
 
-export function SmallButtonPair({ darkLabel = "DARK", purpleLabel = "PURPLE" }: SmallButtonPairProps) {
-  const [pressedButton, setPressedButton] = useState<ButtonId>("purple");
+export function SmallButtonPair({
+  darkLabel = "DARK",
+  onChange,
+  purpleLabel = "PURPLE",
+  selected,
+}: SmallButtonPairProps) {
+  const [internalPressedButton, setInternalPressedButton] = useState<ButtonId>("purple");
+  const pressedButton = selected ?? internalPressedButton;
+
+  const handleButtonClick = (button: ButtonId) => {
+    const nextButton = pressedButton === button ? getOppositeButton(button) : button;
+    setInternalPressedButton(nextButton);
+    onChange?.(nextButton);
+  };
 
   return (
     <div className={styles.shell}>
@@ -73,11 +87,7 @@ export function SmallButtonPair({ darkLabel = "DARK", purpleLabel = "PURPLE" }: 
               aria-pressed={isPressed}
               className={[styles.control, getButtonPosition(button.id, pressedButton)].join(" ")}
               key={button.id}
-              onClick={() =>
-                setPressedButton((current) =>
-                  current === button.id ? getOppositeButton(button.id) : button.id,
-                )
-              }
+              onClick={() => handleButtonClick(button.id)}
               type="button"
             >
               <img

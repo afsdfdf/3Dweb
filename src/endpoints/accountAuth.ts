@@ -10,6 +10,7 @@ import {
   startForgotPassword,
   verifyAccountEmail,
 } from '@/lib/authService'
+import { rejectRateLimitedEndpoint } from '@/lib/endpointRateLimit'
 import { ensurePayloadRequestUser } from '@/lib/payloadAuthFallback'
 import { rejectDisallowedMutationOrigin } from '@/lib/requestSecurity'
 
@@ -23,6 +24,11 @@ export const registerAccountEndpoint = {
   handler: async (req: PayloadRequest) => {
     const blocked = await rejectDisallowedMutationOrigin(req)
     if (blocked) return blocked
+    const rateLimited = await rejectRateLimitedEndpoint({
+      req,
+      scope: 'auth-register',
+    })
+    if (rateLimited) return rateLimited
 
     try {
       const body = req.json ? await req.json() : {}
@@ -49,6 +55,11 @@ export const loginAccountEndpoint = {
   handler: async (req: PayloadRequest) => {
     const blocked = await rejectDisallowedMutationOrigin(req)
     if (blocked) return blocked
+    const rateLimited = await rejectRateLimitedEndpoint({
+      req,
+      scope: 'auth-login',
+    })
+    if (rateLimited) return rateLimited
 
     try {
       const body = req.json ? await req.json() : {}
@@ -116,6 +127,11 @@ export const forgotPasswordEndpoint = {
   handler: async (req: PayloadRequest) => {
     const blocked = await rejectDisallowedMutationOrigin(req)
     if (blocked) return blocked
+    const rateLimited = await rejectRateLimitedEndpoint({
+      req,
+      scope: 'auth-reset-password',
+    })
+    if (rateLimited) return rateLimited
 
     try {
       const body = req.json ? await req.json() : {}
@@ -139,6 +155,11 @@ export const resetPasswordEndpoint = {
   handler: async (req: PayloadRequest) => {
     const blocked = await rejectDisallowedMutationOrigin(req)
     if (blocked) return blocked
+    const rateLimited = await rejectRateLimitedEndpoint({
+      req,
+      scope: 'auth-reset-password',
+    })
+    if (rateLimited) return rateLimited
 
     try {
       const body = req.json ? await req.json() : {}
@@ -169,6 +190,14 @@ export const verifyEmailEndpoint = {
   path: '/account/auth/verify-email',
   method: 'post' as const,
   handler: async (req: PayloadRequest) => {
+    const blocked = await rejectDisallowedMutationOrigin(req)
+    if (blocked) return blocked
+    const rateLimited = await rejectRateLimitedEndpoint({
+      req,
+      scope: 'auth-email',
+    })
+    if (rateLimited) return rateLimited
+
     try {
       const body = req.json ? await req.json() : {}
       const result = await verifyAccountEmail({
@@ -194,6 +223,11 @@ export const resendVerificationEndpoint = {
   handler: async (req: PayloadRequest) => {
     const blocked = await rejectDisallowedMutationOrigin(req)
     if (blocked) return blocked
+    const rateLimited = await rejectRateLimitedEndpoint({
+      req,
+      scope: 'auth-email',
+    })
+    if (rateLimited) return rateLimited
 
     try {
       const body = req.json ? await req.json() : {}

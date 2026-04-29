@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import { aiWebhookEndpoint, meshyWebhookEndpoint, __setAITasksEndpointTestHooks } from '../src/endpoints/aiTasks.ts'
-import { __setMockDownloadEndpointTestHooks, mockModelDownloadEndpoint } from '../src/endpoints/mockDownloads.ts'
+import { __setModelDownloadEndpointTestHooks, modelDownloadEndpoint } from '../src/endpoints/modelDownloads.ts'
 import { __setStripeWebhookTestHooks, stripeWebhookEndpoint } from '../src/endpoints/stripeWebhook.ts'
 import { __setSubscriptionFlowTestHooks, syncStripeSubscriptionState } from '../src/lib/subscriptionFlow.ts'
 
@@ -194,7 +194,7 @@ test('subscription credit grant stays idempotent across repeated syncs', async (
 test('model download failure triggers automatic credit refund', async () => {
   let refundCalls = 0
 
-  __setMockDownloadEndpointTestHooks({
+  __setModelDownloadEndpointTestHooks({
     getMediaAccessURL: async () => null,
     isAllowedRemoteAssetURL: async () => true,
     refundDownloadCredits: async () => {
@@ -211,7 +211,7 @@ test('model download failure triggers automatic credit refund', async () => {
   })
 
   try {
-    const response = await mockModelDownloadEndpoint.handler({
+    const response = await modelDownloadEndpoint.handler({
       payload: {
         findByID: async () => ({
           formats: [
@@ -247,7 +247,7 @@ test('model download failure triggers automatic credit refund', async () => {
     assert.equal(refundCalls, 1)
     assert.match(body.message, /refunded automatically|download failed/i)
   } finally {
-    __setMockDownloadEndpointTestHooks(null)
+    __setModelDownloadEndpointTestHooks(null)
   }
 })
 

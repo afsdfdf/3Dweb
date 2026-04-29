@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { notFound } from 'next/navigation'
 
 import { AuthFlowCard } from '@/components/auth/AuthFlowCard'
 import { Badge } from '@/components/ui/badge'
@@ -137,7 +138,7 @@ const customEndpoints: EndpointSpec[] = [
   { method: 'POST', path: '/api/platform/ai/webhooks/meshy', purpose: 'Meshy webhook', integration: 'Provider callback only' },
   { method: 'POST', path: '/api/platform/ai/webhooks/provider', purpose: 'Generic provider webhook', integration: 'Provider callback only' },
   { method: 'GET', path: '/api/platform/models/:modelId/viewer', purpose: 'Signed/controlled model viewer stream', integration: "const url = `/api/platform/models/${modelId}/viewer`" },
-  { method: 'GET', path: '/api/platform/mock/models/:modelId/download', purpose: 'Mock download flow', integration: "window.location.href = `/api/platform/mock/models/${modelId}/download?format=glb`" },
+  { method: 'GET', path: '/api/platform/models/:modelId/download', purpose: 'Model download flow', integration: "window.location.href = `/api/platform/models/${modelId}/download?format=glb`" },
   { method: 'GET', path: '/api/platform/ops/dashboard', purpose: 'Ops dashboard data', integration: "fetch('/api/platform/ops/dashboard', { method: 'GET', credentials: 'include' })" },
   { method: 'POST', path: '/api/platform/session/logout', purpose: 'Session logout helper', integration: "fetch('/api/platform/session/logout', { method: 'POST', credentials: 'include' })" },
   { method: 'POST', path: '/api/platform/admin/orders/:orderId/status', purpose: 'Admin update order status', integration: "fetch(`/api/platform/admin/orders/${orderId}/status`, { method: 'POST', credentials: 'include', body: JSON.stringify({ status }) })" },
@@ -339,7 +340,7 @@ const pageMappings: PageMapSpec[] = [
     note: 'Task result detail page',
     components: ['SiteShell', 'ResultStatus', 'ModelViewer', 'CreatePrintOrderButton'],
     dataSources: ['getTaskByCode()', 'getCurrentUser()'],
-    endpoints: ['/api/studio/ai/tasks/:taskId/sync', '/api/platform/mock/models/:modelId/download', '/api/commerce/print-orders'],
+    endpoints: ['/api/studio/ai/tasks/:taskId/sync', '/api/platform/models/:modelId/download', '/api/commerce/print-orders'],
   },
   {
     path: '/dashboard',
@@ -353,7 +354,7 @@ const pageMappings: PageMapSpec[] = [
     note: 'User model library',
     components: ['DashboardShell', 'CreatePrintOrderButton'],
     dataSources: ['requireUser()', 'getCurrentUserModels()'],
-    endpoints: ['/api/platform/mock/models/:modelId/download', '/api/commerce/print-orders'],
+    endpoints: ['/api/platform/models/:modelId/download', '/api/commerce/print-orders'],
   },
   {
     path: '/dashboard/orders',
@@ -682,6 +683,10 @@ function PageMapTable({ rows }: { rows: PageMapSpec[] }) {
 }
 
 export default function ProjectTestPage() {
+  if (process.env.NODE_ENV === 'production') {
+    notFound()
+  }
+
   return (
     <main className="min-h-screen bg-background px-4 py-8 text-foreground sm:px-6">
       <div className="mx-auto flex max-w-7xl flex-col gap-8">

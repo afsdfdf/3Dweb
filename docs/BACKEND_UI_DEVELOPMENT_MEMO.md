@@ -167,13 +167,17 @@ Keep this boundary:
 
 ## UI Slots Needing Backend Ownership
 
-### Missing Registered Interfaces
+### Active Interfaces And Remaining Backend-Owned Slots
 
-Current missing or inactive interfaces for the migrated formal UI:
+Current active interfaces for the migrated formal UI:
 
-- `/api/account/profile` and `/api/account/dashboard` are defined in `src/endpoints/account.ts` but are not registered in `src/payload.config.ts`.
-- `/api/account/password` is defined in `src/endpoints/account.ts` but is not registered in `src/payload.config.ts`.
-- public model comments, reactions, favorites, follows, and engagement endpoints exist in dormant endpoint/service files but depend on social collections that are not currently active in `src/payload.config.ts`.
+- `/api/account/profile`, `/api/account/dashboard`, and `/api/account/password` are registered in `src/payload.config.ts`.
+- Public model comments, reactions, favorites, follows, and engagement endpoints are registered and backed by active social collections.
+- Sensitive account endpoints, social mutations, and engagement view writes use endpoint-level rate limiting in addition to origin/auth checks.
+- Model downloads use the formal `GET /api/platform/models/:modelId/download` namespace.
+
+Remaining backend-owned slots:
+
 - model detail sidebar banner has no backend-managed read interface or Payload content slot.
 - avatar frame style catalog has no admin-managed collection/global read interface.
 - homepage featured strip and collection shelf are mostly backed by `homepage-items`, but editable ribbon/badge copy is not currently represented as its own field.
@@ -190,7 +194,7 @@ Current state:
 
 - `users.avatarFrame` exists as an enum with `none`, `ember`, `kick`, and `emerald`.
 - `accountService` accepts and returns `avatarFrame`.
-- the `/api/account/profile` endpoint module accepts and returns `avatarFrame`, but the endpoint is not currently registered.
+- the `/api/account/profile` endpoint accepts and returns `avatarFrame`.
 - The current enum is enough for basic user selection but not enough for admin-managed visual styles.
 
 Needed backend product shape:

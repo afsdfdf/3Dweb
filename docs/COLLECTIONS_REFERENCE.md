@@ -103,7 +103,7 @@ Hooks:
 Frontend and service notes:
 
 - Anonymous direct REST user creation is blocked by collection access.
-- Account/auth endpoint modules exist, but they are not currently registered in `src/payload.config.ts`.
+- Account/auth endpoint modules are registered in `src/payload.config.ts`; sensitive auth mutations use origin checks and endpoint-level rate limits.
 - Current-user server reads should go through `src/app/(frontend)/_lib/session.ts`.
 - Do not let customer profile updates write staff-only fields.
 
@@ -254,8 +254,8 @@ Frontend and service notes:
 
 - `visibility = public` is not enough; the `previewImage` must also be guest-readable.
 - Public pages must not expose raw `formats.file` or raw `viewerUrl`.
-- `src/endpoints/modelViewer.ts` exists, but the endpoint is not currently registered.
-- Registered download endpoint: `GET /api/platform/mock/models/:modelId/download`.
+- `src/endpoints/modelViewer.ts` is registered as `GET /api/platform/models/:modelId/viewer`.
+- Registered download endpoint: `GET /api/platform/models/:modelId/download`.
 
 ## Marketing And Content
 
@@ -651,7 +651,7 @@ Currently registered in `src/payload.config.ts`:
 - `POST /api/studio/ai/tasks`
 - `POST /api/studio/ai/tasks/:taskId/sync`
 - `POST /api/platform/ai/webhooks/provider`
-- `GET /api/platform/mock/models/:modelId/download`
+- `GET /api/platform/models/:modelId/download`
 - `POST /api/commerce/print-orders`
 - `POST /api/commerce/print-orders/:orderId/sync`
 - `POST /api/billing/subscriptions/checkout`
@@ -660,10 +660,9 @@ Currently registered in `src/payload.config.ts`:
 - `POST /api/platform/session/logout`
 - `POST /api/platform/billing/webhooks/stripe`
 
-Endpoint modules present but not registered:
+Additional registered endpoint modules:
 
 - `src/endpoints/account.ts`
-- `src/endpoints/accountAuth.ts`
 - `src/endpoints/adminRepair.ts`
 - `src/endpoints/engagement.ts`
 - `src/endpoints/imageGeneration.ts`
@@ -672,7 +671,7 @@ Endpoint modules present but not registered:
 - `src/endpoints/modelReactions.ts`
 - `src/endpoints/modelViewer.ts`
 
-Frontend integration must not assume these dormant endpoint modules are live.
+Frontend integration may use these endpoint modules through their registered `/api/...` paths, but new calls must preserve the endpoint security contracts.
 
 ## Dormant Or Drifted Table Families
 

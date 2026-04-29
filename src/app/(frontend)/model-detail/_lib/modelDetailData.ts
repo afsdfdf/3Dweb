@@ -9,7 +9,10 @@ type ImageLike = {
 };
 
 type OwnerLike = {
-  avatar?: null | number | (ImageLike & { publicAccess?: null | boolean; purpose?: null | string });
+  avatar?:
+    | null
+    | number
+    | (ImageLike & { publicAccess?: null | boolean; purpose?: null | string });
   bio?: null | string;
   displayName?: null | string;
   email?: null | string;
@@ -30,11 +33,13 @@ type ModelLike = {
     widthMm?: null | number;
   };
   favoritesCount?: null | number;
-  formats?: null | {
-    downloadCredits?: null | number;
-    fileSizeMb?: null | number;
-    format?: null | string;
-  }[];
+  formats?:
+    | null
+    | {
+        downloadCredits?: null | number;
+        fileSizeMb?: null | number;
+        format?: null | string;
+      }[];
   id?: number | string;
   likesCount?: null | number;
   owner?: unknown;
@@ -89,7 +94,8 @@ export type ModelDetailData = {
 };
 
 const fallbackPreview = "/ui-lab/model-detail-uicut/images/detail.png";
-const fallbackSidePreview = "/ui-lab/model-detail-uicut/images/detail-side-img-1.png";
+const fallbackSidePreview =
+  "/ui-lab/model-detail-uicut/images/detail-side-img-1.png";
 const sideModelLimit = 24;
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
@@ -126,7 +132,10 @@ const normalizeBrowserMediaURL = (value: null | string | undefined) => {
 
   try {
     const parsed = new URL(trimmed);
-    if ((parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") && parsed.pathname.startsWith("/api/media/file/")) {
+    if (
+      (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") &&
+      parsed.pathname.startsWith("/api/media/file/")
+    ) {
       return `${parsed.pathname}${parsed.search}`;
     }
   } catch {
@@ -136,18 +145,24 @@ const normalizeBrowserMediaURL = (value: null | string | undefined) => {
   return trimmed;
 };
 
-async function resolveMediaAccessURL(payload: Awaited<ReturnType<typeof getCachedPayload>>, url: null | string | undefined) {
+async function resolveMediaAccessURL(
+  payload: Awaited<ReturnType<typeof getCachedPayload>>,
+  url: null | string | undefined,
+) {
   const normalized = normalizeBrowserMediaURL(url);
   if (!normalized) return null;
   if (normalized.startsWith("/")) return normalized;
 
-  return normalizeBrowserMediaURL(await getMediaAccessURL({ payload, url: normalized }));
+  return normalizeBrowserMediaURL(
+    await getMediaAccessURL({ payload, url: normalized }),
+  );
 }
 
 const compactCount = (value: unknown, fallback = "0") => {
   const count = Number(value ?? 0);
   if (!Number.isFinite(count) || count <= 0) return fallback;
-  if (count >= 1000) return `${(count / 1000).toFixed(count >= 10000 ? 0 : 1)}k`;
+  if (count >= 1000)
+    return `${(count / 1000).toFixed(count >= 10000 ? 0 : 1)}k`;
   return String(count);
 };
 
@@ -200,7 +215,10 @@ const getPublicAvatarURL = (owner: null | OwnerLike | undefined) => {
   return null;
 };
 
-async function getPublicOwner(payload: Awaited<ReturnType<typeof getCachedPayload>>, owner: unknown) {
+async function getPublicOwner(
+  payload: Awaited<ReturnType<typeof getCachedPayload>>,
+  owner: unknown,
+) {
   const ownerId = getRelationId(owner);
   if (!ownerId) return null;
 
@@ -218,6 +236,7 @@ async function getPublicOwner(payload: Awaited<ReturnType<typeof getCachedPayloa
               avatar: true,
               bio: true,
               displayName: true,
+              email: true,
               followersCount: true,
               followingCount: true,
               fullName: true,
@@ -233,7 +252,9 @@ async function getPublicOwner(payload: Awaited<ReturnType<typeof getCachedPayloa
 
 const getFormatLabel = (model: ModelLike) => {
   const formats = Array.isArray(model.formats)
-    ? model.formats.map((item) => normalizeText(item?.format)?.toUpperCase()).filter(Boolean)
+    ? model.formats
+        .map((item) => normalizeText(item?.format)?.toUpperCase())
+        .filter(Boolean)
     : [];
 
   return formats.length > 0 ? formats.join(" / ") : "GLB";
@@ -241,7 +262,9 @@ const getFormatLabel = (model: ModelLike) => {
 
 const getDownloadCreditsLabel = (model: ModelLike) => {
   const values = Array.isArray(model.formats)
-    ? model.formats.map((item) => Number(item?.downloadCredits ?? 0)).filter((value) => Number.isFinite(value) && value > 0)
+    ? model.formats
+        .map((item) => Number(item?.downloadCredits ?? 0))
+        .filter((value) => Number.isFinite(value) && value > 0)
     : [];
 
   if (values.length === 0) return "0.00";
@@ -250,12 +273,18 @@ const getDownloadCreditsLabel = (model: ModelLike) => {
 
 const getTags = (model: ModelLike) => {
   const tags = Array.isArray(model.tags)
-    ? model.tags.map((tag) => normalizeText(tag?.label)).filter((tag): tag is string => Boolean(tag))
+    ? model.tags
+        .map((tag) => normalizeText(tag?.label))
+        .filter((tag): tag is string => Boolean(tag))
     : [];
   return tags.length > 0 ? tags.slice(0, 4) : [getFormatLabel(model)];
 };
 
-async function getSideModels(payload: Awaited<ReturnType<typeof getCachedPayload>>, model: ModelLike, ownerId: null | number) {
+async function getSideModels(
+  payload: Awaited<ReturnType<typeof getCachedPayload>>,
+  model: ModelLike,
+  ownerId: null | number,
+) {
   const where: Where = ownerId
     ? {
         and: [
@@ -269,10 +298,19 @@ async function getSideModels(payload: Awaited<ReturnType<typeof getCachedPayload
 
   const result = await payload.find({
     collection: "models",
-    depth: 2,
+    depth: 1,
     limit: sideModelLimit,
     overrideAccess: false,
     pagination: false,
+    select: {
+      createdAt: true,
+      formats: true,
+      id: true,
+      previewImage: true,
+      tags: true,
+      title: true,
+      updatedAt: true,
+    },
     sort: "-updatedAt",
     where,
   });
@@ -282,7 +320,9 @@ async function getSideModels(payload: Awaited<ReturnType<typeof getCachedPayload
     docs.map(async (item) => ({
       href: `/model-detail?id=${encodeURIComponent(String(item.id))}`,
       id: String(item.id),
-      imageSrc: (await resolveMediaAccessURL(payload, getModelPreviewURL(item))) || fallbackSidePreview,
+      imageSrc:
+        (await resolveMediaAccessURL(payload, getModelPreviewURL(item))) ||
+        fallbackSidePreview,
       tags: getTags(item),
       title: normalizeText(item.title) || `Model ${item.id}`,
       updatedLabel: formatDateLabel(item.updatedAt || item.createdAt),
@@ -301,10 +341,29 @@ export async function getModelDetailData(args: {
   const payload = await getCachedPayload();
   const result = await payload.find({
     collection: "models",
-    depth: 2,
+    depth: 1,
     limit: 1,
     overrideAccess: false,
     pagination: false,
+    select: {
+      commentsCount: true,
+      createdAt: true,
+      description: true,
+      dimensions: true,
+      favoritesCount: true,
+      formats: true,
+      id: true,
+      likesCount: true,
+      owner: true,
+      previewImage: true,
+      printReady: true,
+      sourceTask: true,
+      tags: true,
+      title: true,
+      updatedAt: true,
+      viewCount: true,
+      visibility: true,
+    },
     where: {
       and: [{ id: { equals: modelId } }, { visibility: { equals: "public" } }],
     },
@@ -314,23 +373,37 @@ export async function getModelDetailData(args: {
   if (!model) return null;
 
   const ownerId = getRelationId(model.owner);
-  const owner = await getPublicOwner(payload, model.owner);
-  const previewURL = await resolveMediaAccessURL(payload, getModelPreviewURL(model));
-  const sideModels = await getSideModels(payload, model, ownerId);
+  const [owner, previewURL, sideModels] = await Promise.all([
+    getPublicOwner(payload, model.owner),
+    resolveMediaAccessURL(payload, getModelPreviewURL(model)),
+    getSideModels(payload, model, ownerId),
+  ]);
   const title = normalizeText(model.title) || `Model ${model.id}`;
   const dimensions = isRecord(model.dimensions) ? model.dimensions : null;
   const vertexLabel =
-    typeof dimensions?.widthMm === "number" || typeof dimensions?.heightMm === "number" || typeof dimensions?.depthMm === "number"
+    typeof dimensions?.widthMm === "number" ||
+    typeof dimensions?.heightMm === "number" ||
+    typeof dimensions?.depthMm === "number"
       ? [dimensions.widthMm, dimensions.heightMm, dimensions.depthMm]
-          .map((value) => (typeof value === "number" && Number.isFinite(value) ? Math.round(value) : null))
+          .map((value) =>
+            typeof value === "number" && Number.isFinite(value)
+              ? Math.round(value)
+              : null,
+          )
           .filter((value) => value !== null)
           .join(" x ") || "--"
       : "--";
 
   return {
     ageLabel: getAgeLabel(model.updatedAt || model.createdAt),
-    authorAvatarSrc: await resolveMediaAccessURL(payload, getPublicAvatarURL(owner)),
-    authorDescription: normalizeText(owner?.bio) || normalizeText(model.description) || "Public creator model available for preview and reference.",
+    authorAvatarSrc: await resolveMediaAccessURL(
+      payload,
+      getPublicAvatarURL(owner),
+    ),
+    authorDescription:
+      normalizeText(owner?.bio) ||
+      normalizeText(model.description) ||
+      "Public creator model available for preview and reference.",
     authorName: getOwnerName(owner),
     commentsLabel: compactCount(model.commentsCount),
     downloadCreditsLabel: getDownloadCreditsLabel(model),
@@ -338,7 +411,8 @@ export async function getModelDetailData(args: {
     formatsLabel: getFormatLabel(model),
     id: Number(model.id),
     inputPreviewSrc: previewURL,
-    isOwnedByCurrentUser: ownerId !== null && String(ownerId) === String(args.currentUserId ?? ""),
+    isOwnedByCurrentUser:
+      ownerId !== null && String(ownerId) === String(args.currentUserId ?? ""),
     likesLabel: compactCount(model.likesCount),
     previewImages: [previewURL || fallbackPreview],
     printReadyLabel: model.printReady ? "Print Ready" : "Preview Only",

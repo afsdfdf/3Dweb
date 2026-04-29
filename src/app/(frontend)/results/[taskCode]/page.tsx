@@ -182,10 +182,10 @@ export default async function ResultDetailPage({ params }: { params: Promise<{ t
                 {model ? (
                   <>
                     <Button asChild>
-                      <a href={`/api/platform/mock/models/${model.id}/download?format=glb`}>Download GLB file</a>
+                      <a href={`/api/platform/models/${model.id}/download?format=glb`}>Download GLB file</a>
                     </Button>
                     <Button asChild variant="outline">
-                      <a href={`/api/platform/mock/models/${model.id}/download?format=stl`}>Download STL file</a>
+                      <a href={`/api/platform/models/${model.id}/download?format=stl`}>Download STL file</a>
                     </Button>
                     <CreatePrintOrderButton modelId={Number(model.id)} sourceTaskId={Number(task.id)} variant="secondary" />
                     <Button asChild variant="ghost">

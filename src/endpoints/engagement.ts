@@ -1,6 +1,7 @@
 import type { PayloadRequest } from 'payload'
 
 import { recordEngagementView } from '@/lib/engagementService'
+import { rejectRateLimitedEndpoint } from '@/lib/endpointRateLimit'
 import { ensurePayloadRequestUser } from '@/lib/payloadAuthFallback'
 import { rejectDisallowedMutationOrigin } from '@/lib/requestSecurity'
 
@@ -10,6 +11,11 @@ export const recordEngagementViewEndpoint = {
   handler: async (req: PayloadRequest) => {
     const blocked = await rejectDisallowedMutationOrigin(req)
     if (blocked) return blocked
+    const rateLimited = await rejectRateLimitedEndpoint({
+      req,
+      scope: 'engagement-view-write',
+    })
+    if (rateLimited) return rateLimited
 
     await ensurePayloadRequestUser(req)
 

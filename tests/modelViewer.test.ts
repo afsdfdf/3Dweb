@@ -1,33 +1,41 @@
-import assert from 'node:assert/strict'
-import test from 'node:test'
+import assert from "node:assert/strict";
+import test from "node:test";
 
-import { Models } from '../src/collections/Models.ts'
-import { modelViewerEndpoint, __setModelViewerEndpointTestHooks } from '../src/endpoints/modelViewer.ts'
-import { _resetKVStore } from '../src/lib/kvStore.ts'
+import { Models } from "../src/collections/Models.ts";
+import {
+  modelViewerEndpoint,
+  __setModelViewerEndpointTestHooks,
+} from "../src/endpoints/modelViewer.ts";
+import { _resetKVStore } from "../src/lib/kvStore.ts";
 
 const createLogger = () => ({
   error: () => undefined,
   info: () => undefined,
   warn: () => undefined,
-})
+});
 
-test('public model viewer endpoint is rate limited for anonymous preview traffic', async () => {
-  const previousLimit = process.env.MODEL_PREVIEW_RATE_LIMIT_MAX
-  const previousWindow = process.env.MODEL_PREVIEW_RATE_LIMIT_WINDOW_MS
+test("public model viewer endpoint is rate limited for anonymous preview traffic", async () => {
+  const previousLimit = process.env.MODEL_PREVIEW_RATE_LIMIT_MAX;
+  const previousWindow = process.env.MODEL_PREVIEW_RATE_LIMIT_WINDOW_MS;
 
-  process.env.MODEL_PREVIEW_RATE_LIMIT_MAX = '1'
-  process.env.MODEL_PREVIEW_RATE_LIMIT_WINDOW_MS = '60000'
-  _resetKVStore()
+  process.env.MODEL_PREVIEW_RATE_LIMIT_MAX = "1";
+  process.env.MODEL_PREVIEW_RATE_LIMIT_WINDOW_MS = "60000";
+  _resetKVStore();
 
   __setModelViewerEndpointTestHooks({
-    getMediaAccessURL: async () => 'https://assets.example.com/model.glb',
+    getMediaAccessURL: async () => "https://assets.example.com/model.glb",
     isAllowedRemoteAssetURL: async () => true,
+    resolvePublicModelFormatAsset: async () => ({
+      fileId: 10,
+      mimeType: "model/gltf-binary",
+      url: "https://assets.example.com/model.glb",
+    }),
     resolveModelFormatAsset: async () => ({
       fileId: 10,
-      mimeType: 'model/gltf-binary',
-      url: 'https://assets.example.com/model.glb',
+      mimeType: "model/gltf-binary",
+      url: "https://assets.example.com/model.glb",
     }),
-  })
+  });
 
   const payload = {
     findByID: async ({ overrideAccess }: { overrideAccess?: boolean }) => {
@@ -36,90 +44,98 @@ test('public model viewer endpoint is rate limited for anonymous preview traffic
           formats: [
             {
               file: {
-                mimeType: 'model/gltf-binary',
-                url: 'https://assets.example.com/model.glb',
+                mimeType: "model/gltf-binary",
+                url: "https://assets.example.com/model.glb",
               },
-              format: 'glb',
+              format: "glb",
             },
           ],
           id: 5,
-          visibility: 'public',
-        }
+          visibility: "public",
+        };
       }
 
       return {
         formats: [
           {
-            format: 'glb',
+            format: "glb",
           },
         ],
         id: 5,
-        visibility: 'public',
-      }
+        visibility: "public",
+      };
     },
     logger: createLogger(),
-  }
+  };
 
   try {
     const first = await modelViewerEndpoint.handler({
       headers: new Headers({
-        'user-agent': 'viewer-test/1.0',
+        "user-agent": "viewer-test/1.0",
       }),
       payload,
       query: {
-        format: 'glb',
+        format: "glb",
       },
       routeParams: {
-        modelId: '5',
+        modelId: "5",
       },
-    } as never)
+    } as never);
 
     const second = await modelViewerEndpoint.handler({
       headers: new Headers({
-        'user-agent': 'viewer-test/1.0',
+        "user-agent": "viewer-test/1.0",
       }),
       payload,
       query: {
-        format: 'glb',
+        format: "glb",
       },
       routeParams: {
-        modelId: '5',
+        modelId: "5",
       },
-    } as never)
+    } as never);
 
-    assert.equal(first.status, 302)
-    assert.equal(first.headers.get('Location'), 'https://assets.example.com/model.glb')
-    assert.equal(second.status, 429)
+    assert.equal(first.status, 302);
+    assert.equal(
+      first.headers.get("Location"),
+      "https://assets.example.com/model.glb",
+    );
+    assert.equal(second.status, 429);
   } finally {
-    __setModelViewerEndpointTestHooks(null)
-    _resetKVStore()
+    __setModelViewerEndpointTestHooks(null);
+    _resetKVStore();
 
     if (previousLimit === undefined) {
-      delete process.env.MODEL_PREVIEW_RATE_LIMIT_MAX
+      delete process.env.MODEL_PREVIEW_RATE_LIMIT_MAX;
     } else {
-      process.env.MODEL_PREVIEW_RATE_LIMIT_MAX = previousLimit
+      process.env.MODEL_PREVIEW_RATE_LIMIT_MAX = previousLimit;
     }
 
     if (previousWindow === undefined) {
-      delete process.env.MODEL_PREVIEW_RATE_LIMIT_WINDOW_MS
+      delete process.env.MODEL_PREVIEW_RATE_LIMIT_WINDOW_MS;
     } else {
-      process.env.MODEL_PREVIEW_RATE_LIMIT_WINDOW_MS = previousWindow
+      process.env.MODEL_PREVIEW_RATE_LIMIT_WINDOW_MS = previousWindow;
     }
   }
-})
+});
 
-test('model viewer endpoint redirects relative media URLs against the current local dev origin', async () => {
-  _resetKVStore()
+test("model viewer endpoint redirects relative media URLs against the current local dev origin", async () => {
+  _resetKVStore();
 
   __setModelViewerEndpointTestHooks({
     getMediaAccessURL: async () => null,
     isAllowedRemoteAssetURL: async () => true,
+    resolvePublicModelFormatAsset: async () => ({
+      fileId: 10,
+      mimeType: "model/gltf-binary",
+      url: "/api/media/file/model.glb",
+    }),
     resolveModelFormatAsset: async () => ({
       fileId: 10,
-      mimeType: 'model/gltf-binary',
-      url: '/api/media/file/model.glb',
+      mimeType: "model/gltf-binary",
+      url: "/api/media/file/model.glb",
     }),
-  })
+  });
 
   const payload = {
     findByID: async ({ overrideAccess }: { overrideAccess?: boolean }) => {
@@ -128,123 +144,139 @@ test('model viewer endpoint redirects relative media URLs against the current lo
           formats: [
             {
               file: {
-                mimeType: 'model/gltf-binary',
-                url: '/api/media/file/model.glb',
+                mimeType: "model/gltf-binary",
+                url: "/api/media/file/model.glb",
               },
-              format: 'glb',
+              format: "glb",
             },
           ],
           id: 5,
-          visibility: 'public',
-        }
+          visibility: "public",
+        };
       }
 
       return {
         formats: [
           {
-            format: 'glb',
+            format: "glb",
           },
         ],
         id: 5,
-        visibility: 'public',
-      }
+        visibility: "public",
+      };
     },
     logger: createLogger(),
-  }
+  };
 
   try {
     const response = await modelViewerEndpoint.handler({
       headers: new Headers({
-        'user-agent': 'viewer-test/1.0',
+        "user-agent": "viewer-test/1.0",
       }),
       payload,
       query: {
-        format: 'glb',
+        format: "glb",
       },
       routeParams: {
-        modelId: '5',
+        modelId: "5",
       },
-      url: 'http://localhost:3005/api/platform/models/5/viewer?format=glb',
-    } as never)
+      url: "http://localhost:3005/api/platform/models/5/viewer?format=glb",
+    } as never);
 
-    assert.equal(response.status, 302)
-    assert.equal(response.headers.get('Location'), 'http://localhost:3005/api/media/file/model.glb')
+    assert.equal(response.status, 302);
+    assert.equal(
+      response.headers.get("Location"),
+      "http://localhost:3005/api/media/file/model.glb",
+    );
   } finally {
-    __setModelViewerEndpointTestHooks(null)
-    _resetKVStore()
+    __setModelViewerEndpointTestHooks(null);
+    _resetKVStore();
   }
-})
+});
 
-test('model viewer endpoint supports explicit proxy fallback delivery', async () => {
-  _resetKVStore()
+test("model viewer endpoint supports explicit proxy fallback delivery", async () => {
+  _resetKVStore();
 
   __setModelViewerEndpointTestHooks({
     fetch: async () =>
       new Response(new Uint8Array([1, 2, 3]), {
         headers: {
-          'Content-Length': '3',
+          "Content-Length": "3",
         },
         status: 200,
       }),
-    getMediaAccessURL: async () => 'https://assets.example.com/model.glb',
+    getMediaAccessURL: async () => "https://assets.example.com/model.glb",
     isAllowedRemoteAssetURL: async () => true,
+    resolvePublicModelFormatAsset: async () => ({
+      fileId: 10,
+      mimeType: "model/gltf-binary",
+      url: "https://assets.example.com/model.glb",
+    }),
     resolveModelFormatAsset: async () => ({
       fileId: 10,
-      mimeType: 'model/gltf-binary',
-      url: 'https://assets.example.com/model.glb',
+      mimeType: "model/gltf-binary",
+      url: "https://assets.example.com/model.glb",
     }),
-  })
+  });
 
   const payload = {
     findByID: async () => ({
       formats: [
         {
           file: {
-            mimeType: 'model/gltf-binary',
-            url: 'https://assets.example.com/model.glb',
+            mimeType: "model/gltf-binary",
+            url: "https://assets.example.com/model.glb",
           },
-          format: 'glb',
+          format: "glb",
         },
       ],
       id: 5,
-      visibility: 'public',
+      visibility: "public",
     }),
     logger: createLogger(),
-  }
+  };
 
   try {
     const response = await modelViewerEndpoint.handler({
       headers: new Headers({
-        'user-agent': 'viewer-test/1.0',
+        "user-agent": "viewer-test/1.0",
       }),
       payload,
       query: {
-        delivery: 'proxy',
-        format: 'glb',
+        delivery: "proxy",
+        format: "glb",
       },
       routeParams: {
-        modelId: '5',
+        modelId: "5",
       },
-    } as never)
+    } as never);
 
-    assert.equal(response.status, 200)
-    assert.equal(response.headers.get('Content-Length'), '3')
-    assert.equal(response.headers.get('Content-Type'), 'model/gltf-binary')
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get("Content-Length"), "3");
+    assert.equal(response.headers.get("Content-Type"), "model/gltf-binary");
   } finally {
-    __setModelViewerEndpointTestHooks(null)
-    _resetKVStore()
+    __setModelViewerEndpointTestHooks(null);
+    _resetKVStore();
   }
-})
+});
 
-test('public model docs do not expose sensitive file and viewer URL fields to anonymous readers', () => {
-  const formatsField = Models.fields.find((field) => 'name' in field && field.name === 'formats')
-  assert.ok(formatsField && 'fields' in formatsField)
+test("public model docs do not expose sensitive file and viewer URL fields to anonymous readers", () => {
+  const formatsField = Models.fields.find(
+    (field) => "name" in field && field.name === "formats",
+  );
+  assert.ok(formatsField && "fields" in formatsField);
 
-  const fileField = formatsField.fields.find((field) => 'name' in field && field.name === 'file')
-  const viewerUrlField = Models.fields.find((field) => 'name' in field && field.name === 'viewerUrl')
+  const fileField = formatsField.fields.find(
+    (field) => "name" in field && field.name === "file",
+  );
+  const viewerUrlField = Models.fields.find(
+    (field) => "name" in field && field.name === "viewerUrl",
+  );
 
-  assert.ok(fileField && 'access' in fileField && fileField.access?.read)
-  assert.ok(viewerUrlField && 'access' in viewerUrlField && viewerUrlField.access?.read)
+  assert.ok(fileField && "access" in fileField && fileField.access?.read);
+  assert.ok(
+    viewerUrlField && "access" in viewerUrlField && viewerUrlField.access?.read,
+  );
 
   const anonymousArgs = {
     doc: {
@@ -253,8 +285,8 @@ test('public model docs do not expose sensitive file and viewer URL fields to an
     req: {
       user: null,
     },
-  } as never
+  } as never;
 
-  assert.equal(fileField.access?.read?.(anonymousArgs), false)
-  assert.equal(viewerUrlField.access?.read?.(anonymousArgs), false)
-})
+  assert.equal(fileField.access?.read?.(anonymousArgs), false);
+  assert.equal(viewerUrlField.access?.read?.(anonymousArgs), false);
+});

@@ -19,6 +19,96 @@ const createMockRequest = () => {
     users: [{ creditsBalance: 0, id: 1 }],
   }
 
+  const executeLedgerSQL = async (sql: string, args: unknown[] = []) => {
+    const normalized = sql.replace(/\s+/g, ' ').trim().toUpperCase()
+
+    if (normalized.startsWith('SELECT ID, BALANCE, RESERVED_BALANCE, LIFETIME_PURCHASED, LIFETIME_SPENT FROM CREDITS')) {
+      const credit = state.credits.find((item) => Number(item.user) === Number(args[0]))
+      return {
+        rows: credit
+          ? [
+              {
+                balance: credit.balance,
+                id: credit.id,
+                lifetime_purchased: credit.lifetimePurchased,
+                lifetime_spent: credit.lifetimeSpent,
+                reserved_balance: credit.reservedBalance,
+              },
+            ]
+          : [],
+      }
+    }
+
+    if (normalized.startsWith('INSERT INTO CREDITS')) {
+      const credit = {
+        accountLabel: 'Primary credit account',
+        balance: 0,
+        billingNotes: 'System-created default credit account.',
+        id: state.credits.length + 1,
+        lifetimePurchased: 0,
+        lifetimeSpent: 0,
+        reservedBalance: 0,
+        status: 'active',
+        updatedAt: args[1],
+        user: args[0],
+      }
+      state.credits.push(credit)
+      return { rows: [] }
+    }
+
+    if (normalized.startsWith('SELECT ID FROM CREDIT_TRANSACTIONS')) {
+      const transaction = state.creditTransactions.find((item) => item.idempotencyKey === args[0])
+      return {
+        rows: transaction ? [{ id: transaction.id }] : [],
+      }
+    }
+
+    if (normalized.startsWith('UPDATE CREDITS SET')) {
+      const credit = state.credits.find((item) => item.id === args[6])
+      if (credit) {
+        credit.balance = args[0]
+        credit.reservedBalance = args[1]
+        credit.lifetimePurchased = args[2]
+        credit.lifetimeSpent = args[3]
+        credit.billingNotes = args[4]
+        credit.updatedAt = args[5]
+      }
+      return { rows: [] }
+    }
+
+    if (normalized.startsWith('INSERT INTO CREDIT_TRANSACTIONS')) {
+      state.creditTransactions.push({
+        amount: args[5],
+        balanceAfter: args[7],
+        creditAccount: args[3],
+        id: state.creditTransactions.length + 1,
+        idempotencyKey: args[1],
+        metadata: args[11],
+        notes: args[10],
+        referenceCode: args[0],
+        sourceOrderId: args[9],
+        sourceTaskId: args[8],
+        type: args[4],
+        user: args[2],
+      })
+      return { rows: [] }
+    }
+
+    if (normalized === 'BEGIN' || normalized === 'COMMIT' || normalized === 'ROLLBACK') {
+      return { rows: [] }
+    }
+
+    if (normalized.startsWith('UPDATE USERS SET')) {
+      const user = state.users.find((item) => item.id === args[3])
+      if (user) {
+        user.creditsBalance = Number(args[0])
+      }
+      return { rows: [] }
+    }
+
+    throw new Error(`Unsupported SQL in mock ledger test: ${sql}`)
+  }
+
   const payload = {
     create: async ({ collection, data }: { collection: string; data: Record<string, unknown> }) => {
       if (collection === 'credits') {
@@ -44,96 +134,9 @@ const createMockRequest = () => {
     db: {
       drizzle: {
         $client: {
-          execute: async () => ({ rows: [] }),
-          transaction: async () => ({
-            close() {},
-            commit: async () => undefined,
-            execute: async ({ args = [], sql }: { args?: unknown[]; sql: string }) => {
-              const normalized = sql.replace(/\s+/g, ' ').trim().toUpperCase()
-
-              if (normalized.startsWith('SELECT ID, BALANCE, RESERVED_BALANCE, LIFETIME_PURCHASED, LIFETIME_SPENT FROM CREDITS')) {
-                const credit = state.credits.find((item) => Number(item.user) === Number(args[0]))
-                return {
-                  rows: credit
-                    ? [
-                        {
-                          balance: credit.balance,
-                          id: credit.id,
-                          lifetime_purchased: credit.lifetimePurchased,
-                          lifetime_spent: credit.lifetimeSpent,
-                          reserved_balance: credit.reservedBalance,
-                        },
-                      ]
-                    : [],
-                }
-              }
-
-              if (normalized.startsWith('INSERT INTO CREDITS')) {
-                const credit = {
-                  accountLabel: 'Primary credit account',
-                  balance: 0,
-                  billingNotes: 'System-created default credit account.',
-                  id: state.credits.length + 1,
-                  lifetimePurchased: 0,
-                  lifetimeSpent: 0,
-                  reservedBalance: 0,
-                  status: 'active',
-                  updatedAt: args[1],
-                  user: args[0],
-                }
-                state.credits.push(credit)
-                return { rows: [] }
-              }
-
-              if (normalized.startsWith('SELECT ID FROM CREDIT_TRANSACTIONS')) {
-                const transaction = state.creditTransactions.find((item) => item.idempotencyKey === args[0])
-                return {
-                  rows: transaction ? [{ id: transaction.id }] : [],
-                }
-              }
-
-              if (normalized.startsWith('UPDATE CREDITS SET')) {
-                const credit = state.credits.find((item) => item.id === args[6])
-                if (credit) {
-                  credit.balance = args[0]
-                  credit.reservedBalance = args[1]
-                  credit.lifetimePurchased = args[2]
-                  credit.lifetimeSpent = args[3]
-                  credit.billingNotes = args[4]
-                  credit.updatedAt = args[5]
-                }
-                return { rows: [] }
-              }
-
-              if (normalized.startsWith('INSERT INTO CREDIT_TRANSACTIONS')) {
-                state.creditTransactions.push({
-                  amount: args[5],
-                  balanceAfter: args[7],
-                  creditAccount: args[3],
-                  id: state.creditTransactions.length + 1,
-                  idempotencyKey: args[1],
-                  metadata: args[11],
-                  notes: args[10],
-                  referenceCode: args[0],
-                  sourceOrderId: args[9],
-                  sourceTaskId: args[8],
-                  type: args[4],
-                  user: args[2],
-                })
-                return { rows: [] }
-              }
-
-              if (normalized.startsWith('UPDATE USERS SET')) {
-                const user = state.users.find((item) => item.id === args[3])
-                if (user) {
-                  user.creditsBalance = Number(args[0])
-                }
-                return { rows: [] }
-              }
-
-              throw new Error(`Unsupported SQL in mock ledger test: ${sql}`)
-            },
-            rollback: async () => undefined,
+          connect: async () => ({
+            query: executeLedgerSQL,
+            release() {},
           }),
         },
       },

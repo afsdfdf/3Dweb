@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import { Users } from '../src/collections/Users.ts'
-import { mockModelDownloadEndpoint } from '../src/endpoints/mockDownloads.ts'
+import { modelDownloadEndpoint } from '../src/endpoints/modelDownloads.ts'
 import { registerAccount } from '../src/lib/authService.ts'
 
 test('registerAccount returns a generic success message for new registrations', async () => {
@@ -45,8 +45,8 @@ test('registerAccount returns the same message for duplicate emails', async () =
   })
 })
 
-test('mockModelDownloadEndpoint requires authentication for inline previews', async () => {
-  const response = await mockModelDownloadEndpoint.handler({
+test('modelDownloadEndpoint requires authentication for inline previews', async () => {
+  const response = await modelDownloadEndpoint.handler({
     payload: {},
     query: {
       format: 'glb',

@@ -4,7 +4,12 @@ import { enforceRateLimit, getRateLimitConfig } from '@/lib/rateLimit'
 import { getRequestRateLimitKey } from '@/lib/requestSecurity'
 
 type RateLimitScope =
+  | 'auth-email'
+  | 'auth-login'
+  | 'auth-register'
+  | 'auth-reset-password'
   | "ai-image-submit"
+  | 'engagement-view-write'
   | 'social-comment-write'
   | 'social-follow-write'
   | 'social-reaction-write'
@@ -25,11 +30,41 @@ type ScopeConfig = {
 };
 
 const scopeConfigs: Record<RateLimitScope, ScopeConfig> = {
+  'auth-email': {
+    fallbackLimit: 5,
+    fallbackWindowMs: 10 * 60 * 1000,
+    limitEnv: 'AUTH_EMAIL_RATE_LIMIT_MAX',
+    windowEnv: 'AUTH_EMAIL_RATE_LIMIT_WINDOW_MS',
+  },
+  'auth-login': {
+    fallbackLimit: 10,
+    fallbackWindowMs: 10 * 60 * 1000,
+    limitEnv: 'AUTH_LOGIN_RATE_LIMIT_MAX',
+    windowEnv: 'AUTH_LOGIN_RATE_LIMIT_WINDOW_MS',
+  },
+  'auth-register': {
+    fallbackLimit: 5,
+    fallbackWindowMs: 10 * 60 * 1000,
+    limitEnv: 'AUTH_REGISTER_RATE_LIMIT_MAX',
+    windowEnv: 'AUTH_REGISTER_RATE_LIMIT_WINDOW_MS',
+  },
+  'auth-reset-password': {
+    fallbackLimit: 5,
+    fallbackWindowMs: 10 * 60 * 1000,
+    limitEnv: 'AUTH_RESET_PASSWORD_RATE_LIMIT_MAX',
+    windowEnv: 'AUTH_RESET_PASSWORD_RATE_LIMIT_WINDOW_MS',
+  },
   "ai-image-submit": {
     fallbackLimit: 6,
     fallbackWindowMs: 10 * 60 * 1000,
     limitEnv: 'AI_IMAGE_SUBMIT_RATE_LIMIT_MAX',
     windowEnv: 'AI_IMAGE_SUBMIT_RATE_LIMIT_WINDOW_MS',
+  },
+  'engagement-view-write': {
+    fallbackLimit: 120,
+    fallbackWindowMs: 10 * 60 * 1000,
+    limitEnv: 'ENGAGEMENT_VIEW_WRITE_RATE_LIMIT_MAX',
+    windowEnv: 'ENGAGEMENT_VIEW_WRITE_RATE_LIMIT_WINDOW_MS',
   },
   'social-comment-write': {
     fallbackLimit: 12,
@@ -100,7 +135,12 @@ const scopeConfigs: Record<RateLimitScope, ScopeConfig> = {
 };
 
 const scopeMessages: Record<RateLimitScope, string> = {
+  'auth-email': 'Too many email verification requests. Please try again later.',
+  'auth-login': 'Too many login attempts. Please try again later.',
+  'auth-register': 'Too many registration attempts. Please try again later.',
+  'auth-reset-password': 'Too many password reset attempts. Please try again later.',
   'ai-image-submit': 'Too many image generation requests. Please try again later.',
+  'engagement-view-write': 'Too many view events. Please try again later.',
   'social-comment-write': 'Too many comment actions. Please try again later.',
   'social-follow-write': 'Too many follow actions. Please try again later.',
   'social-reaction-write': 'Too many reaction actions. Please try again later.',

@@ -131,37 +131,20 @@ Command:
 pnpm test:unit
 ```
 
-Result:
+Current result after test-suite cleanup:
 
-- 107 tests discovered
-- 82 passed
-- 25 failed
+- 99 tests discovered
+- 99 passed
+- 0 failed
 
-Failure groups:
+Resolved cleanup:
 
-- missing admin service modules referenced by tests:
-  - `src/lib/adminAudit.ts`
-  - `src/lib/adminConfig.ts`
-  - `src/lib/adminContent.ts`
-  - `src/lib/adminCredits.ts`
-  - `src/lib/adminExceptions.ts`
-  - `src/lib/adminOrders.ts`
-  - `src/lib/adminPayments.ts`
-  - `src/lib/adminSearch.ts`
-  - `src/lib/adminSubscriptions.ts`
-  - `src/lib/adminTasks.ts`
-  - `src/lib/adminUsers.ts`
-- outdated admin i18n test expectation for `adminLabelsKey`
-- outdated locked-document migration compatibility test expecting old `audit_logs_id` repair SQL
-- `AIProviderSettings` tests still expect a tab layout that the current global no longer exposes
-- `auditLog` tests expect persisted logger entries that current implementation no longer emits in the same way
-- `creditLedger` tests use a mock DB shape that no longer satisfies the Postgres transaction client expectations
-- `getCanonicalAppURL` tests expect `http://127.0.0.1:3000`, while current code returns `http://localhost:3000`
+- obsolete admin service tests were removed because their corresponding `src/lib/admin*.ts` modules are not active source files
+- admin i18n, locked-document migration, AI provider settings, audit logger, credit ledger, and canonical app URL tests now match the current Postgres-only architecture
 
 Impact:
 
-- current unit-test suite is not a reliable green gate
-- before major backend changes, either restore the missing admin service modules or retire/update the stale tests
+- current unit-test suite is back to a reliable green gate for the active code surface
 
 ## Architecture Findings
 
@@ -251,7 +234,7 @@ Registered custom endpoints include:
 - `POST /api/studio/ai/tasks/:taskId/sync`
 - `POST /api/platform/ai/webhooks/provider`
 - `GET /api/platform/models/:modelId/viewer`
-- `GET /api/platform/mock/models/:modelId/download`
+- `GET /api/platform/models/:modelId/download`
 - `POST /api/commerce/print-orders`
 - `POST /api/commerce/print-orders/:orderId/sync`
 - `POST /api/billing/subscriptions/checkout`
@@ -260,9 +243,9 @@ Registered custom endpoints include:
 - `POST /api/platform/session/logout`
 - `POST /api/platform/billing/webhooks/stripe`
 
-### B-02: Dormant Endpoint Modules Still Exist
+### B-02: Previously Dormant Endpoint Modules Are Now Active
 
-Present but not registered:
+Current state:
 
 - `src/endpoints/account.ts`
 - `src/endpoints/adminRepair.ts`
@@ -274,12 +257,12 @@ Present but not registered:
 
 Assessment:
 
-- these modules should be treated as inactive
-- frontend code must not call their paths until registration and collection support are restored
+- these modules are now registered in `src/payload.config.ts`
+- frontend code may call their paths, but they must be treated as active production API surface
 
 Recommended follow-up:
 
-- decide per module: register, rewrite, archive, or delete
+- keep endpoint-level rate limits, origin checks, auth checks, and input validation aligned with any future endpoint changes
 
 ### B-03: `modelViewerEndpoint` Documentation Drift
 
@@ -288,11 +271,10 @@ Actual code:
 - `src/payload.config.ts` imports and registers `modelViewerEndpoint`
 - active path: `GET /api/platform/models/:modelId/viewer`
 
-Drifted docs:
+Resolved docs drift:
 
-- `docs/COLLECTIONS_REFERENCE.md` still says `src/endpoints/modelViewer.ts` exists but is not registered
-- `docs/COLLECTIONS_REFERENCE.md` still lists `modelViewer.ts` under endpoint modules present but not registered
-- `docs/AI_PRODUCT_FRAMEWORK_GUIDE.md` also says endpoint modules for account, social, model viewer, image generation, engagement, and admin repair are not currently registered
+- `docs/COLLECTIONS_REFERENCE.md` now describes `modelViewerEndpoint` as registered
+- account, social, model detail, model viewer, image generation, engagement, and admin repair endpoint status should be read from `src/payload.config.ts`
 
 Impact:
 
@@ -308,7 +290,7 @@ Recommended follow-up:
 
 Endpoint:
 
-- `GET /api/platform/mock/models/:modelId/download`
+- `GET /api/platform/models/:modelId/download`
 
 Current frontend references:
 
@@ -540,7 +522,7 @@ Recommended follow-up:
 ### P1 Before Public Launch
 
 - Protect or remove `/test`, `/test-auth-preview`, `/formal-components`, and `*-test` routes.
-- Rename or replace `/api/platform/mock/models/:modelId/download`.
+- Keep `/api/platform/models/:modelId/download` as the formal download namespace and do not reintroduce `/api/platform/mock/models/:modelId/download` in production UI.
 - Audit public models and media for guest-readable preview/viewer assets.
 - Update active docs to match registered Payload config.
 - Clean `AGENTS.md` encoding.
