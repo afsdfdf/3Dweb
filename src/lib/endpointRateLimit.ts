@@ -50,7 +50,7 @@ const scopeConfigs: Record<RateLimitScope, ScopeConfig> = {
     windowEnv: 'SOCIAL_REACTION_WRITE_RATE_LIMIT_WINDOW_MS',
   },
   'model-preview': {
-    fallbackLimit: 30,
+    fallbackLimit: 300,
     fallbackWindowMs: 10 * 60 * 1000,
     limitEnv: 'MODEL_PREVIEW_RATE_LIMIT_MAX',
     windowEnv: 'MODEL_PREVIEW_RATE_LIMIT_WINDOW_MS',

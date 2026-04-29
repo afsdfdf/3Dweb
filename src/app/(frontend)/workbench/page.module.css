@@ -1,0 +1,995 @@
+.page {
+  width: 100vw;
+  height: 100dvh;
+  overflow: hidden;
+  background: #181818;
+  min-width: 1200px;
+}
+
+.stageViewport {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  --panel-base-width: 460px;
+  --panel-base-height: 972px;
+  --design-width: 1920px;
+  --panel-edge-min: 24px;
+  --panel-edge-max: 32px;
+  --panel-scale: min(1, calc((100dvh - 108px) / 972px));
+  --panel-render-width: calc(var(--panel-base-width) * var(--panel-scale));
+  --panel-render-height: calc(var(--panel-base-height) * var(--panel-scale));
+  --panel-edge: clamp(
+    var(--panel-edge-min),
+    calc((100vw - var(--design-width)) / 2 + var(--panel-edge-max)),
+    var(--panel-edge-max)
+  );
+  --center-left: calc(var(--panel-edge) + var(--panel-render-width) + 48px);
+  --center-right: calc(var(--panel-edge) + var(--panel-render-width) + 24px);
+  background:
+    radial-gradient(circle at 24% 66%, rgba(91, 121, 130, 0.52), transparent 34%),
+    radial-gradient(circle at 56% 42%, rgba(86, 55, 38, 0.34), transparent 39%),
+    radial-gradient(circle at 70% 76%, rgba(62, 64, 62, 0.28), transparent 32%),
+    radial-gradient(ellipse at center, transparent 42%, rgba(0, 0, 0, 0.42) 100%),
+    linear-gradient(180deg, #050505 0%, #11100f 48%, #303434 100%);
+  color: #ffffff;
+}
+
+.boundTopNavigation {
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: auto;
+  z-index: 60;
+}
+
+.leftPanel,
+.rightPanel {
+  position: absolute;
+  top: 84px;
+  width: var(--panel-base-width);
+  height: var(--panel-base-height);
+  background: rgba(0, 0, 0, 0.94);
+  box-shadow: 0 24px 40px rgba(0, 0, 0, 0.62);
+  overflow: hidden;
+}
+
+.leftPanel {
+  left: var(--panel-edge);
+  padding: 34px 24px 26px;
+  transform: scale(var(--panel-scale));
+  transform-origin: top left;
+}
+
+.rightPanel {
+  padding: 24px 24px 28px;
+  left: auto;
+  right: var(--panel-edge);
+  transform: scale(var(--panel-scale));
+  transform-origin: top right;
+}
+
+.panelFrameOverlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  --frame-border-width: 32px;
+  filter: drop-shadow(0 18px 22px rgba(0, 0, 0, 0.55));
+  z-index: 12;
+  pointer-events: none;
+}
+
+.panelFrameContent {
+  min-height: 0;
+  padding: 0;
+}
+
+.modeTabsMount {
+  position: absolute;
+  left: 15px;
+  right: 15px;
+  top: 15px;
+  z-index: 30;
+  display: flex;
+  justify-content: center;
+  height: 60px;
+  pointer-events: auto;
+}
+
+.modeTabsMount > div {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  flex-basis: auto;
+}
+
+.modeTabsMount > div > span {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+}
+
+.modeTabsMount > div > div {
+  left: 9px;
+  right: 9px;
+  width: auto;
+}
+
+.modeTabsMount button {
+  width: calc((100% - 12px) / 3);
+}
+
+.modeTabsMount button:nth-child(2) {
+  left: calc((100% - 12px) / 3 + 6px);
+}
+
+.modeTabsMount button:nth-child(3) {
+  left: calc(((100% - 12px) / 3) * 2 + 12px);
+}
+
+.modeTabsMount button img {
+  height: 100%;
+  width: 100%;
+  max-height: none;
+  max-width: none;
+  object-fit: fill;
+}
+
+.modeTabsMount button span {
+  left: 5px;
+  width: calc(100% - 10px);
+}
+
+.tabs {
+  position: relative;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  height: 48px;
+  padding: 6px;
+  border: 1px solid #303038;
+  border-radius: 4px;
+  background: #050505;
+  box-shadow: inset 0 0 0 2px #1b1b23;
+}
+
+.tabs button {
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.42);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.tabs .tabActive {
+  background: linear-gradient(180deg, #5c5c6b 0%, #3d3d49 100%);
+  box-shadow: inset 0 0 0 2px rgba(151, 154, 174, 0.45);
+  color: #ffffff;
+}
+
+.formSection {
+  margin-top: 75px;
+}
+
+.formSection h2,
+.fieldLabel,
+.libraryHeader h2 {
+  display: block;
+  margin: 0;
+  color: #ffffff;
+  font-family: PingFangSC, "PingFang SC", Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 22px;
+  letter-spacing: 0;
+}
+
+.imageBox {
+  margin-top: 8px;
+  height: 280px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0);
+  padding: 22px;
+}
+
+.imageToolsBox {
+  display: grid;
+  grid-template-rows: 112px 1px 1fr;
+  gap: 16px;
+  padding: 18px 22px;
+}
+
+.thumbGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 86px);
+  grid-auto-rows: 86px;
+  gap: 16px 11px;
+}
+
+.thumbCard,
+.addImageCard,
+.multiCard {
+  position: relative;
+  overflow: visible;
+  border: 1px solid #343438;
+  border-radius: 5px;
+  background: #101010;
+}
+
+.thumbCard {
+  background: #f8f6eb;
+}
+
+.thumbCard img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.thumbCard button {
+  position: absolute;
+  right: -9px;
+  top: -9px;
+  display: grid;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  border: 1px solid #86868b;
+  border-radius: 999px;
+  background: #171717;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.promptBox {
+  width: 100%;
+  height: 100%;
+  resize: none;
+  border: 0;
+  background: transparent;
+  color: #ffffff;
+  font-family: PingFangSC, "PingFang SC", Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  outline: none;
+}
+
+.promptBox::placeholder {
+  color: #ffffff;
+  opacity: 1;
+}
+
+.promptBox:focus::placeholder {
+  color: transparent;
+}
+
+.toolImageDivider {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.imageToolsBox .thumbGrid {
+  grid-template-columns: repeat(4, 86px);
+  grid-auto-rows: 86px;
+  gap: 16px 11px;
+  align-content: start;
+}
+
+.addImageCard,
+.multiCard {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 9px;
+  color: rgba(255, 255, 255, 0.72);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.hiddenFileInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.addImageCard span,
+.multiCard span {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border-radius: 999px;
+  background: #454545;
+  color: white;
+  font-size: 26px;
+  font-weight: 300;
+  line-height: 1;
+}
+
+.fieldLabel {
+  margin-top: 18px;
+}
+
+.inputWrap,
+.selectWrap {
+  position: relative;
+  margin-top: 8px;
+}
+
+.inputWrap input,
+.selectWrap select {
+  width: 100%;
+  height: 33px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0);
+  color: #ffffff;
+  font-family: PingFangSC, "PingFang SC", Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  outline: none;
+  padding: 0 40px 0 8px;
+}
+
+.inputWrap input::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.inputWrap span {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: PingFangSC, "PingFang SC", Arial, sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  transform: translateY(-50%);
+}
+
+.fieldGroup {
+  margin-top: 19px;
+}
+
+.fieldGroup .fieldLabel {
+  margin-top: 0;
+}
+
+.tagRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  min-height: 25px;
+}
+
+.tagChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0);
+  color: #ffffff;
+  font-family: "PingFang SC", PingFangSC, Arial, sans-serif;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 18px;
+  padding: 0 6px 0 9px;
+  text-align: left;
+}
+
+.tagChip button,
+.addTag {
+  display: grid;
+  width: 16px;
+  height: 16px;
+  place-items: center;
+  border: 0;
+  border-radius: 2px;
+  background: #bebebe;
+  color: #101010;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.addTag {
+  background: #ffce79;
+  font-weight: 800;
+}
+
+.multiHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 18px;
+}
+
+.multiHeader .fieldLabel {
+  margin-top: 0;
+}
+
+.multiHeader div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+}
+
+.toggle {
+  position: relative;
+  width: 47px;
+  height: 22px;
+  border: 1px solid #515151;
+  border-radius: 999px;
+  background: #101010;
+  cursor: pointer;
+}
+
+.toggle span {
+  position: absolute;
+  right: 2px;
+  top: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #ffd48f;
+}
+
+.multiBox {
+  display: grid;
+  grid-template-columns: repeat(3, 86px);
+  gap: 16px;
+  margin-top: 8px;
+  height: 123px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0);
+  padding: 23px;
+}
+
+.multiHidden {
+  opacity: 0.4;
+}
+
+.selectWrap select {
+  appearance: none;
+  background:
+    linear-gradient(45deg, transparent 50%, #ffffff 50%) calc(100% - 16px) 50% / 6px 6px no-repeat,
+    linear-gradient(135deg, #ffffff 50%, transparent 50%) calc(100% - 12px) 50% / 6px 6px no-repeat,
+    rgba(0, 0, 0, 0);
+}
+
+.bottomActions {
+  position: absolute;
+  left: 31px;
+  right: 31px;
+  bottom: 28px;
+  display: grid;
+  grid-template-columns: 138px 246px;
+  align-items: end;
+  gap: 21px;
+}
+
+.priceButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  height: 62px;
+  border: 1px solid #303033;
+  background: #050505;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 19px;
+}
+
+.priceButton img {
+  width: 54px;
+  height: 54px;
+  object-fit: contain;
+}
+
+.generateCta {
+  width: 246px;
+  height: 62px;
+}
+
+.formError {
+  position: absolute;
+  left: 31px;
+  right: 31px;
+  bottom: 9px;
+  z-index: 31;
+  color: #f2c371;
+  font-size: 11px;
+  line-height: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.centerPanel {
+  position: absolute;
+  left: var(--center-left);
+  top: 84px;
+  right: var(--center-right);
+  width: auto;
+  height: var(--panel-render-height);
+  overflow: hidden;
+}
+
+.breadcrumbRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 32px;
+  color: rgba(255, 255, 255, 0.32);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.breadcrumbRow button {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border: 1px solid #5c5c5c;
+  border-radius: 2px;
+  background: #111111;
+  color: #f2c46e;
+  cursor: pointer;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.breadcrumbRow em {
+  width: 9px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.breadcrumbRow strong {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.headerLine {
+  width: 305px;
+  height: 1px;
+  margin-top: 14px;
+  background: rgba(255, 255, 255, 0.17);
+}
+
+.modelMeta {
+  position: absolute;
+  left: 0;
+  top: 70px;
+  z-index: 3;
+}
+
+.modelMeta span {
+  color: rgba(255, 255, 255, 0.43);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.modelMeta h1 {
+  margin: 10px 0 8px;
+  color: #ffffff;
+  font-size: 41px;
+  font-weight: 800;
+  line-height: 48px;
+}
+
+.modelMeta em {
+  display: inline-flex;
+  align-items: center;
+  height: 17px;
+  border-radius: 2px;
+  background: #a9a9a9;
+  color: #1e1e1e;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 700;
+  padding: 0 7px;
+}
+
+.statsBox {
+  position: absolute;
+  right: 0;
+  top: 0;
+  z-index: 4;
+  display: grid;
+  gap: 12px;
+  width: 196px;
+  min-height: 102px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  background: rgba(0, 0, 0, 0.52);
+  padding: 18px 16px;
+}
+
+.statsBox div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.statsBox span {
+  color: rgba(255, 255, 255, 0.38);
+  font-size: 12px;
+}
+
+.statsBox strong {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.viewerStage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.viewerSquare {
+  position: relative;
+  width: min(100%, var(--panel-render-height));
+  aspect-ratio: 1 / 1;
+  max-height: var(--panel-render-height);
+}
+
+.viewerSurface {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: transparent;
+  box-shadow: none;
+  pointer-events: auto;
+}
+
+.viewerCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.viewerCanvas canvas {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
+  background: transparent !important;
+}
+
+.viewerArrow {
+  position: absolute;
+  top: 510px;
+  z-index: 5;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  opacity: 0.78;
+  padding: 0;
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.viewerArrow:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+.viewerArrow img {
+  width: 58px;
+  height: 78px;
+  object-fit: contain;
+}
+
+.viewerArrowLeft {
+  left: 18px;
+}
+
+.viewerArrowRight {
+  right: 18px;
+}
+
+.libraryHeader {
+  display: grid;
+  grid-template-columns: 168px 1fr;
+  align-items: center;
+  gap: 14px;
+}
+
+.libraryHeader form {
+  display: flex;
+  height: 34px;
+}
+
+.libraryHeader label {
+  position: relative;
+  display: block;
+  width: 180px;
+}
+
+.libraryHeader label span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.libraryHeader input {
+  width: 100%;
+  height: 100%;
+  border: 1px solid #343437;
+  background: #030303;
+  color: #d7d7d7;
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+  padding: 0 10px 0 35px;
+}
+
+.libraryHeader label::after {
+  position: absolute;
+  left: 13px;
+  top: 8px;
+  width: 14px;
+  height: 14px;
+  content: "";
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+}
+
+.libraryHeader label::before {
+  position: absolute;
+  left: 26px;
+  top: 21px;
+  width: 7px;
+  height: 2px;
+  content: "";
+  background: #ffffff;
+  transform: rotate(45deg);
+}
+
+.libraryHeader form button {
+  width: 68px;
+  border: 1px solid #57575d;
+  background: #19191c;
+  color: #ffffff;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.libraryRule {
+  height: 1px;
+  margin-top: 17px;
+  background: #303033;
+}
+
+.pagination {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-top: 17px;
+}
+
+.pagination button {
+  width: 34px;
+  height: 34px;
+  border: 1px solid #333339;
+  background: #050505;
+  color: #d6d6d6;
+  cursor: pointer;
+}
+
+.pagination .pageActive {
+  background: #1d1d20;
+  border-color: #5b5b62;
+}
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 200px);
+  grid-auto-rows: 309px;
+  gap: 14px 13px;
+  margin-top: 10px;
+  height: 824px;
+  overflow: hidden;
+  padding-top: 1px;
+}
+
+.modelCard {
+  position: relative;
+  overflow: hidden;
+  border: 0;
+  background:
+    radial-gradient(circle at 50% 68%, rgba(149, 182, 188, 0.64), transparent 43%),
+    linear-gradient(180deg, #030303 0%, #050505 38%, #757779 100%);
+  color: #ffffff;
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+}
+
+.modelCardSelected {
+  box-shadow:
+    0 0 18px rgba(255, 190, 91, 0.12);
+}
+
+.modelCard::after {
+  position: absolute;
+  left: 23px;
+  right: 23px;
+  top: 49px;
+  z-index: 3;
+  height: 2px;
+  content: "";
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.cardFrameOverlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  --frame-border-width: 32px;
+  z-index: 5;
+  opacity: 1;
+  transition: filter 160ms ease, opacity 160ms ease;
+}
+
+.cardFrameContent {
+  height: 100%;
+  padding: 0;
+}
+
+.modelCardSelected .cardFrameOverlay {
+  opacity: 1;
+  filter:
+    brightness(1.2)
+    sepia(0.9)
+    saturate(1.75)
+    hue-rotate(344deg)
+    drop-shadow(0 0 7px rgba(255, 207, 126, 0.24));
+}
+
+.cardTop {
+  position: absolute;
+  left: 23px;
+  top: 27px;
+  z-index: 3;
+  width: 154px;
+  height: 18px;
+}
+
+.cardTop strong {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 32px;
+  height: 18px;
+  color: #ffffff;
+  font-family: PingFangSC, "PingFang SC", Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  letter-spacing: 0;
+}
+
+.cardTop em {
+  position: absolute;
+  left: 97px;
+  top: 2px;
+  width: 30px;
+  height: 14px;
+  border-radius: 2px;
+  background: #969696;
+  color: #000000;
+  font-family: PingFangSC, "PingFang SC", Arial, sans-serif;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 14px;
+  letter-spacing: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.cardTop span {
+  position: absolute;
+  right: 0;
+  top: 0;
+  display: grid;
+  width: 16px;
+  height: 16px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #ffffff;
+  font-size: 10px;
+  line-height: 10px;
+}
+
+.modelCard p {
+  position: absolute;
+  left: 23px;
+  top: 51px;
+  z-index: 3;
+  width: 53px;
+  height: 28px;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: PingFangSC, "PingFang SC", Arial, sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 14px;
+  letter-spacing: 0;
+}
+
+.modelCard img {
+  position: absolute;
+  left: 17px;
+  bottom: -10px;
+  z-index: 2;
+  width: 178px;
+  height: 260px;
+  object-fit: contain;
+  object-position: center bottom;
+}
+
+.cardMenu {
+  position: absolute;
+  right: 10px;
+  top: 38px;
+  z-index: 7;
+  width: 178px;
+  border: 1px solid #2c2c2f;
+  background: #050505;
+}
+
+.cardMenu span {
+  display: block;
+  height: 40px;
+  padding: 12px 15px;
+  color: #dcdcdc;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.cardMenu span + span {
+  border-top: 1px solid #222;
+  color: rgba(255, 255, 255, 0.34);
+}

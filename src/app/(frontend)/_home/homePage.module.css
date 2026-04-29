@@ -1,0 +1,259 @@
+.page {
+  min-height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: #000000;
+}
+
+.viewport {
+  container-type: inline-size;
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 1920 / 4356;
+  min-height: 100vh;
+  overflow: hidden;
+  position: relative;
+  background: #000000;
+}
+
+.stage {
+  position: relative;
+  width: 1920px;
+  height: 4356px;
+  overflow: hidden;
+  background: #181818;
+  transform: scale(calc(100vw / 1920px));
+  transform-origin: top left;
+}
+
+.heroBottomBanner {
+  left: 33px;
+  position: absolute;
+  top: 986px;
+}
+
+.heroSecondBanner,
+.heroThirdBanner {
+  --upper-height: calc(112px - var(--top-height) - (var(--middle-height) / 2));
+  --lower-height: calc(100% - var(--top-height) - var(--upper-height) - var(--middle-height) - var(--bottom-height));
+  left: 33px;
+  position: absolute;
+}
+
+.heroSecondBanner {
+  top: 1351px;
+}
+
+.heroThirdBanner {
+  top: 1837px;
+}
+
+.bannerContent {
+  height: 100%;
+  min-height: 100%;
+  pointer-events: auto;
+  position: relative;
+  width: 100%;
+}
+
+.bannerSquareLogo {
+  background-image: url("/ui-lab/top-navigation/logo.png");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  display: block;
+  height: 58px;
+  left: -4px;
+  position: absolute;
+  top: -7px;
+  width: 58px;
+}
+
+.bannerRightImage {
+  background-image: url("/ui-lab/home-test/banner-label-bg.png");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  display: block;
+  height: 58px;
+  left: 81px;
+  pointer-events: auto;
+  position: absolute;
+  top: -11px;
+  width: 205px;
+}
+
+.bannerRightImageText {
+  align-items: center;
+  box-sizing: border-box;
+  color: #f9dfb1;
+  display: flex;
+  font-size: 28px;
+  font-weight: 500;
+  line-height: 1;
+  padding: 0 52px 3px 21px;
+}
+
+.bannerDividerLine {
+  background: rgba(255, 255, 255, 0.1);
+  display: block;
+  height: 2px;
+  left: 299px;
+  pointer-events: auto;
+  position: absolute;
+  top: 15px;
+  width: 1107px;
+}
+
+.smallButtonPairMount {
+  height: 60px;
+  left: 1439px;
+  position: absolute;
+  top: calc(((112px - 5px) - 60px) / 2 - 33px);
+  width: 226px;
+  z-index: 6;
+}
+
+.sourceMediumButtonMount {
+  height: 58px;
+  left: 1681px;
+  position: absolute;
+  top: calc(((112px - 5px) - 60px) / 2 - 33px);
+  width: 110px;
+  z-index: 7;
+}
+
+.sourceMediumButtonMount button {
+  background-image: var(--button-image);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  border: 0;
+  height: 58px;
+  inset: 0;
+  position: absolute;
+  width: 110px;
+}
+
+.sourceMediumButtonMount button:active {
+  transform: none;
+}
+
+.lowerButtonGroupMount {
+  height: 48px;
+  left: 1380px;
+  position: absolute;
+  top: calc(((112px - 5px) - 48px) / 2 - 33px);
+  width: 412px;
+  z-index: 6;
+}
+
+.inspirationGridDivider {
+  background: rgba(255, 255, 255, 0.15);
+  display: block;
+  height: 2px;
+  left: -17px;
+  position: absolute;
+  top: 154.5px;
+  width: 1808px;
+  z-index: 5;
+}
+
+.inspirationSearchMount {
+  height: 56px;
+  left: 171px;
+  position: absolute;
+  top: 96.5px;
+  width: 1510px;
+  z-index: 7;
+}
+
+.bottomPagerMount {
+  height: 32px;
+  left: 171px;
+  position: absolute;
+  top: 2128px;
+  width: 276px;
+  z-index: 7;
+}
+
+.bottomPagerMount nav {
+  margin-left: 0;
+}
+
+.heroThirdBanner .bannerRightImage {
+  left: 78px;
+  top: -10px;
+}
+
+.heroThirdBanner .bannerDividerLine {
+  left: 272px;
+  width: 1514px;
+}
+
+.footerBlock {
+  align-items: flex-start;
+  box-sizing: border-box;
+  display: flex;
+  height: 154px;
+  justify-content: space-between;
+  left: 501px;
+  padding: 18px 0 0;
+  position: absolute;
+  top: 4122px;
+  width: 918px;
+  z-index: 45;
+}
+
+.footerBrand {
+  align-items: center;
+  display: flex;
+  padding-top: 44px;
+  width: 286px;
+}
+
+.footerLogo {
+  display: block;
+  height: 59px;
+  object-fit: contain;
+  width: 285px;
+}
+
+.footerInfo {
+  color: rgba(255, 255, 255, 0.62);
+  width: 250px;
+}
+
+.footerHelp {
+  color: rgba(255, 255, 255, 0.62);
+  width: 252px;
+}
+
+.footerInfo h2,
+.footerHelp h2 {
+  color: #f2d3a2;
+  font-size: 32px;
+  font-weight: 400;
+  line-height: 1;
+  margin: 0 0 18px;
+}
+
+.footerInfo p,
+.footerHelp p {
+  font-size: 16px;
+  line-height: 1.35;
+  margin: 0 0 8px;
+}
+
+@supports (container-type: inline-size) and (width: 100cqw) {
+  .stage {
+    transform: scale(calc(100cqw / 1920px));
+  }
+}
+
+@supports (zoom: 1) {
+  .stage {
+    transform: none;
+    zoom: calc(100cqw / 1920px);
+  }
+}

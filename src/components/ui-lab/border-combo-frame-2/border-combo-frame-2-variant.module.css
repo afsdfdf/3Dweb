@@ -1,0 +1,122 @@
+.frame {
+  --left-width: 40px;
+  --center-width: 38px;
+  --right-width: 42px;
+  --top-height: 68px;
+  --bottom-height: 68px;
+  box-sizing: border-box;
+  min-height: calc(var(--top-height) + var(--bottom-height));
+  min-width: calc(var(--left-width) + var(--center-width) + var(--right-width));
+  position: relative;
+  z-index: 40;
+}
+
+.frame > span {
+  pointer-events: none;
+  position: absolute;
+  z-index: 1;
+}
+
+.top13,
+.top15,
+.bottom13,
+.bottom15 {
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+
+.top14,
+.bottom14 {
+  background-repeat: repeat-x;
+  background-size: auto 100%;
+  left: var(--left-width);
+  right: var(--right-width);
+}
+
+.middle10,
+.middle12 {
+  background-repeat: repeat-y;
+  background-size: 100% auto;
+  bottom: var(--bottom-height);
+  top: var(--top-height);
+}
+
+.middle11 {
+  background-repeat: repeat-y;
+  background-size: 100% auto;
+  bottom: var(--bottom-height);
+  left: var(--left-width);
+  right: var(--right-width);
+  top: var(--top-height);
+}
+
+.top13 {
+  background-image: url("./assets/piece_15.png");
+  height: var(--top-height);
+  left: 0;
+  top: 0;
+  transform: rotate(180deg);
+  width: var(--left-width);
+}
+
+.top14 {
+  background-image: url("./assets/piece_14.png");
+  height: var(--top-height);
+  top: 0;
+  transform: rotate(180deg);
+}
+
+.top15 {
+  background-image: url("./assets/piece_13.png");
+  height: var(--top-height);
+  right: 0;
+  top: 0;
+  transform: rotate(180deg);
+  width: var(--right-width);
+}
+
+.middle10 {
+  background-image: url("./assets/piece_10.png");
+  left: 0;
+  width: var(--left-width);
+}
+
+.middle11 {
+  background-image: url("./assets/piece_11.png");
+}
+
+.middle12 {
+  background-image: url("./assets/piece_12.png");
+  right: 0;
+  width: var(--right-width);
+}
+
+.bottom13 {
+  background-image: url("./assets/piece_13.png");
+  bottom: 0;
+  height: var(--bottom-height);
+  left: 0;
+  width: var(--left-width);
+}
+
+.bottom14 {
+  background-image: url("./assets/piece_14.png");
+  bottom: 0;
+  height: var(--bottom-height);
+}
+
+.bottom15 {
+  background-image: url("./assets/piece_15.png");
+  bottom: 0;
+  height: var(--bottom-height);
+  right: 0;
+  width: var(--right-width);
+}
+
+.content {
+  box-sizing: border-box;
+  min-height: 100%;
+  padding: var(--top-height) var(--right-width) var(--bottom-height) var(--left-width);
+  position: relative;
+  z-index: 2;
+}

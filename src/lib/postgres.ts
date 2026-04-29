@@ -21,7 +21,7 @@ function buildPoolConfig(config: Extract<ReturnType<typeof resolveDatabaseRuntim
 }
 
 const globalForPool = globalThis as typeof globalThis & {
-  __miniforgePostgresPool?: pg.Pool
+  __thornstavernPostgresPool?: pg.Pool
 }
 
 export function getPostgresPool() {
@@ -31,11 +31,11 @@ export function getPostgresPool() {
     throw new Error('Postgres runtime is not enabled. Set DATABASE_PROVIDER=postgres and provide DATABASE_URL.')
   }
 
-  if (!globalForPool.__miniforgePostgresPool) {
-    globalForPool.__miniforgePostgresPool = new Pool(buildPoolConfig(config))
+  if (!globalForPool.__thornstavernPostgresPool) {
+    globalForPool.__thornstavernPostgresPool = new Pool(buildPoolConfig(config))
   }
 
-  return globalForPool.__miniforgePostgresPool
+  return globalForPool.__thornstavernPostgresPool
 }
 
 export async function queryPostgres<T extends pg.QueryResultRow = pg.QueryResultRow>(text: string, values: unknown[] = []) {

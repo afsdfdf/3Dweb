@@ -51,13 +51,13 @@ export const generateForgotPasswordEmailHTML = async (args?: { req?: PayloadRequ
   const settings = req
     ? await getEmailSettings(req)
     : {
-        branding: { footerText: 'MiniForge AI 3D', productName: 'MiniForge AI 3D' },
-        sender: { fromAddress: 'no-reply@miniforge.local', fromName: 'MiniForge AI 3D', replyTo: '' },
+        branding: { footerText: 'Thorns Tavern', productName: 'Thorns Tavern' },
+        sender: { fromAddress: 'no-reply@thornstavern.com', fromName: 'Thorns Tavern', replyTo: '' },
         templates: {
           forgotPassword: {
             ctaLabel: '重置密码',
             intro: '我们收到了你的密码重置请求。点击下面按钮即可设置新密码。',
-            subject: 'MiniForge 密码重置',
+            subject: 'Thorns Tavern 密码重置',
           },
           orderPaid: { ctaLabel: '查看订单详情', intro: '', subject: '' },
           subscriptionSuccess: { ctaLabel: '查看积分与订阅', intro: '', subject: '' },
@@ -92,5 +92,5 @@ export const generateForgotPasswordEmailSubject = async (args?: { req?: PayloadR
     return settings.templates.forgotPassword.subject
   }
 
-  return 'MiniForge 密码重置'
+  return 'Thorns Tavern 密码重置'
 }

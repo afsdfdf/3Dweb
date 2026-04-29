@@ -1,5 +1,5 @@
 import { getCachedPayload } from '@/lib/getCachedPayload'
-import { buildModelViewerURL, getModelPreviewURL } from '@/lib/modelAssetURL'
+import { buildModelViewerURL, getModelGLBSourceURL, getModelPreviewURL } from '@/lib/modelAssetURL'
 import { getMediaAccessURL } from '@/lib/s3SignedURL'
 
 import { getCurrentUser } from '../../_lib/session'
@@ -59,6 +59,14 @@ const normalizeText = (value: unknown) => {
   return typeof value === 'string' && value.trim() ? value.trim() : null
 }
 
+const hasGLBFormat = (value: unknown) => {
+  if (!Array.isArray(value)) return false
+
+  return value.some((item) => {
+    return isRecord(item) && normalizeText(item.format)?.toLowerCase() === 'glb'
+  })
+}
+
 const getMediaUrl = (value: unknown) => {
   if (!isRecord(value)) return null
 
@@ -66,6 +74,37 @@ const getMediaUrl = (value: unknown) => {
   if (thumbnailURL) return thumbnailURL
 
   return normalizeText(value.url)
+}
+
+const normalizeBrowserMediaURL = (value: null | string | undefined) => {
+  if (!value) return null
+
+  const trimmed = value.trim()
+  if (!trimmed) return null
+
+  if (trimmed.startsWith('/')) {
+    return trimmed
+  }
+
+  try {
+    const parsed = new URL(trimmed)
+
+    if ((parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') && parsed.pathname.startsWith('/api/media/file/')) {
+      return `${parsed.pathname}${parsed.search}`
+    }
+  } catch {
+    return trimmed
+  }
+
+  return trimmed
+}
+
+async function resolveMediaAccessURL(payload: Awaited<ReturnType<typeof getCachedPayload>>, url: null | string | undefined) {
+  const normalized = normalizeBrowserMediaURL(url)
+  if (!normalized) return null
+  if (normalized.startsWith('/')) return normalized
+
+  return normalizeBrowserMediaURL(await getMediaAccessURL({ payload, url: normalized }))
 }
 
 export function formatVisibilityBadge(visibility: string) {
@@ -125,20 +164,11 @@ export async function getWorkbenchModels(user: Awaited<ReturnType<typeof getCurr
     result.docs.map(async (model: any) => {
       const owner = isRecord(model.owner) ? model.owner : null
       const [previewURL, ownerAvatarUrl, ownerBackgroundUrl] = await Promise.all([
-        getMediaAccessURL({
-          payload,
-          url: getModelPreviewURL(model),
-        }),
-        getMediaAccessURL({
-          payload,
-          url: getMediaUrl(owner?.avatar),
-        }),
-        getMediaAccessURL({
-          payload,
-          url: getMediaUrl(owner?.profileBackground),
-        }),
+        resolveMediaAccessURL(payload, getModelPreviewURL(model)),
+        resolveMediaAccessURL(payload, getMediaUrl(owner?.avatar)),
+        resolveMediaAccessURL(payload, getMediaUrl(owner?.profileBackground)),
       ])
-      const viewerURL = buildModelViewerURL({ modelId: model.id })
+      const viewerURL = getModelGLBSourceURL({ model }) || hasGLBFormat(model.formats) ? buildModelViewerURL({ modelId: model.id }) : null
       const sourceTask =
         model?.sourceTask && typeof model.sourceTask === 'object' && !Array.isArray(model.sourceTask) ? model.sourceTask : null
       const ownerId = Number(owner?.id ?? model.owner) || null

@@ -1,0 +1,65 @@
+.strip {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  height: 280px;
+  left: -17px;
+  position: absolute;
+  top: calc((332px - 280px) / 2 - 68px);
+  width: 1828px;
+  z-index: 5;
+}
+
+.frame {
+  appearance: none;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: block;
+  flex: 0 0 auto;
+  height: 280px;
+  padding: 0;
+  position: relative;
+}
+
+.frame[aria-pressed="true"] {
+  border-color: rgba(255, 255, 255, 0.55);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.18),
+    0 0 0 1px rgba(94, 160, 255, 0.5);
+}
+
+.frame:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.frameImage {
+  display: block;
+  height: 100%;
+  inset: 0;
+  object-fit: cover;
+  position: absolute;
+  width: 100%;
+}
+
+.largeFrame {
+  width: 700px;
+}
+
+.smallFrame {
+  width: 360px;
+}
+
+.lastFrame {
+  width: 340px;
+}
+
+.frameRibbon {
+  left: 36px;
+  position: absolute;
+  top: 0;
+  width: 132px;
+  z-index: 2;
+}

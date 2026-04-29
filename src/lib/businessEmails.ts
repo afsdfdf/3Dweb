@@ -9,7 +9,7 @@ const renderShell = (title: string, content: string) => `
     <h2 style="margin: 0 0 16px;">${title}</h2>
     ${content}
     <hr style="margin: 24px 0; border: none; border-top: 1px solid #e2e8f0;" />
-    <p style="font-size:12px;color:#64748b;">MiniForge AI 3D</p>
+    <p style="font-size:12px;color:#64748b;">Thorns Tavern</p>
   </div>
 `
 

@@ -57,9 +57,9 @@ export const StorageSettings: GlobalConfig = {
       name: 'baseURL',
       type: 'text',
       defaultValue: '',
-      label: text('CDN / base URL'),
+      label: text('Supabase public base URL'),
       admin: {
-        description: text('Default: empty. Optional public CDN domain used for media access URLs.'),
+        description: text('Default: empty. Optional Supabase Storage public object base URL used for media access URLs.'),
       },
     },
     {

@@ -1,117 +1,192 @@
-# Product Architecture Blueprint
+# Architecture Blueprint
 
-## Surfaces
+## Purpose
 
-### 1. Marketing Web
-- Purpose: public-facing finished website
-- Routes:
-  - `/`
-  - `/features`
-  - `/solutions`
-  - `/showcase`
-  - `/pricing`
-  - `/resources`
-  - `/api`
+This document describes the current product architecture at a high level. For exact code-level status, use `AI_PROJECT_MEMORY.md` and `src/payload.config.ts`.
 
-### 2. Studio App
-- Purpose: logged-in creation and delivery workflows
-- Routes:
-  - `/generate` for now, later migrate to `/studio`
-  - `/results/[taskCode]`
-  - `/dashboard/*`
+## Product Surfaces
 
-### 3. Payload Admin
-- Purpose: content operations + business operations
-- Areas:
-  - marketing content
-  - users
-  - tasks
-  - models
-  - orders
-  - payments
-  - provider configuration
+### Marketing Web
 
-### 4. Platform API
-- Purpose: serve public content, product actions, commerce, and provider callbacks
-- API domains:
-  - `/api/public/*`
-  - `/api/studio/*`
-  - `/api/commerce/*`
-  - `/api/platform/*`
+Purpose:
 
-## Data Domains
+- Public product website.
+- Homepage, features, solutions, showcase, pricing, resources, and developer-oriented entry points.
 
-### Marketing Content
-- `site-settings`
+Primary routes:
+
+- `/`
+- `/features`
+- `/solutions`
+- `/showcase`
+- `/showcase/[id]`
+- `/pricing`
+- `/resources`
+- `/developers`
+
+Primary data sources:
+
 - `homepage-content`
-- future:
-  - `feature-pages`
-  - `solution-pages`
-  - `showcase-items`
-  - `resources`
-  - `testimonials`
-  - `pricing-plans`
+- `homepage-items`
+- `site-settings`
+- public `models`
+- guest-readable `media`
 
-### Product
-- `users`
+### Studio / Workbench
+
+Purpose:
+
+- AI generation workflow.
+- Model review and delivery entry point.
+
+Primary routes:
+
+- `/generate` redirects to `/workbench`
+- `/workbench`
+- `/workbench/history`
+- `/workbench/models/[id]`
+- `/results/[taskCode]`
+
+Primary data sources:
+
 - `generation-tasks`
 - `task-events`
 - `models`
+- `media`
+- credits and download endpoints
+
+### Dashboard
+
+Purpose:
+
+- Authenticated user operations.
+- Tasks, library, credits, subscriptions, orders, and settings.
+
+Primary routes:
+
+- `/dashboard`
+- `/dashboard/tasks`
+- `/dashboard/library`
+- `/dashboard/credits`
+- `/dashboard/orders`
+- `/dashboard/orders/[id]`
+- `/dashboard/settings`
+
+Primary data sources:
+
+- user-scoped Local API reads with `overrideAccess: false`
+- project-owned product APIs for mutations and sync operations
+
+### Payload Admin
+
+Purpose:
+
+- Content operations.
+- Business operations.
+- Platform settings.
+- Operator dashboard.
+
+Primary route:
+
+- `/admin`
+
+Admin areas:
+
+- users and media
+- AI production
+- marketing content
+- models and bundles
+- credits, subscriptions, orders, and payments
+- provider, storage, security, and runtime settings
+
+### Platform API
+
+Purpose:
+
+- Stable product API boundary for frontend and external integrations.
+- Keep custom APIs out of Payload REST collection namespaces.
+
+Preferred namespaces:
+
+- `/api/studio/...`
+- `/api/commerce/...`
+- `/api/billing/...`
+- `/api/platform/...`
+- `/api/social/...` only after social endpoints and collections are confirmed active
+
+Do not create custom routes under `/api/<collection-slug>` because those paths belong to Payload REST.
+
+## Data Domains
+
+### Identity And Access
+
+- `users`
+- roles: `admin`, `operator`, `customer`
+- admin UI access: `admin` and `operator`
+
+### Media And Assets
+
+- `media`
+- `models`
+- model format files
+- preview images
+
+Public media depends on `purpose` and `publicAccess`, not only on linked model visibility.
+
+### AI Production
+
+- `generation-tasks`
+- `task-events`
+- provider settings in `ai-provider-settings`
+- AI workflow services in `src/lib/aiTaskFlow.ts`
+
+### Marketing Content
+
+- `site-settings`
+- `homepage-content`
+- `homepage-items`
+- `posts`
+- `announcements`
+- `model-bundles`
 
 ### Commerce
+
 - `credits`
 - `credit-transactions`
 - `credit-products`
+- `billing-subscriptions`
+- `addresses`
 - `print-orders`
 - `shopify-payments`
-- `addresses`
 
-### Platform
+### Platform Settings
+
 - `ai-provider-settings`
-- future:
-  - `api-keys`
-  - `provider-webhook-logs`
-  - `audit-logs`
-  - `usage-metrics`
+- `storage-settings`
+- `security-settings`
+- `runtime-deployment-settings`
 
-## Homepage Refactor Direction
+## Current Integration Notes
 
-### Problem
-- Homepage currently behaves like an operation funnel instead of a finished website.
-- Too much emphasis on “start using” and internal workflow language.
-- Hardcoded content makes it hard to operate from Payload admin.
+- The homepage content model is split between `homepage-content` for section copy and `homepage-items` for repeated curated placements.
+- The frontend still contains some fallback/hardcoded content. New frontend integration should replace those with Payload-managed data where possible.
+- Several endpoint modules exist but are not registered in `src/payload.config.ts`; treat them as inactive until registration is confirmed.
+- Runtime database is PostgreSQL only.
 
-### Target
-- Homepage should feel like a complete product surface:
-  - hero
-  - use cases
-  - featured works
-  - capability sections
-  - process
-  - pricing / entry
-  - FAQ
+## Frontend Integration Order
 
-### Content Ownership
-- Structure lives in React components.
-- Content lives in Payload globals and later supporting collections.
-- Business stats and dynamic featured content can be injected separately after the content layer is stable.
+1. Confirm active Payload collections, globals, and registered endpoints.
+2. Stabilize marketing data adapters around `homepage-content`, `homepage-items`, and public `models`.
+3. Replace hardcoded homepage media fallbacks with Payload-managed preview media.
+4. Align auth frontend with one active auth boundary.
+5. Integrate workbench and result pages with registered studio endpoints.
+6. Integrate commerce and billing flows through project-owned APIs.
+7. Enable social/detail features only after their collections and endpoints are registered.
 
-## Implementation Sequence
+## Non-Negotiable Boundaries
 
-### Phase 1
-- Add persistent documentation and refactor log
-- Expand homepage content schema
-- Build a server-side marketing data adapter
-- Render homepage from Payload content with fallbacks
-
-### Phase 2
-- Move site navigation/footer/announcement content to `site-settings`
-- Create dedicated routes for features / solutions / pricing / showcase
-
-### Phase 3
-- Refactor public APIs into explicit namespaces
-- Add content collections for showcase/resources/testimonials
-
-### Phase 4
-- Reposition `/generate` into a broader studio surface
-- Tighten access control and production-readiness gaps
+- Do not bypass access control by passing `user` without `overrideAccess: false`.
+- Do not expose raw private model files or third-party GLB URLs to browsers.
+- Do not shadow Payload REST routes with custom Next route handlers.
+- Do not reintroduce SQLite runtime assumptions.
+- Do not add new Chinese source literals in frontend/backend code.

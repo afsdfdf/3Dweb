@@ -34,6 +34,19 @@ const normalizeOrigin = (value: null | string | undefined) => {
   }
 }
 
+const isLocalDevelopmentOrigin = (origin: string) => {
+  if (!origin || isProduction()) return false
+
+  try {
+    const { hostname, protocol } = new URL(origin)
+    if (protocol !== 'http:' && protocol !== 'https:') return false
+
+    return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]'
+  } catch {
+    return false
+  }
+}
+
 export async function getAllowedRequestOrigins(payload?: unknown) {
   const allowed = new Set<string>()
   const securitySettings = await getSecuritySettingsSnapshot(payload)
@@ -67,6 +80,10 @@ export async function isAllowedMutationOrigin(args: { headers: Headers; payload?
 
   if (!requestOrigin) {
     return !isProduction()
+  }
+
+  if (isLocalDevelopmentOrigin(requestOrigin)) {
+    return true
   }
 
   return (await getAllowedRequestOrigins(payload)).includes(requestOrigin)
@@ -186,7 +203,7 @@ export function applySecurityHeaders(headers: Headers) {
         "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
         "style-src 'self' 'unsafe-inline'",
         "img-src 'self' data: blob: https:",
-        "connect-src 'self' https:",
+        "connect-src 'self' blob: https:",
         "font-src 'self' data: https:",
         "media-src 'self' blob: https:",
         "worker-src 'self' blob: https://cdn.jsdelivr.net",
@@ -200,7 +217,7 @@ export function applySecurityHeaders(headers: Headers) {
         "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://cdn.jsdelivr.net",
         "style-src 'self' 'unsafe-inline'",
         "img-src 'self' data: blob: https: http:",
-        "connect-src 'self' https: http: ws: wss:",
+        "connect-src 'self' blob: https: http: ws: wss:",
         "font-src 'self' data: https:",
         "media-src 'self' blob: https: http:",
         "worker-src 'self' blob: https://cdn.jsdelivr.net",

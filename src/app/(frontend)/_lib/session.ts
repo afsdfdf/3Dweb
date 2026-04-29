@@ -53,6 +53,20 @@ export async function getCurrentNavUser() {
       pagination: false,
       sort: '-updatedAt',
       user,
+      where: {
+        and: [
+          {
+            user: {
+              equals: user.id,
+            },
+          },
+          {
+            status: {
+              equals: 'active',
+            },
+          },
+        ],
+      },
     }),
   ])
 

@@ -148,7 +148,7 @@ const footerContent = localized<FooterContent>(
   {
     aboutEyebrow: 'About the product',
     aboutText:
-      'MiniForge connects character generation, model management, digital delivery, and print orders into one product workflow so teams can operate 3D assets like a real business.',
+      'Thorns Tavern connects character generation, model management, digital delivery, and print orders into one product workflow so teams can operate 3D assets like a real business.',
     aboutTitle: 'A unified platform for character creation, asset delivery, and print fulfillment',
     directionEyebrow: 'Product direction',
     directionText:
@@ -158,7 +158,7 @@ const footerContent = localized<FooterContent>(
   {
     aboutEyebrow: '关于产品',
     aboutText:
-      'MiniForge 把角色生成、模型管理、下载交付与打印订单串成一条完整链路，让团队可以像运营正式产品一样运营 3D 资产。',
+      'Thorns Tavern 把角色生成、模型管理、下载交付与打印订单串成一条完整链路，让团队可以像运营正式产品一样运营 3D 资产。',
     aboutTitle: '面向角色创作、模型交付与打印履约的一体化平台',
     directionEyebrow: '产品方向',
     directionText:
@@ -192,7 +192,7 @@ const siteSettings = localized<MarketingSiteSettings>(
       { href: '/generate', label: 'Open Studio' },
     ],
     siteDescription: 'An AI 3D product platform for character creation, asset management, and print fulfillment.',
-    siteName: 'MiniForge AI 3D',
+    siteName: 'Thorns Tavern',
     supportEmail: 'support@example.com',
   },
   {
@@ -219,7 +219,7 @@ const siteSettings = localized<MarketingSiteSettings>(
       { href: '/generate', label: '进入 Studio' },
     ],
     siteDescription: '面向角色创作、模型资产管理和打印履约的一体化 AI 3D 产品平台。',
-    siteName: 'MiniForge AI 3D',
+    siteName: 'Thorns Tavern',
     supportEmail: 'support@example.com',
   },
 )
@@ -251,7 +251,7 @@ const homepageContent = localized<MarketingHomepageContent>(
         question: 'What kind of projects is it good for?',
       },
       {
-        answer: 'No. MiniForge is designed to continue from generation into downloads, print orders, and fulfillment instead of stopping at a one-off result.',
+        answer: 'No. Thorns Tavern is designed to continue from generation into downloads, print orders, and fulfillment instead of stopping at a one-off result.',
         question: 'Is this just another generation tool?',
       },
       {
@@ -269,7 +269,7 @@ const homepageContent = localized<MarketingHomepageContent>(
       { category: 'Stylized character', summary: 'Well suited for evolving a single concept into a broader cast.', title: 'Shadow ranger', tone: 'pink' },
     ],
     hero: {
-      eyebrow: 'MiniForge Studio',
+      eyebrow: 'Thorns Tavern Studio',
       primaryCTA: { href: '/generate', label: 'Open Studio' },
       secondaryCTA: { href: '/showcase', label: 'View showcase' },
       subtitle:
@@ -335,7 +335,7 @@ const homepageContent = localized<MarketingHomepageContent>(
         question: '适合什么类型的项目？',
       },
       {
-        answer: '不是。MiniForge 更强调从 3D 结果继续走向下载、打印、订单与履约，而不是只停留在一次性生成。',
+        answer: '不是。Thorns Tavern 更强调从 3D 结果继续走向下载、打印、订单与履约，而不是只停留在一次性生成。',
         question: '这只是一个生成工具吗？',
       },
       {
@@ -353,7 +353,7 @@ const homepageContent = localized<MarketingHomepageContent>(
       { category: '风格化角色', summary: '适合从角色设定继续延展系列化角色开发。', title: '暗影游侠', tone: 'pink' },
     ],
     hero: {
-      eyebrow: 'MiniForge Studio',
+      eyebrow: 'Thorns Tavern Studio',
       primaryCTA: { href: '/generate', label: '进入 Studio' },
       secondaryCTA: { href: '/showcase', label: '查看案例展示' },
       subtitle:

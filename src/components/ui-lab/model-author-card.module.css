@@ -1,0 +1,58 @@
+.card {
+  background: url("/ui-lab/model-detail-uicut/styles/images/detail-side-bg-1.png") center center / 100% 100% no-repeat;
+  box-sizing: border-box;
+  color: #ffffff;
+  font-family: Arial, sans-serif;
+  height: 56px;
+  margin-left: auto;
+  padding: 10px 60px;
+  position: relative;
+  width: 372px;
+}
+
+.avatarFrame {
+  background: linear-gradient(to bottom, #f5d0a0 0%, #dea563 100%);
+  border-radius: 100%;
+  box-sizing: border-box;
+  height: 80px;
+  padding: 4px;
+  position: relative;
+  width: 80px;
+}
+
+.cardAvatar {
+  left: -40px;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.avatarInner {
+  border: #480608 6px solid;
+  border-radius: 100%;
+  box-sizing: border-box;
+  height: 72px;
+  overflow: hidden;
+  width: 72px;
+}
+
+.avatarImage {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.name {
+  font-size: 16px;
+  line-height: 20px;
+}
+
+.description {
+  font-size: 12px;
+  line-height: 16px;
+  opacity: 0.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

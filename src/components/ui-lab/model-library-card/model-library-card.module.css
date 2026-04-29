@@ -1,0 +1,179 @@
+.card {
+  position: relative;
+  overflow: hidden;
+  border: 0;
+  background:
+    radial-gradient(circle at 50% 68%, rgba(149, 182, 188, 0.64), transparent 43%),
+    linear-gradient(180deg, #030303 0%, #050505 38%, #757779 100%);
+  color: #ffffff;
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+}
+
+.selected {
+  box-shadow: 0 0 18px rgba(255, 190, 91, 0.12);
+}
+
+.card::after {
+  position: absolute;
+  left: 23px;
+  right: 23px;
+  top: 49px;
+  z-index: 3;
+  height: 2px;
+  content: "";
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.frameOverlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  --frame-border-width: 32px;
+  z-index: 5;
+  opacity: 1;
+  transition: filter 160ms ease, opacity 160ms ease;
+}
+
+.frameContent {
+  height: 100%;
+  padding: 0;
+}
+
+.selected .frameOverlay {
+  opacity: 1;
+  filter:
+    brightness(1.2)
+    sepia(0.9)
+    saturate(1.75)
+    hue-rotate(344deg)
+    drop-shadow(0 0 7px rgba(255, 207, 126, 0.24));
+}
+
+.cardTop {
+  position: absolute;
+  left: 23px;
+  top: 27px;
+  z-index: 3;
+  width: 154px;
+  height: 18px;
+}
+
+.cardTop strong {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 32px;
+  height: 18px;
+  color: #ffffff;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  letter-spacing: 0;
+}
+
+.cardTop em {
+  position: absolute;
+  left: 97px;
+  top: 2px;
+  width: 30px;
+  height: 14px;
+  border-radius: 2px;
+  background: #969696;
+  color: #000000;
+  font-family: Arial, sans-serif;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 14px;
+  letter-spacing: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.cardTop span {
+  position: absolute;
+  right: 0;
+  top: 0;
+  display: grid;
+  width: 16px;
+  height: 16px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #ffffff;
+  font-size: 10px;
+  line-height: 10px;
+}
+
+.card p {
+  position: absolute;
+  left: 23px;
+  top: 51px;
+  z-index: 3;
+  width: 53px;
+  height: 28px;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: Arial, sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 14px;
+  letter-spacing: 0;
+}
+
+.card p span {
+  display: block;
+}
+
+.previewArea {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 84px;
+  bottom: 18px;
+  z-index: 2;
+  display: block;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 82%, rgba(190, 218, 225, 0.3), transparent 50%),
+    #050505;
+}
+
+.previewImage {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+}
+
+.cardMenu {
+  position: absolute;
+  right: 10px;
+  top: 38px;
+  z-index: 7;
+  width: 178px;
+  border: 1px solid #2c2c2f;
+  background: #050505;
+}
+
+.cardMenu span {
+  display: block;
+  height: 40px;
+  padding: 12px 15px;
+  color: #dcdcdc;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.cardMenu span + span {
+  border-top: 1px solid #222;
+  color: rgba(255, 255, 255, 0.34);
+}

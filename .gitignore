@@ -65,3 +65,22 @@ node_modules/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Codex local diagnostics and generated review artifacts
+.codex*.log
+codex-*.log
+*-audit*.json
+*route-audit*.json
+*regression*.json
+*migration*.json
+*model-viewer-batch-check*.json
+*resource-import*.json
+*resource-title-normalization*.json
+database-user-resource-cleanup-backup-*.json
+*-check.png
+*.codex-*.png
+model-detail-*.png
+*-after.png
+*-before.png
+model-load-debug-*.png
+top-nav-*.png

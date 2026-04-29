@@ -1,0 +1,121 @@
+.row {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(4, 408px);
+  height: 300px;
+  left: 47px;
+  position: absolute;
+  top: 94px;
+  width: 1680px;
+  z-index: 5;
+}
+
+.frame {
+  align-items: center;
+  appearance: none;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: flex;
+  height: 300px;
+  justify-content: center;
+  padding: 0;
+  position: relative;
+  width: 408px;
+}
+
+.frame[aria-pressed="true"] {
+  border-color: rgba(255, 255, 255, 0.55);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.18),
+    0 0 0 1px rgba(94, 160, 255, 0.5);
+}
+
+.frame:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.frameImage {
+  display: block;
+  height: 100%;
+  inset: 0;
+  object-fit: cover;
+  position: absolute;
+  width: 100%;
+}
+
+.frameMeta {
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.78));
+  bottom: 0;
+  box-sizing: border-box;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  left: 0;
+  min-height: 72px;
+  padding: 28px 20px 16px;
+  position: absolute;
+  right: 0;
+  text-align: left;
+}
+
+.frameTitle {
+  display: block;
+  font-size: 16px;
+  line-height: 20px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.frameCount {
+  color: rgba(255, 255, 255, 0.62);
+  display: block;
+  font-size: 12px;
+  line-height: 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.arrowButton {
+  --arrow-image: var(--arrow-normal);
+  appearance: none;
+  background: var(--arrow-image) center / 100% 100% no-repeat;
+  border: 0;
+  cursor: pointer;
+  height: 300px;
+  padding: 0;
+  position: absolute;
+  top: 0;
+  transition: filter 120ms ease;
+  width: 48px;
+  z-index: 6;
+}
+
+.arrowButton:hover {
+  --arrow-image: var(--arrow-hover);
+  filter: brightness(1.08);
+}
+
+.arrowButton:active {
+  filter: brightness(0.95);
+}
+
+.leftArrow {
+  left: -19px;
+  transform: translateX(-100%);
+}
+
+.rightArrow {
+  right: -19px;
+  transform: translateX(100%);
+}
+
+.centerGuide {
+  height: 1px;
+  width: 1px;
+}

@@ -26,7 +26,7 @@ async function ensurePortalConfiguration(stripe: Stripe) {
 
   return stripe.billingPortal.configurations.create({
     business_profile: {
-      headline: 'MiniForge Subscription Management',
+      headline: 'Thorns Tavern Subscription Management',
     },
     features: {
       customer_update: {
@@ -63,7 +63,7 @@ export async function ensureStripeCustomer(req: PayloadRequest) {
   const customer = await stripe.customers.create({
     email: getUserStringField(req, 'email'),
     metadata: {
-      source: 'miniforge-app',
+      source: 'thornstavern-app',
       userId: String(req.user.id),
     },
     name: getUserStringField(req, 'fullName'),
@@ -102,7 +102,7 @@ export async function ensureStripePlanPrice(plan: SubscriptionPlanDefinition) {
       creditsPerMonth: String(plan.creditsPerMonth),
       planKey: plan.key,
     },
-    name: `MiniForge ${plan.name} Monthly Subscription`,
+    name: `Thorns Tavern ${plan.name} Monthly Subscription`,
   })
 
   return stripe.prices.create({

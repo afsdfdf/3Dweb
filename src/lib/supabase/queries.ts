@@ -617,7 +617,7 @@ export async function getSiteSettings(): Promise<PublicSiteSettings | null> {
       subscriptionProvider: String(siteRow.subscription_provider || 'stripe'),
     },
     siteDescription: String(siteRow.site_description || ''),
-    siteName: String(siteRow.site_name || 'MiniForge AI 3D'),
+    siteName: String(siteRow.site_name || 'Thorns Tavern'),
     subscriptionPlans,
     supportEmail: String(siteRow.support_email || ''),
   }

@@ -22,18 +22,19 @@ export async function getAllowedRemoteAssetHosts(payload: Payload) {
   const allowedHosts = new Set<string>()
   const canonicalHost = tryGetHostname(getCanonicalAppURL())
   const meshyApiHost = tryGetHostname(process.env.MESHY_API_BASE_URL || '')
+  const supabaseHost = tryGetHostname(process.env.SUPABASE_URL || '')
 
   if (canonicalHost) {
     allowedHosts.add(canonicalHost)
   }
 
-  if (settings.bucket && settings.region) {
-    allowedHosts.add(`${settings.bucket}.s3.${settings.region}.amazonaws.com`.toLowerCase())
-  }
-
   const storageBaseHost = tryGetHostname(settings.baseURL)
   if (storageBaseHost) {
     allowedHosts.add(storageBaseHost)
+  }
+
+  if (supabaseHost) {
+    allowedHosts.add(supabaseHost)
   }
 
   if (meshyApiHost) {

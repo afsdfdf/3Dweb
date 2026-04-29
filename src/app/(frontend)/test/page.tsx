@@ -33,6 +33,7 @@ type ComponentSpec = {
 }
 
 type PageSpec = {
+  href?: string
   note: string
   path: string
 }
@@ -53,7 +54,10 @@ type PageMapSpec = {
 }
 
 const frontendPages: PageSpec[] = [
-  { path: '/', note: 'Marketing homepage' },
+  { path: '/', href: '/', note: 'Formal homepage' },
+  { path: '/about', href: '/about', note: 'About page' },
+  { path: '/account', href: '/account', note: 'Formal account page' },
+  { path: '/contact', href: '/contact', note: 'Contact page' },
   { path: '/dashboard', note: 'User dashboard overview' },
   { path: '/dashboard/credits', note: 'Credits account' },
   { path: '/dashboard/library', note: 'User model library' },
@@ -64,20 +68,25 @@ const frontendPages: PageSpec[] = [
   { path: '/developers', note: 'Marketing route' },
   { path: '/features', note: 'Marketing route' },
   { path: '/forgot-password', note: 'Forgot password page' },
+  { path: '/formal-components', href: '/formal-components', note: 'Formal component registry' },
   { path: '/generate', note: 'Primary generation screen' },
-  { path: '/login', note: 'Login page' },
-  { path: '/pricing', note: 'Pricing page' },
-  { path: '/register', note: 'Register page' },
+  { path: '/login', href: '/login', note: 'Login page' },
+  { path: '/model-detail', href: '/model-detail?id=74', note: 'Formal model detail page' },
+  { path: '/pricing', href: '/pricing', note: 'Pricing page' },
+  { path: '/privacy-policy', href: '/privacy-policy', note: 'Privacy policy page' },
+  { path: '/refund-policy', href: '/refund-policy', note: 'Refund policy page' },
+  { path: '/register', href: '/register', note: 'Register page' },
   { path: '/reset-password', note: 'Reset password page' },
   { path: '/resources', note: 'Marketing route' },
   { path: '/results/[taskCode]', note: 'AI task result detail' },
+  { path: '/shipping-policy', href: '/shipping-policy', note: 'Shipping policy page' },
   { path: '/showcase', note: 'Public showcase list' },
   { path: '/showcase/[id]', note: 'Public showcase detail' },
   { path: '/solutions', note: 'Marketing route' },
-  { path: '/test', note: 'This project map and component test page' },
-  { path: '/test-auth-preview', note: 'Auth-only visual preview page' },
+  { path: '/test', href: '/test', note: 'Project route index' },
+  { path: '/test-auth-preview', href: '/test-auth-preview', note: 'Auth visual preview page' },
   { path: '/verify-email/[token]', note: 'Email verification landing page' },
-  { path: '/workbench', note: 'Workbench screen' },
+  { path: '/workbench', href: '/workbench', note: 'Formal workbench page' },
   { path: '/workbench/history', note: 'Workbench history' },
   { path: '/workbench/models/[id]', note: 'Workbench model detail' },
 ]
@@ -510,7 +519,15 @@ function SimpleTable({
         <tbody>
           {rows.map((row) => (
             <tr className="border-t border-border/60 align-top" key={row.path}>
-              <td className="px-3 py-2 font-mono text-xs text-primary">{row.path}</td>
+              <td className="px-3 py-2 font-mono text-xs text-primary">
+                {row.href ? (
+                  <Link className="underline-offset-4 hover:underline" href={row.href}>
+                    {row.path}
+                  </Link>
+                ) : (
+                  row.path
+                )}
+              </td>
               <td className="px-3 py-2 text-muted-foreground">{row.note}</td>
             </tr>
           ))}
@@ -911,7 +928,7 @@ export default function ProjectTestPage() {
               </CardHeader>
               <CardContent className="space-y-2 text-sm text-muted-foreground">
                 <p>Project-owned auth entry is under <code>/api/account/auth/*</code>.</p>
-                <p>Client-side authenticated calls should normally use <code>credentials: 'include'</code>.</p>
+                <p>Client-side authenticated calls should normally use <code>credentials: &apos;include&apos;</code>.</p>
                 <p>Profile, favorites, follows, dashboard, comments write, and reactions write all require a signed-in user.</p>
               </CardContent>
             </Card>

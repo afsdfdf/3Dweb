@@ -33,7 +33,7 @@ export const formalPages = {
         body: 'Start a new generation task from image, text, or hybrid references.',
         href: '/generate',
         label: 'Open Studio',
-        title: 'Create with MiniForge',
+        title: 'Create with Thorns Tavern',
       },
       {
         body: 'Browse public examples and understand the output direction.',
@@ -45,7 +45,7 @@ export const formalPages = {
     currentPath: '/about',
     heroEyebrow: 'About',
     heroText:
-      'MiniForge is an AI 3D product platform for character creation, asset delivery, and print fulfillment. The experience is designed to move from inspiration to generated model, then onward into downloads and physical production.',
+      'Thorns Tavern is an AI 3D product platform for character creation, asset delivery, and print fulfillment. The experience is designed to move from inspiration to generated model, then onward into downloads and physical production.',
     heroTitle: 'A product workflow for AI character models, digital delivery, and print-ready output.',
     lastUpdated: 'April 28, 2026',
     sections: [
@@ -66,7 +66,7 @@ export const formalPages = {
             title: 'Operations',
           },
         ],
-        title: 'What MiniForge Does',
+        title: 'What Thorns Tavern Does',
       },
       {
         body:
@@ -133,13 +133,13 @@ export const formalPages = {
     currentPath: '/privacy-policy',
     heroEyebrow: 'Privacy Policy',
     heroText:
-      'This policy explains the categories of information MiniForge may collect, how that information is used to operate the product, and the choices users have around account and support workflows.',
+      'This policy explains the categories of information Thorns Tavern may collect, how that information is used to operate the product, and the choices users have around account and support workflows.',
     heroTitle: 'Privacy practices for accounts, generated assets, orders, and platform operations.',
     lastUpdated: 'April 28, 2026',
     sections: [
       {
         body:
-          'MiniForge may process account details, authentication information, generated task metadata, uploaded references, model delivery records, payment or subscription state, order information, and support communications.',
+          'Thorns Tavern may process account details, authentication information, generated task metadata, uploaded references, model delivery records, payment or subscription state, order information, and support communications.',
         items: [
           { body: 'Account email, profile details, authentication events, and security-related session information.', title: 'Account data' },
           { body: 'Prompts, uploaded references, task progress, result files, model metadata, and download records.', title: 'Product data' },
@@ -154,7 +154,7 @@ export const formalPages = {
       },
       {
         body:
-          'MiniForge may use service providers for hosting, storage, payment processing, email delivery, analytics, and AI generation workflows. These providers are used to operate the product and are not a sale of personal information.',
+          'Thorns Tavern may use service providers for hosting, storage, payment processing, email delivery, analytics, and AI generation workflows. These providers are used to operate the product and are not a sale of personal information.',
         title: 'Service Providers',
       },
       {

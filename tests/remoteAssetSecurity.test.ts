@@ -29,7 +29,7 @@ const createPayloadMock = (options?: {
   },
 })
 
-test('remote asset security allows configured CDN host', async () => {
+test('remote asset security allows configured storage base host', async () => {
   const previousAllowlist = process.env.AI_REMOTE_ASSET_ALLOWLIST
   process.env.AI_REMOTE_ASSET_ALLOWLIST = ''
 
@@ -102,9 +102,11 @@ test('remote asset security falls back to env allowlist when Security Settings i
   }
 })
 
-test('remote asset security always allows canonical and storage derived hosts', async () => {
+test('remote asset security always allows canonical and Supabase storage hosts', async () => {
   const previousAppUrl = process.env.NEXT_PUBLIC_APP_URL
+  const previousSupabaseUrl = process.env.SUPABASE_URL
   process.env.NEXT_PUBLIC_APP_URL = 'https://app.example.com'
+  process.env.SUPABASE_URL = 'https://demo-project.supabase.co'
 
   try {
     const hosts = await getAllowedRemoteAssetHosts(
@@ -115,8 +117,18 @@ test('remote asset security always allows canonical and storage derived hosts', 
 
     assert.equal(hosts.includes('app.example.com'), true)
     assert.equal(hosts.includes('cdn.example-assets.com'), true)
-    assert.equal(hosts.includes('demo-bucket.s3.us-east-1.amazonaws.com'), true)
+    assert.equal(hosts.includes('demo-project.supabase.co'), true)
   } finally {
-    process.env.NEXT_PUBLIC_APP_URL = previousAppUrl
+    if (typeof previousAppUrl === 'undefined') {
+      delete process.env.NEXT_PUBLIC_APP_URL
+    } else {
+      process.env.NEXT_PUBLIC_APP_URL = previousAppUrl
+    }
+
+    if (typeof previousSupabaseUrl === 'undefined') {
+      delete process.env.SUPABASE_URL
+    } else {
+      process.env.SUPABASE_URL = previousSupabaseUrl
+    }
   }
 })

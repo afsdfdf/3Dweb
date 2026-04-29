@@ -1,0 +1,605 @@
+import { getCachedPayload } from '@/lib/getCachedPayload'
+import { getMediaAccessURL } from '@/lib/s3SignedURL'
+import type { Where } from 'payload'
+
+import { getMarketingSiteData } from '../_lib/marketing'
+import { getCurrentNavUser } from '../_lib/session'
+
+type ImageLike = {
+  thumbnailURL?: null | string
+  url?: null | string
+}
+
+type ModelLike = {
+  commentsCount?: null | number
+  createdAt?: null | string
+  description?: null | string
+  favoritesCount?: null | number
+  formats?: null | { format?: null | string }[]
+  id?: number | string
+  likesCount?: null | number
+  owner?: unknown
+  previewImage?: null | number | ImageLike
+  sourceTask?: null | {
+    callbackPayload?: unknown
+    inputMode?: null | string
+  }
+  tags?: null | { label?: null | string }[]
+  title?: null | string
+  updatedAt?: null | string
+  viewCount?: null | number
+}
+
+type UserLike = {
+  avatar?: null | number | (ImageLike & { publicAccess?: null | boolean; purpose?: null | string })
+  displayName?: null | string
+  email?: null | string
+  fullName?: null | string
+  id?: number | string
+  profileVisibility?: null | string
+}
+
+type HomepageItemLike = {
+  coverImage?: null | number | ImageLike
+  customHref?: null | string
+  id?: number | string
+  itemCountLabel?: null | string
+  linkedBundle?: null | number | {
+    coverImage?: null | number | ImageLike
+    id?: number | string
+    models?: unknown[]
+  }
+  linkedModel?: null | number | ModelLike
+  placement?: null | string
+  railVariant?: null | string
+  title?: null | string
+}
+
+export type HomeFeatureItem = {
+  alt: string
+  href?: null | string
+  id: string
+  imageSrc: string
+  ribbonLabel?: string
+  variant?: 'standard' | 'wide'
+}
+
+export type HomeShelfItem = {
+  count?: string
+  href?: null | string
+  id: string
+  imageSrc: string
+  title: string
+}
+
+export type HomeInspirationFilter = 'image-tools' | 'image3d' | 'text3d'
+
+export type HomeInspirationItem = {
+  ageLabel: string
+  alt: string
+  authorName: string
+  avatarSrc?: null | string
+  favoritesLabel: string
+  filter: HomeInspirationFilter
+  href?: null | string
+  id: string
+  imageSrc?: null | string
+  likesLabel: string
+  title: string
+  viewsLabel: string
+}
+
+export type HomeData = {
+  featuredItems: HomeFeatureItem[]
+  footer: {
+    supportEmail: string
+  }
+  inspirationFilter: HomeInspirationFilter | 'all'
+  inspirationItems: HomeInspirationItem[]
+  inspirationPagination: {
+    hasNextPage: boolean
+    hasPrevPage: boolean
+    limit: number
+    page: number
+    totalDocs: number
+    totalPages: number
+  }
+  inspirationSearchQuery: string
+  navUser: {
+    avatarUrl?: null | string
+    credits: number
+    displayName: string
+    email?: null | string
+    name: string
+  } | null
+  shelfItems: HomeShelfItem[]
+}
+
+export type HomeDataArgs = {
+  inspirationPage?: number
+  inspirationQuery?: null | string
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> => {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
+const normalizeBrowserMediaURL = (value: null | string | undefined) => {
+  if (!value) return null
+
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  if (trimmed.startsWith('/')) return trimmed
+
+  try {
+    const parsed = new URL(trimmed)
+
+    if ((parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') && parsed.pathname.startsWith('/api/media/file/')) {
+      return `${parsed.pathname}${parsed.search}`
+    }
+  } catch {
+    return trimmed
+  }
+
+  return trimmed
+}
+
+async function resolveMediaAccessURL(payload: Awaited<ReturnType<typeof getCachedPayload>>, url: null | string | undefined) {
+  const normalized = normalizeBrowserMediaURL(url)
+  if (!normalized) return null
+  if (normalized.startsWith('/')) return normalized
+
+  return normalizeBrowserMediaURL(await getMediaAccessURL({ payload, url: normalized }))
+}
+
+const getImageURL = (value: unknown) => {
+  if (!isRecord(value)) return null
+
+  const thumbnailURL = typeof value.thumbnailURL === 'string' && value.thumbnailURL ? value.thumbnailURL : null
+  const url = typeof value.url === 'string' && value.url ? value.url : null
+
+  return thumbnailURL || url
+}
+
+const getCallbackThumbnailURL = (model: ModelLike) => {
+  const sourceTask = model.sourceTask
+  if (!isRecord(sourceTask)) return null
+
+  const callbackPayload = sourceTask.callbackPayload
+  if (!isRecord(callbackPayload)) return null
+
+  return typeof callbackPayload.thumbnailUrl === 'string' ? callbackPayload.thumbnailUrl : null
+}
+
+const getModelPreviewURL = (model: ModelLike) => {
+  return getImageURL(model.previewImage) || getCallbackThumbnailURL(model)
+}
+
+const getModelInspirationFilter = (model: ModelLike): HomeInspirationFilter => {
+  const sourceTask = model.sourceTask
+  const inputMode = isRecord(sourceTask) && typeof sourceTask.inputMode === 'string' ? sourceTask.inputMode : null
+
+  if (inputMode === 'text') return 'text3d'
+  if (inputMode === 'image' || inputMode === 'hybrid') return 'image3d'
+
+  const searchableText = [
+    model.title,
+    model.description,
+    ...(Array.isArray(model.tags) ? model.tags.map((tag) => tag.label) : []),
+  ]
+    .filter((value): value is string => typeof value === 'string')
+    .join(' ')
+    .toLowerCase()
+
+  if (searchableText.includes('tool') || searchableText.includes('image gen') || searchableText.includes('imagegen')) {
+    return 'image-tools'
+  }
+
+  return model.previewImage ? 'image3d' : 'text3d'
+}
+
+const compactCount = (value: unknown, fallback = '0') => {
+  const count = Number(value ?? 0)
+  if (!Number.isFinite(count) || count <= 0) return fallback
+  if (count >= 1000) return `${(count / 1000).toFixed(count >= 10000 ? 0 : 1)}k`
+  return String(count)
+}
+
+const getOwnerName = (owner: unknown) => {
+  if (!isRecord(owner)) return 'Creator'
+
+  const displayName = typeof owner.displayName === 'string' && owner.displayName.trim() ? owner.displayName.trim() : null
+  const fullName = typeof owner.fullName === 'string' && owner.fullName.trim() ? owner.fullName.trim() : null
+  const email = typeof owner.email === 'string' && owner.email.trim() ? owner.email.trim() : null
+
+  return displayName || fullName || email?.split('@')[0] || 'Creator'
+}
+
+const getRelationId = (value: unknown) => {
+  if (typeof value === 'number' && Number.isFinite(value)) return value
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Number(value)
+    return Number.isFinite(parsed) ? parsed : null
+  }
+  if (isRecord(value)) {
+    const id = value.id
+    if (typeof id === 'number' && Number.isFinite(id)) return id
+    if (typeof id === 'string' && id.trim()) {
+      const parsed = Number(id)
+      return Number.isFinite(parsed) ? parsed : null
+    }
+  }
+  return null
+}
+
+const getPublicAvatarURL = (owner: UserLike) => {
+  const avatar = owner.avatar
+  if (!isRecord(avatar)) return null
+
+  if (avatar.publicAccess === true || avatar.purpose === 'preview') {
+    return getImageURL(avatar)
+  }
+
+  return null
+}
+
+async function getPublicOwnerProfile(payload: Awaited<ReturnType<typeof getCachedPayload>>, owner: unknown) {
+  const ownerId = getRelationId(owner)
+  if (!ownerId) return null
+
+  try {
+    const ownerDoc = (isRecord(owner) ? owner : null) as UserLike | null
+    const resolvedOwner =
+      ownerDoc?.profileVisibility !== undefined
+        ? ownerDoc
+        : ((await payload.findByID({
+            collection: 'users',
+            depth: 1,
+            id: ownerId,
+            overrideAccess: true,
+            select: {
+              avatar: true,
+              displayName: true,
+              email: true,
+              fullName: true,
+              profileVisibility: true,
+            },
+          })) as UserLike)
+
+    if (resolvedOwner.profileVisibility !== 'public') return null
+
+    return {
+      avatarSrc: await resolveMediaAccessURL(payload, getPublicAvatarURL(resolvedOwner)),
+      name: getOwnerName(resolvedOwner),
+    }
+  } catch {
+    return null
+  }
+}
+
+const getAgeLabel = (value: null | string | undefined) => {
+  if (!value) return 'Recently'
+
+  const timestamp = new Date(value).getTime()
+  if (!Number.isFinite(timestamp)) return 'Recently'
+
+  const days = Math.max(1, Math.round((Date.now() - timestamp) / 86_400_000))
+  if (days < 30) return `${days} Days ago`
+
+  const months = Math.max(1, Math.round(days / 30))
+  return `${months} Months ago`
+}
+
+const getHomepageItemHref = (item: HomepageItemLike) => {
+  if (typeof item.customHref === 'string' && item.customHref.trim()) return item.customHref
+
+  if (isRecord(item.linkedModel) && item.linkedModel.id) {
+    return `/model-detail?id=${encodeURIComponent(String(item.linkedModel.id))}`
+  }
+
+  return null
+}
+
+async function resolveHomepageItemImage(payload: Awaited<ReturnType<typeof getCachedPayload>>, item: HomepageItemLike) {
+  const directCover = getImageURL(item.coverImage)
+  if (directCover) {
+    return resolveMediaAccessURL(payload, directCover)
+  }
+
+  if (isRecord(item.linkedModel)) {
+    return resolveMediaAccessURL(payload, getModelPreviewURL(item.linkedModel))
+  }
+
+  if (isRecord(item.linkedBundle)) {
+    return resolveMediaAccessURL(payload, getImageURL(item.linkedBundle.coverImage))
+  }
+
+  return null
+}
+
+function getShelfCount(item: HomepageItemLike) {
+  if (typeof item.itemCountLabel === 'string' && item.itemCountLabel.trim()) {
+    return item.itemCountLabel.trim()
+  }
+
+  if (isRecord(item.linkedBundle) && Array.isArray(item.linkedBundle.models)) {
+    return `Products x${item.linkedBundle.models.length}`
+  }
+
+  if (isRecord(item.linkedModel)) {
+    return `Products x${Math.max(1, Array.isArray(item.linkedModel.formats) ? item.linkedModel.formats.length : 1)}`
+  }
+
+  return 'Products x1'
+}
+
+async function getManagedHomeItems(payload: Awaited<ReturnType<typeof getCachedPayload>>) {
+  const result = await payload.find({
+    collection: 'homepage-items',
+    depth: 2,
+    limit: 20,
+    overrideAccess: false,
+    pagination: false,
+    sort: ['placement', '-isPinned', 'sortOrder', '-publishAt'],
+    where: {
+      placement: {
+        in: ['featured-rail', 'collection-shelf'],
+      },
+    },
+  })
+
+  const featuredItems: HomeFeatureItem[] = []
+  const shelfItems: HomeShelfItem[] = []
+
+  for (const item of result.docs as HomepageItemLike[]) {
+    const imageSrc = await resolveHomepageItemImage(payload, item)
+    if (!imageSrc) continue
+
+    const title = typeof item.title === 'string' && item.title.trim() ? item.title.trim() : 'Homepage item'
+    const id = String(item.id ?? title)
+
+    if (item.placement === 'featured-rail') {
+      featuredItems.push({
+        alt: title,
+        href: getHomepageItemHref(item),
+        id,
+        imageSrc,
+        ribbonLabel: 'New Product',
+        variant: item.railVariant === 'wide' ? 'wide' : 'standard',
+      })
+    }
+
+    if (item.placement === 'collection-shelf') {
+      shelfItems.push({
+        count: getShelfCount(item),
+        href: getHomepageItemHref(item),
+        id,
+        imageSrc,
+        title,
+      })
+    }
+  }
+
+  return {
+    featuredItems,
+    shelfItems,
+  }
+}
+
+const normalizeSearchQuery = (value: null | string | undefined) => {
+  if (typeof value !== 'string') return ''
+  return value.trim().slice(0, 80)
+}
+
+const normalizePageNumber = (value: number | string | null | undefined) => {
+  const parsed = Number(value)
+  if (!Number.isFinite(parsed) || parsed < 1) return 1
+  return Math.floor(parsed)
+}
+
+const emptyPagination = (limit: number) => ({
+  hasNextPage: false,
+  hasPrevPage: false,
+  limit,
+  page: 1,
+  totalDocs: 0,
+  totalPages: 1,
+})
+
+async function getPublicModelItems(
+  payload: Awaited<ReturnType<typeof getCachedPayload>>,
+  args: {
+    limit: number
+    page?: number
+    query?: string
+    withPagination?: boolean
+  },
+) {
+  const query = normalizeSearchQuery(args.query)
+  const andConditions: Where[] = [
+    {
+      visibility: {
+        equals: 'public',
+      },
+    },
+  ]
+
+  if (query.length > 0) {
+    andConditions.push({
+      or: [
+        {
+          title: {
+            contains: query,
+          },
+        },
+        {
+          description: {
+            contains: query,
+          },
+        },
+        {
+          'tags.label': {
+            contains: query,
+          },
+        },
+      ],
+    })
+  }
+
+  const where: Where = andConditions.length === 1 ? andConditions[0] : { and: andConditions }
+
+  const result = await payload.find({
+    collection: 'models',
+    depth: 2,
+    limit: args.limit,
+    overrideAccess: false,
+    page: normalizePageNumber(args.page),
+    pagination: args.withPagination ?? false,
+    sort: '-updatedAt',
+    where,
+  })
+
+  const ownerProfileCache = new Map<number, ReturnType<typeof getPublicOwnerProfile>>()
+  const getCachedOwnerProfile = (owner: unknown) => {
+    const ownerId = getRelationId(owner)
+    if (!ownerId) return Promise.resolve(null)
+
+    const cached = ownerProfileCache.get(ownerId)
+    if (cached) return cached
+
+    const next = getPublicOwnerProfile(payload, owner)
+    ownerProfileCache.set(ownerId, next)
+    return next
+  }
+
+  const items = await Promise.all(
+    (result.docs as ModelLike[]).map(async (model) => {
+      const title = typeof model.title === 'string' && model.title.trim() ? model.title.trim() : `Model ${model.id}`
+      const ownerProfile = await getCachedOwnerProfile(model.owner)
+
+      return {
+        ageLabel: getAgeLabel(model.updatedAt || model.createdAt),
+        alt: title,
+        authorName: ownerProfile?.name ?? getOwnerName(model.owner),
+        avatarSrc: ownerProfile?.avatarSrc ?? null,
+        favoritesLabel: compactCount(model.favoritesCount),
+        filter: getModelInspirationFilter(model),
+        href: model.id ? `/model-detail?id=${encodeURIComponent(String(model.id))}` : null,
+        id: String(model.id ?? title),
+        imageSrc: await resolveMediaAccessURL(payload, getModelPreviewURL(model)),
+        likesLabel: compactCount(model.likesCount),
+        title,
+        viewsLabel: compactCount(model.viewCount),
+      } satisfies HomeInspirationItem
+    }),
+  )
+
+  return {
+    items,
+    pagination: {
+      hasNextPage: Boolean(result.hasNextPage),
+      hasPrevPage: Boolean(result.hasPrevPage),
+      limit: Number(result.limit || args.limit),
+      page: Number(result.page || args.page || 1),
+      totalDocs: Number(result.totalDocs || items.length),
+      totalPages: Math.max(1, Number(result.totalPages || 1)),
+    },
+  }
+}
+
+export async function getHomeData(args: HomeDataArgs = {}): Promise<HomeData> {
+  const inspirationLimit = 24
+  const inspirationQuery = normalizeSearchQuery(args.inspirationQuery)
+  const inspirationPage = normalizePageNumber(args.inspirationPage)
+  const canReuseFallbackModels = inspirationPage === 1 && inspirationQuery.length === 0
+
+  try {
+    const payload = await getCachedPayload()
+    const [marketing, navUser, managedItems, fallbackModels, separatePaginatedModels] = await Promise.all([
+      getMarketingSiteData(),
+      getCurrentNavUser(),
+      getManagedHomeItems(payload),
+      getPublicModelItems(payload, { limit: inspirationLimit, withPagination: canReuseFallbackModels }),
+      canReuseFallbackModels
+        ? Promise.resolve(null)
+        : getPublicModelItems(payload, {
+            limit: inspirationLimit,
+            page: inspirationPage,
+            query: inspirationQuery,
+            withPagination: true,
+          }),
+    ])
+    const paginatedModels =
+      separatePaginatedModels ??
+      {
+        items: fallbackModels.items.slice(0, inspirationLimit),
+        pagination: {
+          hasNextPage: Number(fallbackModels.pagination.totalDocs) > inspirationLimit,
+          hasPrevPage: false,
+          limit: inspirationLimit,
+          page: 1,
+          totalDocs: fallbackModels.pagination.totalDocs,
+          totalPages: Math.max(1, Math.ceil(Number(fallbackModels.pagination.totalDocs || fallbackModels.items.length) / inspirationLimit)),
+        },
+      }
+    const publicModels = fallbackModels.items
+    const publicModelsWithImages = publicModels.filter((item) => Boolean(item.imageSrc))
+    const featuredFallbackItems = publicModelsWithImages.slice(0, 4)
+    const shelfFallbackItems = publicModelsWithImages.slice(4, 8)
+
+    return {
+      featuredItems:
+        managedItems.featuredItems.length > 0
+          ? managedItems.featuredItems
+          : featuredFallbackItems
+              .map((item, index) => ({
+                alt: item.title,
+                href: item.href,
+                id: `featured-${item.id}`,
+                imageSrc: item.imageSrc as string,
+                ribbonLabel: index === 0 ? 'New Product' : 'Featured',
+                variant: index === 0 ? 'wide' : 'standard',
+              })),
+      footer: {
+        supportEmail: marketing.siteSettings.supportEmail || 'service@thornstavern.com',
+      },
+      inspirationFilter: 'all',
+      inspirationItems: paginatedModels.items.filter((item) => Boolean(item.imageSrc)),
+      inspirationPagination: paginatedModels.pagination,
+      inspirationSearchQuery: inspirationQuery,
+      navUser: navUser
+        ? {
+            avatarUrl: navUser.avatarUrl,
+            credits: navUser.creditsBalance,
+            displayName: navUser.displayName,
+            email: navUser.email,
+            name: navUser.displayName,
+          }
+        : null,
+      shelfItems:
+        managedItems.shelfItems.length > 0
+          ? managedItems.shelfItems
+          : (shelfFallbackItems.length > 0 ? shelfFallbackItems : featuredFallbackItems)
+              .map((item) => ({
+                count: 'Products x1',
+                href: item.href,
+                id: item.id,
+                imageSrc: item.imageSrc as string,
+                title: item.title,
+              })),
+    }
+  } catch {
+    return {
+      featuredItems: [],
+      footer: {
+        supportEmail: 'service@thornstavern.com',
+      },
+      inspirationFilter: 'all',
+      inspirationItems: [],
+      inspirationPagination: emptyPagination(inspirationLimit),
+      inspirationSearchQuery: inspirationQuery,
+      navUser: null,
+      shelfItems: [],
+    }
+  }
+}

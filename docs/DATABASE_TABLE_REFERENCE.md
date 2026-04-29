@@ -2,13 +2,13 @@
 
 ## Purpose
 
-This file is the current database baseline for local development, deployment preparation, and future maintenance.
+This file is the current database-domain reference for development, deployment preparation, and future maintenance.
 
-Use it to answer three questions:
+Use it to answer:
 
-1. Which tables are part of the active product data model
-2. Which tables are Payload system tables
-3. Which tables are historical or compatibility leftovers that need special care
+1. Which tables belong to active product domains.
+2. Which tables are Payload system tables.
+3. Which historical tables or generated-schema leftovers require caution.
 
 ## Source Of Truth
 
@@ -17,22 +17,19 @@ Primary sources:
 - [src/payload.config.ts](/D:/web/payload-local-demo/src/payload.config.ts)
 - [src/payload-generated-schema.ts](/D:/web/payload-local-demo/src/payload-generated-schema.ts)
 - [src/payload-types.ts](/D:/web/payload-local-demo/src/payload-types.ts)
-- active Supabase / Postgres schema managed by Payload runtime plus formal migrations
+- active PostgreSQL schema
+- formal migrations in [src/migrations](/D:/web/payload-local-demo/src/migrations)
 
-Compatibility / repair sources:
-
-- [src/migrations/20260413_094128_add_stripe_subscriptions.ts](/D:/web/payload-local-demo/src/migrations/20260413_094128_add_stripe_subscriptions.ts)
-- [src/migrations/20260417_023000_database_baseline_reconciliation.ts](/D:/web/payload-local-demo/src/migrations/20260417_023000_database_baseline_reconciliation.ts)
-
-Formal migration process reference:
+Migration policy:
 
 - [DATABASE_MIGRATION_STANDARD.md](/D:/web/payload-local-demo/docs/DATABASE_MIGRATION_STANDARD.md)
 
-## Important Notes
+## Runtime Database
 
-- The active runtime is now Supabase / PostgreSQL only.
-- Historical SQLite references in migrations and archived docs are legacy context, not an active development mode.
-- The baseline reconciliation migration is preserved only as an archived no-op to prevent legacy SQLite repair SQL from running against Postgres.
+- PostgreSQL is the only supported runtime database.
+- Historical SQLite references are legacy context only.
+- Do not treat `payload.db` as an active source of truth.
+- Future schema changes must be represented in formal migrations.
 
 ## Naming Rules
 
@@ -44,7 +41,39 @@ Formal migration process reference:
 - Localized version tables: `_<base>_v_locales`
 - Relationship tables: `<base>_rels`
 
-## Active Business Tables
+## Active Registered Collections
+
+These collection slugs are registered in `src/payload.config.ts`:
+
+- `users`
+- `media`
+- `generation-tasks`
+- `task-events`
+- `models`
+- `homepage-items`
+- `posts`
+- `announcements`
+- `model-bundles`
+- `credits`
+- `credit-transactions`
+- `credit-products`
+- `billing-subscriptions`
+- `addresses`
+- `print-orders`
+- `shopify-payments`
+
+## Active Registered Globals
+
+These global slugs are registered in `src/payload.config.ts`:
+
+- `site-settings`
+- `homepage-content`
+- `ai-provider-settings`
+- `storage-settings`
+- `security-settings`
+- `runtime-deployment-settings`
+
+## Active Business Table Families
 
 ### User And Auth
 
@@ -71,17 +100,14 @@ Formal migration process reference:
 - `homepage_items_locales`
 - `_homepage_items_v`
 - `_homepage_items_v_locales`
-
 - `posts`
 - `posts_locales`
 - `_posts_v`
 - `_posts_v_locales`
-
 - `announcements`
 - `announcements_locales`
 - `_announcements_v`
 - `_announcements_v_locales`
-
 - `model_bundles`
 - `model_bundles_locales`
 - `model_bundles_rels`
@@ -108,10 +134,8 @@ Formal migration process reference:
 - `site_settings`
 - `site_settings_header_nav`
 - `site_settings_credit_packages`
-
 - `homepage_content`
 - `homepage_content_faq`
-
 - `storage_settings`
 - `security_settings`
 - `security_settings_allowed_mutation_origins`
@@ -127,162 +151,61 @@ Formal migration process reference:
 - `payload_preferences_rels`
 - `payload_migrations`
 
-## Historical / Legacy Tables To Watch
+## Caution: Generated Schema Or Legacy Drift
 
-These exist in the current SQLite database, but they are not the main target shape we should build on going forward.
+Some table families may appear in generated schema, previous migrations, service files, or historical databases even when their collection configs are not currently registered.
 
-### Legacy Content Globals
+Current caution list:
 
+- `user_follows`
+- `model_comments`
+- `model_likes`
+- `model_favorites`
+- `engagement_views`
+- `email_settings`
 - `homepage_content_selling_points`
 
-Reason:
-This table exists in the local database but is not part of the current active homepage content model we are maintaining.
-
-### Legacy Email Global
-
-- `email_settings`
-
-Reason:
-Email settings now live inside `site_settings.emailSettings` rather than a standalone top-level global in the current configuration.
-
-## Tables Reconciled Into Formal Baseline Migration
-
-The following table families are now formally represented by the baseline reconciliation migration:
-
-- `homepage_items*`
-- `posts*`
-- `announcements*`
-- `model_bundles*`
-- `storage_settings`
-- `security_settings*`
-- `runtime_deployment_settings`
-
-The following relation columns are part of the formal baseline reconciliation:
-
-- `homepage_items_id`
-- `posts_id`
-- `announcements_id`
-- `model_bundles_id`
+Do not build new frontend or service logic against these as active collections unless their collection configs are present and registered in `src/payload.config.ts`.
 
 ## Current Drift Risks
 
-### 1. Migration Drift
+### 1. Config vs Generated Schema
 
-Current state:
+If generated schema contains tables for collections no longer registered in Payload config, future work must resolve whether those tables are historical leftovers or active features waiting for collection config restoration.
 
-- [src/migrations/20260413_094128_add_stripe_subscriptions.ts](/D:/web/payload-local-demo/src/migrations/20260413_094128_add_stripe_subscriptions.ts) is effectively a no-op.
-- The active baseline is now captured in [src/migrations/20260417_023000_database_baseline_reconciliation.ts](/D:/web/payload-local-demo/src/migrations/20260417_023000_database_baseline_reconciliation.ts).
+### 2. Internal Relation Tables
 
-Risk:
+Adding or removing collections can require relation-column changes in Payload internal tables such as:
 
-- A fresh environment may not match the current local database unless the repair script is run.
-
-### 2. Generated Schema vs Historical DB
-
-Current state:
-
-- [src/payload-generated-schema.ts](/D:/web/payload-local-demo/src/payload-generated-schema.ts) now reflects newer content tables.
-- Older SQLite snapshots may still miss those tables.
-
-Risk:
-
-- Admin can fail at runtime when generated schema expects tables or relation columns that SQLite does not yet contain.
-
-### 3. Legacy Tables Still Present
-
-Current state:
-
-- `email_settings`
-- `homepage_content_selling_points`
-
-Risk:
-
-- Future developers may mistake these for current production data sources.
-
-## Recommended Deployment Workflow
-
-### Local Development
-
-1. Run `pnpm payload generate:db-schema`
-2. Run `pnpm generate:types`
-3. Run migrations when schema history changes
-4. Start the app
-
-### Before Production Or Shared Environment Deployment
-
-1. Review this table list
-2. Convert manual SQLite repair steps into formal migrations
-3. Rebuild the generated schema
-4. Re-generate types
-5. Verify admin globals open successfully
-6. Verify content collections appear in admin
-
-## Recommended Next Cleanup Tasks
-
-1. Prefer formal migrations over any direct database repair strategy.
-2. Decide whether to remove or archive legacy tables:
-   `email_settings`
-   `homepage_content_selling_points`
-3. Add a repeatable database bootstrap script for fresh environments.
-4. Add a schema drift check to CI for SQLite development mode.
-
-## Full Local Table List
-
-Current `payload.db` tables:
-
-- `_announcements_v`
-- `_announcements_v_locales`
-- `_homepage_items_v`
-- `_homepage_items_v_locales`
-- `_model_bundles_v`
-- `_model_bundles_v_locales`
-- `_model_bundles_v_rels`
-- `_model_bundles_v_version_tags`
-- `_model_bundles_v_version_tags_locales`
-- `_posts_v`
-- `_posts_v_locales`
-- `addresses`
-- `ai_provider_settings`
-- `ai_provider_settings_providers`
-- `announcements`
-- `announcements_locales`
-- `billing_subscriptions`
-- `credit_products`
-- `credit_transactions`
-- `credits`
-- `email_settings`
-- `generation_tasks`
-- `homepage_content`
-- `homepage_content_faq`
-- `homepage_content_selling_points`
-- `homepage_items`
-- `homepage_items_locales`
-- `media`
-- `model_bundles`
-- `model_bundles_locales`
-- `model_bundles_rels`
-- `model_bundles_tags`
-- `model_bundles_tags_locales`
-- `models`
-- `models_formats`
-- `models_tags`
-- `payload_kv`
-- `payload_locked_documents`
 - `payload_locked_documents_rels`
-- `payload_migrations`
-- `payload_preferences`
 - `payload_preferences_rels`
-- `posts`
-- `posts_locales`
-- `print_orders`
-- `runtime_deployment_settings`
-- `security_settings`
-- `security_settings_allowed_mutation_origins`
-- `security_settings_allowed_remote_asset_hosts`
-- `shopify_payments`
-- `site_settings`
-- `site_settings_credit_packages`
-- `storage_settings`
-- `task_events`
-- `users`
-- `users_sessions`
+
+Missing relation columns can break admin document updates even when the main collection table exists.
+
+### 3. Postgres Enum Drift
+
+Changes to select field options can require enum migration work in PostgreSQL.
+
+Watch especially:
+
+- homepage item placements
+- task status values
+- order/payment status values
+- model status and visibility values
+
+## Recommended Schema Change Workflow
+
+1. Update Payload collection/global config.
+2. Run `pnpm payload generate:db-schema`.
+3. Add a formal migration.
+4. Run `pnpm generate:types`.
+5. Run `pnpm exec tsc --noEmit`.
+6. Update this file if table families changed.
+7. Update `AI_PROJECT_MEMORY.md` if the change affects long-lived architecture.
+
+## Recommended Cleanup Tasks
+
+1. Resolve whether social table families should be restored as active collections or removed from generated-schema/service expectations.
+2. Keep `email_settings` historical unless `EmailSettings` is intentionally re-registered.
+3. Keep `homepage_content_selling_points` historical unless the homepage schema intentionally reintroduces it.
+4. Add CI drift checks comparing Payload config, generated schema, migrations, and active PostgreSQL schema.

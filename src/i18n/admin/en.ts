@@ -227,7 +227,7 @@ export const adminEn = {
         bucket: { label: 'Bucket name', description: 'Default: empty. Example: media-assets-prod.' },
         region: { label: 'Region', description: 'Default: us-east-1.' },
         prefix: { label: 'Object prefix', description: 'Default: media. Files are stored under this logical folder prefix.' },
-        baseURL: { label: 'CDN / base URL', description: 'Default: empty. Optional public CDN domain used for media access URLs.' },
+        baseURL: { label: 'Supabase public base URL', description: 'Default: empty. Optional Supabase Storage public object base URL used for media access URLs.' },
         signedDownloads: { label: 'Use signed downloads', description: 'Default: enabled. When disabled, absolute media URLs are returned without signing.' },
         credentialsSource: { label: 'Credentials source', description: 'Default: environment. This is a note for operators; real secrets still live in environment variables.' },
         lastValidatedAt: { description: 'Optional operator timestamp for the last successful storage validation.' },

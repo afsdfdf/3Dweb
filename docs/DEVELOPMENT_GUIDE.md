@@ -26,6 +26,13 @@ It replaces temporary worklogs, dated audit notes, and one-off fix memos.
 - Tests:
   [tests](/D:/web/payload-local-demo/tests)
 
+## Active Documentation
+
+- Start with [DOCS_INDEX.md](/D:/web/payload-local-demo/docs/DOCS_INDEX.md).
+- Treat [AI_PROJECT_MEMORY.md](/D:/web/payload-local-demo/docs/AI_PROJECT_MEMORY.md) as the current AI-readable architecture memory.
+- Treat archived documents as historical context only.
+- If archived guidance is still required, fold it into an evergreen root document instead of linking to the archived file as active guidance.
+
 ## Local Commands
 
 - Start dev server:
@@ -102,6 +109,7 @@ These migrations are now the authoritative baseline for future database evolutio
 - Move dated reports, rollout checklists, one-off migration plans, and worklogs into `docs/archive/`.
 - Delete or archive temporary pentest notes, dated worklogs, and one-off repair notes once the guidance is folded into active docs.
 - Prefer updating a stable reference file over creating another dated report.
+- Keep root docs aligned with the currently registered Payload config, not planned or dormant modules.
 
 ## AI Memory
 

@@ -65,8 +65,8 @@ AWS_RDS_SCHEMA=public
 After filling env vars:
 
 ```bash
-npm run build
-pnpm tsc --noEmit
+pnpm build
+pnpm exec tsc --noEmit
 ```
 
 If deployment is using PostgreSQL, the backend should no longer depend on the local `payload.db` file for startup.

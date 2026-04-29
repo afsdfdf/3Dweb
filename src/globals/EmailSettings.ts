@@ -26,8 +26,8 @@ export const EmailSettings: GlobalConfig = {
               type: 'group',
               label: '发件信息',
               fields: [
-                { name: 'fromName', type: 'text', defaultValue: 'MiniForge AI 3D', label: '发件人名称' },
-                { name: 'fromAddress', type: 'email', defaultValue: 'no-reply@miniforge.local', label: '发件邮箱' },
+                { name: 'fromName', type: 'text', defaultValue: 'Thorns Tavern', label: '发件人名称' },
+                { name: 'fromAddress', type: 'email', defaultValue: 'no-reply@thornstavern.com', label: '发件邮箱' },
                 { name: 'replyTo', type: 'email', label: '回复地址' },
                 {
                   name: 'smtpNotice',
@@ -45,8 +45,8 @@ export const EmailSettings: GlobalConfig = {
               type: 'group',
               label: '品牌显示',
               fields: [
-                { name: 'productName', type: 'text', defaultValue: 'MiniForge AI 3D', label: '产品名称' },
-                { name: 'footerText', type: 'text', defaultValue: 'MiniForge AI 3D', label: '邮件页脚文本' },
+                { name: 'productName', type: 'text', defaultValue: 'Thorns Tavern', label: '产品名称' },
+                { name: 'footerText', type: 'text', defaultValue: 'Thorns Tavern', label: '邮件页脚文本' },
               ],
             },
           ],
@@ -64,11 +64,11 @@ export const EmailSettings: GlobalConfig = {
                   type: 'group',
                   label: '欢迎邮件',
                   fields: [
-                    { name: 'subject', type: 'text', defaultValue: '欢迎加入 MiniForge', label: '主题' },
+                    { name: 'subject', type: 'text', defaultValue: '欢迎加入 Thorns Tavern', label: '主题' },
                     {
                       name: 'intro',
                       type: 'textarea',
-                      defaultValue: '你的账号已经创建成功，现在可以开始使用 MiniForge 的生成、模型、订阅与订单能力。',
+                      defaultValue: '你的账号已经创建成功，现在可以开始使用 Thorns Tavern 的生成、模型、订阅与订单能力。',
                       label: '正文说明',
                     },
                     { name: 'ctaLabel', type: 'text', defaultValue: '进入 Studio', label: '按钮文案' },
@@ -79,11 +79,11 @@ export const EmailSettings: GlobalConfig = {
                   type: 'group',
                   label: '邮箱验证',
                   fields: [
-                    { name: 'subject', type: 'text', defaultValue: '验证你的 MiniForge 邮箱', label: '主题' },
+                    { name: 'subject', type: 'text', defaultValue: '验证你的 Thorns Tavern 邮箱', label: '主题' },
                     {
                       name: 'intro',
                       type: 'textarea',
-                      defaultValue: '请点击下面的按钮完成邮箱验证，验证成功后即可登录并继续使用 MiniForge。',
+                      defaultValue: '请点击下面的按钮完成邮箱验证，验证成功后即可登录并继续使用 Thorns Tavern。',
                       label: '正文说明',
                     },
                     { name: 'ctaLabel', type: 'text', defaultValue: '验证邮箱', label: '按钮文案' },
@@ -94,7 +94,7 @@ export const EmailSettings: GlobalConfig = {
                   type: 'group',
                   label: '找回密码',
                   fields: [
-                    { name: 'subject', type: 'text', defaultValue: 'MiniForge 密码重置', label: '主题' },
+                    { name: 'subject', type: 'text', defaultValue: 'Thorns Tavern 密码重置', label: '主题' },
                     {
                       name: 'intro',
                       type: 'textarea',
@@ -121,7 +121,7 @@ export const EmailSettings: GlobalConfig = {
                   type: 'group',
                   label: '订阅成功',
                   fields: [
-                    { name: 'subject', type: 'text', defaultValue: 'MiniForge 订阅开通成功', label: '主题' },
+                    { name: 'subject', type: 'text', defaultValue: 'Thorns Tavern 订阅开通成功', label: '主题' },
                     {
                       name: 'intro',
                       type: 'textarea',
@@ -136,7 +136,7 @@ export const EmailSettings: GlobalConfig = {
                   type: 'group',
                   label: '订单支付成功',
                   fields: [
-                    { name: 'subject', type: 'text', defaultValue: 'MiniForge 订单支付成功', label: '主题' },
+                    { name: 'subject', type: 'text', defaultValue: 'Thorns Tavern 订单支付成功', label: '主题' },
                     {
                       name: 'intro',
                       type: 'textarea',

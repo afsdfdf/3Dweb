@@ -1,4 +1,4 @@
-export const localeCookieName = 'miniforge-locale'
+export const localeCookieName = 'thornstavern-locale'
 
 export const locales = ['en', 'zh'] as const
 

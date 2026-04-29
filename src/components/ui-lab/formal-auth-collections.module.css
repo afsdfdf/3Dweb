@@ -1,0 +1,577 @@
+.scaleFrame {
+  flex: 0 0 auto;
+  height: calc(var(--auth-height) * var(--auth-scale));
+  overflow: visible;
+  position: relative;
+  width: calc(380px * var(--auth-scale));
+}
+
+.scaleInner {
+  height: var(--auth-height);
+  left: 0;
+  position: absolute;
+  top: 0;
+  transform: scale(var(--auth-scale));
+  transform-origin: left top;
+  width: 380px;
+}
+
+.panel {
+  background: #000000;
+  flex: 0 0 auto;
+  height: var(--panel-height);
+  overflow: hidden;
+  position: relative;
+  width: 380px;
+}
+
+.panel,
+.panel * {
+  box-sizing: border-box;
+}
+
+.frame {
+  height: 100%;
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  width: 100%;
+}
+
+.content {
+  inset: 0;
+  position: absolute;
+  z-index: 2;
+}
+
+.brand {
+  align-items: center;
+  display: flex;
+  gap: 14px;
+  height: 48px;
+  left: 0;
+  overflow: hidden;
+  position: absolute;
+  top: 82px;
+  width: 380px;
+  z-index: 3;
+}
+
+.brandMark {
+  align-items: center;
+  border: 1px solid #f6d49e;
+  border-radius: 50%;
+  color: #f6d49e;
+  display: flex;
+  flex: 0 0 auto;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 7px;
+  font-weight: 700;
+  height: 38px;
+  justify-content: center;
+  left: 62px;
+  line-height: 8px;
+  position: absolute;
+  text-align: center;
+  width: 38px;
+}
+
+.brandText {
+  color: #f6d49e;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 25px;
+  font-weight: 700;
+  left: 50%;
+  letter-spacing: 1px;
+  line-height: 1;
+  position: absolute;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.field {
+  background: transparent;
+  border: 0;
+  height: 50px;
+  left: 40px;
+  position: absolute;
+  width: 300px;
+}
+
+.field::before {
+  background-image: url("/ui-lab/pixso-auth-assets/images/Vector_1_3729.png");
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  content: "";
+  height: 50px;
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 300px;
+}
+
+.loginEmail {
+  top: 158px;
+}
+
+.loginPassword {
+  top: 232px;
+}
+
+.registerEmail {
+  top: 158px;
+}
+
+.registerCode {
+  top: 232px;
+}
+
+.registerPassword {
+  top: 306px;
+}
+
+.registerConfirm {
+  top: 380px;
+}
+
+.fieldLabel {
+  color: #ffffff;
+  font-family: Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  left: 16px;
+  line-height: 18px;
+  margin: 0;
+  position: absolute;
+  top: 8px;
+}
+
+.input {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  caret-color: #f6d49e;
+  color: #ffffff;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  height: 18px;
+  left: 16px;
+  line-height: 18px;
+  outline: 0;
+  padding: 0;
+  position: absolute;
+  top: 30px;
+  width: 238px;
+}
+
+.input::placeholder {
+  color: rgba(139, 154, 166, 0.9);
+  font-size: 12px;
+}
+
+.fieldFilled .fieldLabel,
+.panel .field:focus-within .fieldLabel {
+  display: none;
+}
+
+.fieldFilled .input,
+.panel .field:focus-within .input {
+  font-size: 16px;
+  height: 40px;
+  line-height: 40px;
+  top: 8px;
+  width: 268px;
+}
+
+.panel .field:focus-within .input::placeholder {
+  color: transparent;
+}
+
+.codeField.fieldFilled .input,
+.panel .codeField:focus-within .input {
+  width: 168px;
+}
+
+.loginPanel .brand {
+  left: 122px;
+  top: 114px;
+  width: 270px;
+}
+
+.loginPanel .brandMark {
+  left: auto;
+  position: static;
+}
+
+.loginPanel .brandText {
+  left: auto;
+  position: static;
+  transform: none;
+}
+
+.loginPanel .field {
+  background: transparent;
+  border: 0;
+  height: 50px;
+  left: 40px;
+}
+
+.loginPanel .field::before {
+  display: block;
+}
+
+.loginPanel .input {
+  height: 18px;
+  line-height: 18px;
+  top: 30px;
+}
+
+.loginPanel .fieldFilled .input,
+.loginPanel .field:focus-within .input {
+  height: 40px;
+  line-height: 40px;
+  top: 8px;
+}
+
+.registerLogoGroup {
+  height: 48px;
+  left: 69px;
+  position: absolute;
+  top: 70px;
+  width: 242px;
+  z-index: 3;
+}
+
+.registerLogoMark,
+.registerLogoText {
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  position: absolute;
+}
+
+.registerLogoMark {
+  background-image: url("/ui-lab/pixso-auth-assets/images/Boolean_operation_1_3778.png");
+  height: 48px;
+  left: 0;
+  top: 0;
+  width: 48px;
+}
+
+.registerLogoText {
+  background-image: url("/ui-lab/pixso-auth-assets/images/Fill4720.png");
+  height: 27px;
+  left: 56px;
+  top: 10px;
+  width: 184px;
+}
+
+.registerPanel .fieldLabel {
+  font-family: Arial, sans-serif;
+  font-weight: 500;
+  line-height: 22px;
+}
+
+.registerPanel .codeField {
+  background: transparent;
+  border: 0;
+}
+
+.registerPanel .codeField::before {
+  background-image: url("/ui-lab/pixso-auth-assets/images/Vector_1_3733.png");
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  content: "";
+  height: 50px;
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 206px;
+}
+
+.registerPanel .sendCode {
+  background: transparent;
+  border: 0;
+  height: 50px;
+  left: 205px;
+  overflow: visible;
+  right: auto;
+  top: 0;
+  width: 95px;
+}
+
+.registerPanel .sendCode::before {
+  background-image: url("/ui-lab/pixso-auth-assets/images/Vector_1_3737.png");
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  content: "";
+  height: 50px;
+  inset: 0;
+  position: absolute;
+  width: 95px;
+  z-index: -1;
+}
+
+.eyeButton {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  height: 32px;
+  padding: 0;
+  position: absolute;
+  right: 8px;
+  top: 5px;
+  width: 32px;
+}
+
+.eyeIcon {
+  background-image: url("/ui-lab/pixso-auth-assets/images/Boolean_operation_1_3743.png");
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  display: block;
+  height: 16px;
+  left: 5px;
+  position: absolute;
+  top: 8px;
+  width: 22px;
+}
+
+.eyeIconVisible {
+  background-image: url("/ui-lab/pixso-auth-assets/images/Boolean_operation_1_3757.png");
+  height: 15px;
+  top: 8px;
+}
+
+.eyeButton:focus-visible,
+.checkbox:focus-visible,
+.sendCode:focus-visible,
+.forgot:focus-visible,
+.registerSignIn:focus-visible {
+  outline: 1px solid #f6d49e;
+  outline-offset: 2px;
+}
+
+.codeField .input {
+  width: 170px;
+}
+
+.sendCode {
+  appearance: none;
+  background: rgba(246, 212, 158, 0.12);
+  border: 1px solid rgba(246, 212, 158, 0.52);
+  color: #ffffff;
+  cursor: pointer;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  height: 34px;
+  position: absolute;
+  right: 6px;
+  top: 4px;
+  width: 86px;
+}
+
+.terms {
+  color: rgba(207, 215, 221, 0.88);
+  display: block;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  left: 40px;
+  line-height: 18px;
+  position: absolute;
+  width: 300px;
+}
+
+.loginTerms {
+  height: 36px;
+  top: 306px;
+}
+
+.loginTerms .checkbox {
+  left: 0;
+  position: absolute;
+  top: 0;
+}
+
+.loginTerms > span {
+  display: block;
+  left: 22px;
+  line-height: 16px;
+  padding-left: 2ch;
+  position: absolute;
+  top: 0;
+  white-space: normal;
+  width: 273px;
+}
+
+.registerTerms {
+  height: 36px;
+  left: 40px;
+  top: 478px;
+  width: 300px;
+}
+
+.registerTerms .checkbox {
+  border: 0;
+  height: 18px;
+  left: 0;
+  margin: 0;
+  position: absolute;
+  top: 0;
+  width: 18px;
+}
+
+.registerTermsText {
+  color: rgba(255, 255, 255, 0.5);
+  display: block;
+  height: 36px;
+  left: 22px;
+  line-height: 18px;
+  max-width: 271px;
+  position: absolute;
+  top: 0;
+  white-space: normal;
+  width: 271px;
+}
+
+.termsLine {
+  display: inline;
+}
+
+.checkbox {
+  appearance: none;
+  background: transparent;
+  border: 1px solid #f6d49e;
+  border-radius: 1px;
+  cursor: pointer;
+  height: 14px;
+  margin: 1px 0 0;
+  position: relative;
+  width: 14px;
+}
+
+.registerTerms .checkbox {
+  height: 18px;
+  width: 18px;
+}
+
+.registerTerms .checkbox::before {
+  border: 1px solid #f6d49e;
+  border-radius: 1px;
+  content: "";
+  height: 14px;
+  left: 2px;
+  position: absolute;
+  top: 2px;
+  width: 14px;
+}
+
+.checkbox:checked {
+  background: #f6d49e;
+}
+
+.checkbox:checked::after {
+  border-bottom: 2px solid #000000;
+  border-right: 2px solid #000000;
+  content: "";
+  height: 7px;
+  left: 4px;
+  position: absolute;
+  top: 1px;
+  transform: rotate(45deg);
+  width: 4px;
+}
+
+.registerTerms .checkbox:checked {
+  background: transparent;
+}
+
+.registerTerms .checkbox:checked::before {
+  background: #f6d49e;
+}
+
+.registerTerms .checkbox:checked::after {
+  border: 0;
+  content: "";
+  height: 0;
+  left: 0;
+  top: 0;
+  transform: none;
+  width: 0;
+}
+
+.linkText {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.buttonSlot {
+  height: 38px;
+  position: relative;
+  width: 100px;
+}
+
+.loginSignInSlot,
+.loginSignUpSlot,
+.registerSignUpSlot {
+  height: 38px;
+  position: absolute;
+  width: 100px;
+}
+
+.loginSignInSlot {
+  left: 133px;
+  top: 380px;
+}
+
+.loginSignUpSlot {
+  left: 133px;
+  top: 448px;
+}
+
+.registerSignUpSlot {
+  left: 133px;
+  top: 558px;
+}
+
+.loginSignInSlot .buttonSlot,
+.loginSignUpSlot .buttonSlot,
+.registerSignUpSlot .buttonSlot {
+  height: 36.54px;
+  width: 95.21px;
+}
+
+.forgot,
+.registerSignIn {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  color: #f6d49e;
+  cursor: pointer;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  height: 18px;
+  line-height: 18px;
+  padding: 0;
+  position: absolute;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.forgot {
+  left: 50%;
+  text-align: center;
+  top: 514px;
+  transform: translateX(-50%);
+  width: 98px;
+}
+
+.registerSignIn {
+  font-family: Arial, sans-serif;
+  font-weight: 500;
+  left: 170px;
+  top: 604px;
+  transform: none;
+  width: 40px;
+}

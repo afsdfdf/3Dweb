@@ -1,6 +1,7 @@
 import type { PayloadRequest } from 'payload'
 
 import { InsufficientCreditsError, refundDownloadCredits, spendDownloadCredits } from '@/lib/creditLedger'
+import { queryPostgres } from '@/lib/postgres'
 import { isAllowedRemoteAssetURL } from '@/lib/remoteAssetSecurity'
 import { getMediaAccessURL } from '@/lib/s3SignedURL'
 
@@ -8,6 +9,7 @@ type MockDownloadEndpointTestHooks = {
   getMediaAccessURL?: typeof getMediaAccessURL
   isAllowedRemoteAssetURL?: typeof isAllowedRemoteAssetURL
   refundDownloadCredits?: typeof refundDownloadCredits
+  resolveModelFormatAsset?: typeof resolveModelFormatAsset
   spendDownloadCredits?: typeof spendDownloadCredits
 }
 
@@ -21,6 +23,32 @@ const unauthorized = () => Response.json({ message: 'Please sign in first.' }, {
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
+type ResolvedModelFormatAsset = {
+  filename: null | string
+  mimeType: null | string
+  url: null | string
+}
+
+async function resolveModelFormatAsset(modelId: number, format: string): Promise<ResolvedModelFormatAsset | null> {
+  const result = await queryPostgres<ResolvedModelFormatAsset>(
+    `
+      select
+        media.filename as "filename",
+        media.mime_type as "mimeType",
+        media.url
+      from models_formats mf
+      left join media on media.id = mf.file_id
+      where mf._parent_id = $1
+        and lower(mf.format::text) = $2
+      order by mf._order asc
+      limit 1
+    `,
+    [modelId, format],
+  )
+
+  return result.rows[0] ?? null
 }
 
 async function chargeDownloadIfNeeded(args: {
@@ -87,7 +115,11 @@ export const mockModelDownloadEndpoint = {
     const callbackPayload = sourceTask && isRecord(sourceTask.callbackPayload) ? sourceTask.callbackPayload : null
     const modelURLs = callbackPayload && isRecord(callbackPayload.modelUrls) ? callbackPayload.modelUrls : null
     const remoteFromTask = modelURLs && typeof modelURLs[format] === 'string' ? String(modelURLs[format]) : ''
-    const remoteURL = remoteFromMedia || remoteFromTask
+    const resolvedFormatAsset =
+      remoteFromMedia || remoteFromTask
+        ? null
+        : await (mockDownloadEndpointTestHooks?.resolveModelFormatAsset || resolveModelFormatAsset)(Number(model.id), format)
+    const remoteURL = remoteFromMedia || remoteFromTask || resolvedFormatAsset?.url
 
     if (remoteURL) {
       const allowedSource = await (mockDownloadEndpointTestHooks?.isAllowedRemoteAssetURL || isAllowedRemoteAssetURL)({
@@ -165,14 +197,15 @@ export const mockModelDownloadEndpoint = {
         }
 
         const mimeType =
-          fileRelation && typeof fileRelation === 'object' && 'mimeType' in fileRelation && typeof fileRelation.mimeType === 'string'
+          resolvedFormatAsset?.mimeType ||
+          (fileRelation && typeof fileRelation === 'object' && 'mimeType' in fileRelation && typeof fileRelation.mimeType === 'string'
             ? fileRelation.mimeType
-            : 'application/octet-stream'
+            : 'application/octet-stream')
 
-        const safeName = String(model.title || `model-${model.id}`).replace(/["\r\n\\]/g, '')
+        const safeName = String(resolvedFormatAsset?.filename || model.title || `model-${model.id}`).replace(/["\r\n\\]/g, '')
         return new Response(upstream.body, {
           headers: {
-            'Content-Disposition': `inline; filename="${safeName}.${format}"`,
+            'Content-Disposition': `inline; filename="${safeName}"`,
             'Content-Type': mimeType,
           },
           status: 200,

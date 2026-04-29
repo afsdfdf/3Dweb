@@ -41,39 +41,39 @@ type EmailSettingsShape = {
 
 const defaults: EmailSettingsShape = {
   branding: {
-    footerText: 'MiniForge AI 3D',
-    productName: 'MiniForge AI 3D',
+    footerText: 'Thorns Tavern',
+    productName: 'Thorns Tavern',
   },
   sender: {
-    fromAddress: process.env.EMAIL_FROM_ADDRESS || 'no-reply@miniforge.local',
-    fromName: process.env.EMAIL_FROM_NAME || 'MiniForge AI 3D',
+    fromAddress: process.env.EMAIL_FROM_ADDRESS || 'no-reply@thornstavern.com',
+    fromName: process.env.EMAIL_FROM_NAME || 'Thorns Tavern',
     replyTo: '',
   },
   templates: {
     forgotPassword: {
       ctaLabel: 'Reset password',
       intro: 'We received a password reset request. Use the button below to continue.',
-      subject: 'MiniForge password reset',
+      subject: 'Thorns Tavern password reset',
     },
     orderPaid: {
       ctaLabel: 'View order details',
       intro: 'Your print order has been paid successfully and moved into the next processing stage.',
-      subject: 'MiniForge order payment received',
+      subject: 'Thorns Tavern order payment received',
     },
     subscriptionSuccess: {
       ctaLabel: 'View credits and subscription',
       intro: 'Your subscription is active and credits for the current period have been applied to your account.',
-      subject: 'MiniForge subscription activated',
+      subject: 'Thorns Tavern subscription activated',
     },
     verify: {
       ctaLabel: 'Verify email',
       intro: 'Use the button below to verify your email address before signing in.',
-      subject: 'Verify your MiniForge email',
+      subject: 'Verify your Thorns Tavern email',
     },
     welcome: {
       ctaLabel: 'Open Studio',
-      intro: 'Your account is ready. You can now start using MiniForge for generation, model management, subscriptions, and orders.',
-      subject: 'Welcome to MiniForge',
+      intro: 'Your account is ready. You can now start using Thorns Tavern for generation, model management, subscriptions, and orders.',
+      subject: 'Welcome to Thorns Tavern',
     },
   },
 }

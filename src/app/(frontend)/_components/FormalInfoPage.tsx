@@ -174,7 +174,7 @@ export async function FormalInfoPage({ page }: FormalInfoPageProps) {
                 <div>
                   <h2 className="text-2xl font-semibold tracking-tight text-[#f1e2bc]">Page Summary</h2>
                   <p className="mt-2 text-sm leading-6 text-[#a7a9b0]">
-                  A concise reference for how this page applies to the MiniForge product workflow.
+                  A concise reference for how this page applies to the Thorns Tavern product workflow.
                   </p>
                 </div>
                 {page.summaryCards.map((card) => (

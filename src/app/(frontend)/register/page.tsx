@@ -17,7 +17,7 @@ export default async function RegisterPage() {
     <SiteShell currentPath="/register" showAuthEntry={false} showFooter={false} showLocaleSwitcher={false} showUtilityNav={false}>
       <AuthPageLayout
         badge="Create Account"
-        description="Open a MiniForge account to enter Studio, manage generated assets, and move from prototype to fulfillment inside one connected platform."
+        description="Open a Thorns Tavern account to enter Studio, manage generated assets, and move from prototype to fulfillment inside one connected platform."
         highlights={[
           {
             title: 'Single product path',

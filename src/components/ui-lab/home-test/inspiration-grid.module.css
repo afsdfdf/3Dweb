@@ -1,0 +1,221 @@
+.grid {
+  display: grid;
+  column-gap: 9.2px;
+  grid-template-columns: repeat(6, 288px);
+  grid-template-rows: repeat(4, 460px);
+  left: 50%;
+  position: absolute;
+  row-gap: 13.333px;
+  transform: translateX(-50%);
+  top: 197.5px;
+  width: 1774px;
+  z-index: 5;
+}
+
+.item {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  display: block;
+  height: 460px;
+  padding: 0;
+  position: relative;
+  width: 288px;
+}
+
+.item[aria-pressed="true"] {
+  filter: brightness(1.1);
+}
+
+.cardFrame {
+  height: 460px;
+  pointer-events: none;
+  width: 288px;
+}
+
+.cardFrameContent {
+  height: 100%;
+  min-height: 0;
+  padding: 0 !important;
+}
+
+.cardContent {
+  background: #000000;
+  box-sizing: border-box;
+  color: #ffffff;
+  display: block;
+  height: 100%;
+  overflow: hidden;
+  padding: 0;
+  position: relative;
+  width: 100%;
+}
+
+.cardHeader {
+  height: 67px;
+  position: relative;
+}
+
+.cardHeader::after {
+  background: rgba(255, 255, 255, 0.2);
+  content: "";
+  height: 1px;
+  left: 11px;
+  position: absolute;
+  top: 66px;
+  width: 266px;
+}
+
+.avatarWrap {
+  height: 40px;
+  left: 18px;
+  position: absolute;
+  top: 20px;
+  width: 40px;
+}
+
+.avatarWrap::before {
+  border: 2px solid #009f69;
+  border-radius: 999px;
+  content: "";
+  inset: 0;
+  position: absolute;
+}
+
+.avatar {
+  border-radius: 999px;
+  display: block;
+  height: 32px;
+  left: 4px;
+  object-fit: cover;
+  position: absolute;
+  top: 4px;
+  width: 32px;
+}
+
+.avatarBadge {
+  background: #00b871;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  bottom: -1px;
+  height: 13px;
+  position: absolute;
+  right: -3px;
+  width: 13px;
+}
+
+.titleBlock {
+  left: 66px;
+  min-width: 0;
+  position: absolute;
+  top: 20px;
+}
+
+.titleRow {
+  align-items: flex-start;
+  display: flex;
+  gap: 11px;
+  height: 18px;
+  min-width: 0;
+}
+
+.name {
+  color: #ffffff;
+  flex: 0 0 auto;
+  font-family: PingFangSC, "PingFang SC", sans-serif;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 400;
+  height: 18px;
+  letter-spacing: 0;
+  line-height: 18px;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 64px;
+}
+
+.time {
+  color: rgba(255, 255, 255, 0.3);
+  flex: 0 0 auto;
+  font-family: PingFangSC, "PingFang SC", sans-serif;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 400;
+  height: 18px;
+  letter-spacing: 0;
+  line-height: 18px;
+  text-align: right;
+  white-space: nowrap;
+  width: 64px;
+}
+
+.stats {
+  display: flex;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.stat {
+  align-items: center;
+  background: rgba(0, 0, 0, 0);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  box-sizing: border-box;
+  color: #ffffff;
+  display: inline-flex;
+  font-family: PingFangSC, "PingFang SC", sans-serif;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 400;
+  height: 18px;
+  letter-spacing: 0;
+  line-height: 14px;
+  padding: 0 5px;
+  text-align: left;
+  width: 48px;
+}
+
+.stat img {
+  display: block;
+  height: 10px;
+  margin-right: 3px;
+  object-fit: contain;
+  width: 10px;
+}
+
+.previewArea {
+  background:
+    radial-gradient(circle at 50% 100%, rgba(187, 0, 32, 0.4), transparent 22%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0));
+  display: block;
+  height: 393px;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.previewImage {
+  display: block;
+  height: 100%;
+  inset: 0;
+  object-fit: cover;
+  position: absolute;
+  width: 100%;
+}
+
+.emptyState {
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.58);
+  display: flex;
+  font-family: Arial, sans-serif;
+  font-size: 24px;
+  grid-column: 1 / -1;
+  height: 460px;
+  justify-content: center;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}

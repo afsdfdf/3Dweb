@@ -40,7 +40,7 @@ export async function ensureStripeCustomerForUser(userId: string) {
   const customer = await stripe.customers.create({
     email: profile.email || undefined,
     metadata: {
-      source: 'miniforge-supabase',
+      source: 'thornstavern-supabase',
       userId,
     },
     name: profile.full_name || undefined,
@@ -82,7 +82,7 @@ export async function ensureStripeSubscriptionPrice(planKey: 'starter' | 'pro' |
       creditsPerMonth: String(plan.creditsPerMonth),
       planKey: plan.key,
     },
-    name: `MiniForge ${plan.name} Monthly`,
+    name: `Thorns Tavern ${plan.name} Monthly`,
   })
 
   return stripe.prices.create({
@@ -289,7 +289,7 @@ export async function createStripePrintOrderCheckout(args: {
         price_data: {
           currency: 'usd',
           product_data: {
-            description: args.modelTitle ? `Model: ${args.modelTitle}` : 'MiniForge print order',
+            description: args.modelTitle ? `Model: ${args.modelTitle}` : 'Thorns Tavern print order',
             name: `3D Print Order ${args.orderNumber}`,
           },
           unit_amount: Math.round(Number(args.amount || 0) * 100),

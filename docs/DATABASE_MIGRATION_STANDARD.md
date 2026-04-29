@@ -2,34 +2,37 @@
 
 ## Goal
 
-This document defines the long-term migration standard for the project.
+This document defines the long-term migration standard for `thornstavern`.
 
-It is written to support two environments safely:
+The project supports:
 
-1. Supabase / PostgreSQL local and hosted runtime
-2. Forward-only formal migrations for schema evolution
+- PostgreSQL runtime only.
+- Forward-only formal migrations for schema evolution.
+- Generated Payload schema and types as build artifacts that must stay synchronized with config and migrations.
 
 ## Current Reality
 
-The project originally drifted because:
+The project previously accumulated schema drift because:
 
-- the active Payload schema changed faster than formal migrations
-- local SQLite repairs were applied directly before the Postgres cutover
-- some legacy tables stayed in historical databases even after the configuration changed
+- Payload schema changed faster than formal migrations.
+- historical SQLite repair work existed before the Postgres-only runtime decision.
+- generated schema and service code can contain references that are not currently active in `src/payload.config.ts`.
 
-This is now partially corrected by the archived baseline reconciliation migration:
+The active rule is now:
 
-- [20260417_023000_database_baseline_reconciliation.ts](/D:/web/payload-local-demo/src/migrations/20260417_023000_database_baseline_reconciliation.ts)
+- no new ad-hoc schema repair path
+- no new SQLite runtime path
+- no production schema patch that is not backfilled into a formal migration
 
 ## Migration Layers
 
-### Layer 1: Payload Runtime Schema
+### Layer 1: Payload Runtime Config
 
 Primary source:
 
 - [src/payload.config.ts](/D:/web/payload-local-demo/src/payload.config.ts)
 
-This file defines what the application expects.
+This file defines what the application expects at runtime.
 
 ### Layer 2: Generated Schema Snapshot
 
@@ -37,169 +40,126 @@ Generated source:
 
 - [src/payload-generated-schema.ts](/D:/web/payload-local-demo/src/payload-generated-schema.ts)
 
-Use it as the schema snapshot generated from the current Payload config.
+This file should be regenerated after Payload schema changes.
 
 ### Layer 3: Formal Migrations
 
-Current migration files:
+Migration directory:
 
-- [20260413_094128_add_stripe_subscriptions.ts](/D:/web/payload-local-demo/src/migrations/20260413_094128_add_stripe_subscriptions.ts)
-- [20260417_023000_database_baseline_reconciliation.ts](/D:/web/payload-local-demo/src/migrations/20260417_023000_database_baseline_reconciliation.ts)
+- [src/migrations](/D:/web/payload-local-demo/src/migrations)
 
-These files are the formal migration history and must become the only supported way to evolve schema.
-The SQLite reconciliation migration is now a Postgres no-op and should be treated as historical archive, not an active repair path.
+Formal migrations are the supported way to evolve shared or hosted database schema.
 
-### Layer 4: Legacy Repair Script
+### Layer 4: Active PostgreSQL Schema
 
-Legacy support file:
+The active database must match:
 
-- No repair script should be required for normal development anymore.
+- Payload runtime config
+- generated schema
+- formal migration history
 
-Policy:
+When they disagree, treat it as schema drift and resolve it deliberately.
 
-- formal migrations are now the primary schema management strategy
-- do not introduce new schema drift via ad-hoc repair scripts
-- do not rely on manual database patching in production deployment
+## Required Workflow For Schema Changes
 
-## Formal Baseline
+For every collection/global schema change:
 
-The current formal baseline includes:
+1. Update Payload config and related collection/global files.
+2. Run `pnpm payload generate:db-schema`.
+3. Add a formal migration.
+4. Run `pnpm generate:types`.
+5. Run `pnpm exec tsc --noEmit`.
+6. Update [DATABASE_TABLE_REFERENCE.md](/D:/web/payload-local-demo/docs/DATABASE_TABLE_REFERENCE.md) if table families changed.
+7. Update [AI_PROJECT_MEMORY.md](/D:/web/payload-local-demo/docs/AI_PROJECT_MEMORY.md) if the change affects long-lived architecture.
 
-### Core Business Tables
+For admin component path changes:
 
-- users
-- users_sessions
-- media
-- generation_tasks
-- task_events
-- models
-- models_formats
-- models_tags
-- homepage_items
-- posts
-- announcements
-- model_bundles
-- credits
-- credit_transactions
-- credit_products
-- billing_subscriptions
-- addresses
-- print_orders
-- shopify_payments
+1. Run `pnpm generate:importmap`.
+2. Run `pnpm exec tsc --noEmit`.
 
-### Globals
+## Migration Rules
 
-- site_settings
-- homepage_content
-- ai_provider_settings
-- storage_settings
-- security_settings
-- runtime_deployment_settings
+1. Prefer forward-only migrations.
+2. Do not edit production schema manually except for emergency repair.
+3. Any emergency repair must be backfilled into a reviewed formal migration.
+4. Do not delete legacy tables until removal is represented in a reviewed migration plan.
+5. Do not add new long-lived tables without updating the database reference and AI memory.
+6. Treat enum changes as migrations, not as incidental code-only changes.
+7. Check Payload internal relation tables when adding or removing collections.
 
-### Payload System Tables
+## PostgreSQL Concerns
 
-- payload_kv
-- payload_locked_documents
-- payload_locked_documents_rels
-- payload_preferences
-- payload_preferences_rels
-- payload_migrations
+### Enum Drift
 
-### Localized / Version / Relationship Tables
+PostgreSQL enum values can drift from Payload select field options.
 
-Keep these as Payload-managed support tables. They are part of the formal baseline when the related collection/global uses localization, versions, arrays, or relationships.
+Common risk areas:
 
-## Local SQLite Standard
+- `homepage-items.placement`
+- task status values
+- model status and visibility values
+- order status values
+- payment status values
 
-### Required commands after schema changes
+### Relation Drift
 
-1. `pnpm payload generate:db-schema`
-2. `pnpm generate:types`
-3. `pnpm exec tsc --noEmit`
+Payload internal relation tables can need new relation columns when collections are added.
 
-### New schema changes rule
+Watch:
 
-For any future collection/global change:
+- `payload_locked_documents_rels`
+- `payload_preferences_rels`
 
-1. update Payload config
-2. regenerate schema
-3. add a formal migration
-4. generate types
-5. update docs if the table model changed
+### Generated Schema Drift
 
-Do not stop at step 2.
+If generated schema references collections not registered in `src/payload.config.ts`, resolve whether the feature is:
 
-## Future AWS PostgreSQL / RDS Standard
+- active and missing config
+- intentionally dormant
+- historical and should be cleaned up
 
-### Target policy
+## Deployment Checklist
 
-AWS PostgreSQL / RDS should use formal migrations, not local repair scripts.
+Before shared or production deployment:
 
-### Recommended rollout
+1. Confirm `DATABASE_PROVIDER=postgres`.
+2. Confirm a valid `DATABASE_URL` or AWS RDS connection variables.
+3. Apply formal migrations.
+4. Regenerate Payload schema and types.
+5. Run `pnpm exec tsc --noEmit`.
+6. Verify admin opens.
+7. Verify collection list/edit flows.
+8. Verify global settings pages.
+9. Verify auth, AI task, billing, order, media, and download flows relevant to the release.
 
-1. Provision a clean PostgreSQL database in AWS RDS
-2. Apply only formal migrations from `src/migrations`
-3. Validate schema creation on PostgreSQL
-4. Import approved business data only
-5. Skip Payload system tables unless there is a specific migration reason
+## Data Migration Policy
 
-### Recommended data to migrate from SQLite to PostgreSQL
+Migrate approved business data only.
 
-Migrate:
+Usually safe candidates:
 
 - users
-- media
-- generation_tasks
-- task_events
+- media metadata
+- generation tasks and task events
 - models
-- homepage_items
-- posts
-- announcements
-- model_bundles
-- credits
-- credit_transactions
-- credit_products
-- billing_subscriptions
+- homepage items and content globals
+- posts, announcements, and model bundles
+- credits and credit transactions
+- subscriptions
 - addresses
-- print_orders
-- shopify_payments
+- print orders
+- payment records
 - required globals
 
 Do not blindly migrate:
 
-- payload_locked_documents
-- payload_preferences
-- payload_migrations
-- legacy tables like `email_settings`
-- legacy tables like `homepage_content_selling_points`
-
-### PostgreSQL cutover checklist
-
-1. Admin opens without schema errors
-2. Global settings pages open
-3. Users can authenticate
-4. Content collections can list/create/update
-5. AI tasks can read/write
-6. Commerce tables are queryable
-7. Signed download flow still works
-8. Webhook endpoints can still persist data
-
-## Rules For Future Developers
-
-1. Never patch production schema manually in the database console unless it is an emergency repair.
-2. Any emergency repair must be backfilled into a formal migration.
-3. Do not introduce new long-lived tables without updating:
-   [DATABASE_TABLE_REFERENCE.md](/D:/web/payload-local-demo/docs/DATABASE_TABLE_REFERENCE.md)
-4. Do not delete legacy tables until their removal is represented in a reviewed migration plan.
-5. For AWS / RDS work, treat PostgreSQL as the target source of truth, not the repaired SQLite file.
+- `payload_locked_documents`
+- `payload_preferences`
+- `payload_migrations`
+- historical or dormant tables unless they are intentionally restored
 
 ## Outstanding Cleanup Work
 
-1. Backfill additional formal migrations for any future table changes instead of growing the repair script.
-2. Decide removal or archival policy for:
-   - `email_settings`
-   - `homepage_content_selling_points`
-3. Add a schema-drift CI check comparing:
-   - Payload config
-   - generated schema
-   - migration history
+1. Resolve social table/config drift.
+2. Decide whether `EmailSettings` should remain dormant or be fully removed from the active code tree.
+3. Add CI drift checks comparing Payload config, generated schema, migrations, and active PostgreSQL schema.

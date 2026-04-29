@@ -1291,7 +1291,7 @@ const toMeshySuccessPayload = (args: {
       : `${taskCode} Meshy result`
 
   return {
-    description: 'Meshy generated asset synced into MiniForge.',
+    description: 'Meshy generated asset synced into Thorns Tavern.',
     meshyTaskId: task.id,
     modelTitle,
     modelUrls: task.model_urls || {},

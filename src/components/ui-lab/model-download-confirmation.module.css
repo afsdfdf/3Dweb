@@ -1,0 +1,73 @@
+.dialog {
+  box-sizing: border-box;
+  color: #ffffff;
+  font-family: Arial, sans-serif;
+  height: 280px;
+  pointer-events: auto;
+  position: relative;
+  width: 412px;
+  z-index: 299;
+}
+
+.dialog > div {
+  padding: 34px;
+}
+
+.panel {
+  background: #000000;
+  box-sizing: border-box;
+  height: 212px;
+  padding: 26px 16px 10px;
+  width: 344px;
+}
+
+.title {
+  color: #f6d49e;
+  font-size: 16px;
+  line-height: 22px;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.message {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 12px;
+  height: 54px;
+  line-height: 18px;
+  margin-bottom: 16px;
+  overflow: hidden;
+  padding: 0 10px;
+}
+
+.actions {
+  align-items: center;
+  display: flex;
+  height: 58px;
+  justify-content: space-between;
+  margin: 0 auto;
+  padding: 0 4px;
+  width: 300px;
+}
+
+.buttonSlot {
+  height: 52px;
+  pointer-events: auto;
+  position: relative;
+  width: 144px;
+}
+
+.buttonSlot :global(button) {
+  background: transparent !important;
+  background-image: var(--button-image) !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: 100% 100% !important;
+  border-color: transparent !important;
+  border-image-source: var(--button-image) !important;
+  border-image-slice: 0 20 fill !important;
+  border-image-width: 0 20px !important;
+  border-image-outset: 0 !important;
+  border-image-repeat: stretch !important;
+  border-style: solid !important;
+  border-width: 0 20px !important;
+}

@@ -1,0 +1,247 @@
+.shell {
+  aspect-ratio: 226 / 60;
+  flex: 0 0 226px;
+  height: 60px;
+  max-height: 60px;
+  max-width: 226px;
+  min-height: 60px;
+  min-width: 226px;
+  position: relative;
+  width: 226px;
+}
+
+.frame {
+  display: block;
+  height: 60px;
+  inset: 0;
+  max-height: 60px;
+  max-width: 226px;
+  min-height: 60px;
+  min-width: 226px;
+  object-fit: contain;
+  position: absolute;
+  width: 226px;
+}
+
+.buttons {
+  height: 38px;
+  left: 9px;
+  position: absolute;
+  top: 11px;
+  width: 208px;
+}
+
+.control {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  display: block;
+  height: 38px;
+  padding: 0;
+  position: absolute;
+  top: 0;
+  transition: filter 140ms ease, transform 140ms ease;
+  width: 101px;
+}
+
+.left {
+  left: 0;
+}
+
+.right {
+  left: 107px;
+}
+
+.control:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.control:active,
+.control[aria-pressed="true"] {
+  filter: brightness(0.94);
+  transform: translateY(1px) scale(0.98);
+}
+
+.buttonImage {
+  display: block;
+  height: auto;
+  left: 50%;
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+}
+
+.normal {
+  opacity: 1;
+}
+
+.control:hover .normal,
+.control:hover .pushed,
+.control[aria-pressed="true"] .normal,
+.control[aria-pressed="true"] .hover {
+  opacity: 0;
+}
+
+.control:hover .hover,
+.control[aria-pressed="true"] .pushed {
+  opacity: 1;
+}
+
+.label {
+  align-items: center;
+  color: #ffffff;
+  display: flex;
+  font-family: Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  height: 22px;
+  justify-content: center;
+  letter-spacing: 0;
+  line-height: 22px;
+  pointer-events: none;
+  position: absolute;
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  top: 8px;
+  width: 81px;
+  z-index: 2;
+}
+
+.leftLabel {
+  left: 10px;
+}
+
+.rightLabel {
+  left: 117px;
+}
+
+.tripleShell {
+  aspect-ratio: 333 / 60;
+  flex: 0 0 333px;
+  height: 60px;
+  max-height: 60px;
+  max-width: 333px;
+  min-height: 60px;
+  min-width: 333px;
+  position: relative;
+  width: 333px;
+}
+
+.tripleFrame {
+  border-image: url("/ui-lab/formal-components/assets/small-button-pair/toggle-bar-dark-alt.png") 12 28 fill / 12px 28px / 0 stretch;
+  border-style: solid;
+  border-width: 12px 28px;
+  box-sizing: border-box;
+  display: block;
+  height: 60px;
+  inset: 0;
+  max-height: 60px;
+  max-width: 333px;
+  min-height: 60px;
+  min-width: 333px;
+  position: absolute;
+  width: 333px;
+}
+
+.tripleButtons {
+  height: 38px;
+  left: 9px;
+  position: absolute;
+  top: 11px;
+  width: 315px;
+}
+
+.tripleControl {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  display: block;
+  height: 38px;
+  padding: 0;
+  position: absolute;
+  top: 0;
+  transition: filter 120ms ease, transform 120ms ease;
+  width: 101px;
+}
+
+.tripleButtonOne {
+  left: 0;
+}
+
+.tripleButtonTwo {
+  left: 107px;
+}
+
+.tripleButtonThree {
+  left: 214px;
+}
+
+.tripleControl:hover {
+  filter: brightness(1.12) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.34));
+  transform: translateY(-2px);
+}
+
+.tripleControl:active {
+  filter: brightness(0.9);
+  transform: translateY(2px) scale(0.97);
+}
+
+.tripleControl[aria-pressed="true"] {
+  filter: brightness(0.96) saturate(1.08);
+  transform: translateY(1px) scale(0.985);
+}
+
+.tripleControl:focus-visible {
+  outline: 1px solid rgba(255, 255, 255, 0.78);
+  outline-offset: 2px;
+}
+
+.tripleControl:hover .normal,
+.tripleControl:hover .pushed,
+.tripleControl:active .normal,
+.tripleControl:active .hover,
+.tripleControl[aria-pressed="true"] .normal,
+.tripleControl[aria-pressed="true"] .hover {
+  opacity: 0;
+}
+
+.tripleControl:hover .hover,
+.tripleControl:active .pushed,
+.tripleControl[aria-pressed="true"] .pushed {
+  opacity: 1;
+}
+
+.tripleLabel {
+  align-items: center;
+  color: #ffffff;
+  display: flex;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  height: 18px;
+  justify-content: center;
+  letter-spacing: 0;
+  line-height: 18px;
+  pointer-events: none;
+  position: absolute;
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  top: 10px;
+  width: 91px;
+  z-index: 2;
+}
+
+.tripleButtonOne .tripleLabel,
+.tripleButtonTwo .tripleLabel,
+.tripleButtonThree .tripleLabel {
+  left: 5px;
+}

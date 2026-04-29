@@ -64,7 +64,8 @@ export function SectionFrame({ bodyClassName, children, eyebrow, title, toolbar 
         <div className="relative z-[2] flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="flex items-center gap-3">
             <div className="flex size-9 items-center justify-center rounded-full border border-[#403f46] text-[10px] font-semibold tracking-[0.18em] text-[#f0d188]">
-              MF
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img alt="" aria-hidden="true" className="h-[10px] w-[16px] object-contain" src="/ui/nav/active-chevron.png" />
             </div>
             <div>
               <p className="text-xs uppercase tracking-[0.24em] text-[#8f7a4a]">{eyebrow}</p>

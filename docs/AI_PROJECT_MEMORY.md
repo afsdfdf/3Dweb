@@ -2,357 +2,102 @@
 
 ## Purpose
 
-This file is the persistent project memory for AI-assisted development in `payload-local-demo`.
+This is the compact AI-readable memory for `thornstavern`.
 
-Update this file after important long-lived backend, content, admin, or routing changes so future work starts from the current architecture instead of rediscovering old decisions.
+Use it first to understand stable project boundaries, active entry points, and recurring pitfalls. For detailed collection fields, hooks, and frontend mapping, use `docs/COLLECTIONS_REFERENCE.md`.
 
 ## Update Rule
 
-Update this file when work changes:
+Update this file in the same task when work changes durable architecture:
 
-- collection or global schema
-- access control or media visibility rules
+- collection or global registration
+- access rules or media visibility
 - hook behavior or transaction patterns
 - route ownership or API namespaces
 - homepage content ownership
-- admin component structure or branding
-- important bug fixes that reveal a recurring pitfall
-- backend optimization rules that future refactors should preserve
+- admin component structure
+- database runtime or migration policy
+- important bug fixes that future work should preserve
 
-## Current Architecture Summary
+Do not leave durable project decisions only in chat history.
 
-### Product Surfaces
+## Current Architecture
 
-- Marketing web: public product website
-- Studio app: generation, results, and authenticated workflows
-- Dashboard: user-facing operational views
-- Payload Admin: content operations and business operations
-- Platform API: public, studio, commerce, and platform endpoints
+Product surfaces:
 
-### Active Runtime Database
+- Marketing web
+- Studio / Workbench
+- Dashboard
+- Payload Admin
+- Platform API
 
-- Current runtime database is Supabase Postgres.
-- Do not assume local SQLite is the source of truth for live schema behavior.
-- Every Payload schema change must be checked against the active Supabase/Postgres schema, including enum drift, missing columns, and existing live data compatibility.
+Main entry points:
 
-### Backend Entry Points
-
-- Main config: `src/payload.config.ts`
-- Payload REST and admin app: `src/app/(payload)/`
-- Project API helpers and route support: `src/app/api/`
-- Custom Payload endpoints: `src/endpoints/`
+- Payload config: `src/payload.config.ts`
+- Payload admin and REST routes: `src/app/(payload)/`
+- Project-owned Next routes: `src/app/api/`
+- Frontend app: `src/app/(frontend)/`
+- Collections: `src/collections/`
+- Globals: `src/globals/`
+- Endpoints: `src/endpoints/`
 - Business services: `src/lib/`
-- Collection configs: `src/collections/`
-- Global configs: `src/globals/`
-- Hook implementations: `src/hooks/`
+- Hooks: `src/hooks/`
+- Admin components: `src/components/admin/`
 
-### Core Payload Domains
+Runtime database:
 
-- Users and media
-- Generation tasks and task events
-- Models and model bundles
-- Homepage content and homepage items
-- Credits, subscriptions, print orders, and payments
-- Platform settings globals
+- PostgreSQL only.
+- `resolveDatabaseRuntimeConfig` is the source of truth.
+- Prefer `DATABASE_URL`.
+- Do not reintroduce SQLite, libsql, or `payload.db` runtime fallback paths.
 
-## Backend Map
+## Active Payload Surface
 
-### Collections
+Registered collections:
 
 - `users`
-  - auth collection
-  - roles, avatar, customer IDs, credits balance mirror
-  - account profile fields: display name, bio, profile background, avatar frame, profile visibility, and social counters
-  - anonymous user creation is routed through `accountAuth.ts`; direct anonymous REST collection create should remain blocked
 - `media`
-  - uploads for input, preview, model, document, asset
-  - guest-readable media is restricted to `purpose = preview`
-  - do not rely on `publicAccess` for anonymous delivery of model files or private assets
 - `generation-tasks`
-  - generation queue, provider state, billing snapshot, task result relationship
 - `task-events`
-  - task timeline and operational event log
 - `models`
-  - generated model assets, visibility, print readiness, formats, preview image
-  - public model docs should not expose raw asset file relations or direct viewer URLs to anonymous readers
-- `user-follows`
-  - creator follow relationships
-- `model-comments`
-  - lightweight public comments for public model pages
-- `engagement-views`
-  - deduplicated public page view records
-- `model-likes`
-  - per-user likes for public models
-- `model-favorites`
-  - per-user saved models for later access
 - `homepage-items`
-  - curated homepage cards and rail items
 - `posts`
-  - articles and event-style content
 - `announcements`
-  - short-form announcement content
 - `model-bundles`
-  - grouped public content / collection-style surfaces
 - `credits`
-  - user credit account
 - `credit-transactions`
-  - ledger entries
 - `credit-products`
-  - credit top-up products
 - `billing-subscriptions`
-  - Stripe subscription state
 - `addresses`
-  - shipping addresses
 - `print-orders`
-  - physical print order records
 - `shopify-payments`
-  - payment records with legacy naming kept for compatibility
 
-### Globals
+Registered globals:
 
 - `site-settings`
-  - nav, footer, pricing, generation pricing, announcement
 - `homepage-content`
-  - singleton homepage section copy and section settings
 - `ai-provider-settings`
-  - provider defaults, polling, credit rules, Meshy settings
-  - Gemini image generation settings for official and third-party keys
 - `storage-settings`
-  - non-secret storage config
 - `security-settings`
-  - request origin and remote asset allowlists
 - `runtime-deployment-settings`
-  - runtime deployment notes and DB connection mode
 
-### Hooks
+`src/globals/EmailSettings.ts` exists but is not registered. Email settings currently live under `site-settings.emailSettings`.
 
-- `assignCurrentUser`
-  - writes creator/owner field on create
-- `createDefaultCreditAccount`
-  - creates initial credit account for a new user
-- `fillPublishAtOnPublish`
-  - fills publish date automatically
-- `sendWelcomeEmail`
-  - business email side effect for new users
-- `syncMediaToS3`
-  - mirrors media to S3 when enabled
-- `validateHomepageItem`
-  - validates `homepage-items` content type linkage rules
+Registered Payload endpoints:
 
-### Endpoints
-
-- `aiTasks.ts`
-  - submit AI task
-  - sync AI task
-  - provider webhook entrypoints
-- `imageGeneration.ts`
-  - official Gemini image generation endpoint
-  - in-memory provider response upload directly to object storage
-- `printOrders.ts`
-  - create print order
-  - sync print order
-- `subscriptions.ts`
-  - subscription checkout
-  - subscription sync
-  - billing portal
-- `stripeWebhook.ts`
-  - Stripe webhook processing
-- `mockDownloads.ts`
-  - model download and download-charge flow
-  - authentication is required for all download requests, including inline rendering
-  - `inline=1` only changes response disposition and does not bypass download charging
-- `modelViewer.ts`
-  - public/authorized 3D preview should go through the dedicated viewer endpoint
-  - preview traffic is rate limited separately from authenticated downloads
-- `modelViewer.ts`
-  - same-origin GLB streaming endpoint for showcase, results, and workbench rendering
-  - enforces normal model read access but does not apply download charges
-  - avoids client-side CORS/fetch failures against third-party or signed asset URLs
-- `opsDashboard.ts`
-  - admin operations dashboard data
-- `sessionLogout.ts`
-  - authenticated session logout
-- `account.ts`
-  - current account profile read/update
-  - account dashboard aggregate read
-  - public creator profile read
-- `accountAuth.ts`
-  - project-owned auth wrapper endpoints for register, login, me, forgot/reset password, verify email, resend verification, and logout
-- `modelComments.ts`
-  - public model comment list/create/delete
-- `engagement.ts`
-  - lightweight public view tracking
-- `modelReactions.ts`
-  - public model reaction state
-  - like and favorite toggles
-  - current user favorite list
-- `modelDetails.ts`
-  - model detail aggregate endpoint for public/owner/staff detail views
-- `adminRepair.ts`
-  - admin-safe repair endpoints for order status, credit adjustment, and task result repair
-
-### Service Layer Responsibilities
-
-- `aiTaskFlow.ts`
-  - task creation
-  - provider dispatch and sync
-  - model creation
-  - asset ingestion
-  - task billing
-- `imageGenerationFlow.ts`
-  - text-to-image and image-to-image submission
-  - direct upload to storage without local disk writes
-  - media record creation for generated images
-- `geminiImageGateway.ts`
-  - official Gemini image generation integration
-- `printOrderFlow.ts`
-  - order creation
-  - Stripe checkout for print orders
-  - payment completion state transitions
-- `subscriptionFlow.ts`
-  - Stripe subscription sync
-  - subscription persistence
-  - recurring credit grants
-- `creditLedger.ts`
-  - reserve, spend, refund, grant logic
-- `ledgerStore.ts`
-  - lower-level ledger persistence helpers
-- `paymentRecords.ts`
-  - neutral wrappers for legacy payment fields
-- `paymentProviders.ts`
-  - site-level provider selection
-- `stripeBilling.ts`
-  - Stripe subscription integration helpers
-- `stripeGateway.ts`
-  - Stripe checkout helpers for orders
-- `meshyGateway.ts`
-  - Meshy provider integration
-- `s3Settings.ts`
-  - bootstrap S3 config
-- `s3SignedURL.ts`
-  - signed media access URLs
-- `requestSecurity.ts`
-  - mutation origin rules, CSP, request security helpers
-- `remoteAssetSecurity.ts`
-  - allowlist for remote assets
-- `payloadAuthFallback.ts`
-  - Payload user resolution from headers/JWT
-- `adminDashboard.ts`
-  - admin dashboard aggregation
-- `auditLog.ts`
-  - structured audit logging
-- `accountService.ts`
-  - account profile normalization
-  - current account dashboard aggregation
-  - public creator profile response shaping
-- `followService.ts`
-  - follow and unfollow creator workflow
-  - synchronize follower/following counters
-- `commentService.ts`
-  - public model comment workflow
-  - synchronize model comment counters
-- `engagementService.ts`
-  - deduplicated creator/model view counting
-  - synchronize public counters on users and models
-- `reactionService.ts`
-  - like and favorite toggle workflow
-  - synchronize model likes and favorites counters
-- `authService.ts`
-  - project auth wrappers around Payload auth operations and auth cookies
-  - registration responses are intentionally uniform to avoid account enumeration
-- `modelDetailService.ts`
-  - aggregate model detail response shaping for detail pages
-- `adminRepairService.ts`
-  - controlled admin repair workflows with audit logging
-
-### Current Frontend-to-Payload Content Split
-
-- `homepage-content`
-  - owns singleton section copy
-- `homepage-items`
-  - intended owner of curated homepage repeatable content
-- current risk:
-  - some homepage rails are still hardcoded in frontend and not fully Payload-managed
-
-## Persistent Project Rules
-
-### 1. Follow official Payload patterns first
-
-Use the official Payload skill and official Payload docs as the primary reference. Project code should move toward official Payload conventions, not away from them.
-
-### 2. Local API calls with user must enforce access
-
-When passing `user` to Local API, always set `overrideAccess: false`.
-
-### 3. Nested hook operations must pass req
-
-When hooks perform nested Payload operations, pass `req` to preserve transaction behavior.
-
-### 4. Do not shadow Payload REST collection routes
-
-Do not create custom Next route handlers on paths owned by Payload REST collections, such as `/api/media`.
-
-Known pitfall:
-
-- A custom `src/app/api/media/route.ts` shadowed Payload REST `/api/media` and caused admin bulk edit to fail with `405 Method Not Allowed`.
-
-### 5. Public media depends on media purpose
-
-Guests can read media when either:
-
-- `purpose = preview` for user-public preview assets
-- `publicAccess = true` for explicitly operator-approved public assets
-
-Implication:
-
-- public homepage and showcase imagery must use preview media
-- making a model public is not enough if its preview image is still `purpose = input`
-- treat all other media as private by default
-
-Current extension:
-
-- administrators can explicitly mark exact media assets as guest-readable with `media.publicAccess = true`
-- use this for curated example files or public 3D assets without changing the media purpose semantics for all assets
-
-### 6. Account profile architecture
-
-The account system is now being built as a creator-profile layer on top of the existing auth collection.
-
-Current milestone-A fields on `users`:
-
-- `displayName`
-- `bio`
-- `profileBackground`
-- `avatarFrame`
-- `profileVisibility`
-- `profileViewCount`
-- `followersCount`
-- `followingCount`
-
-Current milestone-A endpoints:
-
-- `GET /api/account/profile`
-- `PATCH /api/account/profile`
-- `GET /api/account/dashboard`
-- `GET /api/creators/:userId`
-
-Current milestone-B/D endpoints:
-
-- `GET /api/account/follows`
-- `POST /api/creators/:userId/follow`
-- `DELETE /api/creators/:userId/follow`
-- `GET /api/models/:modelId/comments`
-- `POST /api/models/:modelId/comments`
-- `DELETE /api/models/:modelId/comments/:commentId`
-- `POST /api/engagement/view`
-- `GET /api/account/favorites`
-- `GET /api/models/:modelId/reactions`
-- `POST /api/models/:modelId/like`
-- `DELETE /api/models/:modelId/like`
-- `POST /api/models/:modelId/favorite`
-- `DELETE /api/models/:modelId/favorite`
-- `POST /api/account/password`
-- `PATCH /api/models/:modelId/comments/:commentId/moderation`
+- `GET /api/platform/ops/dashboard`
+- `POST /api/studio/ai/tasks`
+- `POST /api/studio/ai/tasks/:taskId/sync`
+- `POST /api/platform/ai/webhooks/provider`
+- `GET /api/platform/models/:modelId/viewer`
+- `GET /api/platform/mock/models/:modelId/download`
+- `POST /api/commerce/print-orders`
+- `POST /api/commerce/print-orders/:orderId/sync`
+- `POST /api/billing/subscriptions/checkout`
+- `POST /api/billing/subscriptions/sync`
+- `POST /api/billing/subscriptions/portal`
+- `POST /api/platform/session/logout`
+- `POST /api/platform/billing/webhooks/stripe`
 - `POST /api/account/auth/register`
 - `POST /api/account/auth/login`
 - `POST /api/account/auth/logout`
@@ -361,122 +106,260 @@ Current milestone-B/D endpoints:
 - `POST /api/account/auth/reset-password`
 - `POST /api/account/auth/verify-email`
 - `POST /api/account/auth/resend-verification`
-- `GET /api/models/:modelId/detail`
-- `POST /api/platform/admin/orders/:orderId/status`
-- `POST /api/platform/admin/credits/:userId/adjust`
-- `POST /api/platform/admin/tasks/:taskId/repair`
 
-Design rule:
+Endpoint modules present but not registered:
 
-- keep `users` collection access restrictive by default
-- expose public creator data through explicit sanitized endpoints rather than opening general collection reads
-- keep follow/comment/view write paths in service-owned endpoints so social counters stay consistent
-- keep likes and favorites model-bound through dedicated collections instead of embedding user arrays on the model document
-- account password changes now use Payload auth login verification for the current password, then update the auth collection through the Local API
-- comment moderation is staff-only and updates `models.commentsCount` through the same service synchronization path used by comment create/delete
-- auth routes are now project-owned wrappers, even though they internally rely on Payload auth operations
-- admin repair routes are allowed for order status, credit adjustment, and task-result repair, but manual make-up orders remain out of scope
+- `src/endpoints/account.ts`
+- `src/endpoints/adminRepair.ts`
+- `src/endpoints/engagement.ts`
+- `src/endpoints/imageGeneration.ts`
+- `src/endpoints/modelComments.ts`
+- `src/endpoints/modelDetails.ts`
+- `src/endpoints/modelReactions.ts`
 
-### 6. Homepage content ownership is split
+Important implication:
 
-Use:
+- Frontend code must not assume dormant account, social, image-generation, or admin-repair endpoints are live until they are registered in `src/payload.config.ts`.
 
-- `homepage-content` global for section-level copy and singleton settings
-- `homepage-items` collection for curated repeating cards and operator-managed placements
+## Core Guardrails
 
-Do not hardcode new homepage rails when the same content should be Payload-managed.
+### Local API
 
-### 7. Generated artifacts must be regenerated after Payload-facing changes
+When passing `user` to Payload Local API, always set:
 
-- schema change -> `pnpm run generate:types`
-- admin component path change -> `pnpm run generate:importmap`
-- then run `pnpm exec tsc --noEmit`
+```ts
+overrideAccess: false
+```
 
-### 8. Source language safety
+Administrative internal operations may intentionally bypass access, but keep those operations in service-owned flows and document the reason.
 
-Do not introduce Chinese in code comments.
+### Hooks
 
-Do not introduce Chinese literals in frontend page/component source.
+Nested Payload operations in hooks must pass `req`.
 
-Do not introduce Chinese literals in backend service code, hooks, endpoint handlers, or library code.
+Hooks that can re-enter the same collection need a context flag to prevent recursion.
 
-Allowed exception:
+### Media Visibility
 
-- Chinese may appear in admin-facing UI copy, localization files, or Payload-managed content where multilingual operator-facing text is explicitly intended.
+Guests can read `media` only when:
 
-Preferred rule:
+- `purpose = preview`
+- or `publicAccess = true`
 
-- comments in source code: English only
-- frontend literals in source code: English only
-- backend service and endpoint literals: English only
-- multilingual copy: localization files, admin-facing UI layers, or Payload content
+Public `models.visibility = public` does not make linked private media public.
 
-### 9. Database runtime source of truth
+Generated image results should default to:
 
-- Production and hosted runtime should use Supabase Postgres only.
-- Runtime Postgres connections should resolve from a single config source rooted in `resolveDatabaseRuntimeConfig`.
-- Prefer `DATABASE_URL` as the canonical environment variable.
-- `SUPABASE_DB_URL` / `SUPABASE_DATABASE_URL` may be accepted as compatibility aliases, but code should not introduce new parallel database config readers.
-- Do not add new direct `POSTGRES_URL`-only runtime code paths.
+- `purpose = asset`
+- `publicAccess = false`
 
-### 10. Social write protection
+Public homepage/showcase media must be intentionally guest-readable.
 
-- Social mutations are account-scoped and must stay idempotent at the service layer.
-- Like, favorite, follow, and comment write routes now have dedicated endpoint rate-limit scopes.
-- Database-level uniqueness for social relationship tables should be preserved through migrations and not replaced by frontend-only or service-only assumptions.
+### API Namespaces
 
-### 11. Deployment environment templates
+Use project-owned custom APIs:
 
-- Root deployment templates now belong in `.env.vercel.production.example` and `.env.vercel.preview.example`.
-- Treat `DATABASE_URL` as the canonical runtime database variable for Vercel.
-- Preview and production should both use Supabase Postgres runtime mode unless there is a deliberate environment split.
-- Do not store live secrets in committed env template files; committed templates must contain placeholders only.
+- `/api/platform/...`
+- `/api/studio/...`
+- `/api/commerce/...`
+- `/api/billing/...`
+- `/api/social/...` only if social endpoints and collections are active
 
-## Recent Decisions
+### Mutation Origin Checks
 
-- Official Gemini image generation is exposed at `/api/studio/ai/images`.
-- Official Gemini returns inline image data, so the project uploads generated images to storage from server memory only and does not write them to local disk.
-- Image generation results are stored as `media` records with `purpose = asset` and `publicAccess = false` by default.
-- Administrator-controlled public asset visibility now uses `media.publicAccess`.
+`rejectDisallowedMutationOrigin` enforces mutation origin allowlists for project-owned auth and business endpoints.
 
-## Important Paths
+In non-production local development, loopback browser origins such as `http://localhost:<port>` and `http://127.0.0.1:<port>` are allowed so alternate dev ports like `3005` can call `/api/account/auth/login` without requiring every temporary port in `Security Settings`.
 
-- `src/payload.config.ts`
-- `src/collections/`
-- `src/globals/`
-- `src/endpoints/`
-- `src/lib/`
-- `src/components/admin/`
-- `docs/DEVELOPMENT_GUIDE.md`
-- `docs/ARCHITECTURE_BLUEPRINT.md`
+Production still depends on `security-settings.allowedMutationOrigins`, `ALLOWED_REQUEST_ORIGINS`, `CANONICAL_APP_URL`, or `NEXT_PUBLIC_APP_URL`.
+
+### Browser Media URLs
+
+Frontend pages can run on alternate local ports during UI migration, such as `http://localhost:3005`.
+
+Payload media records may still contain absolute local URLs from another dev port, such as `http://localhost:3000/api/media/file/...`.
+
+Before passing media URLs to browser-rendered images, normalize loopback `/api/media/file/...` URLs to same-origin relative paths like `/api/media/file/...`. Otherwise migrated pages can render data correctly but fail thumbnails because the browser requests the stale port.
+
+Do not create Next route handlers that shadow Payload REST collection routes such as `/api/media`, `/api/models`, or `/api/users`.
+
+Known past issue:
+
+- A custom `src/app/api/media/route.ts` shadowed Payload REST `/api/media` and broke admin bulk edit with `405 Method Not Allowed`.
+
+### Model Viewer Asset Delivery
+
+`/api/platform/models/:modelId/viewer` is the controlled browser viewer entry point for GLB preview rendering.
+
+After normal model read access succeeds, the endpoint should resolve `models_formats.file_id -> media.url` from the active Postgres schema as the first source of truth for format assets. This avoids relying on Payload field output that can be stripped by field-level access rules.
+
+When the resolved source is a Payload media file path or an allowed remote GLB URL, the viewer endpoint should authenticate the model read, resolve a short-lived access URL, and return a `302` redirect. The browser should then fetch the final Supabase Storage URL directly instead of forcing large GLB traffic through the app server.
+
+The frontend `ModelViewer` should fetch the viewer endpoint itself, follow redirects, display loading progress, create a blob URL after a successful response, and only then hand the blob URL to `GLTFLoader`. This prevents loader network failures from becoming Next.js runtime overlays. Direct delivery requires Supabase Storage to allow browser CORS for the app origin. If direct delivery fails, the frontend may retry the same viewer endpoint with `delivery=proxy`; that fallback is for stability and should not be the permanent hot-path for large public assets.
+
+Runtime object storage is Supabase Storage only. Do not reintroduce AWS S3 signing, AWS S3 host construction, Payload S3 plugin registration, or `syncMediaToS3` hooks. Use the Supabase SDK for upload, public URL creation, and signed URL creation.
+
+Historical demo model records may still point to `/api/media/file/...` paths whose files are not present in Supabase Storage. Those assets need migration into the configured Supabase bucket instead of fallback signing through AWS.
+
+`ModelViewer` must register `DRACOLoader` because imported production GLB files can be Draco-compressed. The project serves decoder assets from `public/three-draco/gltf/`; do not depend on a third-party decoder CDN for core model viewing.
+
+Direct third-party or signed remote model URLs remain allowed only through the remote asset allowlist and should return controlled 4xx/5xx responses on failure.
+
+Frontend asset caching is layered:
+
+- `ModelViewer` keeps an in-memory LRU blob URL cache for fast model switching in the current page session.
+- `public/asset-cache-sw.js` registers a browser Cache Storage runtime cache for model viewer responses, Payload media file requests, and local Draco decoder assets.
+- Model viewer redirect responses must include `Vary: Cookie, Authorization` so browser persistent caches do not mix authenticated model access across different login states.
+- Browser persistent cache size is best-effort and subject to browser quota and eviction; do not treat it as the only production hot-model cache.
+
+Future production delivery refactor:
+
+- Keep `/api/platform/models/:modelId/viewer` as the stable access-controlled signing/redirect entry while the Workbench integration is being completed.
+- Do not rely on a Vercel Function as the permanent transfer path for every large GLB file. A 30 MB model repeatedly proxied through the server can consume origin transfer quickly and adds latency.
+- Add a manifest/signing layer before production scale. The preferred shape is a `viewer-manifest` response with `modelId`, `format`, `fileSize`, `updatedAt`, `cacheKey`, `deliveryMode`, `url`, and optional `expiresAt`.
+- Public or hot approved models should use Supabase Storage delivery with versioned cache keys after access has been decided.
+- Private models should use short-lived signed URLs or the existing controlled proxy fallback, with `Vary: Cookie, Authorization` preserved when the response is user-specific.
+- Browser persistent cache remains useful for repeat local loads, but production performance should also rely on Supabase Storage headers, durable object paths, and stable cache invalidation.
+- Images and thumbnails should follow the same policy: normalize URLs, cache by durable key, and avoid forcing repeat downloads of unchanged assets.
+
+### Public Model Detail Boundary
+
+Public homepage discovery and public model detail pages may show other users' models only when `models.visibility = public` and the preview media is guest-readable.
+
+Workbench model library panels should remain scoped to the current user's own models. Other users' public models can enter Workbench only as read-only references or generation inspiration, not as editable library assets.
+
+Public model cards should target the formal detail route: `/model-detail?id=<modelId>`. The former validation routes were removed after promotion.
+
+### Source Language
+
+Do not add Chinese literals to source code comments, frontend component source, backend services, hooks, endpoints, or libraries unless the text is intentionally Payload-managed, localized, or admin-facing.
+
+Reason:
+
+- The repo has had mojibake from Chinese source literals.
+- Durable UI text should come from localization or Payload-managed content.
+
+## Content Ownership
+
+Homepage content split:
+
+- `homepage-content`: singleton section copy and section-level settings.
+- `homepage-items`: repeated cards, curated promos, image-led items, and operator-managed placements.
+
+Rules:
+
+- Do not add new hardcoded homepage rails if Payload can manage the data.
+- Public homepage rendering should use public models and guest-readable preview media only.
+- For detailed collection mappings, see `docs/COLLECTIONS_REFERENCE.md`.
+- Backend-owned UI slot notes for the migrated formal frontend are tracked in `docs/BACKEND_UI_DEVELOPMENT_MEMO.md`.
+
+## Known Drift And Cleanup Items
+
+Social table/config drift:
+
+- `user-follows`
+- `model-comments`
+- `model-likes`
+- `model-favorites`
+- `engagement-views`
+
+These appear in generated schema, migrations, services, or dormant endpoint files, but matching active collection configs are not registered in `src/payload.config.ts`.
+
+Do not build new frontend integration against these until collection configs, generated types, migrations, services, and endpoint registration are aligned.
+
+Other cleanup items:
+
+- Remove hardcoded localhost media fallback URLs from homepage.
+- Confirm or remove dormant endpoint modules before exposing related frontend flows.
+- Keep product docs aligned with registered Payload config, not generated-schema leftovers.
+
+## Database And Migration Rules
+
+Any Payload schema change must include:
+
+1. Update collection/global config.
+2. Run `pnpm payload generate:db-schema`.
+3. Add a formal migration.
+4. Run `pnpm generate:types`.
+5. Run `pnpm exec tsc --noEmit`.
+6. Update docs if table model or long-lived architecture changed.
+
+For admin component path changes, also run:
+
+```bash
+pnpm generate:importmap
+```
+
+Watch for:
+
+- Postgres enum drift.
+- `payload_locked_documents_rels` relation-column drift.
+
+## Documentation Rules
+
+- `docs/DOCS_INDEX.md` is the active documentation entry point.
+- Root `docs/` should contain evergreen documents only.
+- Dated reports, temporary rollout plans, audit reports, and worklogs belong in `docs/archive/`.
+- If archived guidance is still required, fold it into an evergreen root doc or this memory file.
+
+Current evergreen references:
+
+- `docs/COLLECTIONS_REFERENCE.md`: active collection and frontend mapping reference.
+- `docs/ARCHITECTURE_BLUEPRINT.md`: architecture map.
+- `docs/AI_PRODUCT_FRAMEWORK_GUIDE.md`: product/backend integration guide.
+- `docs/DEVELOPMENT_GUIDE.md`: engineering workflow.
+- `docs/DATABASE_TABLE_REFERENCE.md`: table/domain reference.
+- `docs/DATABASE_MIGRATION_STANDARD.md`: migration policy.
 
 ## Recent Decisions
 
 ### 2026-04-20
 
-- Admin branding was switched from the default Payload brand to `Thorns Tavern`.
-- Public homepage visibility should rely only on intentionally public models and preview media.
-- Homepage and showcase public pages should not use `overrideAccess: true` as a fallback to read models.
-- Project-specific Payload guidance is maintained as a Codex overlay skill: `payload-local-demo-backend`.
-- This file is now the required persistent memory target for important architecture and backend changes.
-- Root `docs/` now keeps evergreen references only; dated plans, reports, and worklogs belong in `docs/archive/`.
-- The backend map in this file should be treated as the first-stop index for future debugging and service review.
-- Homepage top featured rail and collection shelf are now intended to be Payload-managed through `homepage-items` placements (`featured-rail`, `collection-shelf`) with rail-level copy in `homepage-content`.
-- Public models now require a preview image whose linked media purpose is `preview` before they can be made public.
-- Chinese source literals and comments are now treated as an encoding risk and should not be introduced into frontend/component source or code comments.
-- Current active runtime is Postgres/Supabase, so schema rollouts must consider Postgres enum/value drift as well as column drift.
-- Adding new homepage item placements required both new columns and Postgres enum expansion for `homepage_items.placement` and `_homepage_items_v.version_placement`.
-- Adding new collections under Payload Postgres may also require checking internal relation tables such as `payload_locked_documents_rels`; missing relation columns there can break document updates even when the main collection tables already exist.
-- Model viewers should use the project-owned `/api/platform/models/:modelId/viewer` endpoint instead of sending raw third-party GLB URLs to the browser; download endpoints remain separate because they can require auth and credit charging.
-- Browser extensions can inject transient attributes such as `style="caret-color: transparent"` onto workbench form inputs before React hydrates; for workbench search/form controls, targeted `suppressHydrationWarning` is acceptable to avoid noisy false-positive hydration warnings.
-- Runtime Postgres access is now being consolidated so Payload and direct SQL helpers read from the same database config resolution path instead of separate connection-string readers.
-- Social relationship stability now depends on database-level deduplication and unique indexes for `user_follows`, `model_likes`, and `model_favorites`, not only on service-layer prechecks.
-- Social write routes have dedicated rate-limit scopes so reaction/comment/follow endpoints do not share budgets with AI, billing, or preview traffic.
+- Public homepage and showcase rely only on intentionally public models and guest-readable media.
+- Homepage repeated content belongs in `homepage-items`; section copy belongs in `homepage-content`.
+- Downloads are separate from viewer access because downloads can require auth and credit charging.
 
 ### 2026-04-24
 
-- Runtime database configuration is now Postgres-only. `resolveDatabaseRuntimeConfig` no longer falls back to SQLite or `payload.db`.
-- `src/payload.config.ts` now initializes only the Postgres adapter at runtime and the project no longer keeps a direct `@payloadcms/db-sqlite` dependency.
-- `.env.example`, package metadata, and active runtime docs now describe Postgres as the only supported database path.
-- `ledgerStore` now supports Postgres transaction clients only.
-- Payload migrations now import Postgres migration helpers from `src/migrations/postgresUtils.ts` instead of `@payloadcms/db-sqlite`, and the old SQLite baseline reconciliation migration is archived as a Postgres no-op to avoid executing legacy repair SQL on Supabase.
+- Runtime database configuration became PostgreSQL-only.
+- SQLite and direct `payload.db` runtime fallback paths were removed.
+- Payload migrations should use Postgres migration helpers.
+
+### 2026-04-28
+
+- Root docs were consolidated into evergreen documents plus `docs/archive/`.
+- AI memory was compacted into guardrails and active registration facts.
+- Detailed collection documentation moved to `docs/COLLECTIONS_REFERENCE.md`.
+- Frontend integration must not assume dormant endpoint modules are registered.
+- Workbench model viewing is currently stabilized through the controlled `/api/platform/models/:modelId/viewer` path plus frontend/service-worker caching. After the formal frontend flow is complete, plan a production delivery refactor around a manifest/signing layer, Supabase Storage delivery for public hot assets, short-lived signed access for private assets, and durable cache keys for models and images.
+- Public model discovery/detail and Workbench ownership are separate. `/model-detail?id=<modelId>` is the formal public detail route; Workbench library panels should keep showing only the current user's own models, with other users' public models used only as read-only references.
+- Backend UI development memo added for formal page wiring. Current findings: `users.avatarFrame` and `accountService` support a basic avatar frame value, but there is no admin-managed style catalog; `src/endpoints/account.ts` defines profile/dashboard endpoints but they are not registered in `src/payload.config.ts`; model detail sidebar banner is still static and needs a backend promotion slot; the homepage featured strip and collection shelf are mostly covered by `homepage-items`, with a possible missing editable ribbon/badge label.
+- `/account` now uses existing server-side current-user Local API helpers for display name, email, avatar, credit balance, and credit transaction history. Client-side account editing remains blocked on registered profile/password endpoints and the future avatar-frame style catalog.
+- Formal page UI closeout kept the migrated layout intact while improving data stability: the homepage now short-circuits local `/api/media/file/...` URLs, public owner card lookups select only required fields, and runtime S3 storage settings use a brief in-process cache to avoid repeated global reads during media-heavy renders. `/model-detail` still depends on `/api/platform/models/:modelId/viewer`; dev delivery of local GLB media can be slow and should be handled in the later media/cache backend pass rather than by changing UI layout.
+- Formal frontend route replacement points `/`, `/workbench`, `/model-detail`, and `/account` at the validated migrated UI implementations. Formal navigation should link to formal paths. The shared security header allows `blob:` in `connect-src` because `ModelViewer` creates browser object URLs before Three.js parses GLB assets.
+- Project and default runtime branding now use `thornstavern` / `Thorns Tavern`. Historical migrations, filesystem paths, and Stripe subscription lookup keys intentionally remain unchanged unless a later billing/data migration explicitly renames them.
+
+### 2026-04-29
+
+- Media storage direction is Supabase Storage only. Do not reintroduce AWS S3 storage plugins, AWS signing helpers, or S3 sync hooks for runtime media delivery.
+- Partial media migration completed for the verified local source files only: media IDs `4`, `33`, `35`, and `89` through `96` were uploaded to the configured Supabase bucket and their `media.url` values now point at Supabase Storage public object URLs.
+- Migration artifacts were written to `media-migration-supabase-before.json` and `media-migration-supabase-result.json`. `media-migration-current-media.json` remains the earlier full-row backup.
+- Current database state after the partial migration: `96` media rows total, `11` Supabase Storage URLs, `85` legacy `/api/media/file/...` URLs. The remaining legacy rows were not updated because no verified source file or existing Supabase object was found.
+- Verified model viewer delivery for migrated public GLB examples: `/api/platform/models/42/viewer?format=glb` and `/api/platform/models/44/viewer?format=glb` redirect to Supabase signed URLs, and direct Supabase range requests return `206 Partial Content`.
+- Do not bulk-rewrite legacy media URLs unless the source object is verified by filename/size or an explicit migration map. Broken old demo records are a data-source problem, not a frontend fallback problem.
+- The old S3 backup at `D:\py\backups\3dmodules-20260420-225145` was migrated as a Supabase legacy archive under `media/legacy-s3/3dmodules`. All `162` backed-up objects were uploaded, totaling about `1037.8 MB`; two Unicode-key PNGs were stored under `_unicode-renamed` with their original S3 keys preserved in `media-migration-legacy-s3-to-supabase.json`.
+- The legacy S3 archive does not automatically match the remaining `85` legacy Payload media records by filename/extension/size, and its keys were not found in current `generation_tasks.callback_payload`. Treat it as a staged asset archive until an explicit mapping or import workflow connects it to product records.
+- User-rebuildable resource data was reset after export backup. Cleared tables include `media`, `models`, `models_formats`, `generation_tasks`, `task_events`, engagement/social rows, print orders, Shopify payment test rows, homepage item rows, model bundle rows, and Payload lock rows. Preserved tables include `users`, sessions, credits/ledger rows, subscriptions, globals, Payload migrations, and Supabase Storage archive objects.
+- Reusable cleanup command added: `pnpm db:cleanup:user-resources` for dry-run counts and `pnpm db:cleanup:user-resources -- --apply` for backup plus deletion. This is a development/deployment reset helper for user-generated resources, not a full database drop.
+- The staged legacy archive was imported as administrator-owned public resources. The import created `32` public `models`, `32` preview `media` records, `110` public model-file `media` records, and `110` `models_formats` rows. Owner is admin user `1`; source mapping is recorded in `admin-public-resource-import-2026-04-28T17-14-40-259Z.json`.
+- The public resource import pairs files by identical legacy S3 key basename, not by arbitrary upload filename. It skips GLB groups without a same-basename preview image so public model cards have guest-readable thumbnails.
+- Imported public model titles were normalized to `Archive <legacyResourceId>` so the same API/result ID is visible as the binding key across preview image and multiple model formats. Homepage fallback data now uses separate public-model slices for featured, shelf, and inspiration sections to reduce repeated cards when no `homepage-items` are curated.
+- Public/admin-owned model files can be hidden from non-owner Payload reads by the field-level access rule on `models.formats.file`. Frontend data mappers must not require `formats.file.url` to decide whether a public model can be viewed; if a `glb` format row exists, use `/api/platform/models/:modelId/viewer?format=glb` and let the endpoint resolve `models_formats -> media.url`. The mock download endpoint follows the same direct format-asset resolution so public model downloads return real Supabase assets instead of mock files.
+- Workbench model loading depends on the formal `workbench` client receiving `ModelLibraryPanelCard.modelSrc`. Keep the first real card selected by default so the center `ModelViewer` is not mounted with `src=null` on initial load. The shared `ModelViewer` disk cache is versioned and should validate cached/fetched blobs with the GLB magic header before storing or reusing them, because stale bad blobs can otherwise mask healthy Supabase/Payload delivery.
+- `model-preview` endpoint rate limiting must allow normal gallery browsing. The 2026-04-28 retry import considered 42 candidates (`14` newly imported and `28` reused), and a default `30` requests per 10 minutes caused `/api/platform/models/:id/viewer` to return `429` during ordinary full-batch checks and repeated Workbench switching. Keep generation, billing, social writes, and downloads stricter, but model viewer redirects should use a higher preview limit because they are read-only and ultimately redirect public GLB delivery to Supabase.
+- The four migrated validation routes were promoted fully to formal routes and the route directories were removed: `/home-test`, `/workbench-test`, `/model-detail-test`, and `/account-test` no longer exist. Use `/`, `/workbench`, `/model-detail`, and `/account` for future UI and backend integration work. UI-lab component or static asset folder names may still contain `home-test` as historical asset names, but they are not routable app pages.
+- Public model detail pages should show the model owner's basic public-by-context identity when the model itself is public. Do not drop the author card to `Creator` only because `users.profileVisibility` is private; still keep avatar media constrained by `purpose=preview` or `publicAccess=true` and do not expose private avatar assets.
+- Keep Supabase public object URLs stable for frontend images and thumbnails. Do not wrap `/storage/v1/object/public/...` URLs in signed URLs; changing signed query strings make card thumbnails appear to reload and defeats browser cache. Private `/storage/v1/object/sign/...` or non-public media should still use signed access where required.
+- Model detail creator model rails should keep the current model visible in the rail. Do not exclude the current `model.id` from the creator public-model query; otherwise the clicked/current card disappears after navigation and makes the thumbnail rail appear to refresh.
+- The compact current-model info card under the model detail author block should not bind its image to the current model preview URL. Keep that small image stable to avoid making the right rail appear to refresh while the actual 3D model loads; the real current model preview belongs in the main viewer and creator model rail.
+- Model detail creator rail clicks should behave like a master-detail picker, not route navigation. Keep the rail mounted, update the active model state and browser URL with history state, and avoid document/RSC/image reloads. Comments and model actions should use the active model id.

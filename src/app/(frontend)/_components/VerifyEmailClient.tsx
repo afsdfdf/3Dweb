@@ -27,7 +27,7 @@ export function VerifyEmailClient({ token }: { token: string }) {
         }
 
         setStatus('success')
-        setMessage('邮箱验证成功，现在可以登录 MiniForge。')
+        setMessage('邮箱验证成功，现在可以登录 Thorns Tavern。')
       } catch (error) {
         if (!active) return
         setStatus('error')

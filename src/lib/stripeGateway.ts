@@ -71,7 +71,7 @@ export class StripeGateway {
           price_data: {
             currency,
             product_data: {
-              description: input.modelTitle ? `Model: ${input.modelTitle}` : 'MiniForge Studio 3D print order',
+              description: input.modelTitle ? `Model: ${input.modelTitle}` : 'Thorns Tavern Studio 3D print order',
               name: `3D Print Order ${input.orderNumber}`,
             },
             unit_amount: toMinorUnits(input.amount),

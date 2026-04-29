@@ -1,7 +1,6 @@
 import type { Payload } from 'payload'
 
 type StorageSettings = {
-  accessKeyId: string
   baseURL: string
   bucket: string
   enabled: boolean
@@ -9,21 +8,8 @@ type StorageSettings = {
   missingRequiredSettings: string[]
   prefix: string
   region: string
-  secretAccessKey: string
   signedDownloads: boolean
   source: 'storage-settings'
-}
-
-type S3PluginBootstrapSettings = {
-  accessKeyId: string
-  baseURL: string
-  bucket: string
-  enabled: boolean
-  prefix: string
-  region: string
-  secretAccessKey: string
-  signedDownloads: boolean
-  source: 'env-bootstrap'
 }
 
 const toRecord = (value: unknown): Record<string, unknown> => {
@@ -46,6 +32,14 @@ const STORAGE_DEFAULTS = {
   region: 'us-east-1',
   signedDownloads: true,
 } as const
+const STORAGE_SETTINGS_CACHE_TTL_MS = 30_000
+
+type CachedStorageSettings = {
+  expiresAt: number
+  promise: Promise<StorageSettings>
+}
+
+const storageSettingsCache = new WeakMap<Payload, CachedStorageSettings>()
 
 async function readGlobal(payload: Payload, slug: string) {
   if (typeof payload?.findGlobal !== 'function') {
@@ -61,11 +55,9 @@ async function readGlobal(payload: Payload, slug: string) {
 }
 
 function buildRuntimeMissingSettings(args: {
-  accessKeyId: string
   bucket: string
   enabled: boolean
   region: string
-  secretAccessKey: string
 }) {
   if (!args.enabled) {
     return []
@@ -81,48 +73,11 @@ function buildRuntimeMissingSettings(args: {
     missing.push('storage-settings.region')
   }
 
-  if (!args.accessKeyId) {
-    missing.push('AWS_ACCESS_KEY_ID')
-  }
-
-  if (!args.secretAccessKey) {
-    missing.push('AWS_SECRET_ACCESS_KEY')
-  }
-
   return missing
 }
 
-function buildPluginBootstrapMissingSettings(args: {
-  accessKeyId: string
-  bucket: string
-  region: string
-  secretAccessKey: string
-}) {
-  const missing: string[] = []
-
-  if (!args.bucket) {
-    missing.push('S3_BUCKET')
-  }
-
-  if (!args.region) {
-    missing.push('S3_REGION')
-  }
-
-  if (!args.accessKeyId) {
-    missing.push('AWS_ACCESS_KEY_ID')
-  }
-
-  if (!args.secretAccessKey) {
-    missing.push('AWS_SECRET_ACCESS_KEY')
-  }
-
-  return missing
-}
-
-export async function getS3StorageSettings(payload: Payload): Promise<StorageSettings> {
+async function readS3StorageSettings(payload: Payload): Promise<StorageSettings> {
   const storage = toRecord(await readGlobal(payload, 'storage-settings'))
-  const accessKeyId = process.env.AWS_ACCESS_KEY_ID || ''
-  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY || ''
   const enabled = pickBoolean(storage.enabled, STORAGE_DEFAULTS.enabled)
   const bucket = pickString(storage.bucket, STORAGE_DEFAULTS.bucket)
   const region = pickString(storage.region, STORAGE_DEFAULTS.region)
@@ -130,15 +85,12 @@ export async function getS3StorageSettings(payload: Payload): Promise<StorageSet
   const baseURL = pickString(storage.baseURL, STORAGE_DEFAULTS.baseURL)
   const signedDownloads = pickBoolean(storage.signedDownloads, STORAGE_DEFAULTS.signedDownloads)
   const missingRequiredSettings = buildRuntimeMissingSettings({
-    accessKeyId,
     bucket,
     enabled,
     region,
-    secretAccessKey,
   })
 
   return {
-    accessKeyId,
     baseURL,
     bucket,
     enabled,
@@ -146,58 +98,32 @@ export async function getS3StorageSettings(payload: Payload): Promise<StorageSet
     missingRequiredSettings,
     prefix,
     region,
-    secretAccessKey,
     signedDownloads,
     source: 'storage-settings',
   }
 }
 
-export function readS3PluginBootstrapSettingsFromEnv(): S3PluginBootstrapSettings {
-  const accessKeyId = process.env.AWS_ACCESS_KEY_ID || ''
-  const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY || ''
-  const bucket = process.env.S3_BUCKET || ''
-  const region = process.env.S3_REGION || STORAGE_DEFAULTS.region
-  const prefix = process.env.S3_PREFIX || STORAGE_DEFAULTS.prefix
-  const baseURL = process.env.S3_CDN_URL || STORAGE_DEFAULTS.baseURL
-  const signedDownloads = process.env.S3_SIGNED_DOWNLOADS !== 'false'
+export async function getS3StorageSettings(payload: Payload): Promise<StorageSettings> {
+  const now = Date.now()
+  const cached = storageSettingsCache.get(payload)
+  if (cached && cached.expiresAt > now) {
+    return cached.promise
+  }
 
-  const hasAnyBootstrapValue = [
-    accessKeyId,
-    secretAccessKey,
-    bucket,
-    process.env.S3_REGION,
-    process.env.S3_PREFIX,
-    process.env.S3_CDN_URL,
-    process.env.S3_SIGNED_DOWNLOADS,
-  ].some((value) => typeof value === 'string' && value.trim().length > 0)
-
-  if (hasAnyBootstrapValue) {
-    const missingRequiredSettings = buildPluginBootstrapMissingSettings({
-      accessKeyId,
-      bucket,
-      region,
-      secretAccessKey,
-    })
-
-    if (missingRequiredSettings.length > 0) {
-      throw new Error(
-        `Incomplete S3 plugin bootstrap env configuration. Missing: ${missingRequiredSettings.join(', ')}. ` +
-          'Keep AWS secrets in env, and move non-sensitive runtime settings to the Storage Settings global.',
-      )
+  const promise = readS3StorageSettings(payload).catch((error) => {
+    const current = storageSettingsCache.get(payload)
+    if (current?.promise === promise) {
+      storageSettingsCache.delete(payload)
     }
-  }
+    throw error
+  })
 
-  return {
-    accessKeyId,
-    baseURL,
-    bucket,
-    enabled: Boolean(bucket && region && accessKeyId && secretAccessKey),
-    prefix,
-    region,
-    secretAccessKey,
-    signedDownloads,
-    source: 'env-bootstrap',
-  }
+  storageSettingsCache.set(payload, {
+    expiresAt: now + STORAGE_SETTINGS_CACHE_TTL_MS,
+    promise,
+  })
+
+  return promise
 }
 
 export function describeS3StorageConfigProblem(settings: Pick<StorageSettings, 'enabled' | 'hasRequiredConfig' | 'missingRequiredSettings'>) {

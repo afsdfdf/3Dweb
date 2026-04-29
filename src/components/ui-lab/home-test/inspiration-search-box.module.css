@@ -1,0 +1,161 @@
+.toolbar {
+  align-items: center;
+  display: flex;
+  height: 32px;
+  margin-left: 906px;
+  width: 686px;
+}
+
+.searchBox {
+  align-items: stretch;
+  display: flex;
+  height: 32px;
+  width: 255px;
+}
+
+.inputShell {
+  align-items: center;
+  background: #050505;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-right: 0;
+  box-sizing: border-box;
+  display: flex;
+  height: 32px;
+  min-width: 0;
+  width: 167px;
+}
+
+.icon {
+  background-image: url("/ui-lab/model-detail-uicut/images/icon-search-white.png");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  display: block;
+  flex: 0 0 auto;
+  height: 22px;
+  margin-left: 14px;
+  width: 22px;
+}
+
+.input {
+  background: transparent;
+  border: 0;
+  color: #ffffff;
+  flex: 1;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  height: 30px;
+  line-height: 30px;
+  min-width: 0;
+  outline: 0;
+  padding: 0 12px;
+}
+
+.input::placeholder {
+  color: rgba(255, 255, 255, 0.36);
+  opacity: 1;
+}
+
+.button {
+  background: #1c1c1f;
+  border: 1px solid rgba(255, 255, 255, 0.36);
+  box-sizing: border-box;
+  color: #ffffff;
+  font-family: Arial, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  height: 32px;
+  line-height: 1;
+  padding: 0;
+  width: 88px;
+}
+
+.button:hover {
+  background: #24242a;
+}
+
+.button:active {
+  background: #121215;
+}
+
+.pager {
+  display: flex;
+  gap: 3px;
+  height: 32px;
+  margin-left: 18px;
+}
+
+.pager a,
+.pager .ellipsis {
+  align-items: center;
+  background: #111113;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 2px;
+  box-sizing: border-box;
+  color: #ffffff;
+  display: inline-flex;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  height: 32px;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
+  text-decoration: none;
+  width: 28px;
+}
+
+.pager a[aria-disabled="true"] {
+  color: rgba(255, 255, 255, 0.28);
+  pointer-events: none;
+}
+
+.pager .currentPage {
+  background: #1d1d22;
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.pageGroup {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.pageSize {
+  align-items: center;
+  background: #111113;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 2px;
+  box-sizing: border-box;
+  color: #ffffff;
+  display: flex;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  height: 32px;
+  justify-content: center;
+  margin-left: 12px;
+  overflow: hidden;
+  padding: 0;
+  width: 132px;
+}
+
+.pageSize span:first-child {
+  display: block;
+  line-height: 30px;
+  max-width: 102px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chevron {
+  border-bottom: 2px solid #ffffff;
+  border-right: 2px solid #ffffff;
+  display: block;
+  flex: 0 0 auto;
+  height: 8px;
+  margin-left: 8px;
+  transform: rotate(45deg) translateY(-2px);
+  width: 8px;
+}

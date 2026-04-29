@@ -1,7 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
 import { ownerOrStaff } from '@/access'
-import { syncMediaToS3AfterChange, syncMediaToS3AfterDelete } from '@/hooks/syncMediaToS3'
 import { adminLabelsKey, adminTextKey } from '@/lib/adminText'
 import { mediaReadAccess } from '@/lib/mediaReadAccess'
 
@@ -42,8 +41,6 @@ export const Media: CollectionConfig = {
         }
       },
     ],
-    afterChange: [syncMediaToS3AfterChange],
-    afterDelete: [syncMediaToS3AfterDelete],
   },
   fields: [
     { name: 'alt', type: 'text', required: true, label: 'Alt text' },

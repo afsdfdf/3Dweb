@@ -3,7 +3,6 @@ import { zh } from 'payload/i18n/zh'
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { nodemailerAdapter } from '@payloadcms/email-nodemailer'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
-import { s3Storage } from '@payloadcms/storage-s3'
 import path from 'path'
 import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
@@ -25,8 +24,19 @@ import { Posts } from './collections/Posts'
 import { ShopifyPayments } from './collections/ShopifyPayments'
 import { TaskEvents } from './collections/TaskEvents'
 import { Users } from './collections/Users'
+import {
+  forgotPasswordEndpoint,
+  getCurrentAuthAccountEndpoint,
+  loginAccountEndpoint,
+  logoutAccountEndpoint,
+  registerAccountEndpoint,
+  resendVerificationEndpoint,
+  resetPasswordEndpoint,
+  verifyEmailEndpoint,
+} from './endpoints/accountAuth'
 import { aiWebhookEndpoint, submitAITaskEndpoint, syncAITaskEndpoint } from './endpoints/aiTasks'
 import { mockModelDownloadEndpoint } from './endpoints/mockDownloads'
+import { modelViewerEndpoint } from './endpoints/modelViewer'
 import { opsDashboardEndpoint } from './endpoints/opsDashboard'
 import { createPrintOrderEndpoint, syncPrintOrderEndpoint } from './endpoints/printOrders'
 import { sessionLogoutEndpoint } from './endpoints/sessionLogout'
@@ -44,14 +54,13 @@ import { SiteSettings } from './globals/SiteSettings'
 import { StorageSettings } from './globals/StorageSettings'
 import { assertRuntimeSecurityGuards, getValidatedPayloadSecret } from './lib/envGuard'
 import { resolveDatabaseRuntimeConfig } from './lib/databaseRuntimeConfig'
-import { readS3PluginBootstrapSettingsFromEnv } from './lib/s3Settings'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
 const appURL = process.env.NEXT_PUBLIC_APP_URL || 'http://127.0.0.1:3000'
-const defaultFromAddress = process.env.EMAIL_FROM_ADDRESS || 'no-reply@miniforge.local'
-const defaultFromName = process.env.EMAIL_FROM_NAME || 'MiniForge AI 3D'
+const defaultFromAddress = process.env.EMAIL_FROM_ADDRESS || 'no-reply@thornstavern.com'
+const defaultFromName = process.env.EMAIL_FROM_NAME || 'Thorns Tavern'
 const smtpSecure = process.env.SMTP_SECURE === 'true'
 const smtpPort = Number(process.env.SMTP_PORT || (smtpSecure ? 465 : 587))
 
@@ -81,7 +90,6 @@ const emailAdapter = nodemailerAdapter({
       }),
 })
 
-const s3Settings = readS3PluginBootstrapSettingsFromEnv()
 const dbConfig = resolveDatabaseRuntimeConfig()
 assertRuntimeSecurityGuards()
 const payloadSecret = getValidatedPayloadSecret()
@@ -139,9 +147,18 @@ export default buildConfig({
   email: emailAdapter,
   endpoints: [
     opsDashboardEndpoint,
+    registerAccountEndpoint,
+    loginAccountEndpoint,
+    logoutAccountEndpoint,
+    getCurrentAuthAccountEndpoint,
+    forgotPasswordEndpoint,
+    resetPasswordEndpoint,
+    verifyEmailEndpoint,
+    resendVerificationEndpoint,
     submitAITaskEndpoint,
     syncAITaskEndpoint,
     aiWebhookEndpoint,
+    modelViewerEndpoint,
     mockModelDownloadEndpoint,
     createPrintOrderEndpoint,
     syncPrintOrderEndpoint,
@@ -164,32 +181,6 @@ export default buildConfig({
     fallback: true,
     locales: ['en', 'zh'],
   },
-  plugins: [
-    ...(s3Settings.enabled && s3Settings.bucket && s3Settings.region && s3Settings.accessKeyId && s3Settings.secretAccessKey
-      ? [
-          s3Storage({
-            acl: 'private',
-            bucket: s3Settings.bucket,
-            collections: {
-              media: {
-                prefix: s3Settings.prefix,
-                signedDownloads: {
-                  shouldUseSignedURL: () => s3Settings.signedDownloads,
-                },
-              },
-            },
-            config: {
-              credentials: {
-                accessKeyId: s3Settings.accessKeyId,
-                secretAccessKey: s3Settings.secretAccessKey,
-              },
-              region: s3Settings.region,
-            },
-            enabled: true,
-          }),
-        ]
-      : []),
-  ],
   secret: payloadSecret,
   serverURL: appURL,
   sharp,

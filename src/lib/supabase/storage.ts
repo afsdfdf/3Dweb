@@ -102,6 +102,49 @@ export async function createSupabaseStorageSignedUrl(args: {
   return data.signedUrl
 }
 
+export function getSupabaseStoragePublicUrl(args: {
+  bucket: string
+  path: string
+}) {
+  const supabase = getSupabaseAdminClient()
+  return supabase.storage.from(args.bucket).getPublicUrl(args.path).data.publicUrl
+}
+
+export function getSupabaseStorageObjectPathFromURL(args: {
+  bucket: string
+  url: string
+}) {
+  const rawURL = args.url.trim()
+  if (!rawURL) return null
+
+  let parsed: URL
+  try {
+    parsed = new URL(rawURL)
+  } catch {
+    return null
+  }
+
+  const objectPrefixes = ['/storage/v1/object/public/', '/storage/v1/object/sign/']
+  const matchedPrefix = objectPrefixes.find((prefix) => parsed.pathname.startsWith(prefix))
+  if (!matchedPrefix) {
+    return null
+  }
+
+  const pathWithBucket = parsed.pathname.slice(matchedPrefix.length)
+  const bucketPrefix = `${encodeURIComponent(args.bucket)}/`
+  const plainBucketPrefix = `${args.bucket}/`
+
+  if (pathWithBucket.startsWith(bucketPrefix)) {
+    return decodeURIComponent(pathWithBucket.slice(bucketPrefix.length))
+  }
+
+  if (pathWithBucket.startsWith(plainBucketPrefix)) {
+    return decodeURIComponent(pathWithBucket.slice(plainBucketPrefix.length))
+  }
+
+  return null
+}
+
 export async function configureSupabaseNativeStorage(args?: { bucket?: string; prefix?: string; signedDownloads?: boolean }) {
   const bucket = args?.bucket || DEFAULT_BUCKET
   const prefix = args?.prefix || 'media'

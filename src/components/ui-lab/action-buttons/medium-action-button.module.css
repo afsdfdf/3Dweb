@@ -1,0 +1,64 @@
+.button {
+  appearance: none;
+  background: transparent;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 0 20px;
+  border-image-source: var(--button-image);
+  border-image-slice: 0 20 fill;
+  border-image-width: 0 20px;
+  border-image-outset: 0;
+  border-image-repeat: stretch;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  pointer-events: auto;
+  position: absolute;
+  inset: -18.421052631578945% -106% -18.421052631578945% -86%;
+  z-index: 80;
+}
+
+.center {
+  display: contents;
+}
+
+.normal {
+  --button-image: var(--normal-image);
+}
+
+.hover {
+  --button-image: var(--hover-image);
+}
+
+.pressed {
+  --button-image: var(--pressed-image);
+}
+
+.button:not(:disabled):hover {
+  --button-image: var(--hover-image);
+}
+
+.button:not(:disabled):active {
+  --button-image: var(--pressed-image);
+  transform: translateY(1px);
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.label {
+  color: #ffffff;
+  font-family: Arial, sans-serif;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 22px;
+  pointer-events: none;
+  position: relative;
+  text-align: center;
+  z-index: 1;
+}

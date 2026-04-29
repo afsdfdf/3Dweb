@@ -228,8 +228,8 @@ export const SiteSettings: GlobalConfig = {
                   type: 'group',
                   label: 'Sender',
                   fields: [
-                    { name: 'fromName', type: 'text', defaultValue: 'MiniForge AI 3D', label: 'From name' },
-                    { name: 'fromAddress', type: 'email', defaultValue: 'no-reply@miniforge.local', label: 'From address' },
+                    { name: 'fromName', type: 'text', defaultValue: 'Thorns Tavern', label: 'From name' },
+                    { name: 'fromAddress', type: 'email', defaultValue: 'no-reply@thornstavern.com', label: 'From address' },
                     { name: 'replyTo', type: 'email', label: 'Reply-to address' },
                     {
                       name: 'smtpNotice',
@@ -247,8 +247,8 @@ export const SiteSettings: GlobalConfig = {
                   type: 'group',
                   label: 'Branding',
                   fields: [
-                    { name: 'productName', type: 'text', defaultValue: 'MiniForge AI 3D', label: 'Product name' },
-                    { name: 'footerText', type: 'text', defaultValue: 'MiniForge AI 3D', label: 'Footer text' },
+                    { name: 'productName', type: 'text', defaultValue: 'Thorns Tavern', label: 'Product name' },
+                    { name: 'footerText', type: 'text', defaultValue: 'Thorns Tavern', label: 'Footer text' },
                   ],
                 },
                 {
@@ -261,11 +261,11 @@ export const SiteSettings: GlobalConfig = {
                       type: 'group',
                       label: 'Welcome email',
                       fields: [
-                        { name: 'subject', type: 'text', defaultValue: 'Welcome to MiniForge', label: 'Subject' },
+                        { name: 'subject', type: 'text', defaultValue: 'Welcome to Thorns Tavern', label: 'Subject' },
                         {
                           name: 'intro',
                           type: 'textarea',
-                          defaultValue: 'Your account is ready. You can now start using MiniForge for generation, model management, subscriptions, and orders.',
+                          defaultValue: 'Your account is ready. You can now start using Thorns Tavern for generation, model management, subscriptions, and orders.',
                           label: 'Body copy',
                         },
                         { name: 'ctaLabel', type: 'text', defaultValue: 'Open Studio', label: 'CTA label' },
@@ -276,7 +276,7 @@ export const SiteSettings: GlobalConfig = {
                       type: 'group',
                       label: 'Email verification',
                       fields: [
-                        { name: 'subject', type: 'text', defaultValue: 'Verify your MiniForge email', label: 'Subject' },
+                        { name: 'subject', type: 'text', defaultValue: 'Verify your Thorns Tavern email', label: 'Subject' },
                         {
                           name: 'intro',
                           type: 'textarea',
@@ -291,7 +291,7 @@ export const SiteSettings: GlobalConfig = {
                       type: 'group',
                       label: 'Password reset',
                       fields: [
-                        { name: 'subject', type: 'text', defaultValue: 'MiniForge password reset', label: 'Subject' },
+                        { name: 'subject', type: 'text', defaultValue: 'Thorns Tavern password reset', label: 'Subject' },
                         {
                           name: 'intro',
                           type: 'textarea',
@@ -313,7 +313,7 @@ export const SiteSettings: GlobalConfig = {
                       type: 'group',
                       label: 'Subscription success',
                       fields: [
-                        { name: 'subject', type: 'text', defaultValue: 'MiniForge subscription activated', label: 'Subject' },
+                        { name: 'subject', type: 'text', defaultValue: 'Thorns Tavern subscription activated', label: 'Subject' },
                         {
                           name: 'intro',
                           type: 'textarea',
@@ -328,7 +328,7 @@ export const SiteSettings: GlobalConfig = {
                       type: 'group',
                       label: 'Order payment success',
                       fields: [
-                        { name: 'subject', type: 'text', defaultValue: 'MiniForge order payment received', label: 'Subject' },
+                        { name: 'subject', type: 'text', defaultValue: 'Thorns Tavern order payment received', label: 'Subject' },
                         {
                           name: 'intro',
                           type: 'textarea',

@@ -1,10 +1,6 @@
 import Link from 'next/link'
 
-import { Button } from '@/components/ui/button'
-
 import { Locale } from '../../_lib/locale'
-import { LocaleSwitcher } from '../LocaleSwitcher'
-import { LogoutButton } from '../LogoutButton'
 
 type TopNavBarProps = {
   currentPath?: string
@@ -25,26 +21,30 @@ const isActivePath = (href: string, currentPath?: string) => {
   return Boolean(currentPath?.startsWith(href))
 }
 
+const NAV_ITEM_WIDTH_CLASS = 'w-[132px]'
+const STANDARD_NAVIGATION = [
+  { href: '/', label: 'Home' },
+  { href: '/generate', label: 'Workbench' },
+  { href: '/dashboard', label: 'Account' },
+  { href: '/admin', label: 'Admin' },
+]
+
 function HeaderBrand() {
   return (
-    <Link className="flex shrink-0 items-center pr-4" href="/">
+    <Link className="absolute left-[48px] top-[14px] flex h-8 w-[161px] items-center" href="/">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img alt="Thorns Tavern" className="h-[30px] w-auto object-contain" src="/ui/nav/brand-wordmark.png" />
+      <img alt="Thorns Tavern" className="h-8 w-[161px] object-contain" src="/ui/nav/brand-wordmark.png" />
     </Link>
   )
 }
 
 function NavOrnament() {
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-1/2 hidden h-[58px] -translate-y-1/2 lg:block">
+    <div className="pointer-events-none absolute left-[460px] top-[1px] h-[58px] w-[1000px]">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img alt="" aria-hidden="true" className="h-full w-full object-fill opacity-68" src="/ui/nav/nav-ornament.png" />
+      <img alt="" aria-hidden="true" className="h-[58px] w-[1000px] object-contain opacity-68" src="/ui/nav/nav-ornament.png" />
     </div>
   )
-}
-
-function CreditsCounter() {
-  return <CreditsCounterValue value={560} />
 }
 
 function CreditsCounterValue({
@@ -87,54 +87,55 @@ function AuthEntry() {
 }
 
 export function TopNavBar({ currentPath, locale, navigation, showAuthEntry = true, showLocaleSwitcher = true, user }: TopNavBarProps) {
+  void locale
+  void navigation
+  void showLocaleSwitcher
+
+  const links = STANDARD_NAVIGATION
+
   return (
-    <header className="sticky top-0 z-40 h-[60px] overflow-hidden bg-[#1b1b1b]">
-      <div className="relative mx-auto flex h-[58px] max-w-[1872px] items-center px-6">
+    <header className="relative z-40 h-[60px] w-[1920px] overflow-hidden bg-[#1b1b1b]">
+      <div className="relative h-[60px] w-[1920px] overflow-hidden">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img alt="" aria-hidden="true" className="pointer-events-none absolute inset-0 h-[60px] w-[1920px] object-contain" src="/ui/nav/nav-divider.png" />
         <HeaderBrand />
 
-        <div
-          className="absolute left-1/2 top-0 flex h-[58px] max-w-[970px] -translate-x-1/2 items-center justify-center"
-          style={{ width: 'min(970px, calc(100% - 560px))' }}
-        >
-          <NavOrnament />
+        <NavOrnament />
 
-          <nav className="relative z-10 flex h-[58px] items-center gap-5" aria-label="Primary navigation">
-            {navigation.map((link, index) => {
-              const active = isActivePath(link.href, currentPath)
-              const widthClass =
-                index === 0 ? 'w-[102px]' : index === 1 ? 'w-[156px]' : index === 2 ? 'w-[126px]' : 'w-[108px]'
+        <nav className="absolute left-[460px] top-0 z-10 flex h-[58px] w-[1000px] items-center justify-center gap-5" aria-label="Primary navigation">
+          {links.map((link) => {
+            const active = isActivePath(link.href, currentPath)
 
-              return (
-                <Link
-                  className={`group/navitem relative flex h-[58px] shrink-0 flex-col items-center justify-center ${widthClass} text-[15px] uppercase leading-[22px] transition-colors ${
-                    active ? 'font-medium text-white' : 'font-normal text-[rgba(233,175,85,0.58)] hover:text-[#d9b261]'
+            return (
+              <Link
+                className={`group/navitem relative flex h-[58px] shrink-0 flex-col items-center justify-center ${NAV_ITEM_WIDTH_CLASS} text-[15px] uppercase leading-[22px] transition-colors ${
+                  active ? 'font-medium text-white' : 'font-normal text-[rgba(233,175,85,0.58)] hover:text-[#d9b261]'
+                }`}
+                href={link.href || '/'}
+                key={`${link.href}-${link.label}`}
+              >
+                <span className="relative z-10 max-w-full truncate px-2">{link.label}</span>
+                <span
+                  aria-hidden="true"
+                  className={`pointer-events-none absolute bottom-[12px] left-1/2 h-[10px] w-[48px] -translate-x-1/2 rounded-full bg-[#e9af55] blur-[6px] transition-opacity duration-150 ${
+                    active ? 'opacity-100' : 'opacity-0 group-hover/navitem:opacity-100'
                   }`}
-                  href={link.href || '/'}
-                  key={`${link.href}-${link.label}`}
-                >
-                  <span className="relative z-10">{link.label}</span>
-                  <span
-                    aria-hidden="true"
-                    className={`pointer-events-none absolute bottom-[12px] left-1/2 h-[10px] w-[48px] -translate-x-1/2 rounded-full bg-[#e9af55] blur-[6px] transition-opacity duration-150 ${
-                      active ? 'opacity-100' : 'opacity-0 group-hover/navitem:opacity-100'
-                    }`}
-                  />
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    alt=""
-                    aria-hidden="true"
-                    className={`pointer-events-none absolute bottom-[4px] left-1/2 h-[10px] w-[16px] -translate-x-1/2 object-contain transition-opacity duration-150 ${
-                      active ? 'opacity-100' : 'opacity-0 group-hover/navitem:opacity-100'
-                    }`}
-                    src="/ui/nav/active-chevron.png"
-                  />
-                </Link>
-              )
-            })}
-          </nav>
-        </div>
+                />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  alt=""
+                  aria-hidden="true"
+                  className={`pointer-events-none absolute bottom-[4px] left-1/2 h-[10px] w-[16px] -translate-x-1/2 object-contain transition-opacity duration-150 ${
+                    active ? 'opacity-100' : 'opacity-0 group-hover/navitem:opacity-100'
+                  }`}
+                  src="/ui/nav/active-chevron.png"
+                />
+              </Link>
+            )
+          })}
+        </nav>
 
-        <div className="ml-auto flex shrink-0 items-center justify-end">
+        <div className="absolute right-[48px] top-[10px] flex h-10 items-center justify-end">
           {user ? (
             <div className="grid grid-cols-[76px_24px_24px_40px_minmax(0,1fr)] items-center justify-items-start gap-x-3">
               <CreditsCounterValue value={typeof user.creditsBalance === 'number' ? Math.max(0, Number(user.creditsBalance)) : null} />
@@ -163,8 +164,6 @@ export function TopNavBar({ currentPath, locale, navigation, showAuthEntry = tru
           )}
         </div>
       </div>
-
-      <div className="h-[2px] w-full bg-[linear-gradient(45deg,rgba(233,175,85,0)_0%,rgba(233,175,85,0.3)_27.335938%,rgba(233,175,85,0.3)_50.716146%,rgba(233,175,85,0.3)_76.559896%,rgba(233,175,85,0)_100%)]" />
     </header>
   )
 }

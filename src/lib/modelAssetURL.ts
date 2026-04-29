@@ -13,6 +13,12 @@ const getRelationMediaURL = (value: unknown) => {
   return url
 }
 
+const getRelationImageURL = (value: unknown) => {
+  if (!isRecord(value)) return null
+
+  return normalizeText(value.thumbnailURL) || normalizeText(value.url)
+}
+
 const getTaskCallbackPayload = (task: unknown) => {
   if (!isRecord(task)) return null
   return isRecord(task.callbackPayload) ? task.callbackPayload : null
@@ -51,7 +57,7 @@ export function getModelPreviewURL(model: unknown) {
   if (!isRecord(model)) return null
 
   const preview = isRecord(model.previewImage) ? model.previewImage : null
-  const previewURL = getRelationMediaURL(preview)
+  const previewURL = getRelationImageURL(preview)
   if (previewURL) {
     return previewURL
   }
