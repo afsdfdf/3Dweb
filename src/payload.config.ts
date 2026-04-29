@@ -30,6 +30,21 @@ import { TaskEvents } from './collections/TaskEvents'
 import { Users } from './collections/Users'
 import { UserFollows } from './collections/UserFollows'
 import {
+  adminAdjustCreditsEndpoint,
+  adminRepairTaskEndpoint,
+  adminUpdateOrderStatusEndpoint,
+} from './endpoints/adminRepair'
+import {
+  changeAccountPasswordEndpoint,
+  followCreatorEndpoint,
+  getAccountDashboardEndpoint,
+  getAccountProfileEndpoint,
+  getCreatorProfileEndpoint,
+  listCurrentUserFollowsEndpoint,
+  unfollowCreatorEndpoint,
+  updateAccountProfileEndpoint,
+} from './endpoints/account'
+import {
   forgotPasswordEndpoint,
   getCurrentAuthAccountEndpoint,
   loginAccountEndpoint,
@@ -39,8 +54,25 @@ import {
   resetPasswordEndpoint,
   verifyEmailEndpoint,
 } from './endpoints/accountAuth'
-import { aiWebhookEndpoint, submitAITaskEndpoint, syncAITaskEndpoint } from './endpoints/aiTasks'
+import { aiWebhookEndpoint, meshyWebhookEndpoint, submitAITaskEndpoint, syncAITaskEndpoint } from './endpoints/aiTasks'
+import { recordEngagementViewEndpoint } from './endpoints/engagement'
+import { submitImageGenerationEndpoint } from './endpoints/imageGeneration'
 import { mockModelDownloadEndpoint } from './endpoints/mockDownloads'
+import {
+  createModelCommentEndpoint,
+  deleteModelCommentEndpoint,
+  listModelCommentsEndpoint,
+  moderateModelCommentEndpoint,
+} from './endpoints/modelComments'
+import { getModelDetailEndpoint } from './endpoints/modelDetails'
+import {
+  favoriteModelEndpoint,
+  getModelReactionStateEndpoint,
+  likeModelEndpoint,
+  listCurrentUserFavoritesEndpoint,
+  unfavoriteModelEndpoint,
+  unlikeModelEndpoint,
+} from './endpoints/modelReactions'
 import { modelViewerEndpoint } from './endpoints/modelViewer'
 import { opsDashboardEndpoint } from './endpoints/opsDashboard'
 import { createPrintOrderEndpoint, syncPrintOrderEndpoint } from './endpoints/printOrders'
@@ -102,6 +134,11 @@ const payloadSecret = getValidatedPayloadSecret()
 export default buildConfig({
   admin: {
     components: {
+      beforeNavLinks: ['./components/admin/AdminNavQuickLinks'],
+      graphics: {
+        Icon: './components/admin/ThornsTavernBrand#ThornsTavernIcon',
+        Logo: './components/admin/ThornsTavernBrand',
+      },
       views: {
         dashboard: {
           Component: {
@@ -165,8 +202,33 @@ export default buildConfig({
     resetPasswordEndpoint,
     verifyEmailEndpoint,
     resendVerificationEndpoint,
+    getAccountProfileEndpoint,
+    updateAccountProfileEndpoint,
+    changeAccountPasswordEndpoint,
+    getAccountDashboardEndpoint,
+    listCurrentUserFollowsEndpoint,
+    listCurrentUserFavoritesEndpoint,
+    getCreatorProfileEndpoint,
+    followCreatorEndpoint,
+    unfollowCreatorEndpoint,
+    listModelCommentsEndpoint,
+    createModelCommentEndpoint,
+    deleteModelCommentEndpoint,
+    moderateModelCommentEndpoint,
+    getModelDetailEndpoint,
+    getModelReactionStateEndpoint,
+    likeModelEndpoint,
+    unlikeModelEndpoint,
+    favoriteModelEndpoint,
+    unfavoriteModelEndpoint,
+    recordEngagementViewEndpoint,
+    adminUpdateOrderStatusEndpoint,
+    adminAdjustCreditsEndpoint,
+    adminRepairTaskEndpoint,
     submitAITaskEndpoint,
+    submitImageGenerationEndpoint,
     syncAITaskEndpoint,
+    meshyWebhookEndpoint,
     aiWebhookEndpoint,
     modelViewerEndpoint,
     mockModelDownloadEndpoint,
