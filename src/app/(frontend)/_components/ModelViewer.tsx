@@ -407,20 +407,6 @@ function ModelErrorOverlay({ visible }: { visible: boolean }) {
   )
 }
 
-function canCreateWebGLContext() {
-  if (typeof document === 'undefined') return true
-
-  try {
-    const canvas = document.createElement('canvas')
-    const context = canvas.getContext('webgl2') || canvas.getContext('webgl')
-    const loseContext = context?.getExtension('WEBGL_lose_context')
-    loseContext?.loseContext()
-    return Boolean(context)
-  } catch {
-    return false
-  }
-}
-
 function RendererLifecycle() {
   const gl = useThree((state) => state.gl)
 
@@ -469,7 +455,6 @@ export function ModelViewer({
   transparentBackground = false,
 }: ModelViewerProps) {
   const pointLightColor = accent === 'blue' ? '#67b4ff' : '#8b6cff'
-  const [webGLAvailable, setWebGLAvailable] = useState(() => canCreateWebGLContext())
   const [loadState, setLoadState] = useState<ModelLoadState>(idleLoadState)
   const activeSrc = loadState.status === 'ready' ? loadState.objectURL : null
   const frameloop = activeSrc || showPlaceholderModel ? 'always' : 'demand'
@@ -652,47 +637,25 @@ export function ModelViewer({
     }
   }, [activeSrc])
 
-  useEffect(() => {
-    if (!webGLAvailable) {
-      setLoadState((previous) => ({
-        ...previous,
-        objectURL: null,
-        status: 'error',
-      }))
-    }
-  }, [webGLAvailable])
-
   return (
     <div className={className} style={{ contain: 'layout paint', overflow: 'hidden', position: 'relative' }}>
-      {webGLAvailable ? (
-        <ViewerErrorBoundary
-          fallback={null}
-          onError={() => {
-            setWebGLAvailable(false)
-            setLoadState((previous) => ({
-              ...previous,
-              objectURL: null,
-              status: 'error',
-            }))
-          }}
-        >
-          <Canvas
-            camera={{ fov: 36, position: [0, 1.6, 5.4] }}
-            dpr={activeSrc ? [1, 1.2] : [1, 1.5]}
-            frameloop={frameloop}
-            gl={{
-              antialias: true,
-              alpha: transparentBackground,
-              powerPreference: 'low-power',
-              preserveDrawingBuffer: false,
-            }}
-            onCreated={({ gl }) => {
-              if (transparentBackground) {
-                gl.setClearColor(0x000000, 0)
-                gl.setClearAlpha(0)
-              }
-            }}
-            style={transparentBackground ? { background: 'transparent' } : undefined}
+      <Canvas
+        camera={{ fov: 36, position: [0, 1.6, 5.4] }}
+        dpr={activeSrc ? [1, 1.2] : [1, 1.5]}
+        frameloop={frameloop}
+        gl={{
+          antialias: true,
+          alpha: transparentBackground,
+          powerPreference: 'low-power',
+          preserveDrawingBuffer: false,
+        }}
+        onCreated={({ gl }) => {
+          if (transparentBackground) {
+            gl.setClearColor(0x000000, 0)
+            gl.setClearAlpha(0)
+          }
+        }}
+        style={transparentBackground ? { background: 'transparent' } : undefined}
       >
         <RendererLifecycle />
         {transparentBackground ? null : <color attach="background" args={['#0a101b']} />}
@@ -732,9 +695,7 @@ export function ModelViewer({
           maxDistance={7}
           minDistance={2.2}
         />
-          </Canvas>
-        </ViewerErrorBoundary>
-      ) : null}
+      </Canvas>
 
       {label ? (
         <div className="pointer-events-none absolute bottom-4 left-4 rounded-full border border-white/10 bg-background/85 px-3 py-1 text-xs text-foreground shadow-sm">

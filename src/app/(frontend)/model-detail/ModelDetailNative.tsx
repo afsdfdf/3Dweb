@@ -148,7 +148,7 @@ export default function ModelDetailNative({ data = null, navUser = null }: Model
                 style={{ transform: `translateX(-${slide * 100}%)` }}
               >
                 {modelImages.map((image, index) => (
-                  <li className="swiper-slide" key={`${image}-${index}`}>
+                  <li className="swiper-slide" key={`model-preview-slide-${index}`}>
                     {index === 0 && activeModel.viewerURL ? (
                       <div className="detail-model-stage">
                         <ModelViewer
