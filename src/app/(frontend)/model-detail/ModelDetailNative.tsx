@@ -153,7 +153,6 @@ export default function ModelDetailNative({ data = null, navUser = null }: Model
                       <div className="detail-model-stage">
                         <ModelViewer
                           className="detail-model-viewer"
-                          key={activeModel.viewerURL || activeModel.id}
                           showGround={false}
                           showPlaceholderModel={false}
                           src={activeModel.viewerURL}
