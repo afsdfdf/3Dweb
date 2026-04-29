@@ -1,4 +1,4 @@
-import type { CollectionConfig } from 'payload'
+import type { Access, CollectionConfig, CollectionBeforeValidateHook } from 'payload'
 
 import { canAccessAdmin, isAdmin, isSelfOrStaff } from '@/access'
 import { createDefaultCreditAccount } from '@/hooks/createDefaultCreditAccount'
@@ -18,6 +18,35 @@ const staffFieldAccess = ({ req }: { req: { user?: { role?: string | null } | nu
 
 const adminFieldAccess = ({ req }: { req: { user?: { role?: string | null } | null } }) => {
   return Boolean(req.user?.role === 'admin')
+}
+
+const isFirstRegisterRequest = (req: { url?: string | null }) => {
+  if (!req.url) return false
+
+  try {
+    return new URL(req.url).pathname.endsWith('/api/users/first-register')
+  } catch {
+    return String(req.url).includes('/api/users/first-register')
+  }
+}
+
+const usersUpdateAccess: Access = ({ data, req }) => {
+  if (isFirstRegisterRequest(req) && !req.user && data && Object.keys(data).every((key) => key === '_verified')) {
+    return true
+  }
+
+  return isSelfOrStaff({ data, req })
+}
+
+const assignFirstUserAdminRole: CollectionBeforeValidateHook = ({ data, operation, req }) => {
+  if (operation === 'create' && isFirstRegisterRequest(req)) {
+    return {
+      ...(data || {}),
+      role: 'admin',
+    }
+  }
+
+  return data
 }
 
 const validateDisplayName = (value: null | string | undefined) => {
@@ -61,9 +90,10 @@ export const Users: CollectionConfig = {
     create: staffFieldAccess,
     delete: isAdmin,
     read: isSelfOrStaff,
-    update: isSelfOrStaff,
+    update: usersUpdateAccess,
   },
   hooks: {
+    beforeValidate: [assignFirstUserAdminRole],
     afterOperation: [
       ({ operation, result, req }) => {
         if (operation === 'create' && req.method === 'POST' && !req.user) {
