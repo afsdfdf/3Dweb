@@ -3,7 +3,7 @@ import {
   type MigrateUpArgs,
   executeStatement,
   hasColumn,
-} from './postgresUtils'
+} from '../lib/migrations/postgresUtils'
 
 const addColumnStatements = [
   `ALTER TABLE homepage_items ADD COLUMN rail_variant TEXT DEFAULT 'standard'`,

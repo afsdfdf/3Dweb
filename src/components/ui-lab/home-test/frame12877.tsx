@@ -9,7 +9,7 @@ import {
     uploadWorkbenchSourceImage,
     validateWorkbenchSourceImage,
 } from "@/app/(frontend)/_lib/workbenchDraft";
-import "./frame12877.module.css";
+import styles from "./frame12877.module.css";
 
 type ModeTabsProps = {
     showTextState: boolean;
@@ -149,6 +149,7 @@ const Frame12877 = () => {
     );
 
     return (
+        <div className={styles.scope}>
         <div className="scroll-container">
             <div id="1_2877" className="Pixso-frame-1_2877">
                 <div id="1_2878" className="Pixso-vector-1_2878"></div>
@@ -764,6 +765,7 @@ const Frame12877 = () => {
                     <div id="1_3295" className="Pixso-vector-1_3295"></div>
                 </div>
             </div>
+        </div>
         </div>
     );
 };

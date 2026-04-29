@@ -3,7 +3,7 @@ import {
   type MigrateUpArgs,
   executeStatement,
   hasColumn,
-} from './postgresUtils'
+} from '../lib/migrations/postgresUtils'
 
 async function addColumnIfMissing(args: {
   column: string

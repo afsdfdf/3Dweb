@@ -433,7 +433,6 @@ export const media = pgTable(
     }),
     purpose: enum_media_purpose("purpose").default("asset"),
     publicAccess: boolean("public_access").default(false),
-    prefix: varchar("prefix").default("media"),
     updatedAt: timestamp("updated_at", {
       mode: "string",
       withTimezone: true,
@@ -1880,6 +1879,7 @@ export const engagement_views = pgTable(
     index("engagement_views_target_model_idx").on(columns.targetModel),
     index("engagement_views_viewer_idx").on(columns.viewer),
     index("engagement_views_viewer_key_hash_idx").on(columns.viewerKeyHash),
+    index("engagement_views_last_viewed_at_idx").on(columns.lastViewedAt),
     index("engagement_views_updated_at_idx").on(columns.updatedAt),
     index("engagement_views_created_at_idx").on(columns.createdAt),
   ],
@@ -2533,7 +2533,7 @@ export const site_settings_credit_packages = pgTable(
 
 export const site_settings = pgTable("site_settings", {
   id: serial("id").primaryKey(),
-  siteName: varchar("site_name").notNull().default("MiniForge AI 3D"),
+  siteName: varchar("site_name").notNull().default("Thorns Tavern"),
   siteDescription: varchar("site_description").default(
     "An AI 3D product platform for character creation, asset management, and print fulfillment.",
   ),
@@ -2548,7 +2548,7 @@ export const site_settings = pgTable("site_settings", {
     "A unified platform for character creation, asset delivery, and print fulfillment",
   ),
   footer_aboutText: varchar("footer_about_text").default(
-    "MiniForge connects character generation, model management, digital delivery, and print orders into one product workflow so teams can operate 3D assets like a real business.",
+    "Thorns Tavern connects character generation, model management, digital delivery, and print orders into one product workflow so teams can operate 3D assets like a real business.",
   ),
   footer_directionEyebrow: varchar("footer_direction_eyebrow").default(
     "Product direction",
@@ -2645,31 +2645,31 @@ export const site_settings = pgTable("site_settings", {
   ).default(5),
   emailSettings_sender_fromName: varchar(
     "email_settings_sender_from_name",
-  ).default("MiniForge AI 3D"),
+  ).default("Thorns Tavern"),
   emailSettings_sender_fromAddress: varchar(
     "email_settings_sender_from_address",
-  ).default("no-reply@miniforge.local"),
+  ).default("no-reply@thornstavern.com"),
   emailSettings_sender_replyTo: varchar("email_settings_sender_reply_to"),
   emailSettings_branding_productName: varchar(
     "email_settings_branding_product_name",
-  ).default("MiniForge AI 3D"),
+  ).default("Thorns Tavern"),
   emailSettings_branding_footerText: varchar(
     "email_settings_branding_footer_text",
-  ).default("MiniForge AI 3D"),
+  ).default("Thorns Tavern"),
   emailSettings_templates_welcome_subject: varchar(
     "email_settings_templates_welcome_subject",
-  ).default("Welcome to MiniForge"),
+  ).default("Welcome to Thorns Tavern"),
   emailSettings_templates_welcome_intro: varchar(
     "email_settings_templates_welcome_intro",
   ).default(
-    "Your account is ready. You can now start using MiniForge for generation, model management, subscriptions, and orders.",
+    "Your account is ready. You can now start using Thorns Tavern for generation, model management, subscriptions, and orders.",
   ),
   emailSettings_templates_welcome_ctaLabel: varchar(
     "email_settings_templates_welcome_cta_label",
   ).default("Open Studio"),
   emailSettings_templates_verify_subject: varchar(
     "email_settings_templates_verify_subject",
-  ).default("Verify your MiniForge email"),
+  ).default("Verify your Thorns Tavern email"),
   emailSettings_templates_verify_intro: varchar(
     "email_settings_templates_verify_intro",
   ).default(
@@ -2680,7 +2680,7 @@ export const site_settings = pgTable("site_settings", {
   ).default("Verify email"),
   emailSettings_templates_forgotPassword_subject: varchar(
     "email_settings_templates_forgot_password_subject",
-  ).default("MiniForge password reset"),
+  ).default("Thorns Tavern password reset"),
   emailSettings_templates_forgotPassword_intro: varchar(
     "email_settings_templates_forgot_password_intro",
   ).default(
@@ -2691,7 +2691,7 @@ export const site_settings = pgTable("site_settings", {
   ).default("Reset password"),
   emailSettings_businessTemplates_subscriptionSuccess_subject: varchar(
     "email_settings_business_templates_subscription_success_subject",
-  ).default("MiniForge subscription activated"),
+  ).default("Thorns Tavern subscription activated"),
   emailSettings_businessTemplates_subscriptionSuccess_intro: varchar(
     "email_settings_business_templates_subscription_success_intro",
   ).default(
@@ -2702,7 +2702,7 @@ export const site_settings = pgTable("site_settings", {
   ).default("View credits and subscription"),
   emailSettings_businessTemplates_orderPaid_subject: varchar(
     "email_settings_business_templates_order_paid_subject",
-  ).default("MiniForge order payment received"),
+  ).default("Thorns Tavern order payment received"),
   emailSettings_businessTemplates_orderPaid_intro: varchar(
     "email_settings_business_templates_order_paid_intro",
   ).default(
@@ -2831,7 +2831,7 @@ export const homepage_content_faq = pgTable(
 
 export const homepage_content = pgTable("homepage_content", {
   id: serial("id").primaryKey(),
-  hero_eyebrow: varchar("hero_eyebrow").default("MiniForge Studio"),
+  hero_eyebrow: varchar("hero_eyebrow").default("Thorns Tavern Studio"),
   hero_title: varchar("hero_title").default(
     "An AI 3D product site built for character creation, delivery, and print fulfillment.",
   ),

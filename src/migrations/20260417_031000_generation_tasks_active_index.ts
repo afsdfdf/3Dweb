@@ -1,4 +1,4 @@
-import { type MigrateDownArgs, type MigrateUpArgs, executeStatement } from './postgresUtils'
+import { type MigrateDownArgs, type MigrateUpArgs, executeStatement } from '../lib/migrations/postgresUtils'
 
 const ACTIVE_TASK_INDEX = `
   CREATE INDEX IF NOT EXISTS generation_tasks_active_by_user_idx

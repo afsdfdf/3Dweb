@@ -1,4 +1,4 @@
-import { type MigrateDownArgs, type MigrateUpArgs } from './postgresUtils'
+import { type MigrateDownArgs, type MigrateUpArgs } from '../lib/migrations/postgresUtils'
 
 export async function up({}: MigrateUpArgs): Promise<void> {
   // Historical SQLite-only baseline reconciliation.

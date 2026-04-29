@@ -505,7 +505,7 @@ function PreviewBlock({
 function SimpleTable({
   rows,
 }: {
-  rows: Array<{ note: string; path: string }>
+  rows: Array<{ href?: string; note: string; path: string }>
 }) {
   return (
     <div className="overflow-hidden rounded-lg border border-border/60">

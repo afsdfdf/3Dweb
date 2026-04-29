@@ -14,9 +14,13 @@ import { Announcements } from './collections/Announcements'
 import { CreditProducts } from './collections/CreditProducts'
 import { CreditTransactions } from './collections/CreditTransactions'
 import { Credits } from './collections/Credits'
+import { EngagementViews } from './collections/EngagementViews'
 import { GenerationTasks } from './collections/GenerationTasks'
 import { HomepageItems } from './collections/HomepageItems'
 import { Media } from './collections/Media'
+import { ModelComments } from './collections/ModelComments'
+import { ModelFavorites } from './collections/ModelFavorites'
+import { ModelLikes } from './collections/ModelLikes'
 import { ModelBundles } from './collections/ModelBundles'
 import { Models } from './collections/Models'
 import { PrintOrders } from './collections/PrintOrders'
@@ -24,6 +28,7 @@ import { Posts } from './collections/Posts'
 import { ShopifyPayments } from './collections/ShopifyPayments'
 import { TaskEvents } from './collections/TaskEvents'
 import { Users } from './collections/Users'
+import { UserFollows } from './collections/UserFollows'
 import {
   forgotPasswordEndpoint,
   getCurrentAuthAccountEndpoint,
@@ -114,10 +119,14 @@ export default buildConfig({
   },
   collections: [
     Users,
+    UserFollows,
     Media,
     GenerationTasks,
     TaskEvents,
     Models,
+    ModelComments,
+    ModelLikes,
+    ModelFavorites,
     HomepageItems,
     Posts,
     Announcements,
@@ -125,6 +134,7 @@ export default buildConfig({
     Credits,
     CreditTransactions,
     CreditProducts,
+    EngagementViews,
     BillingSubscriptions,
     Addresses,
     PrintOrders,

@@ -1,4 +1,4 @@
-import { type MigrateDownArgs, type MigrateUpArgs, executeStatements } from './postgresUtils'
+import { type MigrateDownArgs, type MigrateUpArgs, executeStatements } from '../lib/migrations/postgresUtils'
 
 const upStatements = [
   'CREATE INDEX IF NOT EXISTS users_stripe_customer_id_idx ON users(stripe_customer_id)',
