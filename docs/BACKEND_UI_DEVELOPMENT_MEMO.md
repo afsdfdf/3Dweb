@@ -425,6 +425,14 @@ Services that should be reviewed later for SDK/service unification:
 - `src/endpoints/modelViewer.ts`: uses direct SQL to resolve `models_formats -> media.url` because Payload field access can hide file relations. Keep this unless a safer Payload read adapter is added.
 - `src/lib/ledgerStore.ts`: reaches into Payload's Postgres client for transaction-aware ledger writes; keep transaction safety first.
 
+Preview and download credit policy:
+
+- Current imported public model previews and downloads do not need credit charging enabled.
+- Keep preview access and download access as separate backend policy surfaces. Preview can remain free while downloads may charge later, or both can be configured independently.
+- Future implementation should expose admin-managed backend settings for preview credit cost and download credit cost instead of hardcoding values in frontend components.
+- Download charging must stay server-side and idempotent, with automatic refund on failed asset delivery.
+- Preview charging, if enabled later, should be rate-aware and abuse-resistant so normal gallery browsing does not drain credits unexpectedly.
+
 Optimization rule:
 
 - Do not blindly replace Payload Local API with `supabase-js` table calls. That can bypass Payload access rules, hooks, drafts, relationships, and transaction behavior.
