@@ -6,7 +6,9 @@ import { WorkbenchClient } from "./WorkbenchClient";
 
 export default async function WorkbenchPage() {
   const [user, navUser] = await Promise.all([getCurrentUser(), getCurrentNavUser()]);
-  const models = user ? (await getWorkbenchModels(user)).filter((model) => model.isOwnedByCurrentUser) : [];
+  const allVisibleModels = await getWorkbenchModels(user);
+  const ownedModels = user ? allVisibleModels.filter((model) => model.isOwnedByCurrentUser) : [];
+  const models = ownedModels.length > 0 ? ownedModels : allVisibleModels.filter((model) => model.visibility === "public");
   const libraryCards: ModelLibraryPanelCard[] = models.map((model) => ({
     date: formatWorkbenchDate(model.updatedAt).replace(" ", "\n"),
     id: model.id,

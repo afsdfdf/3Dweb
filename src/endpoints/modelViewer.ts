@@ -220,31 +220,40 @@ export const modelViewerEndpoint = {
     }
 
     let model = accessCheckedModel
-
-    const resolvedFormatAsset = await (modelViewerEndpointTestHooks?.resolveModelFormatAsset || resolveModelFormatAsset)(
-      modelId,
-      format,
-    )
+    let resolvedFormatAsset: Awaited<ReturnType<typeof resolveModelFormatAsset>> | null = null
     let selectedFormat: unknown = null
-    let sourceURL = resolvedFormatAsset?.url || null
+    let sourceURL: null | string = null
+
+    try {
+      model = await req.payload.findByID({
+        collection: 'models',
+        depth: 2,
+        id: modelId,
+        overrideAccess: true,
+        req,
+      })
+    } catch {
+      model = accessCheckedModel
+    }
+
+    selectedFormat = getSelectedFormat(model, format)
+    const payloadFormatFileURL = await getMediaURLFromFormatFile(req, isRecord(selectedFormat) ? selectedFormat.file : null)
+    sourceURL = payloadFormatFileURL || getModelGLBSourceURL({ model }) || getModelGLBSourceURL({ model: accessCheckedModel })
 
     if (!sourceURL) {
       try {
-        model = await req.payload.findByID({
-          collection: 'models',
-          depth: 2,
-          id: modelId,
-          overrideAccess: true,
-          req,
+        resolvedFormatAsset = await (modelViewerEndpointTestHooks?.resolveModelFormatAsset || resolveModelFormatAsset)(modelId, format)
+        sourceURL = resolvedFormatAsset?.url || null
+      } catch (error) {
+        req.payload.logger.warn({
+          error: error instanceof Error ? error.message : String(error),
+          modelId,
+          msg: 'Model viewer direct format asset lookup failed.',
         })
-      } catch {
-        model = accessCheckedModel
       }
 
-      selectedFormat = getSelectedFormat(model, format)
-      const payloadFormatFileURL = await getMediaURLFromFormatFile(req, isRecord(selectedFormat) ? selectedFormat.file : null)
-      sourceURL = payloadFormatFileURL || getModelGLBSourceURL({ model }) || getModelGLBSourceURL({ model: accessCheckedModel })
     }
+
     if (!sourceURL) {
       return Response.json({ message: 'No renderable GLB asset is available for this model.' }, { status: 404 })
     }
