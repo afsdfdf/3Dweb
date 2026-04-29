@@ -38,6 +38,7 @@ temp_addresses.txt
 
 # local env files
 .env*.local
+.env.backup.*
 
 # vercel
 .vercel

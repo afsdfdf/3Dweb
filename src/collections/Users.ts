@@ -1,4 +1,4 @@
-import type { Access, CollectionConfig, CollectionBeforeValidateHook } from 'payload'
+import type { Access, CollectionBeforeOperationHook, CollectionBeforeValidateHook, CollectionConfig } from 'payload'
 
 import { canAccessAdmin, isAdmin, isSelfOrStaff } from '@/access'
 import { createDefaultCreditAccount } from '@/hooks/createDefaultCreditAccount'
@@ -49,6 +49,17 @@ const assignFirstUserAdminRole: CollectionBeforeValidateHook = ({ data, operatio
   return data
 }
 
+const skipFirstRegisterVerificationEmail: CollectionBeforeOperationHook<'users'> = ({ args, operation, req }) => {
+  if (operation === 'create' && isFirstRegisterRequest(req)) {
+    return {
+      ...args,
+      disableVerificationEmail: true,
+    }
+  }
+
+  return args
+}
+
 const validateDisplayName = (value: null | string | undefined) => {
   if (!value) return true
 
@@ -93,6 +104,7 @@ export const Users: CollectionConfig = {
     update: usersUpdateAccess,
   },
   hooks: {
+    beforeOperation: [skipFirstRegisterVerificationEmail],
     beforeValidate: [assignFirstUserAdminRole],
     afterOperation: [
       ({ operation, result, req }) => {
