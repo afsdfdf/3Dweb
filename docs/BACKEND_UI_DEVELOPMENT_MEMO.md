@@ -445,11 +445,11 @@ Current media migration state:
 - `Robed Man.glb` and `Savage Warrior.glb` now load through `/api/platform/models/:modelId/viewer` and redirect to Supabase signed URLs.
 - The remaining legacy demo records still need an external source export or explicit mapping file before they can be migrated safely.
 - Required next artifact for bulk migration: a reviewed map with `{ mediaId, sourceFile, supabasePath }`, followed by upload, object-size verification, DB backup, and URL update.
-- The old S3 bucket backup `D:\py\backups\3dmodules-20260420-225145` has been staged into Supabase Storage under `media/legacy-s3/3dmodules` with a manifest at `media-migration-legacy-s3-to-supabase.json`.
+- The old S3 bucket backup `D:\py\backups\3dmodules-20260420-225145` has been staged into Supabase Storage under `media/legacy-s3/3dmodules`.
 - That archive is complete but not automatically linked to current Payload media or generation task rows. Do not update current `media.url` values from it without an explicit mapping/import step.
 - After the archive migration, user-rebuildable resource tables were cleaned so users can upload/generate fresh content. The cleanup preserves users, globals, credits, subscriptions, migrations, and Supabase archive objects.
 - Future reset command: `pnpm db:cleanup:user-resources` previews counts; `pnpm db:cleanup:user-resources -- --apply` writes a JSON backup and performs the cleanup.
 - Administrator public import completed from the staged archive: `32` public model records were created with preview images and GLB/FBX/OBJ/USDZ format rows when available.
-- Public model import manifest: `admin-public-resource-import-2026-04-28T17-14-40-259Z.json`.
+- Public model import grouping rule: preview images and model formats are paired by identical legacy S3 key basename.
 - Imported public model titles now expose the legacy resource ID as `Archive <legacyResourceId>`, matching the backend binding rule that preview images and model formats are grouped by one API/result ID.
 - Homepage fallback model sections use different slices of public models for featured, shelf, and inspiration content when no curated `homepage-items` exist.

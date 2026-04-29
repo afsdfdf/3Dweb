@@ -35,7 +35,6 @@ dev-server*.log
 .tmp-*.log
 admin-audit-results.json
 temp_addresses.txt
-参考代码
 
 # local env files
 .env*.local

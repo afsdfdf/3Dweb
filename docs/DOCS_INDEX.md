@@ -21,13 +21,14 @@ Root `docs/` contains evergreen documents only. Dated reports, rollout checklist
 
 - [DATABASE_TABLE_REFERENCE.md](/D:/web/payload-local-demo/docs/DATABASE_TABLE_REFERENCE.md) - active table/domain reference
 - [DATABASE_MIGRATION_STANDARD.md](/D:/web/payload-local-demo/docs/DATABASE_MIGRATION_STANDARD.md) - formal migration policy
-- [AWS_RDS_SETUP.md](/D:/web/payload-local-demo/docs/AWS_RDS_SETUP.md) - AWS RDS PostgreSQL setup notes
 
 ## Archive
 
 - [archive/2026](/D:/web/payload-local-demo/docs/archive/2026)
 
 Archived documents are historical context only. If an archived document contains guidance that future work must follow, move that guidance into an evergreen document or `AI_PROJECT_MEMORY.md`.
+
+Legacy AWS RDS setup notes were moved to `docs/archive/2026/AWS_RDS_SETUP_LEGACY.md`; current deployment work should follow the Supabase/Postgres notes in the active database documents.
 
 ## Maintenance Policy
 

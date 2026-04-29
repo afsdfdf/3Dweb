@@ -41,9 +41,7 @@ Primary sources:
 
 ### Browser Route Audit
 
-Audit output:
-
-- `project-route-audit.json`
+Route-audit findings are folded into this memo; the one-off local JSON artifact is not a project input.
 
 Routes checked:
 
