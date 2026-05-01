@@ -7,6 +7,7 @@ const rootDir = process.cwd()
 const publicNavigationPath = path.join(rootDir, 'src', 'lib', 'publicNavigation.ts')
 const siteShellPath = path.join(rootDir, 'src', 'app', '(frontend)', '_components', 'SiteShell.tsx')
 const topNavigationPath = path.join(rootDir, 'src', 'components', 'ui-lab', 'top-navigation', 'top-navigation.tsx')
+const topNavigationCssPath = path.join(rootDir, 'src', 'components', 'ui-lab', 'top-navigation', 'top-navigation.module.css')
 const topNavBarPath = path.join(rootDir, 'src', 'app', '(frontend)', '_components', 'shell', 'TopNavBar.tsx')
 const workbenchModelPagePath = path.join(rootDir, 'src', 'app', '(frontend)', 'workbench', 'models', '[id]', 'page.tsx')
 const personalCenterTestPath = path.join(
@@ -48,10 +49,13 @@ test('public pages share one canonical navigation contract', () => {
 
 test('shared navigation components use the canonical navigation source', () => {
   const topNavigationSource = readFileSync(topNavigationPath, 'utf8')
+  const topNavigationCssSource = readFileSync(topNavigationCssPath, 'utf8')
   const topNavBarSource = readFileSync(topNavBarPath, 'utf8')
 
   assert.match(topNavigationSource, /@\/lib\/publicNavigation/)
   assert.match(topNavigationSource, /publicNavigationItems/)
+  assert.match(topNavigationSource, /<Link className=\{styles\.userName\} href="\/account">/)
+  assert.doesNotMatch(topNavigationCssSource, /\.topNav\[data-authenticated=["']true["']\]\s+\.userName\s*\{[\s\S]*?display:\s*none/)
   assert.doesNotMatch(topNavigationSource, /href:\s*['"]\/model-detail['"]/)
   assert.doesNotMatch(topNavigationSource, /id:\s*['"]DETAIL['"]/)
 

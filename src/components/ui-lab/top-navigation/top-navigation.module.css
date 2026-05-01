@@ -304,10 +304,6 @@
   white-space: nowrap;
 }
 
-.topNav[data-authenticated="true"] .userName {
-  display: none;
-}
-
 .authEntry {
   position: absolute;
   right: 24px;
