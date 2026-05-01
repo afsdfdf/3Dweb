@@ -8,7 +8,7 @@ import { SiteShell } from '../_components/SiteShell'
 import { getMarketingSiteData } from '../_lib/marketing'
 import { getCurrentUser } from '../_lib/session'
 import { getCachedPayload } from '@/lib/getCachedPayload'
-import { getMediaAccessURL } from '@/lib/s3SignedURL'
+import { getMediaAccessURL } from '@/lib/mediaAccessURL'
 
 type ShowcaseModel = {
   formats: string[]

@@ -1,0 +1,74 @@
+.stage {
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.content {
+  height: 100%;
+  transition:
+    filter 180ms ease,
+    opacity 180ms ease,
+    transform 220ms ease;
+  transform-origin: 50% 42%;
+  width: 100%;
+}
+
+.contentMuted {
+  filter: blur(8px) saturate(0.78);
+  opacity: 0.58;
+  transform: perspective(1200px) translateY(18px) scale(0.985) rotateX(2.2deg);
+}
+
+.overlay {
+  align-items: center;
+  background:
+    radial-gradient(circle at 50% 38%, rgba(246, 212, 158, 0.1), transparent 26%),
+    linear-gradient(180deg, rgba(6, 7, 10, 0.24), rgba(6, 7, 10, 0.68));
+  display: flex;
+  inset: var(--auth-modal-top-offset, 0px) 0 0 0;
+  justify-content: center;
+  overflow: hidden;
+  padding: 48px;
+  position: absolute;
+  z-index: 70;
+}
+
+.overlayConstrained {
+  bottom: auto;
+  height: var(--auth-modal-overlay-height);
+}
+
+.modalShell {
+  filter: drop-shadow(0 22px 46px rgba(0, 0, 0, 0.58));
+  position: relative;
+  transform: translateY(-12px);
+}
+
+.closeButton {
+  align-items: center;
+  appearance: none;
+  background: rgba(9, 10, 13, 0.76);
+  border: 1px solid rgba(246, 212, 158, 0.4);
+  border-radius: 999px;
+  color: #f6d49e;
+  cursor: pointer;
+  display: flex;
+  font-family: Arial, sans-serif;
+  font-size: 22px;
+  height: 34px;
+  justify-content: center;
+  line-height: 1;
+  padding: 0 0 2px;
+  position: absolute;
+  right: -18px;
+  top: -18px;
+  width: 34px;
+  z-index: 5;
+}
+
+.closeButton:hover {
+  background: rgba(24, 20, 17, 0.92);
+  border-color: rgba(246, 212, 158, 0.74);
+}

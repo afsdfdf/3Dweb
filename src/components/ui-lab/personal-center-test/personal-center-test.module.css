@@ -1,0 +1,975 @@
+.pageShell {
+  width: 100vw;
+  height: 100dvh;
+  overflow: visible;
+  background: #181818;
+}
+
+.stageViewport {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.boundTopNavigation {
+  position: absolute;
+  inset: 0 0 auto;
+  width: auto;
+  z-index: 60;
+}
+
+.boundTopNavigation :global(a) {
+  color: rgba(244, 202, 132, 0.8);
+}
+
+.stage {
+  --page-scale: 1;
+  --stage-height: 1080px;
+  --stage-width: 1920px;
+  position: relative;
+  width: var(--stage-width);
+  height: var(--stage-height);
+  overflow: visible;
+  color: #ffffff;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 118px),
+    #151516;
+  font-family: Arial, Helvetica, sans-serif;
+  left: 0;
+  transform: scale(var(--page-scale));
+  transform-origin: top left;
+}
+
+.accountSurface {
+  --profile-width: 475px;
+  --profile-inner-width: calc(var(--profile-width) - 63px);
+  --surface-height: 924px;
+  position: absolute;
+  top: var(--viewport-surface-top, 84px);
+  left: var(--surface-left, 32px);
+  width: var(--surface-width);
+  height: var(--surface-height);
+  background: transparent;
+}
+
+.accountFrameContainer {
+  --upper-height: calc(var(--surface-width) - (var(--profile-width) - var(--bottom-height) - 58px) - var(--top-height) - var(--middle-height) - var(--bottom-height));
+  --lower-height: calc(var(--profile-width) - var(--bottom-height) - 58px);
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--surface-height);
+  height: var(--surface-width);
+  background: #1e1e22;
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+
+.accountFrameContainer > div:last-child {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--surface-width);
+  height: var(--surface-height);
+  min-height: 0;
+  padding: 0;
+  transform: translate(-50%, -50%) rotate(-90deg);
+}
+
+.accountFrameGrid {
+  display: grid;
+  grid-template-columns: var(--profile-width) minmax(0, 1fr);
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.profilePanel,
+.accountPanel {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+
+.panelFrameContent,
+.accountFrameContent {
+  position: relative;
+  z-index: 2;
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 0;
+}
+
+.panelFrameContent {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 34px 31px 34px 32px;
+}
+
+.accountFrameContent {
+  height: 100%;
+  min-height: 0;
+  padding: 46px 50px;
+}
+
+.identityBlock {
+  display: grid;
+  grid-template-columns: 94px 1fr;
+  align-items: center;
+  gap: 18px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid rgba(245, 211, 142, 0.14);
+}
+
+.avatarRing {
+  display: grid;
+  place-items: center;
+  border: 5px solid #f2d18d;
+  border-radius: 50%;
+  background: #5c1720;
+  box-shadow:
+    inset 0 0 0 5px #5b1f27,
+    0 0 0 1px rgba(0, 0, 0, 0.72);
+}
+
+.avatarRing {
+  position: relative;
+  width: 84px;
+  height: 84px;
+  overflow: visible;
+}
+
+.avatarRing img {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatarEditButton {
+  position: absolute;
+  right: -12px;
+  bottom: -7px;
+}
+
+.avatarEditButton,
+.backgroundEditButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 60px;
+  height: 24px;
+  border: 1px solid rgba(209, 213, 224, 0.58);
+  border-radius: 2px;
+  background: rgba(8, 9, 12, 0.72);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: #f8f4eb;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0 8px;
+}
+
+.avatarEditButton span,
+.backgroundEditButton span {
+  color: #ffffff;
+  font-size: 16px;
+  line-height: 10px;
+  transform: rotate(24deg);
+}
+
+.avatarEditButton:hover,
+.avatarEditButton:focus-visible,
+.backgroundEditButton:hover,
+.backgroundEditButton:focus-visible {
+  border-color: rgba(255, 255, 255, 0.82);
+  background: rgba(20, 22, 29, 0.86);
+  outline: none;
+}
+
+.identityBlock p,
+.panelHeader p,
+.contentHeader p {
+  margin: 0 0 4px;
+  color: rgba(245, 211, 142, 0.72);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.identityBlock h1 {
+  margin: 0;
+  color: #f6f4f0;
+  font-size: 24px;
+  line-height: 30px;
+}
+
+.identityBlock span {
+  display: block;
+  max-width: 250px;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 13px;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.creditPlate {
+  display: grid;
+  grid-template-columns: 86px 1fr;
+  align-items: center;
+  min-height: 92px;
+  margin: 28px 0 0;
+  border: 1px solid rgba(245, 211, 142, 0.24);
+  background:
+    linear-gradient(90deg, rgba(244, 189, 96, 0.16), transparent 44%),
+    rgba(255, 255, 255, 0.028);
+  padding: 0 18px;
+}
+
+.creditPlate img {
+  width: 76px;
+  height: 76px;
+  object-fit: contain;
+}
+
+.creditPlate strong {
+  display: block;
+  color: #f5d38e;
+  font-size: 34px;
+  line-height: 38px;
+}
+
+.creditPlate span {
+  display: block;
+  color: rgba(245, 211, 142, 0.72);
+  font-size: 13px;
+}
+
+.profileBackgroundCard {
+  position: relative;
+  min-height: 96px;
+  margin-top: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(245, 211, 142, 0.16);
+  background: #08080a;
+  padding: 14px;
+}
+
+.profileBackgroundCard img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.34;
+}
+
+.profileBackgroundCard::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.78), rgba(0, 0, 0, 0.24) 62%, rgba(0, 0, 0, 0.48));
+}
+
+.profileBackgroundCard div {
+  position: relative;
+  z-index: 2;
+}
+
+.profileBackgroundCard span {
+  display: block;
+  color: rgba(245, 211, 142, 0.78);
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.profileBackgroundCard strong {
+  display: block;
+  margin-top: 5px;
+  color: #fff8e8;
+  font-size: 15px;
+  line-height: 20px;
+}
+
+.backgroundEditButton {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+}
+
+.sideMenu {
+  display: grid;
+  gap: 8px;
+  margin-top: 42px;
+}
+
+.sideMenu button {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  min-height: 58px;
+  border: 1px solid rgba(245, 211, 142, 0.14);
+  border-radius: 0;
+  background: rgba(255, 255, 255, 0.018);
+  color: #ffffff;
+  cursor: pointer;
+  column-gap: 12px;
+  padding: 0 12px 0 18px;
+  text-align: left;
+}
+
+.sideMenu button:hover,
+.sideMenu button:focus-visible,
+.sideMenuActive {
+  border-color: rgba(247, 205, 130, 0.48) !important;
+  background:
+    linear-gradient(90deg, rgba(244, 189, 96, 0.12), transparent 46%),
+    rgba(255, 255, 255, 0.04) !important;
+  outline: none;
+}
+
+.sideMenu strong {
+  min-width: 0;
+  overflow: hidden;
+  color: #fff8e8;
+  font-size: 15px;
+  line-height: 19px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sideMenu em {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  height: 24px;
+  max-width: 72px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(245, 211, 142, 0.1);
+  color: #f5d38e;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 700;
+  padding: 0 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sideMenuSettings {
+  margin-top: 8px;
+}
+
+.primaryActions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: auto;
+  padding: 0;
+}
+
+.mediumActionSlot {
+  position: relative;
+  width: 100%;
+  height: 52px;
+  overflow: visible;
+}
+
+.mediumActionSlot :global(button) {
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  border: 0 !important;
+  border-image-source: none !important;
+  border-image-slice: 0 !important;
+  background-image: var(--button-image) !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  background-size: 100% 100% !important;
+}
+
+.mediumActionSlot :global(span) {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.62);
+}
+
+.sidebarMediumButton {
+  position: absolute;
+}
+
+.overviewFrame {
+  display: grid;
+  gap: 10px;
+}
+
+.overviewHero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 96px;
+  border: 1px solid rgba(245, 211, 142, 0.18);
+  background:
+    linear-gradient(90deg, rgba(244, 189, 96, 0.14), transparent 48%),
+    rgba(255, 255, 255, 0.024);
+  padding: 16px 20px;
+}
+
+.overviewHero span,
+.overviewActivity header span {
+  display: block;
+  margin-bottom: 5px;
+  color: rgba(245, 211, 142, 0.72);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.overviewHero strong,
+.overviewActivity header strong {
+  display: block;
+  color: #fff8e8;
+  font-size: 20px;
+  line-height: 25px;
+}
+
+.overviewHero p {
+  max-width: 640px;
+  margin: 7px 0 0;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.overviewGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.overviewGrid div {
+  min-height: 84px;
+  border: 1px solid rgba(245, 211, 142, 0.14);
+  background: rgba(255, 255, 255, 0.018);
+  padding: 13px 16px;
+}
+
+.overviewGrid span,
+.overviewActivity div span {
+  display: block;
+  color: rgba(245, 211, 142, 0.7);
+  font-size: 12px;
+  line-height: 16px;
+  text-transform: uppercase;
+}
+
+.overviewGrid strong {
+  display: block;
+  margin-top: 8px;
+  color: #f5d38e;
+  font-size: 28px;
+  line-height: 31px;
+}
+
+.overviewGrid em,
+.overviewActivity div em {
+  display: block;
+  margin-top: 5px;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 13px;
+  font-style: normal;
+  line-height: 18px;
+}
+
+.overviewActivity {
+  display: grid;
+  gap: 6px;
+  border: 1px solid rgba(245, 211, 142, 0.14);
+  background: rgba(255, 255, 255, 0.014);
+  padding: 14px;
+}
+
+.overviewActivity header {
+  margin-bottom: 2px;
+}
+
+.overviewActivity div {
+  display: grid;
+  grid-template-columns: 156px 1fr 132px;
+  align-items: center;
+  min-height: 40px;
+  border-top: 1px solid rgba(245, 211, 142, 0.1);
+}
+
+.overviewActivity div strong {
+  color: #f6f4f0;
+  font-size: 15px;
+  line-height: 20px;
+}
+
+.overviewActivity div em {
+  justify-self: end;
+  margin-top: 0;
+  color: #f5d38e;
+}
+
+.frameButtonText {
+  color: #fff8e8 !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.88) !important;
+}
+
+.frameButtonText span {
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  text-shadow: inherit;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.panelHeader h2 {
+  margin: 0;
+  color: #f6f4f0;
+  font-size: 30px;
+  line-height: 36px;
+}
+
+.assetStrip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.assetStrip div {
+  min-height: 64px;
+  border: 1px solid rgba(245, 211, 142, 0.15);
+  background:
+    linear-gradient(90deg, rgba(244, 189, 96, 0.08), transparent 36%),
+    rgba(31, 31, 36, 0.58);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    inset 0 -1px 0 rgba(245, 211, 142, 0.08);
+  padding: 10px 20px;
+}
+
+.assetStrip span {
+  display: block;
+  color: rgba(208, 174, 119, 0.62);
+  font-size: 12.5px;
+}
+
+.assetStrip strong {
+  display: block;
+  margin-top: 5px;
+  color: #f5d38e;
+  font-size: 24px;
+  line-height: 28px;
+}
+
+.assetStrip em {
+  display: block;
+  margin-top: 3px;
+  color: rgba(255, 255, 255, 0.64);
+  font-size: 11.5px;
+  font-style: normal;
+}
+
+.contentPanel {
+  position: relative;
+  min-height: 0;
+  border: 1px solid rgba(245, 211, 142, 0.16);
+  background: rgba(255, 255, 255, 0.018);
+  padding: 24px 28px;
+}
+
+.contentPanelWithSummary {
+  height: max(650px, calc(var(--stage-height) - 430px));
+}
+
+.contentPanelFull {
+  height: max(760px, calc(var(--stage-height) - 320px));
+}
+
+.contentHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.contentHeader h3 {
+  margin: 0;
+  color: #f4f2ef;
+  font-size: 24px;
+  line-height: 30px;
+}
+
+.insightStrip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.insightStrip div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  border: 1px solid rgba(245, 211, 142, 0.14);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 0 14px;
+}
+
+.insightStrip span {
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 12.5px;
+}
+
+.insightStrip strong {
+  color: #f5d38e;
+  font-size: 15px;
+}
+
+.accountSettingsFrame {
+  display: grid;
+  gap: 34px;
+}
+
+.passwordPanel {
+  border: 1px solid rgba(245, 211, 142, 0.12);
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.profileFormGrid span,
+.passwordPanel span {
+  display: block;
+  color: rgba(245, 211, 142, 0.78);
+  font-size: 12px;
+  line-height: 17px;
+}
+
+.passwordPanel strong {
+  display: block;
+  margin-top: 4px;
+  color: #f6f4f0;
+  font-size: 16px;
+  line-height: 22px;
+}
+
+.passwordPanel p {
+  margin: 5px 0 9px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12.5px;
+  line-height: 18px;
+}
+
+.profileFormGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 30px 28px;
+}
+
+.profileFormGrid label {
+  display: grid;
+  gap: 10px;
+}
+
+.profileFormGrid input,
+.profileFormGrid select,
+.profileFormGrid textarea,
+.passwordFields input {
+  min-width: 0;
+  height: 50px;
+  border: 1px solid rgba(245, 211, 142, 0.13);
+  border-radius: 0;
+  background: rgba(0, 0, 0, 0.2);
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 13px;
+  outline: none;
+  padding: 0 12px;
+}
+
+.profileFormGrid input:focus,
+.profileFormGrid select:focus,
+.profileFormGrid textarea:focus,
+.passwordFields input:focus {
+  border-color: rgba(246, 197, 114, 0.42);
+  box-shadow: inset 0 0 0 1px rgba(246, 197, 114, 0.08);
+}
+
+.profileFormGrid textarea {
+  height: 96px;
+  padding-top: 14px;
+  resize: none;
+}
+
+.bioField {
+  grid-column: 1 / -1;
+}
+
+.passwordPanel {
+  display: grid;
+  grid-template-columns: 300px minmax(360px, 1fr) 178px;
+  align-items: center;
+  gap: 28px;
+  min-height: 132px;
+  padding: 26px;
+}
+
+.passwordFields {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.recordsToolbar {
+  display: grid;
+  grid-template-columns: 1fr 200px 134px;
+  align-items: end;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.recordsToolbar label {
+  display: grid;
+  gap: 7px;
+}
+
+.recordsToolbar span {
+  color: rgba(245, 211, 142, 0.78);
+  font-size: 12px;
+}
+
+.recordsToolbar input,
+.recordsToolbar select {
+  min-width: 0;
+  height: 38px;
+  border: 1px solid rgba(245, 211, 142, 0.14);
+  border-radius: 0;
+  background: rgba(0, 0, 0, 0.2);
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 13px;
+  outline: none;
+  padding: 0 12px;
+}
+
+.recordsTable {
+  width: 100%;
+  border-collapse: collapse;
+  color: rgba(255, 255, 255, 0.76);
+  table-layout: fixed;
+}
+
+.recordsTable th,
+.recordsTable td {
+  height: 52px;
+  border: 1px solid rgba(245, 211, 142, 0.13);
+  overflow: hidden;
+  font-size: 13.5px;
+  font-weight: 400;
+  padding: 0 16px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recordsTable th {
+  height: 42px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
+  color: rgba(255, 248, 232, 0.96);
+  font-weight: 700;
+}
+
+.recordsTable tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.018);
+}
+
+.recordsTable th:nth-child(1),
+.recordsTable td:nth-child(1) {
+  width: 132px;
+}
+
+.recordsTable th:nth-child(2),
+.recordsTable td:nth-child(2) {
+  width: 140px;
+}
+
+.recordsTable th:nth-child(4),
+.recordsTable td:nth-child(4) {
+  width: 120px;
+}
+
+.recordsTable th:nth-child(5),
+.recordsTable td:nth-child(5) {
+  width: 130px;
+  text-align: right;
+}
+
+.recordsTable td:nth-child(4) {
+  color: #f4d48a;
+  font-weight: 700;
+}
+
+.recordsTable th:nth-child(6),
+.recordsTable td:nth-child(6) {
+  width: 190px;
+}
+
+.amountCell {
+  color: #f0c982;
+  font-weight: 700;
+}
+
+.pagination {
+  position: absolute;
+  right: 28px;
+  bottom: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+  height: 32px;
+}
+
+.pagination button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: 32px;
+  min-width: 28px;
+  border: 1px solid rgba(245, 211, 142, 0.18);
+  border-radius: 2px;
+  background: #111113;
+  color: #ffffff;
+  cursor: pointer;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+}
+
+.pagination button:hover,
+.pagination button:focus-visible {
+  border-color: rgba(255, 255, 255, 0.5);
+  background: #1d1d22;
+  outline: none;
+}
+
+.pagination .currentPage {
+  border-color: rgba(255, 255, 255, 0.5);
+  background: #1d1d22;
+  color: #f5d38e;
+  font-weight: 700;
+}
+
+.pagination .pageSizeButton {
+  justify-content: center;
+  gap: 8px;
+  width: 132px;
+  margin-left: 9px;
+  overflow: hidden;
+  font-size: 13px;
+}
+
+.pageSizeButton span:first-child {
+  display: block;
+  max-width: 102px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pageSizeChevron {
+  display: block;
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid #ffffff;
+  border-bottom: 2px solid #ffffff;
+  transform: rotate(45deg) translateY(-2px);
+}
+
+.identityBlock {
+  border-bottom-color: rgba(86, 87, 99, 0.46);
+}
+
+.identityBlock p,
+.panelHeader p,
+.contentHeader p,
+.profileFormGrid span,
+.passwordPanel span,
+.recordsToolbar span {
+  color: rgba(212, 176, 111, 0.78);
+}
+
+.creditPlate {
+  border-color: rgba(92, 93, 104, 0.68);
+  background:
+    linear-gradient(90deg, rgba(220, 158, 61, 0.12), transparent 44%),
+    rgba(255, 255, 255, 0.025);
+}
+
+.sideMenu button,
+.assetStrip div,
+.contentPanel,
+.insightStrip div,
+.passwordPanel,
+.profileFormGrid input,
+.profileFormGrid select,
+.profileFormGrid textarea,
+.passwordFields input,
+.recordsToolbar input,
+.recordsToolbar select,
+.recordsTable th,
+.recordsTable td,
+.pagination button {
+  border-color: rgba(92, 93, 104, 0.72);
+}
+
+.sideMenu button,
+.assetStrip div,
+.contentPanel,
+.insightStrip div,
+.passwordPanel {
+  background: rgba(20, 20, 23, 0.44);
+}
+
+.sideMenu button:hover,
+.sideMenu button:focus-visible,
+.sideMenuActive {
+  border-color: rgba(211, 160, 77, 0.68) !important;
+  background:
+    linear-gradient(90deg, rgba(211, 160, 77, 0.12), transparent 46%),
+    rgba(255, 255, 255, 0.035) !important;
+}
+
+.assetStrip span,
+.recordsTable td,
+.recordsToolbar input,
+.recordsToolbar select,
+.profileFormGrid input,
+.profileFormGrid select,
+.profileFormGrid textarea,
+.passwordFields input {
+  color: rgba(222, 222, 226, 0.76);
+}

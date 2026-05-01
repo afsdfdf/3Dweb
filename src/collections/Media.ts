@@ -51,10 +51,13 @@ export const Media: CollectionConfig = {
       defaultValue: 'asset',
       label: 'Purpose',
       admin: {
-        description: 'Use preview for guest-readable images. Keep model files as model and source assets as input.',
+        description:
+          'Use preview for guest-readable model images. Use avatar and profile banner for user profile media. Keep model files as model and source assets as input.',
       },
       options: [
         { label: 'Input image', value: 'input' },
+        { label: 'Avatar image', value: 'avatar' },
+        { label: 'Profile banner', value: 'profile-banner' },
         { label: 'Preview image', value: 'preview' },
         { label: '3D file', value: 'model' },
         { label: 'Document', value: 'document' },

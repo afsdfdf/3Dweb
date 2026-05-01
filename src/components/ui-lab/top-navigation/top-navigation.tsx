@@ -3,6 +3,8 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 
+import { useAuthModal } from "@/components/auth/AuthModalProvider";
+
 import styles from "./top-navigation.module.css";
 
 const assetBase = "/ui-lab/top-navigation";
@@ -82,11 +84,14 @@ function AuthEntryButtons({
 }: {
   loginHref: string;
 }) {
+  const { openAuthModal } = useAuthModal();
+  void loginHref;
+
   return (
-    <Link className={styles.authEntry} href={loginHref}>
+    <button className={styles.authEntry} onClick={() => openAuthModal("login")} type="button">
       <img alt="" aria-hidden="true" className={styles.authEntryBg} decoding="async" src="/ui/nav/auth-pill.png" />
       <span className={styles.authEntryText}>Log in / Sign up</span>
-    </Link>
+    </button>
   );
 }
 

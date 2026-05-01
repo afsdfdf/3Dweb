@@ -2,6 +2,8 @@ import React from 'react'
 
 import './globals.css'
 
+import { AuthModalProvider } from '@/components/auth/AuthModalProvider'
+
 import { FrontendAssetCache } from './_components/FrontendAssetCache'
 import { LocaleProvider } from './_components/LocaleProvider'
 import { getCurrentLocale } from './_lib/locale-server'
@@ -20,7 +22,9 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
       <body>
         <FrontendAssetCache />
         <LocaleProvider locale={locale}>
-          <main>{children}</main>
+          <AuthModalProvider>
+            <main>{children}</main>
+          </AuthModalProvider>
         </LocaleProvider>
       </body>
     </html>

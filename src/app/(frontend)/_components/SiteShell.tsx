@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
 
+import { AuthModalStage } from '@/components/auth/AuthModalStage'
+
 import type { FooterContent, NavigationItem } from '../_lib/marketing-content'
 import { getDefaultFooter, getDefaultSiteSettings } from '../_lib/marketing-content'
 import { getCurrentLocale } from '../_lib/locale-server'
@@ -80,7 +82,9 @@ export async function SiteShell({
           }
         />
 
-        <main className="h-[1020px] overflow-hidden">{children}</main>
+        <main className="h-[1020px] overflow-hidden">
+          <AuthModalStage>{children}</AuthModalStage>
+        </main>
 
         {showFooter ? (
           <FooterBar

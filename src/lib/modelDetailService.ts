@@ -2,6 +2,7 @@ import type { PayloadRequest } from 'payload'
 
 import { listModelComments } from '@/lib/commentService'
 import { getFollowState } from '@/lib/followService'
+import { isGuestReadableMedia } from '@/lib/mediaVisibility'
 import { getModelReactionState } from '@/lib/reactionService'
 
 const accessOptions = (req: PayloadRequest) => {
@@ -16,6 +17,17 @@ const getMediaUrl = (value: unknown) => {
   if (typeof candidate.thumbnailURL === 'string' && candidate.thumbnailURL) return candidate.thumbnailURL
   if (typeof candidate.url === 'string' && candidate.url) return candidate.url
   return null
+}
+
+const getPublicMediaUrl = (value: unknown) => {
+  if (!value || typeof value !== 'object' || !isGuestReadableMedia(value)) return null
+  return getMediaUrl(value)
+}
+
+const normalizeFocalPoint = (value: unknown) => {
+  const numeric = Number(value)
+  if (!Number.isFinite(numeric)) return 50
+  return Math.max(0, Math.min(100, numeric))
 }
 
 const resolveRelationId = (value: unknown) => {
@@ -55,7 +67,9 @@ export async function getModelDetail(args: {
       : null
   const isOwner = args.req.user ? Number(args.req.user.id) === ownerId : false
   const isStaff = ['admin', 'operator'].includes(String(args.req.user?.role || 'customer'))
-  const followable = Boolean(ownerId && owner?.profileVisibility === 'public' && !isOwner)
+  const ownerProfileVisibility = String(owner?.profileVisibility || 'private')
+  const ownerProfileIsPublic = ownerProfileVisibility === 'public'
+  const followable = Boolean(ownerId && ownerProfileIsPublic && !isOwner)
   const isFollowingOwner = followable
     ? await getFollowState({
         req: args.req,
@@ -113,15 +127,19 @@ export async function getModelDetail(args: {
     ownerProfile: owner
       ? {
           avatarFrame: String(owner.avatarFrame || 'none'),
-          avatarUrl: getMediaUrl(owner.avatar),
-          backgroundUrl: getMediaUrl(owner.profileBackground),
-          bio: normalizeText(owner.bio),
+          avatarUrl: getPublicMediaUrl(owner.avatar),
+          backgroundUrl: getPublicMediaUrl(owner.profileBackground),
+          bio: ownerProfileIsPublic ? normalizeText(owner.bio) : null,
           displayName: normalizeText(owner.displayName) || normalizeText(owner.fullName) || `Creator ${owner.id}`,
           followersCount: Number(owner.followersCount || 0),
           followingCount: Number(owner.followingCount || 0),
           id: ownerId,
+          profileBanner: resolveRelationId(owner.profileBackground) || null,
+          profileBannerFocalX: normalizeFocalPoint(owner.profileBannerFocalX),
+          profileBannerFocalY: normalizeFocalPoint(owner.profileBannerFocalY),
+          profileBannerUrl: getPublicMediaUrl(owner.profileBackground),
           profileViewCount: Number(owner.profileViewCount || 0),
-          profileVisibility: String(owner.profileVisibility || 'private'),
+          profileVisibility: ownerProfileVisibility,
         }
       : null,
     social: {

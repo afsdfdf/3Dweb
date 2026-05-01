@@ -117,6 +117,42 @@ export const HomepageItems: CollectionConfig = {
       label: 'Summary',
     },
     {
+      name: 'badgeLabel',
+      type: 'text',
+      localized: true,
+      label: 'Badge label',
+      admin: {
+        description: 'Optional small label for homepage cards, such as Featured or New.',
+      },
+    },
+    {
+      name: 'ribbonLabel',
+      type: 'text',
+      localized: true,
+      label: 'Ribbon label',
+      admin: {
+        description: 'Optional ribbon copy for image-led homepage cards.',
+      },
+    },
+    {
+      name: 'ctaLabel',
+      type: 'text',
+      localized: true,
+      label: 'CTA label',
+      admin: {
+        description: 'Optional action label when a card renders a button or link label.',
+      },
+    },
+    {
+      name: 'altText',
+      type: 'text',
+      localized: true,
+      label: 'Image alt text',
+      admin: {
+        description: 'Optional override for the cover image alt text on frontend cards.',
+      },
+    },
+    {
       name: 'railVariant',
       type: 'select',
       defaultValue: 'standard',

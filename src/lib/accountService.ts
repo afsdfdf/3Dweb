@@ -1,6 +1,7 @@
 import type { PayloadRequest } from 'payload'
 
 import { getFollowState } from '@/lib/followService'
+import { isGuestReadableMedia } from '@/lib/mediaVisibility'
 
 type AccountProfileUpdateInput = {
   avatar?: number | null
@@ -10,6 +11,9 @@ type AccountProfileUpdateInput = {
   fullName?: string | null
   phone?: string | null
   profileBackground?: number | null
+  profileBanner?: number | null
+  profileBannerFocalX?: number | null
+  profileBannerFocalY?: number | null
   profileVisibility?: 'private' | 'public'
 }
 
@@ -30,6 +34,10 @@ type PublicCreatorProfile = {
   id: number
   isFollowing: boolean
   modelCount: number
+  profileBanner: null | number
+  profileBannerFocalX: number
+  profileBannerFocalY: number
+  profileBannerUrl: null | string
   profileViewCount: number
 }
 
@@ -55,6 +63,12 @@ const normalizeAvatarFrame = (value: unknown) => {
   return value === 'ember' || value === 'emerald' || value === 'kick' ? value : 'none'
 }
 
+const normalizeFocalPoint = (value: unknown) => {
+  const numeric = Number(value)
+  if (!Number.isFinite(numeric)) return 50
+  return Math.max(0, Math.min(100, numeric))
+}
+
 const resolveRelationId = (value: unknown) => {
   if (typeof value === 'number') return value
   if (typeof value === 'string' && value.trim()) return Number(value)
@@ -67,6 +81,11 @@ const getMediaUrl = (value: unknown) => {
   const url = typeof value.url === 'string' && value.url ? value.url : null
   const thumbnailURL = typeof value.thumbnailURL === 'string' && value.thumbnailURL ? value.thumbnailURL : null
   return thumbnailURL || url
+}
+
+const getPublicMediaUrl = (value: unknown) => {
+  if (!isRecord(value) || !isGuestReadableMedia(value)) return null
+  return getMediaUrl(value)
 }
 
 async function assertMediaOwnership(args: {
@@ -121,6 +140,10 @@ export async function getAccountProfile(req: PayloadRequest) {
     lastActiveAt: typeof user.lastActiveAt === 'string' ? user.lastActiveAt : null,
     phone: normalizeOptionalText(user.phone),
     profileBackground: resolveRelationId(user.profileBackground),
+    profileBanner: resolveRelationId(user.profileBackground),
+    profileBannerFocalX: normalizeFocalPoint(user.profileBannerFocalX),
+    profileBannerFocalY: normalizeFocalPoint(user.profileBannerFocalY),
+    profileBannerUrl: getMediaUrl(user.profileBackground),
     profileViewCount: Number(user.profileViewCount || 0),
     profileVisibility: normalizeProfileVisibility(user.profileVisibility),
     role: typeof user.role === 'string' ? user.role : 'customer',
@@ -139,7 +162,8 @@ export async function updateAccountProfile(args: {
   }
 
   const avatarId = input.avatar === null ? null : resolveRelationId(input.avatar)
-  const backgroundId = input.profileBackground === null ? null : resolveRelationId(input.profileBackground)
+  const bannerInput = input.profileBanner !== undefined ? input.profileBanner : input.profileBackground
+  const backgroundId = bannerInput === null ? null : resolveRelationId(bannerInput)
 
   await assertMediaOwnership({ mediaId: avatarId, req })
   await assertMediaOwnership({ mediaId: backgroundId, req })
@@ -154,7 +178,9 @@ export async function updateAccountProfile(args: {
       ...(input.displayName !== undefined ? { displayName: normalizeOptionalText(input.displayName) } : {}),
       ...(input.fullName !== undefined ? { fullName: normalizeOptionalText(input.fullName) } : {}),
       ...(input.phone !== undefined ? { phone: normalizeOptionalText(input.phone) } : {}),
-      ...(input.profileBackground !== undefined ? { profileBackground: backgroundId } : {}),
+      ...(bannerInput !== undefined ? { profileBackground: backgroundId } : {}),
+      ...(input.profileBannerFocalX !== undefined ? { profileBannerFocalX: normalizeFocalPoint(input.profileBannerFocalX) } : {}),
+      ...(input.profileBannerFocalY !== undefined ? { profileBannerFocalY: normalizeFocalPoint(input.profileBannerFocalY) } : {}),
       ...(input.profileVisibility !== undefined
         ? { profileVisibility: normalizeProfileVisibility(input.profileVisibility) }
         : {}),
@@ -171,6 +197,10 @@ export async function updateAccountProfile(args: {
     displayName: normalizeOptionalText(updated.displayName),
     fullName: normalizeOptionalText(updated.fullName),
     phone: normalizeOptionalText(updated.phone),
+    profileBanner: resolveRelationId(updated.profileBackground),
+    profileBannerFocalX: normalizeFocalPoint(updated.profileBannerFocalX),
+    profileBannerFocalY: normalizeFocalPoint(updated.profileBannerFocalY),
+    profileBannerUrl: getMediaUrl(updated.profileBackground),
     profileVisibility: normalizeProfileVisibility(updated.profileVisibility),
     userId: Number(updated.id),
   }
@@ -375,8 +405,8 @@ export async function getPublicCreatorProfile(args: {
 
   const profile: PublicCreatorProfile = {
     avatarFrame: normalizeAvatarFrame(user.avatarFrame),
-    avatarUrl: getMediaUrl(user.avatar),
-    backgroundUrl: getMediaUrl(user.profileBackground),
+    avatarUrl: getPublicMediaUrl(user.avatar),
+    backgroundUrl: getPublicMediaUrl(user.profileBackground),
     bio: normalizeOptionalText(user.bio),
     displayName:
       normalizeOptionalText(user.displayName) ||
@@ -387,6 +417,10 @@ export async function getPublicCreatorProfile(args: {
     id: Number(user.id),
     isFollowing,
     modelCount: models.totalDocs,
+    profileBanner: resolveRelationId(user.profileBackground),
+    profileBannerFocalX: normalizeFocalPoint(user.profileBannerFocalX),
+    profileBannerFocalY: normalizeFocalPoint(user.profileBannerFocalY),
+    profileBannerUrl: getPublicMediaUrl(user.profileBackground),
     profileViewCount: Number(user.profileViewCount || 0),
   }
 

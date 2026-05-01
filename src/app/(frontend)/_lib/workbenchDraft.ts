@@ -5,10 +5,11 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 export type WorkbenchDraftMode = "image3d" | "text3d";
 
 export type WorkbenchSourceImageAsset = {
-  bucket: string;
+  bucket?: string;
   contentType: string;
   fileName: string;
-  path: string;
+  mediaId?: number;
+  path?: string;
   publicUrl: string;
 };
 
@@ -103,10 +104,8 @@ export function readWorkbenchDraft(): WorkbenchDraft | null {
       (asset): asset is WorkbenchSourceImageAsset =>
         Boolean(asset) &&
         typeof asset === "object" &&
-        typeof asset.bucket === "string" &&
         typeof asset.contentType === "string" &&
         typeof asset.fileName === "string" &&
-        typeof asset.path === "string" &&
         typeof asset.publicUrl === "string",
     ),
   };

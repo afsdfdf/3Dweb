@@ -201,6 +201,43 @@ export const SiteSettings: GlobalConfig = {
               ],
             },
             {
+              name: 'modelAccessPolicy',
+              type: 'group',
+              label: 'Model access policy',
+              fields: [
+                {
+                  name: 'chargePreviewCredits',
+                  type: 'checkbox',
+                  defaultValue: false,
+                  label: 'Charge preview credits',
+                  admin: {
+                    description: 'Default off. Keep imported public model previews free until an operator enables charging.',
+                  },
+                },
+                {
+                  name: 'previewCredits',
+                  type: 'number',
+                  defaultValue: 0,
+                  label: 'Preview credits',
+                },
+                {
+                  name: 'chargeDownloadCredits',
+                  type: 'checkbox',
+                  defaultValue: false,
+                  label: 'Charge download credits',
+                  admin: {
+                    description: 'Default off. Download charging must remain server-side and refundable on delivery failure.',
+                  },
+                },
+                {
+                  name: 'downloadCredits',
+                  type: 'number',
+                  defaultValue: defaultSiteSettings.generationPricing.downloadCredits,
+                  label: 'Download credits',
+                },
+              ],
+            },
+            {
               name: 'creditPackages',
               type: 'array',
               label: 'Credit packages',

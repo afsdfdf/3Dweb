@@ -87,7 +87,7 @@ export default async function DashboardSettingsPage() {
           </CardHeader>
           <CardContent>
             <ol className="grid gap-3 text-sm leading-6 text-muted-foreground">
-              <li>补齐正式数据库与对象存储方案，例如 PostgreSQL / RDS 与 S3。</li>
+              <li>Use Supabase Postgres for data and Supabase Storage for object assets.</li>
               <li>把文件上传、CDN、回源与模型下载的职责拆得更清晰。</li>
               <li>在 Shopify Checkout 与 Stripe 并行存在时，继续整理支付与订单同步策略。</li>
               <li>继续完善 AI 任务流、结果资产、3D 模型库管理与访问边界。</li>

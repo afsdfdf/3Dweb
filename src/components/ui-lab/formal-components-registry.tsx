@@ -13,7 +13,7 @@ import { BorderComboFrame1 } from "@/components/ui-lab/border-combo-frame-1";
 import { BorderComboFrame2, BorderComboFrame2Variant } from "@/components/ui-lab/border-combo-frame-2";
 import { ButtonBoxFrame } from "@/components/ui-lab/button-box-frame";
 import { ButtonBoxFrame11 } from "@/components/ui-lab/button-box-frame-11";
-import { LoginCollection, RegisterCollection } from "@/components/ui-lab/formal-auth-collections";
+import { AuthPairCollection, LoginCollection, RegisterCollection } from "@/components/ui-lab/formal-auth-collections";
 import { HeroProductRibbon } from "@/components/ui-lab/hero-product-ribbon";
 import { ModelAuthorAvatar, ModelAuthorCard } from "@/components/ui-lab/model-author-card";
 import { ModelDetailAdBanner } from "@/components/ui-lab/model-detail-ad-banner";
@@ -88,7 +88,8 @@ export type ComponentId =
   | "inspiration-card-reference"
   | "hero-product-ribbon"
   | "register-group"
-  | "login-group";
+  | "login-group"
+  | "auth-pair";
 
 type FormalComponent = {
   id: ComponentId;
@@ -305,6 +306,15 @@ const components: FormalComponent[] = [
     title: "Login Collection",
     description: "Standalone visual login panel composed from fields, terms, sign-in, sign-up, and forgot password actions.",
     usage: "<LoginCollection />",
+    assets: ["/ui-lab/pixso-auth-assets/images", `${uiAssetBase}/buttons`],
+  },
+  {
+    id: "auth-pair",
+    name: "Auth Flow",
+    kind: "group",
+    title: "Login And Register Flow",
+    description: "Single framed auth component that switches between login and register states.",
+    usage: "<AuthPairCollection />",
     assets: ["/ui-lab/pixso-auth-assets/images", `${uiAssetBase}/buttons`],
   },
 ];
@@ -578,6 +588,7 @@ function ComponentPreview({ id }: { id: ComponentId }) {
   }
 
   if (id === "register-group") return <RegisterCollection />;
+  if (id === "auth-pair") return <AuthPairCollection />;
   return <LoginCollection />;
 }
 

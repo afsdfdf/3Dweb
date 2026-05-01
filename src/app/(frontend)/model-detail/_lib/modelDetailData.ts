@@ -1,6 +1,6 @@
 import { getCachedPayload } from "@/lib/getCachedPayload";
 import { buildModelViewerURL, getModelPreviewURL } from "@/lib/modelAssetURL";
-import { getMediaAccessURL } from "@/lib/s3SignedURL";
+import { getMediaAccessURL } from "@/lib/mediaAccessURL";
 import type { Where } from "payload";
 
 type ImageLike = {

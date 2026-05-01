@@ -1,19 +1,19 @@
 'use client'
 
-import type { FormEvent } from 'react'
-import { Eye, EyeOff } from 'lucide-react'
+import type { CSSProperties, FormEvent, ReactNode } from 'react'
 import { useState } from 'react'
 
-import { FrameButton } from '@/components/ui/frame-button'
+import { OrangeMediumActionButton, PurpleMediumActionButton } from '@/components/ui-lab/action-buttons'
+import { BorderComboFrame1 } from '@/components/ui-lab/border-combo-frame-1'
 import { registrationPrivacyMessage } from '@/lib/registrationPrivacy'
 
-import { AuthCardShell } from './AuthCardShell'
-import styles from './auth-runtime.module.css'
+import styles from '@/components/ui-lab/formal-auth-collections.module.css'
 
 type AuthMode = 'forgot' | 'forgot-success' | 'login' | 'register'
 
 type AuthFlowCardProps = {
   initialMode?: AuthMode
+  onSuccess?: () => void
   redirectTo?: string
 }
 
@@ -22,12 +22,78 @@ const safeRedirect = (value?: null | string) => {
   return value.startsWith('/') ? value : '/generate'
 }
 
-export function AuthFlowCard({ initialMode = 'login', redirectTo }: AuthFlowCardProps) {
+function EyeButton({ onClick, visible }: { onClick: () => void; visible: boolean }) {
+  return (
+    <button
+      aria-label={visible ? 'Hide password' : 'Show password'}
+      aria-pressed={visible}
+      className={styles.eyeButton}
+      onClick={onClick}
+      type="button"
+    >
+      <span className={[styles.eyeIcon, visible ? styles.eyeIconVisible : ''].join(' ')} />
+    </button>
+  )
+}
+
+function AuthField({
+  children,
+  className,
+  label,
+  onChange,
+  placeholder,
+  type,
+  value,
+}: {
+  children?: ReactNode
+  className: string
+  label: string
+  onChange: (value: string) => void
+  placeholder: string
+  type: string
+  value: string
+}) {
+  return (
+    <label className={[styles.field, className, value ? styles.fieldFilled : ''].join(' ')}>
+      <span className={styles.fieldLabel}>{label}</span>
+      <input
+        className={styles.input}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={value ? '' : placeholder}
+        type={type}
+        value={value}
+      />
+      {children}
+    </label>
+  )
+}
+
+function AuthScaleFrame({ children, height }: { children: ReactNode; height: number }) {
+  return (
+    <div
+      className={styles.scaleFrame}
+      style={
+        {
+          '--auth-height': `${height}px`,
+          '--auth-scale': 1,
+          height,
+          width: 380,
+        } as CSSProperties
+      }
+    >
+      <div className={styles.scaleInner}>{children}</div>
+    </div>
+  )
+}
+
+export function AuthFlowCard({ initialMode = 'login', onSuccess, redirectTo }: AuthFlowCardProps) {
   const [mode, setMode] = useState<AuthMode>(initialMode)
   const [email, setEmail] = useState('')
   const [verificationCode, setVerificationCode] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [passwordVisible, setPasswordVisible] = useState(false)
+  const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false)
   const [agreed, setAgreed] = useState(false)
   const [message, setMessage] = useState('')
   const [messageTone, setMessageTone] = useState<'error' | 'success' | null>(null)
@@ -131,6 +197,11 @@ export function AuthFlowCard({ initialMode = 'login', redirectTo }: AuthFlowCard
 
         await waitForSession()
 
+        if (onSuccess) {
+          onSuccess()
+          return
+        }
+
         if (typeof window !== 'undefined') {
           window.location.assign(resolvedRedirect)
         }
@@ -167,172 +238,258 @@ export function AuthFlowCard({ initialMode = 'login', redirectTo }: AuthFlowCard
 
   return (
     <form onSubmit={handleSubmit}>
-      <AuthCardShell
-        actionButton={
-          isLogin ? (
-            <div className={styles.actionStack}>
-              <FrameButton disabled={loading} fullWidth type="submit" variant="slate">
-                {loading ? 'Processing...' : 'Sign In'}
-              </FrameButton>
-              <FrameButton
-                fullWidth
-                onClick={() => {
-                  setMode('register')
-                  resetTransientState()
-                }}
-                type="button"
-                variant="gold"
-              >
-                Sign Up
-              </FrameButton>
-            </div>
-          ) : isRegister ? (
-            <div className={styles.actionStack}>
-              <FrameButton disabled={loading} fullWidth type="submit" variant="gold">
-                {loading ? 'Processing...' : 'Sign Up'}
-              </FrameButton>
-            </div>
-          ) : (
-            <FrameButton
-              disabled={loading}
-              fullWidth
-              onClick={
-                isForgotSuccess
-                  ? () => {
-                      setMode('login')
-                      resetTransientState()
-                    }
-                  : undefined
-              }
-              type={isForgotSuccess ? 'button' : 'submit'}
-              variant="slate"
-            >
-              {loading ? 'Processing...' : isForgot ? 'Submit' : 'Sign In'}
-            </FrameButton>
-          )
-        }
-        footerLink={
-          isForgot ? (
-            <button
-              className={styles.footerLink}
-              onClick={() => {
-                setMode('login')
-                resetTransientState()
-              }}
-              type="button"
-            >
-              Back to Sign In
-            </button>
-          ) : isRegister ? (
-            <button
-              className={styles.footerLink}
-              onClick={() => {
-                setMode('login')
-                resetTransientState()
-              }}
-              type="button"
-            >
-              Sign In
-            </button>
-          ) : (
-            <button
-              className={styles.footerLink}
-              onClick={() => {
-                setMode('forgot')
-                resetTransientState()
-              }}
-              type="button"
-            >
-              Forgot Password
-            </button>
-          )
-        }
-      >
-        {isForgotSuccess ? (
-          <div className={styles.successState}>
-            <h3 className={styles.successTitle}>Check Your Email</h3>
-            <p className={styles.successText}>
-              If that address exists in Thorns Tavern, we have sent a password reset link. Open the email to choose a new password.
-            </p>
+      <AuthScaleFrame height={isRegister ? 662 : 588}>
+        <section
+          className={[
+            styles.panel,
+            isRegister ? styles.registerPanel : styles.loginPanel,
+            isForgot || isForgotSuccess ? styles.authForgotPanel : '',
+          ].join(' ')}
+          style={{ '--panel-height': `${isRegister ? 662 : 588}px` } as CSSProperties}
+        >
+          <BorderComboFrame1 className={styles.frame} />
+          <div className={[styles.registerLogoGroup, isRegister ? '' : styles.loginLogoGroup].join(' ')} aria-hidden="true">
+            <span className={styles.registerLogoMark} />
+            <span className={styles.registerLogoText} />
           </div>
-        ) : (
-          <>
-            <label className={styles.field}>
-              <span className={styles.fieldLabel}>Email</span>
-              <input
-                className={styles.input}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="Please enter your email"
-                type="email"
-                value={email}
-              />
-            </label>
 
-            {isRegister ? (
-              <label className={styles.field}>
-                <span className={styles.fieldLabel}>Verification Code</span>
-                <div className={styles.codeRow}>
-                  <input
-                    className={styles.codeInput}
-                    onChange={(event) => setVerificationCode(event.target.value)}
-                    placeholder="Enter Email Verification Code"
-                    type="text"
-                    value={verificationCode}
-                  />
-                  <button className={styles.codeButton} onClick={handleSendCode} type="button">
+          <div className={styles.content}>
+            {isForgotSuccess ? (
+              <>
+                <div className={styles.authSuccessState}>
+                  <h3 className={styles.authSuccessTitle}>Check Your Email</h3>
+                  <p className={styles.authSuccessText}>
+                    If that address exists in Thorns Tavern, we have sent a password reset link. Open the email to choose a new password.
+                  </p>
+                </div>
+                <div className={styles.forgotSubmitSlot}>
+                  <div className={styles.buttonSlot}>
+                    <PurpleMediumActionButton
+                      className={[styles.authFlowButton, styles.authFlowButtonSlate].join(' ')}
+                      label="Sign In"
+                      onClick={() => {
+                        setMode('login')
+                        resetTransientState()
+                      }}
+                      type="button"
+                    />
+                  </div>
+                </div>
+              </>
+            ) : isRegister ? (
+              <>
+                <AuthField
+                  className={styles.registerEmail}
+                  label="Email"
+                  onChange={setEmail}
+                  placeholder="Please enter your email"
+                  type="email"
+                  value={email}
+                />
+
+                <AuthField
+                  className={[styles.codeField, styles.registerCode].join(' ')}
+                  label="Verification Code"
+                  onChange={setVerificationCode}
+                  placeholder="Enter Email Verification Code"
+                  type="text"
+                  value={verificationCode}
+                >
+                  <button className={styles.sendCode} onClick={handleSendCode} type="button">
                     Send Code
                   </button>
-                </div>
-              </label>
-            ) : null}
+                </AuthField>
 
-            {(isLogin || isRegister) ? (
-              <label className={styles.field}>
-                <span className={styles.fieldLabel}>Password</span>
-                <div className={styles.inputWithIcon}>
-                  <input
-                    onChange={(event) => setPassword(event.target.value)}
-                    placeholder="Please enter your password"
-                    type="password"
-                    value={password}
+                <AuthField
+                  className={styles.registerPassword}
+                  label="Password"
+                  onChange={setPassword}
+                  placeholder="Please enter your password"
+                  type={passwordVisible ? 'text' : 'password'}
+                  value={password}
+                >
+                  <EyeButton visible={passwordVisible} onClick={() => setPasswordVisible((value) => !value)} />
+                </AuthField>
+
+                <AuthField
+                  className={styles.registerConfirm}
+                  label="Confirm Password"
+                  onChange={setConfirmPassword}
+                  placeholder="Please enter your password again"
+                  type={confirmPasswordVisible ? 'text' : 'password'}
+                  value={confirmPassword}
+                >
+                  <EyeButton
+                    visible={confirmPasswordVisible}
+                    onClick={() => setConfirmPasswordVisible((value) => !value)}
                   />
-                  <EyeOff className="text-[#f6d49e]" size={16} />
-                </div>
-              </label>
-            ) : null}
+                </AuthField>
 
-            {isRegister ? (
-              <label className={styles.field}>
-                <span className={styles.fieldLabel}>Confirm Password</span>
-                <div className={styles.inputWithIcon}>
+                <label className={[styles.terms, styles.registerTerms].join(' ')}>
                   <input
-                    onChange={(event) => setConfirmPassword(event.target.value)}
-                    placeholder="Please enter your password again"
-                    type="password"
-                    value={confirmPassword}
+                    checked={agreed}
+                    className={styles.checkbox}
+                    onChange={(event) => setAgreed(event.target.checked)}
+                    type="checkbox"
                   />
-                  <Eye className="text-[#f6d49e]" size={16} />
-                </div>
-              </label>
-            ) : null}
+                  <span className={styles.registerTermsText}>
+                    I have read and agreed to the <span className={styles.linkText}>Terms of Use</span> and{' '}
+                    <span className={styles.linkText}>Privacy Policy</span>.
+                  </span>
+                </label>
 
-            {(isLogin || isRegister) ? (
-              <label className={styles.checkboxRow}>
                 <button
-                  className={`${styles.checkbox} ${agreed ? styles.checkboxChecked : ''}`}
-                  onClick={() => setAgreed((value) => !value)}
+                  className={styles.registerSignIn}
+                  onClick={() => {
+                    setMode('login')
+                    resetTransientState()
+                  }}
                   type="button"
-                />
-                <span className={styles.checkboxText}>I have read and agreed to the Terms of Use and Privacy Policy.</span>
-              </label>
-            ) : null}
+                >
+                  Sign In
+                </button>
+                <div className={styles.registerSignUpSlot}>
+                  <div className={styles.buttonSlot}>
+                    <OrangeMediumActionButton
+                      className={[styles.authFlowButton, styles.authFlowButtonGold].join(' ')}
+                      disabled={loading}
+                      label={loading ? 'Processing...' : 'Sign Up'}
+                      type="submit"
+                    />
+                  </div>
+                </div>
+              </>
+            ) : isForgot ? (
+              <>
+                <p className={styles.forgotIntro}>
+                  Enter your email and we will send a password reset link.
+                </p>
 
-            <div className={`${styles.message} ${messageTone === 'error' ? styles.messageError : ''} ${messageTone === 'success' ? styles.messageSuccess : ''}`}>
+                <AuthField
+                  className={styles.forgotEmail}
+                  label="Email"
+                  onChange={setEmail}
+                  placeholder="Please enter your email"
+                  type="email"
+                  value={email}
+                />
+
+                <div className={styles.forgotSubmitSlot}>
+                  <div className={styles.buttonSlot}>
+                    <PurpleMediumActionButton
+                      className={[styles.authFlowButton, styles.authFlowButtonSlate].join(' ')}
+                      disabled={loading}
+                      label={loading ? 'Processing...' : 'Submit'}
+                      type="submit"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  className={styles.forgotSignIn}
+                  onClick={() => {
+                    setMode('login')
+                    resetTransientState()
+                  }}
+                  type="button"
+                >
+                  Sign In
+                </button>
+                <button
+                  className={styles.forgotSignUp}
+                  onClick={() => {
+                    setMode('register')
+                    resetTransientState()
+                  }}
+                  type="button"
+                >
+                  Sign Up
+                </button>
+              </>
+            ) : (
+              <>
+                <AuthField
+                  className={styles.loginEmail}
+                  label="Email"
+                  onChange={setEmail}
+                  placeholder="Please enter your email"
+                  type="email"
+                  value={email}
+                />
+
+                <AuthField
+                  className={styles.loginPassword}
+                  label="Password"
+                  onChange={setPassword}
+                  placeholder="Please enter your password"
+                  type={passwordVisible ? 'text' : 'password'}
+                  value={password}
+                >
+                  <EyeButton visible={passwordVisible} onClick={() => setPasswordVisible((value) => !value)} />
+                </AuthField>
+
+                <label className={[styles.terms, styles.loginTerms].join(' ')}>
+                  <input
+                    checked={agreed}
+                    className={styles.checkbox}
+                    onChange={(event) => setAgreed(event.target.checked)}
+                    type="checkbox"
+                  />
+                  <span>
+                    I have read and agreed to the <span className={styles.linkText}>Terms of Use</span> and{' '}
+                    <span className={styles.linkText}>Privacy Policy</span>.
+                  </span>
+                </label>
+
+                <div className={styles.loginSignInSlot}>
+                  <div className={styles.buttonSlot}>
+                    <PurpleMediumActionButton
+                      className={[styles.authFlowButton, styles.authFlowButtonSlate].join(' ')}
+                      disabled={loading}
+                      label={loading ? 'Processing...' : 'Sign In'}
+                      type="submit"
+                    />
+                  </div>
+                </div>
+                <div className={styles.loginSignUpSlot}>
+                  <div className={styles.buttonSlot}>
+                    <OrangeMediumActionButton
+                      className={[styles.authFlowButton, styles.authFlowButtonGold].join(' ')}
+                      label="Sign Up"
+                      onClick={() => {
+                        setMode('register')
+                        resetTransientState()
+                      }}
+                      type="button"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  className={styles.forgot}
+                  onClick={() => {
+                    setMode('forgot')
+                    resetTransientState()
+                  }}
+                  type="button"
+                >
+                  Forgot Password
+                </button>
+              </>
+            )}
+
+            <div
+              className={[
+                styles.authFlowMessage,
+                messageTone === 'error' ? styles.authFlowMessageError : '',
+                messageTone === 'success' ? styles.authFlowMessageSuccess : '',
+              ].join(' ')}
+            >
               {message}
             </div>
-          </>
-        )}
-      </AuthCardShell>
+          </div>
+        </section>
+      </AuthScaleFrame>
     </form>
   )
 }

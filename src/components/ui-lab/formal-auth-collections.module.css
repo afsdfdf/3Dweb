@@ -17,7 +17,7 @@
 }
 
 .panel {
-  background: #000000;
+  background: #040405;
   flex: 0 0 auto;
   height: var(--panel-height);
   overflow: hidden;
@@ -114,6 +114,10 @@
   top: 158px;
 }
 
+.forgotEmail {
+  top: 214px;
+}
+
 .loginPassword {
   top: 232px;
 }
@@ -136,11 +140,11 @@
 
 .fieldLabel {
   color: #ffffff;
-  font-family: Arial, sans-serif;
+  font-family: "PingFang SC", "PingFangSC", "Hiragino Sans GB", sans-serif;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 500;
   left: 16px;
-  line-height: 18px;
+  line-height: 22px;
   margin: 0;
   position: absolute;
   top: 8px;
@@ -152,8 +156,9 @@
   border: 0;
   caret-color: #f6d49e;
   color: #ffffff;
-  font-family: Arial, sans-serif;
+  font-family: "PingFang SC", "PingFangSC", "Hiragino Sans GB", sans-serif;
   font-size: 12px;
+  font-weight: 400;
   height: 18px;
   left: 16px;
   line-height: 18px;
@@ -165,8 +170,11 @@
 }
 
 .input::placeholder {
-  color: rgba(139, 154, 166, 0.9);
+  color: rgba(255, 255, 255, 0.4);
+  font-family: "PingFang SC", "PingFangSC", "Hiragino Sans GB", sans-serif;
   font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0;
 }
 
 .fieldFilled .fieldLabel,
@@ -266,7 +274,7 @@
 }
 
 .registerPanel .fieldLabel {
-  font-family: Arial, sans-serif;
+  font-family: "PingFang SC", "PingFangSC", "Hiragino Sans GB", sans-serif;
   font-weight: 500;
   line-height: 22px;
 }
@@ -346,6 +354,8 @@
 .checkbox:focus-visible,
 .sendCode:focus-visible,
 .forgot:focus-visible,
+.forgotSignIn:focus-visible,
+.forgotSignUp:focus-visible,
 .registerSignIn:focus-visible {
   outline: 1px solid #f6d49e;
   outline-offset: 2px;
@@ -361,9 +371,9 @@
   border: 1px solid rgba(246, 212, 158, 0.52);
   color: #ffffff;
   cursor: pointer;
-  font-family: Arial, sans-serif;
-  font-size: 12px;
-  font-weight: 600;
+  font-family: "PingFang SC", "PingFangSC", "Hiragino Sans GB", sans-serif;
+  font-size: 11px;
+  font-weight: 500;
   height: 34px;
   position: absolute;
   right: 6px;
@@ -372,12 +382,12 @@
 }
 
 .terms {
-  color: rgba(207, 215, 221, 0.88);
+  color: rgba(255, 255, 255, 0.55);
   display: block;
-  font-family: Arial, sans-serif;
-  font-size: 12px;
+  font-family: "PingFang SC", "PingFangSC", "Hiragino Sans GB", sans-serif;
+  font-size: 10px;
   left: 40px;
-  line-height: 18px;
+  line-height: 1.45;
   position: absolute;
   width: 300px;
 }
@@ -396,7 +406,7 @@
 .loginTerms > span {
   display: block;
   left: 22px;
-  line-height: 16px;
+  line-height: 1.45;
   padding-left: 2ch;
   position: absolute;
   top: 0;
@@ -422,11 +432,11 @@
 }
 
 .registerTermsText {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.55);
   display: block;
   height: 36px;
   left: 22px;
-  line-height: 18px;
+  line-height: 1.45;
   max-width: 271px;
   position: absolute;
   top: 0;
@@ -501,8 +511,8 @@
 }
 
 .linkText {
-  color: #ffffff;
-  font-weight: 700;
+  color: rgba(255, 255, 255, 0.82);
+  font-weight: 500;
 }
 
 .buttonSlot {
@@ -511,12 +521,64 @@
   width: 100px;
 }
 
+.authFlowButton span {
+  font-family: "PingFang SC", "PingFangSC", "Hiragino Sans GB", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.authFlowButtonGold span {
+  color: #fff9ea;
+  text-shadow: 0 1px 0 rgba(96, 45, 16, 0.45);
+}
+
+.authFlowButtonSlate span {
+  color: #f1ecdf;
+  text-shadow: 0 1px 0 rgba(22, 20, 29, 0.5);
+}
+
+.authFlowMessage {
+  color: transparent;
+  font-family: "PingFang SC", "PingFangSC", "Hiragino Sans GB", sans-serif;
+  font-size: 11px;
+  left: 40px;
+  line-height: 1.45;
+  min-height: 16px;
+  position: absolute;
+  top: 350px;
+  width: 300px;
+}
+
+.registerPanel .authFlowMessage {
+  top: 522px;
+}
+
+.authForgotPanel .authFlowMessage {
+  text-align: center;
+  top: 278px;
+}
+
+.authFlowMessageError {
+  color: #ffb5b5;
+}
+
+.authFlowMessageSuccess {
+  color: #9fe2b3;
+}
+
+.forgotSubmitSlot,
 .loginSignInSlot,
 .loginSignUpSlot,
 .registerSignUpSlot {
   height: 38px;
   position: absolute;
   width: 100px;
+}
+
+.forgotSubmitSlot {
+  left: 133px;
+  top: 318px;
 }
 
 .loginSignInSlot {
@@ -542,21 +604,76 @@
 }
 
 .forgot,
+.forgotSignIn,
+.forgotSignUp,
 .registerSignIn {
   appearance: none;
   background: transparent;
   border: 0;
-  color: #f6d49e;
+  color: #d1b97f;
   cursor: pointer;
-  font-family: Arial, sans-serif;
+  font-family: "PingFang SC", "PingFangSC", "Hiragino Sans GB", sans-serif;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
   height: 18px;
   line-height: 18px;
   padding: 0;
   position: absolute;
   text-align: left;
   white-space: nowrap;
+}
+
+.forgotIntro,
+.forgotSuccess {
+  color: rgba(255, 255, 255, 0.7);
+  font-family: "PingFang SC", "PingFangSC", "Hiragino Sans GB", sans-serif;
+  font-size: 14px;
+  left: 50%;
+  line-height: 1.6;
+  margin: 0;
+  position: absolute;
+  text-align: center;
+  transform: translateX(-50%);
+  width: 282px;
+}
+
+.forgotIntro {
+  top: 158px;
+}
+
+.forgotSuccess {
+  color: #9fe2b3;
+  top: 282px;
+}
+
+.authSuccessState {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  left: 50%;
+  margin: 0;
+  position: absolute;
+  text-align: center;
+  top: 174px;
+  transform: translateX(-50%);
+  width: 282px;
+}
+
+.authSuccessTitle {
+  color: #f6d49e;
+  font-family: "PingFang SC", "PingFangSC", "Hiragino Sans GB", sans-serif;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.authSuccessText {
+  color: rgba(255, 255, 255, 0.7);
+  font-family: "PingFang SC", "PingFangSC", "Hiragino Sans GB", sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 16px 0 0;
 }
 
 .forgot {
@@ -567,8 +684,24 @@
   width: 98px;
 }
 
+.forgotSignIn,
+.forgotSignUp {
+  top: 386px;
+}
+
+.forgotSignIn {
+  left: 135px;
+  text-align: right;
+  width: 44px;
+}
+
+.forgotSignUp {
+  left: 202px;
+  width: 48px;
+}
+
 .registerSignIn {
-  font-family: Arial, sans-serif;
+  font-family: "PingFang SC", "PingFangSC", "Hiragino Sans GB", sans-serif;
   font-weight: 500;
   left: 170px;
   top: 604px;

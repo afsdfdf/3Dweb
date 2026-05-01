@@ -26,6 +26,15 @@
   transform-origin: top left;
 }
 
+.boundTopNavigation {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  width: auto;
+  z-index: 60;
+}
+
 .heroBottomBanner {
   left: 33px;
   position: absolute;

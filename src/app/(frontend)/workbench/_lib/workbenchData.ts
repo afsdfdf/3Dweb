@@ -4,7 +4,7 @@ import {
   getModelGLBSourceURL,
   getModelPreviewURL,
 } from "@/lib/modelAssetURL";
-import { getMediaAccessURL } from "@/lib/s3SignedURL";
+import { getMediaAccessURL } from "@/lib/mediaAccessURL";
 
 import { getCurrentUser } from "../../_lib/session";
 
@@ -53,6 +53,14 @@ export type WorkbenchModel = {
   viewCount: number;
   viewerURL: null | string;
   visibility: string;
+};
+
+export type WorkbenchImageAsset = {
+  createdAt: null | string;
+  fileName: string;
+  id: number;
+  mimeType: string;
+  previewURL: string;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
@@ -272,4 +280,89 @@ export async function getWorkbenchModels(
       };
     }),
   );
+}
+
+function getImageGenerationResultMediaId(task: unknown) {
+  if (!isRecord(task)) return 0;
+  const callbackPayload = isRecord(task.callbackPayload) ? task.callbackPayload : {};
+  const imageGeneration = isRecord(callbackPayload.imageGeneration)
+    ? callbackPayload.imageGeneration
+    : {};
+  const mediaId =
+    typeof imageGeneration.resultMediaId === "number"
+      ? imageGeneration.resultMediaId
+      : Number(imageGeneration.resultMediaId);
+
+  return Number.isFinite(mediaId) && mediaId > 0 ? mediaId : 0;
+}
+
+export async function getWorkbenchImageAssets(
+  user: Awaited<ReturnType<typeof getCurrentUser>>,
+): Promise<WorkbenchImageAsset[]> {
+  if (!user) return [];
+
+  const payload = await getCachedPayload();
+  const tasks = await payload.find({
+    collection: "generation-tasks",
+    depth: 0,
+    limit: 24,
+    overrideAccess: false,
+    pagination: false,
+    sort: "-updatedAt",
+    user,
+    where: {
+      and: [
+        {
+          user: {
+            equals: user.id,
+          },
+        },
+        {
+          status: {
+            equals: "succeeded",
+          },
+        },
+        {
+          provider: {
+            in: ["gemini-official", "gemini-third-party"],
+          },
+        },
+      ],
+    },
+  });
+
+  const seen = new Set<number>();
+  const assets = await Promise.all(
+    tasks.docs.map(async (task: any) => {
+      const mediaId = getImageGenerationResultMediaId(task);
+      if (!mediaId || seen.has(mediaId)) return null;
+      seen.add(mediaId);
+
+      const media = await payload
+        .findByID({
+          collection: "media",
+          depth: 0,
+          id: mediaId,
+          overrideAccess: false,
+          user,
+        })
+        .catch(() => null);
+
+      if (!media) return null;
+
+      const rawURL = getMediaUrl(media);
+      const previewURL = await resolveMediaAccessURL(payload, rawURL);
+      if (!previewURL) return null;
+
+      return {
+        createdAt: typeof task.createdAt === "string" ? task.createdAt : null,
+        fileName: normalizeText(media.filename) || `image-${mediaId}.png`,
+        id: mediaId,
+        mimeType: normalizeText(media.mimeType) || "image/png",
+        previewURL,
+      };
+    }),
+  );
+
+  return assets.filter((asset): asset is WorkbenchImageAsset => Boolean(asset));
 }

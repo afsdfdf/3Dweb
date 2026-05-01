@@ -1,7 +1,8 @@
 import type { PayloadRequest } from 'payload'
 
 import { getCanonicalAppURL } from '@/lib/getCanonicalAppURL'
-import { getMediaAccessURL } from '@/lib/s3SignedURL'
+import { getMediaAccessURL } from '@/lib/mediaAccessURL'
+import { createSupabaseStorageSignedUrl } from '@/lib/supabase/storage'
 
 type ImageGenerationProvider = 'gemini-official' | 'gemini-third-party'
 
@@ -43,6 +44,22 @@ const readString = (value: unknown) => {
 const readSourceImageAssetUrl = (value: unknown) => {
   if (!isRecord(value)) return ''
   return readString(value.publicUrl)
+}
+
+const readSourceImageAssetStorage = (value: unknown) => {
+  if (!isRecord(value)) return null
+
+  const bucket = readString(value.bucket)
+  const path = readString(value.path)
+  if (!bucket || !path) return null
+
+  return { bucket, path }
+}
+
+const readSourceImageAssetMediaId = (value: unknown) => {
+  if (!isRecord(value)) return 0
+  const id = typeof value.mediaId === 'number' ? value.mediaId : Number(value.mediaId)
+  return Number.isFinite(id) && id > 0 ? id : 0
 }
 
 async function parseGeminiError(response: Response) {
@@ -99,20 +116,38 @@ async function resolveSourceImageDownloadURL(args: {
   sourceImage?: number
   sourceImageAsset?: Record<string, unknown>
 }) {
+  const storage = readSourceImageAssetStorage(args.sourceImageAsset)
+  if (storage) {
+    try {
+      return await createSupabaseStorageSignedUrl({
+        bucket: storage.bucket,
+        expiresIn: 3600,
+        path: storage.path,
+      })
+    } catch (error) {
+      args.req.payload.logger.warn({
+        error: error instanceof Error ? error.message : String(error),
+        msg: 'Image generation source image signed URL creation failed; falling back to public URL.',
+      })
+    }
+  }
+
   const sourceImageAssetUrl = readSourceImageAssetUrl(args.sourceImageAsset)
 
   if (sourceImageAssetUrl) {
     return sourceImageAssetUrl
   }
 
-  if (!args.sourceImage) {
+  const sourceImage = args.sourceImage || readSourceImageAssetMediaId(args.sourceImageAsset)
+
+  if (!sourceImage) {
     throw new Error('Image-to-image generation requires a source image.')
   }
 
   const media = await args.req.payload.findByID({
     collection: 'media',
     depth: 0,
-    id: args.sourceImage,
+    id: sourceImage,
     overrideAccess: false,
     req: args.req,
   })

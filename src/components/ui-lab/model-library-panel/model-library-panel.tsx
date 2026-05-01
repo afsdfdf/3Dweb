@@ -11,12 +11,21 @@ import styles from "./model-library-panel.module.css";
 export type ModelLibraryPanelCard = {
   date?: string;
   id: number;
+  kind?: "image" | "model";
   license: string;
   menu?: boolean;
   modelSrc?: null | string;
   name?: string;
   previewAlt?: string;
   previewSrc?: null | string;
+  sourceAsset?: {
+    bucket?: string;
+    contentType: string;
+    fileName: string;
+    mediaId?: number;
+    path?: string;
+    publicUrl: string;
+  };
 };
 
 type ModelLibraryPanelProps = {

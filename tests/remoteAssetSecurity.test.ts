@@ -132,3 +132,25 @@ test('remote asset security always allows canonical and Supabase storage hosts',
     }
   }
 })
+
+test('remote asset security always allows official Meshy result asset host', async () => {
+  const previousKey = process.env.MESHY_API_KEY
+  delete process.env.MESHY_API_KEY
+
+  try {
+    const hosts = await getAllowedRemoteAssetHosts(createPayloadMock() as never)
+    const allowed = await isAllowedRemoteAssetURL({
+      payload: createPayloadMock() as never,
+      url: 'https://assets.meshy.ai/result/model.glb',
+    })
+
+    assert.equal(hosts.includes('assets.meshy.ai'), true)
+    assert.equal(allowed, true)
+  } finally {
+    if (typeof previousKey === 'undefined') {
+      delete process.env.MESHY_API_KEY
+    } else {
+      process.env.MESHY_API_KEY = previousKey
+    }
+  }
+})

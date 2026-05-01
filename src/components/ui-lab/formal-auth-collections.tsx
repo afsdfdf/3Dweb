@@ -250,3 +250,206 @@ export function RegisterCollection({ scale = 1 }: AuthCollectionProps = {}) {
     </AuthScaleFrame>
   );
 }
+
+export function AuthPairCollection({ scale = 1 }: AuthCollectionProps = {}) {
+  const [mode, setMode] = useState<"forgot" | "login" | "register">("login");
+  const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [accepted, setAccepted] = useState(false);
+  const [sent, setSent] = useState(false);
+  const isRegister = mode === "register";
+  const isForgot = mode === "forgot";
+  const panelHeight = isRegister ? 662 : 588;
+
+  return (
+    <AuthScaleFrame height={panelHeight} scale={scale}>
+      <section
+        className={[styles.panel, isRegister ? styles.registerPanel : styles.loginPanel].join(" ")}
+        style={{ "--panel-height": `${panelHeight}px` } as CSSProperties}
+      >
+        <BorderComboFrame1 className={styles.frame} />
+        <div className={[styles.registerLogoGroup, isRegister ? "" : styles.loginLogoGroup].join(" ")} aria-hidden="true">
+          <span className={styles.registerLogoMark} />
+          <span className={styles.registerLogoText} />
+        </div>
+        <div className={styles.content}>
+          {isRegister ? (
+            <>
+              <AuthField
+                className={styles.registerEmail}
+                label="Email"
+                value={email}
+                placeholder="Please enter your email"
+                type="email"
+                onChange={setEmail}
+              />
+
+              <AuthField
+                className={[styles.codeField, styles.registerCode].join(" ")}
+                label="Verification Code"
+                value={code}
+                placeholder="Enter Email Verification Code"
+                type="text"
+                onChange={setCode}
+              >
+                <button type="button" className={styles.sendCode} onClick={() => setSent(true)}>
+                  {sent ? "Sent" : "Send Code"}
+                </button>
+              </AuthField>
+
+              <AuthField
+                className={styles.registerPassword}
+                label="Password"
+                value={password}
+                placeholder="Please enter your password"
+                type={passwordVisible ? "text" : "password"}
+                onChange={setPassword}
+              >
+                <EyeButton visible={passwordVisible} onClick={() => setPasswordVisible((value) => !value)} />
+              </AuthField>
+
+              <AuthField
+                className={styles.registerConfirm}
+                label="Confirm Password"
+                value={confirmPassword}
+                placeholder="Please enter your password again"
+                type={confirmVisible ? "text" : "password"}
+                onChange={setConfirmPassword}
+              >
+                <EyeButton visible={confirmVisible} onClick={() => setConfirmVisible((value) => !value)} />
+              </AuthField>
+
+              <label className={[styles.terms, styles.registerTerms].join(" ")}>
+                <input
+                  className={styles.checkbox}
+                  type="checkbox"
+                  checked={accepted}
+                  onChange={(event) => setAccepted(event.target.checked)}
+                />
+                <span className={styles.registerTermsText}>
+                  I have read and agreed to the and <span className={styles.linkText}>Terms of Use</span>{" "}
+                  <span className={styles.linkText}>Privacy Policy</span> .
+                </span>
+              </label>
+
+              <button type="button" className={styles.registerSignIn} onClick={() => setMode("login")}>
+                Sign In
+              </button>
+              <div className={styles.registerSignUpSlot}>
+                <div className={styles.buttonSlot}>
+                  <OrangeMediumActionButton
+                    className={[styles.authFlowButton, styles.authFlowButtonGold].join(" ")}
+                    label="Sign Up"
+                    type="submit"
+                  />
+                </div>
+              </div>
+            </>
+          ) : isForgot ? (
+            <>
+              <p className={styles.forgotIntro}>
+                Enter your email and we will send a password reset link.
+              </p>
+
+              <AuthField
+                className={styles.forgotEmail}
+                label="Email"
+                value={email}
+                placeholder="Please enter your email"
+                type="email"
+                onChange={setEmail}
+              />
+
+              {sent ? (
+                <p className={styles.forgotSuccess}>
+                  Reset link sent. Please check your inbox.
+                </p>
+              ) : null}
+
+              <div className={styles.forgotSubmitSlot}>
+                <div className={styles.buttonSlot}>
+                  <PurpleMediumActionButton
+                    className={[styles.authFlowButton, styles.authFlowButtonSlate].join(" ")}
+                    label="Submit"
+                    type="button"
+                    onClick={() => setSent(true)}
+                  />
+                </div>
+              </div>
+
+              <button type="button" className={styles.forgotSignIn} onClick={() => setMode("login")}>
+                Sign In
+              </button>
+              <button type="button" className={styles.forgotSignUp} onClick={() => setMode("register")}>
+                Sign Up
+              </button>
+            </>
+          ) : (
+            <>
+              <AuthField
+                className={styles.loginEmail}
+                label="Email"
+                value={email}
+                placeholder="Please enter your email"
+                type="email"
+                onChange={setEmail}
+              />
+
+              <AuthField
+                className={styles.loginPassword}
+                label="Password"
+                value={password}
+                placeholder="Please enter your password"
+                type={passwordVisible ? "text" : "password"}
+                onChange={setPassword}
+              >
+                <EyeButton visible={passwordVisible} onClick={() => setPasswordVisible((value) => !value)} />
+              </AuthField>
+
+              <label className={[styles.terms, styles.loginTerms].join(" ")}>
+                <input
+                  className={styles.checkbox}
+                  type="checkbox"
+                  checked={accepted}
+                  onChange={(event) => setAccepted(event.target.checked)}
+                />
+                <span>
+                  I have read and agreed to the <span className={styles.linkText}>Terms of Use</span> and{" "}
+                  <span className={styles.linkText}>Privacy Policy</span>.
+                </span>
+              </label>
+
+              <div className={styles.loginSignInSlot}>
+                <div className={styles.buttonSlot}>
+                  <PurpleMediumActionButton
+                    className={[styles.authFlowButton, styles.authFlowButtonSlate].join(" ")}
+                    label="Sign In"
+                    type="submit"
+                  />
+                </div>
+              </div>
+              <div className={styles.loginSignUpSlot}>
+                <div className={styles.buttonSlot}>
+                  <OrangeMediumActionButton
+                    className={[styles.authFlowButton, styles.authFlowButtonGold].join(" ")}
+                    label="Sign Up"
+                    type="button"
+                    onClick={() => setMode("register")}
+                  />
+                </div>
+              </div>
+
+              <button type="button" className={styles.forgot} onClick={() => setMode("forgot")}>
+                Forgot Password
+              </button>
+            </>
+          )}
+        </div>
+      </section>
+    </AuthScaleFrame>
+  );
+}

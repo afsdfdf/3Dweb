@@ -37,7 +37,7 @@ export const AIProviderSettings: GlobalConfig = {
       type: 'textarea',
       label: 'Secret management notice',
       defaultValue:
-        'Meshy API key, AI webhook secret, S3 access key ID, and S3 secret access key are no longer stored in Payload globals. Configure them in your hosting environment or secret manager instead.',
+        'Provider API keys should prefer environment variables or a secret manager. Meshy and image-generation keys may be stored here only when operators need backend-admin override; keys are never sent to the frontend.',
       admin: {
         readOnly: true,
       },
@@ -79,6 +79,30 @@ export const AIProviderSettings: GlobalConfig = {
           label: 'Meshy API base URL',
         },
         {
+          name: 'apiKeyMode',
+          type: 'select',
+          defaultValue: 'environment',
+          label: 'API key mode',
+          options: [
+            { label: 'Environment variable', value: 'environment' },
+            { label: 'Payload admin override', value: 'payload' },
+          ],
+          admin: {
+            description:
+              'Environment variables are safer. Use Payload admin override only when operators need to switch Meshy keys from the backend UI.',
+          },
+        },
+        {
+          name: 'apiKey',
+          type: 'text',
+          label: 'Meshy API key override',
+          admin: {
+            condition: (_, siblingData) => siblingData?.apiKeyMode === 'payload',
+            description:
+              'Stored in the Payload database and never sent to the frontend. Prefer MESHY_API_KEY in production when possible.',
+          },
+        },
+        {
           name: 'textTo3DAiModel',
           type: 'select',
           defaultValue: 'latest',
@@ -102,6 +126,54 @@ export const AIProviderSettings: GlobalConfig = {
         },
         { name: 'shouldTexture', type: 'checkbox', defaultValue: true, label: 'Generate textures' },
         { name: 'enablePBR', type: 'checkbox', defaultValue: false, label: 'Enable PBR output' },
+        { name: 'hdTexture', type: 'checkbox', defaultValue: false, label: 'Generate 4K base color texture' },
+        { name: 'multiImageEnabled', type: 'checkbox', defaultValue: true, label: 'Enable Multi Image to 3D' },
+        {
+          name: 'pricing',
+          type: 'group',
+          label: 'Meshy credit pricing',
+          fields: [
+            { name: 'textTo3DCredits', type: 'number', defaultValue: 30, label: 'Text to 3D credits' },
+            { name: 'imageTo3DCredits', type: 'number', defaultValue: 30, label: 'Image to 3D credits' },
+            { name: 'multiImageTo3DCredits', type: 'number', defaultValue: 30, label: 'Multi Image to 3D credits' },
+          ],
+        },
+        {
+          name: 'modelType',
+          type: 'select',
+          defaultValue: 'standard',
+          label: 'Model type',
+          options: [
+            { label: 'Standard', value: 'standard' },
+            { label: 'Low poly', value: 'lowpoly' },
+          ],
+        },
+        {
+          name: 'topology',
+          type: 'select',
+          defaultValue: 'triangle',
+          label: 'Topology',
+          options: [
+            { label: 'Triangle', value: 'triangle' },
+            { label: 'Quad', value: 'quad' },
+          ],
+        },
+        { name: 'targetPolycount', type: 'number', defaultValue: 30000, label: 'Target polycount' },
+        {
+          name: 'targetFormats',
+          type: 'select',
+          defaultValue: ['glb'],
+          hasMany: true,
+          label: 'Default target formats',
+          options: [
+            { label: 'GLB', value: 'glb' },
+            { label: 'OBJ', value: 'obj' },
+            { label: 'FBX', value: 'fbx' },
+            { label: 'STL', value: 'stl' },
+            { label: 'USDZ', value: 'usdz' },
+            { label: '3MF', value: '3mf' },
+          ],
+        },
         { name: 'moderation', type: 'checkbox', defaultValue: false, label: 'Enable moderation' },
         { name: 'imageEnhancement', type: 'checkbox', defaultValue: true, label: 'Enable image enhancement' },
         { name: 'removeLighting', type: 'checkbox', defaultValue: true, label: 'Remove baked lighting' },

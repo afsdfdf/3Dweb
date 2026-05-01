@@ -1,7 +1,8 @@
 import type { PayloadRequest } from 'payload'
 
 import { getCanonicalAppURL } from '@/lib/getCanonicalAppURL'
-import { getMediaAccessURL } from '@/lib/s3SignedURL'
+import { getMediaAccessURL } from '@/lib/mediaAccessURL'
+import { createSupabaseStorageSignedUrl } from '@/lib/supabase/storage'
 
 export type MeshyImageTask = {
   id: string
@@ -17,28 +18,44 @@ export type MeshyTextTask = MeshyImageTask & {
   prompt?: string | null
 }
 
+export type MeshyMultiImageTask = MeshyImageTask
+
 export type MeshySettings = {
   apiKey: string
+  apiKeyMode: 'environment' | 'payload'
   baseURL: string
   enablePBR: boolean
+  hdTexture: boolean
   imageEnhancement: boolean
   imageTo3DAiModel: string
+  modelType: 'lowpoly' | 'standard'
   moderation: boolean
+  multiImageEnabled: boolean
   removeLighting: boolean
   shouldTexture: boolean
+  targetFormats: string[]
+  targetPolycount: number
   textTo3DAiModel: string
+  topology: 'quad' | 'triangle'
 }
 
 const DEFAULT_MESHY_SETTINGS: MeshySettings = {
   apiKey: '',
+  apiKeyMode: 'environment',
   baseURL: 'https://api.meshy.ai',
   enablePBR: false,
+  hdTexture: false,
   imageEnhancement: true,
   imageTo3DAiModel: 'latest',
+  modelType: 'standard',
   moderation: false,
+  multiImageEnabled: true,
   removeLighting: true,
   shouldTexture: true,
+  targetFormats: ['glb'],
+  targetPolycount: 30000,
   textTo3DAiModel: 'latest',
+  topology: 'triangle',
 }
 
 export class MeshyAPIError extends Error {
@@ -73,6 +90,32 @@ const normalizeConfiguredBaseURL = (value: string) => {
 
 const toRecord = (value: unknown): Record<string, unknown> => {
   return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : {}
+}
+
+const readString = (value: unknown) => {
+  return typeof value === 'string' && value.trim() ? value.trim() : ''
+}
+
+const readBoolean = (value: unknown, fallback: boolean) => {
+  return typeof value === 'boolean' ? value : fallback
+}
+
+const readMeshyModelType = (value: unknown): MeshySettings['modelType'] => {
+  return value === 'lowpoly' ? 'lowpoly' : 'standard'
+}
+
+const readMeshyTopology = (value: unknown): MeshySettings['topology'] => {
+  return value === 'quad' ? 'quad' : 'triangle'
+}
+
+const readTargetFormats = (value: unknown) => {
+  const supported = new Set(['3mf', 'fbx', 'glb', 'obj', 'stl', 'usdz'])
+  const candidates = Array.isArray(value) ? value : []
+  const formats = candidates
+    .map((item) => (typeof item === 'string' ? item.toLowerCase().trim() : ''))
+    .filter((item) => supported.has(item))
+
+  return formats.length > 0 ? Array.from(new Set(formats)) : DEFAULT_MESHY_SETTINGS.targetFormats
 }
 
 const parseErrorMessage = async (response: Response) => {
@@ -131,32 +174,42 @@ const normalizeCreatedTask = <T extends Record<string, unknown>>(response: T) =>
 export async function getMeshySettings(req: PayloadRequest): Promise<MeshySettings> {
   const config = await req.payload
     .findGlobal({
+      overrideAccess: true,
       slug: 'ai-provider-settings',
     })
     .catch(() => null)
 
   const meshy = toRecord(config?.meshy)
   const apiKey = (process.env.MESHY_API_KEY || '').trim()
+  const storedApiKey = readString(meshy.apiKey)
+  const apiKeyMode = meshy.apiKeyMode === 'payload' ? 'payload' : 'environment'
   const envBaseURL = (process.env.MESHY_API_BASE_URL || '').trim()
   const globalBaseURL = typeof meshy.baseURL === 'string' && meshy.baseURL.trim() ? meshy.baseURL.trim() : ''
 
   return {
-    apiKey,
+    apiKey: apiKeyMode === 'payload' ? storedApiKey || apiKey : apiKey || storedApiKey,
+    apiKeyMode,
     baseURL: normalizeConfiguredBaseURL(envBaseURL || globalBaseURL || DEFAULT_MESHY_SETTINGS.baseURL),
-    enablePBR: typeof meshy.enablePBR === 'boolean' ? meshy.enablePBR : DEFAULT_MESHY_SETTINGS.enablePBR,
+    enablePBR: readBoolean(meshy.enablePBR, DEFAULT_MESHY_SETTINGS.enablePBR),
+    hdTexture: readBoolean(meshy.hdTexture, DEFAULT_MESHY_SETTINGS.hdTexture),
     imageEnhancement:
-      typeof meshy.imageEnhancement === 'boolean' ? meshy.imageEnhancement : DEFAULT_MESHY_SETTINGS.imageEnhancement,
+      readBoolean(meshy.imageEnhancement, DEFAULT_MESHY_SETTINGS.imageEnhancement),
     imageTo3DAiModel:
       typeof meshy.imageTo3DAiModel === 'string' && meshy.imageTo3DAiModel.trim()
         ? meshy.imageTo3DAiModel
         : DEFAULT_MESHY_SETTINGS.imageTo3DAiModel,
-    moderation: typeof meshy.moderation === 'boolean' ? meshy.moderation : DEFAULT_MESHY_SETTINGS.moderation,
-    removeLighting: typeof meshy.removeLighting === 'boolean' ? meshy.removeLighting : DEFAULT_MESHY_SETTINGS.removeLighting,
-    shouldTexture: typeof meshy.shouldTexture === 'boolean' ? meshy.shouldTexture : DEFAULT_MESHY_SETTINGS.shouldTexture,
+    modelType: readMeshyModelType(meshy.modelType),
+    moderation: readBoolean(meshy.moderation, DEFAULT_MESHY_SETTINGS.moderation),
+    multiImageEnabled: readBoolean(meshy.multiImageEnabled, DEFAULT_MESHY_SETTINGS.multiImageEnabled),
+    removeLighting: readBoolean(meshy.removeLighting, DEFAULT_MESHY_SETTINGS.removeLighting),
+    shouldTexture: readBoolean(meshy.shouldTexture, DEFAULT_MESHY_SETTINGS.shouldTexture),
+    targetFormats: readTargetFormats(meshy.targetFormats),
+    targetPolycount: Math.max(0, Number(meshy.targetPolycount || DEFAULT_MESHY_SETTINGS.targetPolycount)),
     textTo3DAiModel:
       typeof meshy.textTo3DAiModel === 'string' && meshy.textTo3DAiModel.trim()
         ? meshy.textTo3DAiModel
         : DEFAULT_MESHY_SETTINGS.textTo3DAiModel,
+    topology: readMeshyTopology(meshy.topology),
   }
 }
 
@@ -165,10 +218,25 @@ export function isMeshyConfigured(settings: MeshySettings) {
 }
 
 export async function resolveMeshyImageURL(args: {
-  sourceImageAsset?: { publicUrl?: string | null } | null
+  sourceImageAsset?: { bucket?: string | null; path?: string | null; publicUrl?: string | null } | null
   mediaId?: number
   req: PayloadRequest
 }) {
+  if (args.sourceImageAsset?.bucket && args.sourceImageAsset.path) {
+    try {
+      return await createSupabaseStorageSignedUrl({
+        bucket: args.sourceImageAsset.bucket,
+        expiresIn: 3600,
+        path: args.sourceImageAsset.path,
+      })
+    } catch (error) {
+      args.req.payload.logger.warn({
+        error: error instanceof Error ? error.message : String(error),
+        msg: 'Meshy source image signed URL creation failed; falling back to public URL.',
+      })
+    }
+  }
+
   if (args.sourceImageAsset?.publicUrl && typeof args.sourceImageAsset.publicUrl === 'string') {
     return args.sourceImageAsset.publicUrl
   }
@@ -204,18 +272,26 @@ export async function createMeshyTextPreviewTask(args: {
   prompt: string
   settings: MeshySettings
   style?: string
+  targetFormats?: string[]
 }) {
-  const { prompt, settings, style } = args
+  const { prompt, settings, style, targetFormats } = args
 
   const body: Record<string, unknown> = {
     ai_model: settings.textTo3DAiModel,
     mode: 'preview',
+    model_type: settings.modelType,
     moderation: settings.moderation,
     prompt,
+    target_polycount: settings.targetPolycount,
+    topology: settings.topology,
   }
 
   if (style === 'realistic') {
     body.art_style = 'realistic'
+  }
+
+  if (targetFormats?.length) {
+    body.target_formats = targetFormats
   }
 
   const created = await requestMeshy<MeshyTextTask & { result?: string }>({
@@ -243,6 +319,12 @@ export async function createMeshyTextRefineTask(args: {
     moderation: settings.moderation,
     preview_task_id: previewTaskId,
   }
+
+  if (settings.hdTexture) {
+    body.hd_texture = true
+  }
+
+  body.remove_lighting = settings.removeLighting
 
   if (prompt && prompt.trim()) {
     body.texture_prompt = prompt.trim()
@@ -285,12 +367,19 @@ export async function createMeshyImageTask(args: {
     enable_pbr: settings.enablePBR,
     image_enhancement: settings.imageEnhancement,
     image_url: imageURL,
+    model_type: settings.modelType,
     moderation: settings.moderation,
     remove_background: true,
     should_texture: settings.shouldTexture,
+    target_polycount: settings.targetPolycount,
+    topology: settings.topology,
   }
 
   body.remove_lighting = settings.removeLighting
+
+  if (settings.hdTexture) {
+    body.hd_texture = true
+  }
 
   if (prompt && prompt.trim()) {
     body.texture_prompt = prompt.trim()
@@ -316,6 +405,56 @@ export async function retrieveMeshyImageTask(args: {
 }) {
   return requestMeshy<MeshyImageTask>({
     path: `/openapi/v1/image-to-3d/${args.taskId}`,
+    settings: args.settings,
+  })
+}
+
+export async function createMeshyMultiImageTask(args: {
+  imageURLs: string[]
+  prompt?: string
+  settings: MeshySettings
+  targetFormats?: string[]
+}) {
+  const { imageURLs, prompt, settings, targetFormats } = args
+  const body: Record<string, unknown> = {
+    ai_model: settings.imageTo3DAiModel,
+    enable_pbr: settings.enablePBR,
+    image_urls: imageURLs,
+    model_type: settings.modelType,
+    moderation: settings.moderation,
+    should_texture: settings.shouldTexture,
+    target_polycount: settings.targetPolycount,
+    topology: settings.topology,
+  }
+
+  if (prompt && prompt.trim()) {
+    body.texture_prompt = prompt.trim()
+  }
+
+  if (settings.hdTexture) {
+    body.hd_texture = true
+  }
+
+  if (targetFormats?.length) {
+    body.target_formats = targetFormats
+  }
+
+  const created = await requestMeshy<MeshyMultiImageTask & { result?: string }>({
+    body,
+    method: 'POST',
+    path: '/openapi/v1/multi-image-to-3d',
+    settings,
+  })
+
+  return normalizeCreatedTask(created) as MeshyMultiImageTask
+}
+
+export async function retrieveMeshyMultiImageTask(args: {
+  settings: MeshySettings
+  taskId: string
+}) {
+  return requestMeshy<MeshyMultiImageTask>({
+    path: `/openapi/v1/multi-image-to-3d/${args.taskId}`,
     settings: args.settings,
   })
 }

@@ -4,6 +4,8 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+import { AuthModalStage } from "@/components/auth/AuthModalStage";
+import { useAuthModal } from "@/components/auth/AuthModalProvider";
 import { ModelLibraryPanel, type ModelLibraryPanelCard } from "@/components/ui-lab/model-library-panel";
 import { TopNavigation, migrationTestNavItems } from "@/components/ui-lab/top-navigation";
 import type { TopNavigationUser } from "@/components/ui-lab/top-navigation";
@@ -16,6 +18,7 @@ import {
   workbenchAllowedImageTypes,
   workbenchDefaultPrompt,
   workbenchMaxUploadBytes,
+  type WorkbenchSourceImageAsset,
 } from "../_lib/workbenchDraft";
 import {
   WorkbenchLeftGenerationPanel,
@@ -25,26 +28,35 @@ import {
 import styles from "./page.module.css";
 
 type WorkbenchClientProps = {
+  imageAssetCards?: ModelLibraryPanelCard[];
   libraryCards: ModelLibraryPanelCard[];
   navUser: null | TopNavigationUser;
 };
 
-export function WorkbenchClient({ libraryCards, navUser }: WorkbenchClientProps) {
+export function WorkbenchClient({
+  imageAssetCards: initialImageAssetCards = [],
+  libraryCards,
+  navUser,
+}: WorkbenchClientProps) {
   const router = useRouter();
+  const { openAuthModal } = useAuthModal();
   const firstModelSrc = libraryCards[0]?.modelSrc ?? null;
   const imagesRef = useRef<WorkbenchImageInput[]>([]);
-  const [activeMode, setActiveMode] = useState<WorkbenchMode>("text3d");
+  const [activeMode, setActiveMode] = useState<WorkbenchMode>("image3d");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [multiView, setMultiView] = useState(true);
+  const [multiView, setMultiView] = useState(false);
   const [tags, setTags] = useState(["game", "Unnamed"]);
   const [images, setImages] = useState<WorkbenchImageInput[]>([]);
+  const [imageAssetCards, setImageAssetCards] = useState<ModelLibraryPanelCard[]>(initialImageAssetCards);
   const [license, setLicense] = useState<"Private" | "Public">("Public");
   const [modelTitle, setModelTitle] = useState("Monk");
   const [prompt, setPrompt] = useState(workbenchDefaultPrompt);
   const [selectedModelSrc, setSelectedModelSrc] = useState<null | string>(firstModelSrc);
   const activeModelSrc = selectedModelSrc ?? firstModelSrc;
   const showImageInputs = activeMode === "image3d" || activeMode === "imageTools";
+  const rightPanelCards = activeMode === "imageTools" ? imageAssetCards : libraryCards;
+  const rightPanelTitle = activeMode === "imageTools" ? "Image Assets" : "Model Library";
 
   useEffect(() => {
     imagesRef.current = images;
@@ -63,7 +75,7 @@ export function WorkbenchClient({ libraryCards, navUser }: WorkbenchClientProps)
     const mode = searchParams.get("mode");
     if (mode === "image3d" || mode === "text3d") {
       setActiveMode(mode);
-      setMultiView(mode === "image3d");
+      setMultiView(false);
     }
 
     const draftFlag = searchParams.get("draft");
@@ -73,7 +85,7 @@ export function WorkbenchClient({ libraryCards, navUser }: WorkbenchClientProps)
     if (!draft) return;
 
     setActiveMode(draft.sourceImageAssets.length > 0 ? "image3d" : draft.mode);
-    setMultiView(draft.sourceImageAssets.length > 0 || draft.mode === "image3d");
+    setMultiView(false);
     setPrompt(draft.prompt.trim() || workbenchDefaultPrompt);
     setImages(
       draft.sourceImageAssets.map((asset) => ({
@@ -90,7 +102,7 @@ export function WorkbenchClient({ libraryCards, navUser }: WorkbenchClientProps)
 
     setError("");
     setImages((current) => {
-      const availableSlots = Math.max(0, 5 - current.length);
+      const availableSlots = Math.max(0, 4 - current.length);
       const selectedFiles = Array.from(files).slice(0, availableSlots);
       const nextImages = selectedFiles
         .filter((file) => workbenchAllowedImageTypes.has(file.type) && file.size <= workbenchMaxUploadBytes)
@@ -119,11 +131,15 @@ export function WorkbenchClient({ libraryCards, navUser }: WorkbenchClientProps)
   const handleGenerate = async () => {
     if (isSubmitting) return;
 
+    if (!navUser) {
+      openAuthModal("login");
+      return;
+    }
+
     setError("");
     setIsSubmitting(true);
 
     try {
-      const trimmedPrompt = prompt.trim() || workbenchDefaultPrompt;
       const sourceImageAssets = showImageInputs
         ? await Promise.all(
             images.map((image) => {
@@ -134,8 +150,14 @@ export function WorkbenchClient({ libraryCards, navUser }: WorkbenchClientProps)
           )
         : [];
       const sourceImageAsset = sourceImageAssets[0];
+      const rawPrompt = prompt.trim();
+      const trimmedPrompt =
+        sourceImageAssets.length > 0 && rawPrompt === workbenchDefaultPrompt
+          ? ""
+          : rawPrompt || (sourceImageAssets.length > 0 ? "" : workbenchDefaultPrompt);
       const commonSnapshot = {
         format: "glb",
+        targetFormats: ["glb"],
         quality: "high",
         style: "tabletop",
         workbench: {
@@ -156,6 +178,7 @@ export function WorkbenchClient({ libraryCards, navUser }: WorkbenchClientProps)
                 parameterSnapshot: commonSnapshot,
                 prompt: trimmedPrompt,
                 sourceImageAsset,
+                sourceImageAssets,
               }),
               credentials: "include",
               headers: { "Content-Type": "application/json" },
@@ -167,6 +190,7 @@ export function WorkbenchClient({ libraryCards, navUser }: WorkbenchClientProps)
                 parameterSnapshot: commonSnapshot,
                 prompt: trimmedPrompt,
                 sourceImageAsset,
+                sourceImageAssets,
               }),
               credentials: "include",
               headers: { "Content-Type": "application/json" },
@@ -176,6 +200,36 @@ export function WorkbenchClient({ libraryCards, navUser }: WorkbenchClientProps)
       const json = await response.json().catch(() => ({}));
       if (!response.ok) {
         throw new Error(json.message || "Generation request failed.");
+      }
+
+      if (activeMode === "imageTools") {
+        const media = json.media;
+        const mediaUrl = typeof media?.url === "string" ? media.url : typeof media?.thumbnailURL === "string" ? media.thumbnailURL : "";
+        if (!mediaUrl) {
+          throw new Error("Image generated, but no image URL was returned.");
+        }
+
+        const sourceAsset: WorkbenchSourceImageAsset = {
+          contentType: typeof media?.mimeType === "string" ? media.mimeType : "image/png",
+          fileName: typeof media?.filename === "string" ? media.filename : `image-${media?.id ?? Date.now()}.png`,
+          mediaId: typeof media?.id === "number" ? media.id : Number(media?.id) || undefined,
+          publicUrl: mediaUrl,
+        };
+
+        setImageAssetCards((current) => [
+          {
+            date: new Date().toISOString().slice(0, 10),
+            id: sourceAsset.mediaId ?? Date.now(),
+            kind: "image",
+            license: "Private",
+            name: sourceAsset.fileName,
+            previewAlt: sourceAsset.fileName,
+            previewSrc: sourceAsset.publicUrl,
+            sourceAsset,
+          },
+          ...current,
+        ]);
+        return;
       }
 
       const taskCode = json.task?.taskCode;
@@ -203,12 +257,14 @@ export function WorkbenchClient({ libraryCards, navUser }: WorkbenchClientProps)
             user={navUser}
           />
 
+          <AuthModalStage fitViewport topOffset={60}>
           <WorkbenchLeftGenerationPanel
             activeMode={activeMode}
             error={error}
             images={images}
             isSubmitting={isSubmitting}
             license={license}
+            modeTabs="dual"
             modelTitle={modelTitle}
             multiView={multiView}
             onAddImages={handleImageFiles}
@@ -221,6 +277,7 @@ export function WorkbenchClient({ libraryCards, navUser }: WorkbenchClientProps)
             onRemoveImage={removeImage}
             onTagsChange={setTags}
             prompt={prompt}
+            streamlinedImageFlow
             tags={tags}
           />
 
@@ -273,10 +330,35 @@ export function WorkbenchClient({ libraryCards, navUser }: WorkbenchClientProps)
           </main>
 
           <ModelLibraryPanel
-            cards={libraryCards}
+            cards={rightPanelCards}
             className={styles.rightPanel}
-            onSelectCard={(card) => setSelectedModelSrc(card.modelSrc ?? null)}
+            onSelectCard={(card) => {
+              const sourceAsset = card.sourceAsset;
+              if (card.kind === "image" && sourceAsset) {
+                setImages((current) => {
+                  if (current.some((image) => image.sourceAsset?.publicUrl === sourceAsset.publicUrl)) {
+                    return current;
+                  }
+
+                  return [
+                    ...current,
+                    {
+                      id: `generated-${sourceAsset.mediaId ?? card.id}`,
+                      previewUrl: sourceAsset.publicUrl,
+                      sourceAsset,
+                    },
+                  ].slice(0, 4);
+                });
+                setActiveMode("image3d");
+                setMultiView(true);
+                return;
+              }
+
+              setSelectedModelSrc(card.modelSrc ?? null);
+            }}
+            title={rightPanelTitle}
           />
+          </AuthModalStage>
         </section>
       </div>
     </main>

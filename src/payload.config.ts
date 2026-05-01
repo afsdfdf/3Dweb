@@ -9,6 +9,7 @@ import { fileURLToPath } from 'url'
 import sharp from 'sharp'
 
 import { Addresses } from './collections/Addresses'
+import { AvatarFrameStyles } from './collections/AvatarFrameStyles'
 import { BillingSubscriptions } from './collections/BillingSubscriptions'
 import { Announcements } from './collections/Announcements'
 import { CreditProducts } from './collections/CreditProducts'
@@ -56,7 +57,7 @@ import {
 } from './endpoints/accountAuth'
 import { aiWebhookEndpoint, meshyWebhookEndpoint, submitAITaskEndpoint, syncAITaskEndpoint } from './endpoints/aiTasks'
 import { recordEngagementViewEndpoint } from './endpoints/engagement'
-import { submitImageGenerationEndpoint } from './endpoints/imageGeneration'
+import { listImageGenerationAssetsEndpoint, submitImageGenerationEndpoint } from './endpoints/imageGeneration'
 import { modelDownloadEndpoint } from './endpoints/modelDownloads'
 import {
   createModelCommentEndpoint,
@@ -157,6 +158,7 @@ export default buildConfig({
   collections: [
     Users,
     UserFollows,
+    AvatarFrameStyles,
     Media,
     GenerationTasks,
     TaskEvents,
@@ -225,6 +227,7 @@ export default buildConfig({
     adminUpdateOrderStatusEndpoint,
     adminAdjustCreditsEndpoint,
     adminRepairTaskEndpoint,
+    listImageGenerationAssetsEndpoint,
     submitAITaskEndpoint,
     submitImageGenerationEndpoint,
     syncAITaskEndpoint,

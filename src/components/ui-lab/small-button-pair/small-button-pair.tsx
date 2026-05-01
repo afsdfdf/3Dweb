@@ -66,9 +66,8 @@ export function SmallButtonPair({
   const pressedButton = selected ?? internalPressedButton;
 
   const handleButtonClick = (button: ButtonId) => {
-    const nextButton = pressedButton === button ? getOppositeButton(button) : button;
-    setInternalPressedButton(nextButton);
-    onChange?.(nextButton);
+    setInternalPressedButton(button);
+    onChange?.(button);
   };
 
   return (

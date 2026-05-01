@@ -3,6 +3,7 @@ import type { PayloadRequest } from 'payload'
 import { refundTaskCredits, reserveTaskCredits, settleReservedTaskCredits, spendTaskCredits } from '@/lib/creditLedger'
 import {
   createMeshyImageTask,
+  createMeshyMultiImageTask,
   createMeshyTextPreviewTask,
   createMeshyTextRefineTask,
   getMeshyFailureReason,
@@ -11,14 +12,22 @@ import {
   isMeshyConcurrencyError,
   mapMeshyStatus,
   type MeshyImageTask,
+  type MeshyMultiImageTask,
   type MeshyTextTask,
   resolveMeshyImageURL,
   retrieveMeshyImageTask,
+  retrieveMeshyMultiImageTask,
   retrieveMeshyTextTask,
 } from '@/lib/meshyGateway'
 import { isAllowedRemoteAssetURL } from '@/lib/remoteAssetSecurity'
 import { getRuntimeStorageSettings, uploadToSupabaseStorage } from '@/lib/supabase/storage'
-import { defaultTaskCreditRules, getTaskBillingSettings, readTaskBillingSnapshot, resolveGenerationCredits } from '@/lib/taskBilling'
+import {
+  defaultTaskCreditRules,
+  getTaskBillingSettings,
+  readTaskBillingSnapshot,
+  resolveGenerationCredits,
+  resolveMeshyGenerationCredits,
+} from '@/lib/taskBilling'
 
 const randomCode = (prefix: string) => {
   const date = new Date()
@@ -37,6 +46,20 @@ type SupportedProvider = 'custom' | 'gemini-official' | 'gemini-third-party' | '
 
 type SupportedModelFormat = '3mf' | 'fbx' | 'glb' | 'obj' | 'stl' | 'usdz'
 
+type ResolvedThumbnailAsset = {
+  contentType: string
+  fileSize: number
+  filename: string
+  publicUrl: string
+}
+
+type SourceImageAsset = {
+  bucket?: string | null
+  mediaId?: number | null
+  path?: string | null
+  publicUrl?: string | null
+}
+
 type AITaskFlowStorageTestHooks = {
   getRuntimeStorageSettings?: typeof getRuntimeStorageSettings
   uploadToSupabaseStorage?: typeof uploadToSupabaseStorage
@@ -52,10 +75,11 @@ export function __setAITaskFlowStorageTestHooks(hooks: AITaskFlowStorageTestHook
 
 type MeshySnapshot = {
   imageTaskId?: string
-  mode?: 'image-to-3d' | 'text-to-3d'
+  mode?: 'image-to-3d' | 'multi-image-to-3d' | 'text-to-3d'
+  multiImageTaskId?: string
   previewTaskId?: string
   refineTaskId?: string
-  stage?: 'image' | 'preview' | 'refine'
+  stage?: 'image' | 'multi-image' | 'preview' | 'refine'
 }
 
 const accessOptions = (req: PayloadRequest) => {
@@ -90,10 +114,17 @@ const getMeshySnapshot = (parameterSnapshot: unknown): MeshySnapshot => {
 
   return {
     imageTaskId: typeof meshy.imageTaskId === 'string' ? meshy.imageTaskId : undefined,
-    mode: meshy.mode === 'image-to-3d' || meshy.mode === 'text-to-3d' ? meshy.mode : undefined,
+    mode:
+      meshy.mode === 'image-to-3d' || meshy.mode === 'multi-image-to-3d' || meshy.mode === 'text-to-3d'
+        ? meshy.mode
+        : undefined,
+    multiImageTaskId: typeof meshy.multiImageTaskId === 'string' ? meshy.multiImageTaskId : undefined,
     previewTaskId: typeof meshy.previewTaskId === 'string' ? meshy.previewTaskId : undefined,
     refineTaskId: typeof meshy.refineTaskId === 'string' ? meshy.refineTaskId : undefined,
-    stage: meshy.stage === 'image' || meshy.stage === 'preview' || meshy.stage === 'refine' ? meshy.stage : undefined,
+    stage:
+      meshy.stage === 'image' || meshy.stage === 'multi-image' || meshy.stage === 'preview' || meshy.stage === 'refine'
+        ? meshy.stage
+        : undefined,
   }
 }
 
@@ -187,9 +218,41 @@ async function ingestRemoteModelAsset(args: {
   })
 
   return {
+    contentType: getModelMimeType(format, response),
+    filename,
     fileSizeMb: Number((buffer.byteLength / (1024 * 1024)).toFixed(3)),
+    fileSize: buffer.byteLength,
     publicUrl: uploaded.publicUrl,
   }
+}
+
+async function createGeneratedMediaRecord(args: {
+  alt: string
+  contentType: string
+  fileSize: number
+  filename: string
+  ownerId: number
+  publicAccess?: boolean
+  purpose: 'asset' | 'model' | 'preview'
+  req: PayloadRequest
+  url: string
+}) {
+  return args.req.payload.create({
+    collection: 'media',
+    data: {
+      alt: args.alt,
+      filename: args.filename,
+      filesize: args.fileSize,
+      mimeType: args.contentType,
+      owner: args.ownerId,
+      publicAccess: Boolean(args.publicAccess),
+      purpose: args.purpose,
+      thumbnailURL: args.url,
+      url: args.url,
+    },
+    req: args.req,
+    ...accessOptions(args.req),
+  })
 }
 
 const getThumbnailExtension = (response: Response, downloadURL: string) => {
@@ -268,16 +331,23 @@ async function ingestRemoteThumbnailAsset(args: {
   const safeTaskCode = sanitizeFilenamePart(taskCode) || 'task-result'
   const safeUserId = sanitizeFilenamePart(`user-${userId}`) || 'user'
   const extension = getThumbnailExtension(response, downloadURL)
+  const contentType = response.headers.get('content-type') || FALLBACK_THUMBNAIL_CONTENT_TYPE
+  const filename = `${safeTaskCode}-thumbnail.${extension}`
   const storage = await readRuntimeStorageSettings()
   const uploaded = await uploadRuntimeAsset({
     bucket: storage.bucket,
-    contentType: response.headers.get('content-type') || FALLBACK_THUMBNAIL_CONTENT_TYPE,
-    path: `${storage.prefix.replace(/^\/+|\/+$/g, '')}/generated/${safeUserId}/${safeTaskCode}/${safeTaskCode}-thumbnail.${extension}`,
+    contentType,
+    path: `${storage.prefix.replace(/^\/+|\/+$/g, '')}/generated/${safeUserId}/${safeTaskCode}/${filename}`,
     upsert: true,
     value: buffer,
   })
 
-  return uploaded.publicUrl
+  return {
+    contentType,
+    fileSize: buffer.byteLength,
+    filename,
+    publicUrl: uploaded.publicUrl,
+  } satisfies ResolvedThumbnailAsset
 }
 
 async function ingestRemoteTextureAsset(args: {
@@ -319,12 +389,13 @@ async function ingestRemoteTextureAsset(args: {
 export async function resolveModelFormatAssets(args: {
   generationPricingDownloadCredits: number
   payloadData?: Record<string, unknown>
+  requireLocalIngestion?: boolean
   req: PayloadRequest
   taskCode: string
   taskId: number
   userId: number
 }) {
-  const { generationPricingDownloadCredits, payloadData, req, taskCode, taskId, userId } = args
+  const { generationPricingDownloadCredits, payloadData, requireLocalIngestion = false, req, taskCode, taskId, userId } = args
   const supportedFormats: SupportedModelFormat[] = ['glb', 'fbx', 'obj', 'stl', 'usdz', '3mf']
   const rawModelURLs = isRecord(payloadData?.modelUrls) ? payloadData?.modelUrls : {}
   const thumbnailCandidate = typeof payloadData?.thumbnailUrl === 'string' ? payloadData.thumbnailUrl.trim() : ''
@@ -336,6 +407,7 @@ export async function resolveModelFormatAssets(args: {
   }> = []
   const modelUrls: Record<string, string> = {}
   const textureUrls: Record<string, string | null> = {}
+  let thumbnailAsset: ResolvedThumbnailAsset | null = null
   let thumbnailUrl: string | null = null
 
   for (const format of supportedFormats) {
@@ -356,6 +428,9 @@ export async function resolveModelFormatAssets(args: {
         taskId,
         url: candidate,
       })
+      if (requireLocalIngestion) {
+        throw new Error(`Remote ${format.toUpperCase()} model URL is not allowed for local ingestion.`)
+      }
       continue
     }
 
@@ -366,10 +441,20 @@ export async function resolveModelFormatAssets(args: {
         taskCode,
         userId,
       })
+      const media = await createGeneratedMediaRecord({
+        alt: `${taskCode} ${format.toUpperCase()} model`,
+        contentType: ingested.contentType,
+        fileSize: ingested.fileSize,
+        filename: ingested.filename,
+        ownerId: userId,
+        purpose: 'model',
+        req,
+        url: ingested.publicUrl,
+      })
 
       formats.push({
         downloadCredits: generationPricingDownloadCredits,
-        file: null,
+        file: Number(media.id),
         fileSizeMb: ingested.fileSizeMb,
         format,
       })
@@ -382,6 +467,10 @@ export async function resolveModelFormatAssets(args: {
         taskId,
         url: candidate,
       })
+
+      if (requireLocalIngestion) {
+        throw error
+      }
 
       formats.push({
         downloadCredits: generationPricingDownloadCredits,
@@ -415,6 +504,9 @@ export async function resolveModelFormatAssets(args: {
         textureKey,
         url: rawTextureURL,
       })
+      if (requireLocalIngestion) {
+        throw new Error(`Remote texture URL is not allowed for local ingestion: ${textureKey}.`)
+      }
       continue
     }
 
@@ -434,6 +526,10 @@ export async function resolveModelFormatAssets(args: {
         url: rawTextureURL,
       })
 
+      if (requireLocalIngestion) {
+        throw error
+      }
+
       textureUrls[textureKey] = rawTextureURL
     }
   }
@@ -450,13 +546,17 @@ export async function resolveModelFormatAssets(args: {
         taskId,
         url: thumbnailCandidate,
       })
+      if (requireLocalIngestion) {
+        throw new Error('Remote thumbnail URL is not allowed for local ingestion.')
+      }
     } else {
       try {
-        thumbnailUrl = await ingestRemoteThumbnailAsset({
+        thumbnailAsset = await ingestRemoteThumbnailAsset({
           downloadURL: thumbnailCandidate,
           taskCode,
           userId,
         })
+        thumbnailUrl = thumbnailAsset.publicUrl
       } catch (error) {
         req.payload.logger.warn({
           err: error,
@@ -465,14 +565,23 @@ export async function resolveModelFormatAssets(args: {
           url: thumbnailCandidate,
         })
 
+        if (requireLocalIngestion) {
+          throw error
+        }
+
         thumbnailUrl = thumbnailCandidate
       }
     }
   }
 
+  if (requireLocalIngestion && formats.length === 0) {
+    throw new Error('Meshy did not provide an ingestible model file.')
+  }
+
   return {
     formats,
     modelUrls,
+    thumbnailAsset,
     textureUrls,
     thumbnailUrl,
   }
@@ -642,6 +751,7 @@ async function createResultModel(args: {
 }) {
   const { payloadData, req, task, userId } = args
   const { generationPricing } = await getTaskBillingSettings(req)
+  const workbenchSnapshot = readWorkbenchSnapshot(task.parameterSnapshot)
   const existingModelId =
     typeof task.resultModel === 'object' && task.resultModel
       ? Number(task.resultModel.id)
@@ -652,6 +762,7 @@ async function createResultModel(args: {
   const resolvedAssets = await resolveModelFormatAssets({
     generationPricingDownloadCredits: generationPricing.downloadCredits,
     payloadData,
+    requireLocalIngestion: payloadData?.provider === 'meshy',
     req,
     taskCode: task.taskCode,
     taskId: task.id,
@@ -659,6 +770,21 @@ async function createResultModel(args: {
   })
 
   let modelId = existingModelId
+  const previewMedia =
+    resolvedAssets.thumbnailAsset && !existingModelId
+      ? await createGeneratedMediaRecord({
+          alt: `${task.taskCode} preview`,
+          contentType: resolvedAssets.thumbnailAsset.contentType,
+          fileSize: resolvedAssets.thumbnailAsset.fileSize,
+          filename: resolvedAssets.thumbnailAsset.filename,
+          ownerId: userId,
+          publicAccess: workbenchSnapshot.visibility === 'public',
+          purpose: workbenchSnapshot.visibility === 'public' ? 'preview' : 'asset',
+          req,
+          url: resolvedAssets.thumbnailAsset.publicUrl,
+        })
+      : null
+  const finalVisibility = workbenchSnapshot.visibility === 'public' && previewMedia ? 'public' : 'private'
 
   if (!modelId) {
     const existingModels = await req.payload.find({
@@ -709,12 +835,16 @@ async function createResultModel(args: {
                 },
               ],
         owner: userId,
+        previewImage: previewMedia?.id,
         printReady: Boolean(payloadData?.printReady ?? true),
         sourceTask: task.id,
         status: 'ready',
-        title: String(payloadData?.modelTitle ?? `${task.taskCode} result model`),
+        tags: workbenchSnapshot.tags.map((label) => ({ label })),
+        title:
+          workbenchSnapshot.requestedTitle ||
+          String(payloadData?.modelTitle ?? `${task.taskCode} result model`),
         viewerUrl: `/results/${task.taskCode}`,
-        visibility: 'private',
+        visibility: finalVisibility,
       },
       req,
       ...accessOptions(req),
@@ -806,6 +936,52 @@ async function updateTaskStatus(args: {
       ...accessOptions(req),
     })
 
+    if (status === 'succeeded') {
+      try {
+        await createResultModel({
+          payloadData,
+          req,
+          task: updated,
+          userId,
+        })
+      } catch (error) {
+        const failedTask = await req.payload.update({
+          collection: 'generation-tasks',
+          data: {
+            completedAt: new Date().toISOString(),
+            failureReason: error instanceof Error ? error.message : 'Result asset ingestion failed.',
+            progress: 100,
+            status: 'failed',
+          },
+          id: updated.id,
+          req,
+          ...accessOptions(req),
+        })
+
+        await finalizeTaskBilling({
+          req,
+          status: 'failed',
+          task: failedTask,
+          userId,
+        })
+
+        await createTaskEvent({
+          eventType: 'failed',
+          message: 'Result asset ingestion failed.',
+          payload: {
+            error: error instanceof Error ? error.message : 'Result asset ingestion failed.',
+            provider,
+          },
+          provider,
+          req,
+          taskId: currentTask.id,
+          userId,
+        })
+
+        return failedTask
+      }
+    }
+
     await finalizeTaskBilling({
       req,
       status,
@@ -827,15 +1003,6 @@ async function updateTaskStatus(args: {
       taskId: currentTask.id,
       userId,
     })
-
-    if (status === 'succeeded') {
-      await createResultModel({
-        payloadData,
-        req,
-        task: updated,
-        userId,
-      })
-    }
 
     return updated
   } finally {
@@ -877,13 +1044,91 @@ const getMeshyDispatchStaleMs = () => Math.max(30_000, Number(process.env.MESHY_
 const resolveMeshyTargetFormats = (parameterSnapshot?: Record<string, unknown>) => {
   const supportedFormats = new Set<SupportedModelFormat>(['3mf', 'fbx', 'glb', 'obj', 'stl', 'usdz'])
   const requestedFormat = typeof parameterSnapshot?.format === 'string' ? parameterSnapshot.format.toLowerCase().trim() : ''
+  const requestedFormats = Array.isArray(parameterSnapshot?.targetFormats)
+    ? parameterSnapshot.targetFormats
+    : Array.isArray(parameterSnapshot?.formats)
+      ? parameterSnapshot.formats
+      : []
   const formats = new Set<SupportedModelFormat>(['glb'])
 
   if (supportedFormats.has(requestedFormat as SupportedModelFormat)) {
     formats.add(requestedFormat as SupportedModelFormat)
   }
 
+  requestedFormats.forEach((format) => {
+    if (typeof format !== 'string') return
+    const normalized = format.toLowerCase().trim()
+    if (supportedFormats.has(normalized as SupportedModelFormat)) {
+      formats.add(normalized as SupportedModelFormat)
+    }
+  })
+
   return Array.from(formats)
+}
+
+const normalizeSourceImageAssets = (value: unknown): SourceImageAsset[] => {
+  const items = Array.isArray(value) ? value : isRecord(value) ? [value] : []
+  return items
+    .map((item): SourceImageAsset | null => {
+      if (!isRecord(item)) return null
+
+      const publicUrl = typeof item.publicUrl === 'string' && item.publicUrl.trim() ? item.publicUrl.trim() : null
+      const bucket = typeof item.bucket === 'string' && item.bucket.trim() ? item.bucket.trim() : null
+      const path = typeof item.path === 'string' && item.path.trim() ? item.path.trim() : null
+      const mediaId = typeof item.mediaId === 'number' ? item.mediaId : Number(item.mediaId) || null
+
+      if (!publicUrl && (!bucket || !path) && !mediaId) return null
+
+      return { bucket, mediaId, path, publicUrl }
+    })
+    .filter((item): item is SourceImageAsset => Boolean(item))
+}
+
+const dedupeSourceImageAssets = (assets: SourceImageAsset[]) => {
+  const seen = new Set<string>()
+  const unique: SourceImageAsset[] = []
+
+  for (const asset of assets) {
+    const key = asset.mediaId ? `media:${asset.mediaId}` : asset.bucket && asset.path ? `${asset.bucket}:${asset.path}` : asset.publicUrl || ''
+    if (!key || seen.has(key)) continue
+    seen.add(key)
+    unique.push(asset)
+  }
+
+  return unique
+}
+
+const readWorkbenchSnapshot = (value: unknown) => {
+  const snapshot = isRecord(value) ? value : {}
+  const workbench = isRecord(snapshot.workbench) ? snapshot.workbench : {}
+  const requestedTitle =
+    typeof workbench.requestedTitle === 'string' && workbench.requestedTitle.trim()
+      ? workbench.requestedTitle.trim()
+      : typeof snapshot.requestedTitle === 'string' && snapshot.requestedTitle.trim()
+        ? snapshot.requestedTitle.trim()
+        : ''
+  const rawVisibility =
+    typeof workbench.license === 'string'
+      ? workbench.license
+      : typeof snapshot.visibility === 'string'
+        ? snapshot.visibility
+        : 'private'
+  const visibility = rawVisibility.toLowerCase() === 'public' ? 'public' : 'private'
+  const rawTags = Array.isArray(workbench.tags) ? workbench.tags : Array.isArray(snapshot.tags) ? snapshot.tags : []
+  const tags = Array.from(
+    new Set(
+      rawTags
+        .map((tag) => (typeof tag === 'string' ? tag.trim().replace(/^#+\s*/, '') : ''))
+        .filter(Boolean)
+        .slice(0, 5),
+    ),
+  )
+
+  return {
+    requestedTitle,
+    tags,
+    visibility,
+  }
 }
 
 const getRecentMeshyDispatchStartedAt = (task: { parameterSnapshot?: unknown }) => {
@@ -947,22 +1192,29 @@ async function createMeshyTask(args: {
   prompt?: string
   req: PayloadRequest
   sourceImageAsset?: Record<string, unknown>
+  sourceImageAssets?: Record<string, unknown>[]
   sourceImage?: number
   style?: string
 }) {
-  const { inputMode, parameterSnapshot, prompt, req, sourceImage, sourceImageAsset, style } = args
+  const { inputMode, parameterSnapshot, prompt, req, sourceImage, sourceImageAsset, sourceImageAssets, style } = args
   const settings = await getMeshySettings(req)
-  const targetFormats = resolveMeshyTargetFormats(parameterSnapshot)
+  const targetFormats = Array.from(new Set([...settings.targetFormats, ...resolveMeshyTargetFormats(parameterSnapshot)]))
 
   if (!isMeshyConfigured(settings)) {
     throw new Error('Meshy API key is not configured in AI provider settings.')
   }
 
-  if (inputMode === 'text') {
+  const snapshotSourceAssets = normalizeSourceImageAssets(parameterSnapshot?.sourceImageAssets)
+  const sourceAssets = normalizeSourceImageAssets(sourceImageAssets)
+  const legacySourceAsset = normalizeSourceImageAssets(sourceImageAsset)
+  const imageAssets = dedupeSourceImageAssets([...sourceAssets, ...snapshotSourceAssets, ...legacySourceAsset]).slice(0, 4)
+
+  if (inputMode === 'text' || (imageAssets.length === 0 && !sourceImage)) {
     const previewTask = await createMeshyTextPreviewTask({
       prompt: String(prompt || '').trim(),
       settings,
       style,
+      targetFormats,
     })
 
     return {
@@ -975,24 +1227,50 @@ async function createMeshyTask(args: {
     }
   }
 
-  const sourceImagePublicUrl =
-    sourceImageAsset && typeof sourceImageAsset === 'object' && typeof sourceImageAsset.publicUrl === 'string'
-      ? sourceImageAsset.publicUrl
-      : ''
+  if (imageAssets.length > 1) {
+    if (!settings.multiImageEnabled) {
+      throw new Error('Meshy Multi Image to 3D is disabled in backend settings.')
+    }
 
-  if (!sourceImage && !sourceImagePublicUrl) {
+    const imageURLs = await Promise.all(
+      imageAssets.map((asset) =>
+        resolveMeshyImageURL({
+          mediaId: asset.mediaId ?? undefined,
+          req,
+          sourceImageAsset: asset,
+        }),
+      ),
+    )
+
+    const multiImageTask = await createMeshyMultiImageTask({
+      imageURLs,
+      prompt,
+      settings,
+      targetFormats,
+    })
+
+    return {
+      parameterSnapshotUpdate: {
+        mode: 'multi-image-to-3d',
+        multiImageTaskId: multiImageTask.id,
+        sourceImageCount: imageAssets.length,
+        stage: 'multi-image',
+      },
+      providerTaskId: multiImageTask.id,
+    }
+  }
+
+  const firstSourceImageAsset = imageAssets[0]
+  const sourceImagePublicUrl = firstSourceImageAsset?.publicUrl || ''
+
+  if (!sourceImage && !firstSourceImageAsset) {
     throw new Error('Meshy image generation requires a source image.')
   }
 
   const imageURL = await resolveMeshyImageURL({
     mediaId: sourceImage,
     req,
-    sourceImageAsset:
-      sourceImageAsset && typeof sourceImageAsset === 'object'
-        ? ({
-            publicUrl: typeof sourceImageAsset.publicUrl === 'string' ? sourceImageAsset.publicUrl : null,
-          } as { publicUrl?: string | null })
-        : null,
+    sourceImageAsset: firstSourceImageAsset || { publicUrl: sourceImagePublicUrl || null },
   })
 
   const imageTask = await createMeshyImageTask({
@@ -1020,11 +1298,12 @@ async function dispatchMeshyTask(args: {
   prompt?: string | null
   req: PayloadRequest
   sourceImageAsset?: Record<string, unknown>
+  sourceImageAssets?: Record<string, unknown>[]
   sourceImage?: number | null
   task: any
   userId: number
 }) {
-  const { inputMode, parameterSnapshot, prompt, req, sourceImage, sourceImageAsset, task, userId } = args
+  const { inputMode, parameterSnapshot, prompt, req, sourceImage, sourceImageAsset, sourceImageAssets, task, userId } = args
 
   if (task.providerTaskId || task.status === 'succeeded' || task.status === 'failed' || task.status === 'timeout') {
     return task
@@ -1069,6 +1348,9 @@ async function dispatchMeshyTask(args: {
 
   const startedAt = new Date().toISOString()
   const sourceImageAssetFromSnapshot = isRecord(currentSnapshot.sourceImageAsset) ? currentSnapshot.sourceImageAsset : undefined
+  const sourceImageAssetsFromSnapshot = Array.isArray(currentSnapshot.sourceImageAssets)
+    ? (currentSnapshot.sourceImageAssets.filter(isRecord) as Record<string, unknown>[])
+    : undefined
   const sourceImageId =
     typeof sourceImage === 'number'
       ? sourceImage
@@ -1104,6 +1386,7 @@ async function dispatchMeshyTask(args: {
       req,
       sourceImage: sourceImageId,
       sourceImageAsset: sourceImageAsset || sourceImageAssetFromSnapshot,
+      sourceImageAssets: sourceImageAssets || sourceImageAssetsFromSnapshot,
       style: typeof currentSnapshot.style === 'string' ? currentSnapshot.style : undefined,
     })
 
@@ -1280,7 +1563,7 @@ async function dispatchQueuedMeshyTasks(args: { req: PayloadRequest }) {
 
 const toMeshySuccessPayload = (args: {
   provider: 'meshy'
-  task: MeshyImageTask | MeshyTextTask
+  task: MeshyImageTask | MeshyMultiImageTask | MeshyTextTask
   taskCode: string
 }) => {
   const { provider, task, taskCode } = args
@@ -1461,6 +1744,63 @@ async function syncMeshyTask(args: { req: PayloadRequest; task: any; userId: num
     })
   }
 
+  if (snapshot.mode === 'multi-image-to-3d') {
+    const multiImageTaskId = snapshot.multiImageTaskId || task.providerTaskId
+    const multiImageTask = await retrieveMeshyMultiImageTask({
+      settings,
+      taskId: String(multiImageTaskId),
+    })
+    const mapped = mapMeshyStatus(multiImageTask.status)
+
+    if (mapped.status === 'succeeded') {
+      return updateTaskStatus({
+        payloadData: toMeshySuccessPayload({
+          provider: 'meshy',
+          task: multiImageTask,
+          taskCode: task.taskCode,
+        }),
+        progress: 100,
+        req,
+        status: 'succeeded',
+        task,
+        userId,
+      })
+    }
+
+    if (mapped.status === 'failed') {
+      return updateTaskStatus({
+        payloadData: {
+          failureReason: getMeshyFailureReason(multiImageTask),
+          provider: 'meshy',
+          providerTaskId: multiImageTask.id,
+          status: 'failed',
+        },
+        progress: 100,
+        req,
+        status: 'failed',
+        task,
+        userId,
+      })
+    }
+
+    return req.payload.update({
+      collection: 'generation-tasks',
+      data: {
+        callbackPayload: {
+          provider: 'meshy',
+          providerTaskId: multiImageTask.id,
+          stage: 'multi-image',
+          task: multiImageTask,
+        },
+        progress: typeof multiImageTask.progress === 'number' ? multiImageTask.progress : mapped.progress,
+        status: mapped.status,
+      },
+      id: task.id,
+      req,
+      ...accessOptions(req),
+    })
+  }
+
   const imageTaskId = snapshot.imageTaskId || task.providerTaskId
   const imageTask = await retrieveMeshyImageTask({
     settings,
@@ -1526,6 +1866,7 @@ export async function submitAITask(args: {
   provider?: SupportedProvider
   req: PayloadRequest
   sourceImageAsset?: Record<string, unknown>
+  sourceImageAssets?: Record<string, unknown>[]
   sourceImage?: number
 }) {
   const {
@@ -1538,23 +1879,33 @@ export async function submitAITask(args: {
     req,
     sourceImage,
     sourceImageAsset,
+    sourceImageAssets,
   } = args
 
   if (!req.user) {
     throw new Error('Unauthorized')
   }
 
-  const { creditRules, generationPricing } = await getTaskBillingSettings(req)
-  const configuredCredits = resolveGenerationCredits({
-    inputMode,
-    pricing: generationPricing,
-  })
+  const { creditRules, generationPricing, meshyPricing } = await getTaskBillingSettings(req)
 
   const resolvedProvider = await resolveSubmitProvider({
     preferredProvider: provider,
     req,
   })
   assertProviderAllowedInCurrentEnv(resolvedProvider)
+  const configuredCredits =
+    resolvedProvider === 'meshy'
+      ? resolveMeshyGenerationCredits({
+          inputMode,
+          pricing: meshyPricing,
+          sourceImage,
+          sourceImageAsset,
+          sourceImageAssets,
+        })
+      : resolveGenerationCredits({
+          inputMode,
+          pricing: generationPricing,
+        })
 
   const task = await req.payload.create({
     collection: 'generation-tasks',
@@ -1570,6 +1921,7 @@ export async function submitAITask(args: {
           reserveOnSubmit: creditRules.reserveOnSubmit,
         },
         ...(sourceImageAsset ? { sourceImageAsset } : {}),
+        ...(sourceImageAssets?.length ? { sourceImageAssets } : {}),
       },
       printRequested,
       progress: 5,
@@ -1616,6 +1968,7 @@ export async function submitAITask(args: {
       prompt,
       req,
       sourceImageAsset,
+      sourceImageAssets,
       sourceImage,
       task,
       userId: Number(req.user.id),

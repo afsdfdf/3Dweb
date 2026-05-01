@@ -2,6 +2,7 @@ export const adminEn = {
   collections: {
     addresses: { plural: 'Address Book', singular: 'Address' },
     announcements: { plural: 'Announcements', singular: 'Announcement', description: 'Manage homepage announcements, system notices, and short-form prompts.' },
+    avatarFrameStyles: { plural: 'Avatar Frame Styles', singular: 'Avatar Frame Style', description: 'Manage user-selectable avatar frame metadata, thumbnails, unlock rules, and ordering.' },
     auditLogs: { plural: 'Audit Logs', singular: 'Audit Log', description: 'Centralized record of high-risk admin actions, financial operations, webhook handling, and config changes.' },
     billingSubscriptions: { plural: 'Subscriptions', singular: 'Subscription', description: 'Track Stripe subscriptions, billing periods, and credit grant status.' },
     creditProducts: { plural: 'Credit Products', singular: 'Credit Product' },
@@ -221,11 +222,10 @@ export const adminEn = {
     },
     storageSettings: {
       label: 'Storage Settings',
-      description: 'Manage non-sensitive object storage settings here. Runtime code reads bucket / region / prefix / baseURL / signedDownloads from this global only. Keep AWS access key ID and secret access key in environment variables. Build-time S3 plugin bootstrap may still use env values during migration, but operators should treat this global as the single runtime source of truth.',
+      description: 'Manage non-sensitive Supabase Storage settings here. Runtime code reads bucket, prefix, baseURL, and signedDownloads from this global only. Supabase service keys must stay in environment variables.',
       fields: {
-        enabled: { label: 'Enable storage integration', description: 'Default: disabled. Turn this on only after bucket, region, and environment secrets are configured.' },
+        enabled: { label: 'Enable storage integration', description: 'Default: disabled. Turn this on only after Supabase bucket and environment secrets are configured.' },
         bucket: { label: 'Bucket name', description: 'Default: empty. Example: media-assets-prod.' },
-        region: { label: 'Region', description: 'Default: us-east-1.' },
         prefix: { label: 'Object prefix', description: 'Default: media. Files are stored under this logical folder prefix.' },
         baseURL: { label: 'Supabase public base URL', description: 'Default: empty. Optional Supabase Storage public object base URL used for media access URLs.' },
         signedDownloads: { label: 'Use signed downloads', description: 'Default: enabled. When disabled, absolute media URLs are returned without signing.' },

@@ -110,6 +110,11 @@ export const submitAITaskEndpoint = {
         provider: body.provider ?? 'custom',
         req,
         sourceImageAsset: body.sourceImageAsset ?? undefined,
+        sourceImageAssets: Array.isArray(body.sourceImageAssets)
+          ? (body.sourceImageAssets.filter(
+              (item: unknown) => item && typeof item === 'object' && !Array.isArray(item),
+            ) as Record<string, unknown>[])
+          : undefined,
         sourceImage: body.sourceImage,
       })
 

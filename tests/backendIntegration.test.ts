@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import { aiWebhookEndpoint, meshyWebhookEndpoint, __setAITasksEndpointTestHooks } from '../src/endpoints/aiTasks.ts'
+import { submitImageGenerationEndpoint, __setImageGenerationEndpointTestHooks } from '../src/endpoints/imageGeneration.ts'
 import { __setModelDownloadEndpointTestHooks, modelDownloadEndpoint } from '../src/endpoints/modelDownloads.ts'
 import { __setStripeWebhookTestHooks, stripeWebhookEndpoint } from '../src/endpoints/stripeWebhook.ts'
 import { __setSubscriptionFlowTestHooks, syncStripeSubscriptionState } from '../src/lib/subscriptionFlow.ts'
@@ -349,5 +350,74 @@ test('Meshy webhook accepts token and schedules provider sync after response', a
     }
 
     __setAITasksEndpointTestHooks(null)
+  }
+})
+
+test('image generation endpoint rejects multiple source image assets', async () => {
+  const response = await submitImageGenerationEndpoint.handler({
+    headers: new Headers(),
+    json: async () => ({
+      inputMode: 'image',
+      prompt: 'make a clean concept image',
+      sourceImageAssets: [
+        { publicUrl: 'https://storage.example.com/a.png' },
+        { publicUrl: 'https://storage.example.com/b.png' },
+      ],
+    }),
+    payload: {
+      config: { cookiePrefix: 'payload' },
+      logger: createLogger(),
+    },
+    user: {
+      id: 7,
+    },
+  } as never)
+  const body = await response.json()
+
+  assert.equal(response.status, 400)
+  assert.match(body.message, /one source image/i)
+})
+
+test('image generation endpoint forwards a single source image asset from the array payload', async () => {
+  let forwardedSourceImageAsset: Record<string, unknown> | undefined
+
+  __setImageGenerationEndpointTestHooks({
+    submitImageGeneration: async ({ sourceImageAsset }) => {
+      forwardedSourceImageAsset = sourceImageAsset
+      return {
+        media: {
+          id: 3,
+          mimeType: 'image/png',
+          url: 'https://storage.example.com/result.png',
+        },
+        task: {
+          id: 9,
+        },
+      } as never
+    },
+  })
+
+  try {
+    const response = await submitImageGenerationEndpoint.handler({
+      headers: new Headers(),
+      json: async () => ({
+        inputMode: 'image',
+        prompt: 'make a clean concept image',
+        sourceImageAssets: [{ bucket: 'media', path: 'media/input/a.png', publicUrl: 'https://storage.example.com/a.png' }],
+      }),
+      payload: {
+        config: { cookiePrefix: 'payload' },
+        logger: createLogger(),
+      },
+      user: {
+        id: 7,
+      },
+    } as never)
+
+    assert.equal(response.status, 200)
+    assert.equal(forwardedSourceImageAsset?.bucket, 'media')
+    assert.equal(forwardedSourceImageAsset?.path, 'media/input/a.png')
+  } finally {
+    __setImageGenerationEndpointTestHooks(null)
   }
 })

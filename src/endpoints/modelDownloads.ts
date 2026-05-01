@@ -3,7 +3,7 @@ import type { PayloadRequest } from 'payload'
 import { InsufficientCreditsError, refundDownloadCredits, spendDownloadCredits } from '@/lib/creditLedger'
 import { queryPostgres } from '@/lib/postgres'
 import { isAllowedRemoteAssetURL } from '@/lib/remoteAssetSecurity'
-import { getMediaAccessURL } from '@/lib/s3SignedURL'
+import { getMediaAccessURL } from '@/lib/mediaAccessURL'
 
 type ModelDownloadEndpointTestHooks = {
   getMediaAccessURL?: typeof getMediaAccessURL

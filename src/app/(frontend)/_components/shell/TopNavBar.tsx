@@ -1,5 +1,6 @@
 import Link from 'next/link'
 
+import { AuthEntryButton } from './AuthEntryButton'
 import { Locale } from '../../_lib/locale'
 
 type TopNavBarProps = {
@@ -76,16 +77,6 @@ function IconAction({
   )
 }
 
-function AuthEntry() {
-  return (
-    <Link className="relative flex h-[34px] min-w-[168px] items-center justify-center px-4 text-[12px] uppercase tracking-[0.08em] text-[#efe7da]" href="/login">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-fill" src="/ui/nav/auth-pill.png" />
-      <span className="relative z-10">Log in / Sign up</span>
-    </Link>
-  )
-}
-
 export function TopNavBar({ currentPath, locale, navigation, showAuthEntry = true, showLocaleSwitcher = true, user }: TopNavBarProps) {
   void locale
   void navigation
@@ -159,7 +150,7 @@ export function TopNavBar({ currentPath, locale, navigation, showAuthEntry = tru
               <IconAction alt="Cart" src="/ui/nav/icon-cart.png" />
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img alt="" aria-hidden="true" className="h-10 w-10 object-contain opacity-88" src="/ui/nav/avatar-disc.png" />
-              {showAuthEntry ? <AuthEntry /> : <div />}
+              {showAuthEntry ? <AuthEntryButton /> : <div />}
             </div>
           )}
         </div>

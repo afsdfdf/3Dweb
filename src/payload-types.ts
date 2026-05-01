@@ -69,6 +69,7 @@ export interface Config {
   collections: {
     users: User;
     'user-follows': UserFollow;
+    'avatar-frame-styles': AvatarFrameStyle;
     media: Media;
     'generation-tasks': GenerationTask;
     'task-events': TaskEvent;
@@ -97,6 +98,7 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     'user-follows': UserFollowsSelect<false> | UserFollowsSelect<true>;
+    'avatar-frame-styles': AvatarFrameStylesSelect<false> | AvatarFrameStylesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     'generation-tasks': GenerationTasksSelect<false> | GenerationTasksSelect<true>;
     'task-events': TaskEventsSelect<false> | TaskEventsSelect<true>;
@@ -185,7 +187,21 @@ export interface User {
   bio?: string | null;
   role: 'admin' | 'operator' | 'customer';
   avatar?: (number | null) | Media;
+  /**
+   * Creator profile banner shown on account and model detail surfaces. Field name is kept for compatibility.
+   */
   profileBackground?: (number | null) | Media;
+  /**
+   * Horizontal focal point percentage for banner cropping.
+   */
+  profileBannerFocalX?: number | null;
+  /**
+   * Vertical focal point percentage for banner cropping.
+   */
+  profileBannerFocalY?: number | null;
+  /**
+   * Compatibility frame key. Rich frame metadata is managed in Avatar Frame Styles.
+   */
   avatarFrame?: ('none' | 'ember' | 'kick' | 'emerald') | null;
   profileVisibility?: ('private' | 'public') | null;
   phone?: string | null;
@@ -228,9 +244,9 @@ export interface Media {
   alt: string;
   owner?: (number | null) | User;
   /**
-   * Use preview for guest-readable images. Keep model files as model and source assets as input.
+   * Use preview for guest-readable model images. Use avatar and profile banner for user profile media. Keep model files as model and source assets as input.
    */
-  purpose?: ('input' | 'preview' | 'model' | 'document' | 'asset') | null;
+  purpose?: ('input' | 'avatar' | 'profile-banner' | 'preview' | 'model' | 'document' | 'asset') | null;
   /**
    * Enable this when administrators want guests to access this exact asset, including example files or public 3D files.
    */
@@ -255,6 +271,29 @@ export interface UserFollow {
   id: number;
   follower: number | User;
   followee: number | User;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Manage user-selectable avatar frame metadata, thumbnails, unlock rules, and ordering.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "avatar-frame-styles".
+ */
+export interface AvatarFrameStyle {
+  id: number;
+  /**
+   * Stable frontend key. Keep it lowercase and do not reuse retired keys.
+   */
+  key: string;
+  title: string;
+  description?: string | null;
+  thumbnail?: (number | null) | Media;
+  frameImage?: (number | null) | Media;
+  unlockRule?: ('free' | 'subscription' | 'event' | 'achievement') | null;
+  isActive?: boolean | null;
+  isUserSelectable?: boolean | null;
+  sortOrder?: number | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -431,6 +470,22 @@ export interface HomepageItem {
     | 'articles';
   contentType: 'custom' | 'model' | 'post' | 'announcement' | 'bundle';
   summary?: string | null;
+  /**
+   * Optional small label for homepage cards, such as Featured or New.
+   */
+  badgeLabel?: string | null;
+  /**
+   * Optional ribbon copy for image-led homepage cards.
+   */
+  ribbonLabel?: string | null;
+  /**
+   * Optional action label when a card renders a button or link label.
+   */
+  ctaLabel?: string | null;
+  /**
+   * Optional override for the cover image alt text on frontend cards.
+   */
+  altText?: string | null;
   railVariant?: ('standard' | 'wide') | null;
   /**
    * Example: Products x5. Used for collection shelf cards.
@@ -815,6 +870,10 @@ export interface PayloadLockedDocument {
         value: number | UserFollow;
       } | null)
     | ({
+        relationTo: 'avatar-frame-styles';
+        value: number | AvatarFrameStyle;
+      } | null)
+    | ({
         relationTo: 'media';
         value: number | Media;
       } | null)
@@ -943,6 +1002,8 @@ export interface UsersSelect<T extends boolean = true> {
   role?: T;
   avatar?: T;
   profileBackground?: T;
+  profileBannerFocalX?: T;
+  profileBannerFocalY?: T;
   avatarFrame?: T;
   profileVisibility?: T;
   phone?: T;
@@ -979,6 +1040,23 @@ export interface UsersSelect<T extends boolean = true> {
 export interface UserFollowsSelect<T extends boolean = true> {
   follower?: T;
   followee?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "avatar-frame-styles_select".
+ */
+export interface AvatarFrameStylesSelect<T extends boolean = true> {
+  key?: T;
+  title?: T;
+  description?: T;
+  thumbnail?: T;
+  frameImage?: T;
+  unlockRule?: T;
+  isActive?: T;
+  isUserSelectable?: T;
+  sortOrder?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1128,6 +1206,10 @@ export interface HomepageItemsSelect<T extends boolean = true> {
   placement?: T;
   contentType?: T;
   summary?: T;
+  badgeLabel?: T;
+  ribbonLabel?: T;
+  ctaLabel?: T;
+  altText?: T;
   railVariant?: T;
   itemCountLabel?: T;
   coverImage?: T;
@@ -1485,6 +1567,18 @@ export interface SiteSetting {
     hybridCredits?: number | null;
     downloadCredits?: number | null;
   };
+  modelAccessPolicy?: {
+    /**
+     * Default off. Keep imported public model previews free until an operator enables charging.
+     */
+    chargePreviewCredits?: boolean | null;
+    previewCredits?: number | null;
+    /**
+     * Default off. Download charging must remain server-side and refundable on delivery failure.
+     */
+    chargeDownloadCredits?: boolean | null;
+    downloadCredits?: number | null;
+  };
   creditPackages?:
     | {
         title: string;
@@ -1656,10 +1750,29 @@ export interface AiProviderSetting {
   meshy?: {
     credentialsSource?: string | null;
     baseURL?: string | null;
+    /**
+     * Environment variables are safer. Use Payload admin override only when operators need to switch Meshy keys from the backend UI.
+     */
+    apiKeyMode?: ('environment' | 'payload') | null;
+    /**
+     * Stored in the Payload database and never sent to the frontend. Prefer MESHY_API_KEY in production when possible.
+     */
+    apiKey?: string | null;
     textTo3DAiModel?: ('latest' | 'meshy-6' | 'meshy-5') | null;
     imageTo3DAiModel?: ('latest' | 'meshy-6' | 'meshy-5') | null;
     shouldTexture?: boolean | null;
     enablePBR?: boolean | null;
+    hdTexture?: boolean | null;
+    multiImageEnabled?: boolean | null;
+    pricing?: {
+      textTo3DCredits?: number | null;
+      imageTo3DCredits?: number | null;
+      multiImageTo3DCredits?: number | null;
+    };
+    modelType?: ('standard' | 'lowpoly') | null;
+    topology?: ('triangle' | 'quad') | null;
+    targetPolycount?: number | null;
+    targetFormats?: ('glb' | 'obj' | 'fbx' | 'stl' | 'usdz' | '3mf')[] | null;
     moderation?: boolean | null;
     imageEnhancement?: boolean | null;
     removeLighting?: boolean | null;
@@ -1701,7 +1814,7 @@ export interface AiProviderSetting {
   createdAt?: string | null;
 }
 /**
- * Manage non-sensitive object storage settings here. Runtime code reads bucket / region / prefix / baseURL / signedDownloads from this global only. Keep AWS access key ID and secret access key in environment variables. Build-time S3 plugin bootstrap may still use env values during migration, but operators should treat this global as the single runtime source of truth.
+ * Manage non-sensitive Supabase Storage settings here. Runtime code reads bucket, prefix, baseURL, and signedDownloads from this global only. Supabase service keys must stay in environment variables.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "storage-settings".
@@ -1709,17 +1822,13 @@ export interface AiProviderSetting {
 export interface StorageSetting {
   id: number;
   /**
-   * Default: disabled. Turn this on only after bucket, region, and environment secrets are configured.
+   * Default: disabled. Turn this on only after Supabase bucket and environment secrets are configured.
    */
   enabled?: boolean | null;
   /**
    * Default: empty. Example: media-assets-prod.
    */
   bucket?: string | null;
-  /**
-   * Default: us-east-1.
-   */
-  region?: string | null;
   /**
    * Default: media. Files are stored under this logical folder prefix.
    */
@@ -1895,6 +2004,14 @@ export interface SiteSettingsSelect<T extends boolean = true> {
         imageCredits?: T;
         textCredits?: T;
         hybridCredits?: T;
+        downloadCredits?: T;
+      };
+  modelAccessPolicy?:
+    | T
+    | {
+        chargePreviewCredits?: T;
+        previewCredits?: T;
+        chargeDownloadCredits?: T;
         downloadCredits?: T;
       };
   creditPackages?:
@@ -2112,10 +2229,25 @@ export interface AiProviderSettingsSelect<T extends boolean = true> {
     | {
         credentialsSource?: T;
         baseURL?: T;
+        apiKeyMode?: T;
+        apiKey?: T;
         textTo3DAiModel?: T;
         imageTo3DAiModel?: T;
         shouldTexture?: T;
         enablePBR?: T;
+        hdTexture?: T;
+        multiImageEnabled?: T;
+        pricing?:
+          | T
+          | {
+              textTo3DCredits?: T;
+              imageTo3DCredits?: T;
+              multiImageTo3DCredits?: T;
+            };
+        modelType?: T;
+        topology?: T;
+        targetPolycount?: T;
+        targetFormats?: T;
         moderation?: T;
         imageEnhancement?: T;
         removeLighting?: T;
@@ -2164,7 +2296,6 @@ export interface AiProviderSettingsSelect<T extends boolean = true> {
 export interface StorageSettingsSelect<T extends boolean = true> {
   enabled?: T;
   bucket?: T;
-  region?: T;
   prefix?: T;
   baseURL?: T;
   signedDownloads?: T;

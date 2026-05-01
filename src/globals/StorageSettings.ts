@@ -23,7 +23,7 @@ export const StorageSettings: GlobalConfig = {
       defaultValue: false,
       label: text('Enable storage integration'),
       admin: {
-        description: text('Default: disabled. Turn this on only after bucket, region, and environment secrets are configured.'),
+        description: text('Default: disabled. Turn this on only after Supabase bucket and environment secrets are configured.'),
       },
     },
     {
@@ -33,15 +33,6 @@ export const StorageSettings: GlobalConfig = {
       label: text('Bucket name'),
       admin: {
         description: text('Default: empty. Example: media-assets-prod.'),
-      },
-    },
-    {
-      name: 'region',
-      type: 'text',
-      defaultValue: 'us-east-1',
-      label: text('Region'),
-      admin: {
-        description: text('Default: us-east-1.'),
       },
     },
     {

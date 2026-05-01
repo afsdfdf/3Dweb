@@ -12,6 +12,12 @@ export type TaskCreditRules = {
   reserveOnSubmit: boolean
 }
 
+export type MeshyGenerationPricing = {
+  imageTo3DCredits: number
+  multiImageTo3DCredits: number
+  textTo3DCredits: number
+}
+
 export type TaskBillingSnapshot = {
   configuredCredits: number
   refundOnFailure: boolean
@@ -23,6 +29,12 @@ export const defaultGenerationPricing: GenerationPricing = {
   hybridCredits: 25,
   imageCredits: 20,
   textCredits: 15,
+}
+
+export const defaultMeshyGenerationPricing: MeshyGenerationPricing = {
+  imageTo3DCredits: 30,
+  multiImageTo3DCredits: 30,
+  textTo3DCredits: 30,
 }
 
 export const defaultTaskCreditRules: TaskCreditRules = {
@@ -71,6 +83,20 @@ export async function getTaskBillingSettings(req: PayloadRequest) {
       imageCredits: toNumber(siteSettings?.generationPricing?.imageCredits, defaultGenerationPricing.imageCredits),
       textCredits: toNumber(siteSettings?.generationPricing?.textCredits, defaultGenerationPricing.textCredits),
     } satisfies GenerationPricing,
+    meshyPricing: {
+      imageTo3DCredits: toNumber(
+        aiProviderSettings?.meshy?.pricing?.imageTo3DCredits,
+        defaultMeshyGenerationPricing.imageTo3DCredits,
+      ),
+      multiImageTo3DCredits: toNumber(
+        aiProviderSettings?.meshy?.pricing?.multiImageTo3DCredits,
+        defaultMeshyGenerationPricing.multiImageTo3DCredits,
+      ),
+      textTo3DCredits: toNumber(
+        aiProviderSettings?.meshy?.pricing?.textTo3DCredits,
+        defaultMeshyGenerationPricing.textTo3DCredits,
+      ),
+    } satisfies MeshyGenerationPricing,
   }
 }
 
@@ -89,6 +115,31 @@ export function resolveGenerationCredits(args: {
     default:
       return pricing.textCredits
   }
+}
+
+export function resolveMeshyGenerationCredits(args: {
+  inputMode: 'hybrid' | 'image' | 'text'
+  pricing: MeshyGenerationPricing
+  sourceImage?: number | null
+  sourceImageAsset?: unknown
+  sourceImageAssets?: unknown
+}) {
+  const sourceImageAssetCount = Array.isArray(args.sourceImageAssets)
+    ? args.sourceImageAssets.filter((item) => item && typeof item === 'object').length
+    : args.sourceImageAsset && typeof args.sourceImageAsset === 'object'
+      ? 1
+      : 0
+  const imageCount = Math.max(sourceImageAssetCount, args.sourceImage ? 1 : 0)
+
+  if (imageCount > 1) {
+    return args.pricing.multiImageTo3DCredits
+  }
+
+  if (imageCount === 1 || args.inputMode === 'image' || args.inputMode === 'hybrid') {
+    return args.pricing.imageTo3DCredits
+  }
+
+  return args.pricing.textTo3DCredits
 }
 
 export function readTaskBillingSnapshot(parameterSnapshot: unknown): TaskBillingSnapshot | null {

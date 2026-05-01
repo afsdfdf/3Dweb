@@ -1,0 +1,1023 @@
+.pageShell {
+  width: 100vw;
+  height: 100dvh;
+  min-width: 1200px;
+  overflow: hidden;
+  background: #111112;
+  color: #f5efe2;
+}
+
+.stageViewport {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.boundTopNavigation {
+  position: absolute;
+  inset: 0 0 auto;
+  width: auto;
+  z-index: 60;
+}
+
+.stage {
+  --page-scale: min(1, calc(100vw / 1920px), calc(100dvh / 1080px));
+  position: relative;
+  left: 50%;
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  transform: translateX(-50%) scale(var(--page-scale));
+  transform-origin: top center;
+  background:
+    radial-gradient(circle at 18% 22%, rgba(142, 75, 36, 0.34), transparent 28%),
+    radial-gradient(circle at 80% 82%, rgba(53, 92, 85, 0.4), transparent 34%),
+    linear-gradient(135deg, #090909 0%, #171413 48%, #202523 100%);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.heroBackdrop {
+  position: absolute;
+  inset: 60px 0 0;
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.68), transparent 42%, rgba(0, 0, 0, 0.44)),
+    url("/ui-lab/model-detail-uicut/images/detail-side-banner.png") center / cover no-repeat;
+  opacity: 0.15;
+}
+
+.sideNav {
+  position: absolute;
+  left: 32px;
+  top: 92px;
+  width: 430px;
+  height: 908px;
+}
+
+.sideFrame {
+  --upper-height: calc(112px - var(--top-height) - (var(--middle-height) / 2));
+  --lower-height: calc(100% - var(--top-height) - var(--upper-height) - var(--middle-height) - var(--bottom-height));
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.sideContent {
+  position: relative;
+  z-index: 2;
+  box-sizing: border-box;
+  height: 100%;
+  padding: 34px 30px;
+  background: rgba(9, 9, 10, 0.78);
+}
+
+.identityCard {
+  display: grid;
+  grid-template-columns: 116px 1fr;
+  align-items: center;
+  gap: 18px;
+}
+
+.avatarHalo {
+  display: grid;
+  width: 112px;
+  height: 112px;
+  place-items: center;
+  border: 5px solid #f1cd82;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, rgba(245, 199, 119, 0.35), transparent 58%),
+    #42161b;
+  box-shadow:
+    inset 0 0 0 7px rgba(82, 24, 31, 0.86),
+    0 0 32px rgba(233, 170, 80, 0.2);
+}
+
+.avatarHalo img {
+  width: 88px;
+  height: 88px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+.kicker {
+  margin: 0;
+  color: rgba(241, 203, 130, 0.72);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  line-height: 16px;
+  text-transform: uppercase;
+}
+
+.identityCard h1 {
+  margin: 8px 0 0;
+  max-width: 100%;
+  color: #fff8ec;
+  font-size: 28px;
+  line-height: 34px;
+  overflow-wrap: anywhere;
+}
+
+.email {
+  margin: 7px 0 0;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+}
+
+.creditPlate {
+  display: grid;
+  grid-template-columns: 82px 1fr;
+  align-items: center;
+  gap: 12px;
+  margin-top: 30px;
+  min-height: 92px;
+  border: 1px solid rgba(243, 199, 116, 0.28);
+  background:
+    linear-gradient(90deg, rgba(231, 169, 78, 0.2), transparent 68%),
+    rgba(255, 255, 255, 0.04);
+  padding: 10px 18px 10px 6px;
+}
+
+.creditPlate img {
+  width: 86px;
+  height: 86px;
+  object-fit: contain;
+}
+
+.creditPlate strong {
+  display: block;
+  color: #f4d18a;
+  font-size: 36px;
+  line-height: 38px;
+}
+
+.creditPlate span {
+  color: rgba(244, 209, 138, 0.65);
+  font-size: 13px;
+}
+
+.sectionNav {
+  display: grid;
+  gap: 10px;
+  margin-top: 30px;
+}
+
+.sectionNav button {
+  display: grid;
+  grid-template-columns: 42px 1fr 46px;
+  align-items: center;
+  min-height: 58px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.18);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  padding: 0 14px;
+  text-align: left;
+  text-decoration: none;
+}
+
+.sectionNav button:hover,
+.sectionNav button:focus-visible,
+.activeNavItem {
+  border-color: rgba(244, 202, 127, 0.54);
+  background: linear-gradient(90deg, rgba(244, 202, 127, 0.16), rgba(0, 0, 0, 0.22));
+  outline: none;
+}
+
+.sectionNav span {
+  color: rgba(241, 203, 130, 0.66);
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.sectionNav strong {
+  color: #fff8ee;
+  font-size: 14px;
+}
+
+.sectionNav em {
+  display: grid;
+  min-width: 34px;
+  height: 28px;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(244, 209, 138, 0.12);
+  color: #f4d18a;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.sideActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+.sideActions a,
+.headerLink,
+.cardHeader a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  border: 1px solid rgba(244, 202, 127, 0.36);
+  background: rgba(255, 255, 255, 0.045);
+  color: #f6ddb1;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.sideActions a:first-child {
+  background: linear-gradient(180deg, #ffe2a0, #c87a26);
+  color: #351b05;
+}
+
+.mainPanel {
+  position: absolute;
+  left: 494px;
+  right: 32px;
+  top: 92px;
+  height: 908px;
+  box-sizing: border-box;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(7, 7, 8, 0.8);
+  box-shadow: 0 28px 60px rgba(0, 0, 0, 0.36);
+  overflow: hidden;
+  padding: 34px 38px 38px;
+}
+
+.panelHeader,
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.panelHeader h2,
+.cardHeader h3 {
+  margin: 8px 0 0;
+  color: #fff7e8;
+  font-size: 32px;
+  line-height: 38px;
+}
+
+.headerLink,
+.cardHeader a {
+  min-width: 146px;
+  padding: 0 18px;
+}
+
+.metricGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 26px;
+}
+
+.metricCard {
+  min-height: 104px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent),
+    rgba(255, 255, 255, 0.035);
+  padding: 18px;
+}
+
+.metricCard span {
+  display: block;
+  color: rgba(255, 255, 255, 0.48);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.metricCard strong {
+  display: block;
+  margin-top: 15px;
+  color: #ffffff;
+  font-size: 36px;
+  line-height: 38px;
+}
+
+.gold strong {
+  color: #f4d18a;
+}
+
+.green strong {
+  color: #9fd9c2;
+}
+
+.purple strong {
+  color: #c7b2ff;
+}
+
+.contentFrame {
+  position: relative;
+  height: 626px;
+  margin-top: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  background: rgba(255, 255, 255, 0.035);
+  padding: 24px;
+}
+
+.activityList,
+.paymentList {
+  display: grid;
+  gap: 10px;
+  margin-top: 20px;
+  max-height: 430px;
+  overflow: hidden;
+}
+
+.overviewGrid,
+.profileEditorGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.overviewHero,
+.overviewLinks,
+.assetSummaryList,
+.accountHealth,
+.overviewProfile,
+.avatarEditor,
+.bannerEditor,
+.profileField,
+.securityPrimary,
+.settingsGrid div,
+.profileFormGrid label,
+.passwordPanel,
+.readOnlyAccount div {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.18);
+  padding: 16px;
+}
+
+.overviewHero {
+  grid-column: span 2;
+  min-height: 118px;
+  background:
+    linear-gradient(90deg, rgba(244, 202, 127, 0.12), transparent 60%),
+    rgba(0, 0, 0, 0.2);
+}
+
+.overviewHero strong {
+  display: block;
+  max-width: 780px;
+  margin-top: 10px;
+  color: #fff8ee;
+  font-size: 22px;
+  line-height: 30px;
+}
+
+.overviewHero span,
+.overviewProfile em {
+  display: block;
+  margin-top: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+  font-style: normal;
+  line-height: 20px;
+}
+
+.overviewLinks {
+  display: grid;
+  gap: 10px;
+}
+
+.overviewLinks button,
+.assetSummaryList button,
+.accountHealth button,
+.overviewProfile button,
+.avatarEditor button,
+.bannerEditor button,
+.passwordPanel button {
+  min-height: 38px;
+  border: 1px solid rgba(244, 202, 127, 0.36);
+  background: rgba(255, 255, 255, 0.045);
+  color: #f6ddb1;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.overviewLinks button:hover,
+.overviewLinks button:focus-visible,
+.assetSummaryList button:hover,
+.assetSummaryList button:focus-visible,
+.accountHealth button:hover,
+.accountHealth button:focus-visible,
+.overviewProfile button:hover,
+.overviewProfile button:focus-visible,
+.avatarEditor button:hover,
+.bannerEditor button:hover,
+.passwordPanel button:hover {
+  border-color: rgba(244, 202, 127, 0.72);
+  outline: none;
+}
+
+.overviewProfile {
+  display: grid;
+  grid-column: span 2;
+  grid-template-columns: 82px 1fr 154px;
+  align-items: center;
+  gap: 16px;
+  min-height: 92px;
+}
+
+.assetSummaryList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.assetSummaryList button {
+  display: grid;
+  grid-template-columns: 1fr 54px;
+  min-height: 90px;
+  padding: 14px;
+  text-align: left;
+}
+
+.assetSummaryList span,
+.accountHealth span {
+  color: rgba(241, 203, 130, 0.72);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.assetSummaryList strong,
+.accountHealth strong {
+  justify-self: end;
+  color: #ffffff;
+  font-size: 28px;
+  line-height: 28px;
+}
+
+.assetSummaryList em {
+  grid-column: span 2;
+  color: rgba(255, 255, 255, 0.56);
+  font-size: 12px;
+  font-style: normal;
+  line-height: 18px;
+}
+
+.assetSummaryList small {
+  grid-column: span 2;
+  color: #f4d18a;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.accountHealth {
+  display: grid;
+  gap: 10px;
+}
+
+.accountHealth div {
+  display: grid;
+  gap: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 10px;
+}
+
+.accountHealth div:last-of-type {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.accountHealth button {
+  margin-top: 2px;
+}
+
+.accountHealth strong {
+  justify-self: start;
+  font-size: 18px;
+}
+
+.accountHealth em {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+  font-style: normal;
+  line-height: 18px;
+}
+
+.overviewProfile img {
+  width: 72px;
+  height: 72px;
+  border: 3px solid #f1cd82;
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+.overviewProfile span {
+  color: rgba(241, 203, 130, 0.7);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.overviewProfile strong {
+  display: block;
+  margin-top: 8px;
+  color: #fff8ee;
+  font-size: 20px;
+}
+
+.avatarEditor {
+  display: grid;
+  grid-template-columns: 104px 1fr;
+  align-items: center;
+  gap: 18px;
+}
+
+.largeAvatar {
+  display: grid;
+  width: 96px;
+  height: 96px;
+  place-items: center;
+  border: 4px solid #f1cd82;
+  border-radius: 999px;
+  background: #42161b;
+  overflow: hidden;
+}
+
+.largeAvatar img {
+  width: 78px;
+  height: 78px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+.bannerEditor {
+  position: relative;
+  min-height: 128px;
+  overflow: hidden;
+}
+
+.bannerEditor img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.34;
+}
+
+.bannerEditor div {
+  position: relative;
+  z-index: 1;
+}
+
+.avatarEditor span,
+.bannerEditor span,
+.profileField span,
+.securityPrimary span,
+.settingsGrid span {
+  display: block;
+  margin-bottom: 8px;
+  color: rgba(241, 203, 130, 0.7);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.avatarEditor strong,
+.bannerEditor strong,
+.profileField strong,
+.securityPrimary strong {
+  display: block;
+  color: #fff8ee;
+  font-size: 16px;
+  overflow-wrap: anywhere;
+}
+
+.avatarEditor p,
+.bannerEditor p,
+.securityPrimary p {
+  margin: 8px 0 0;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+  line-height: 19px;
+}
+
+.avatarEditor button,
+.bannerEditor button {
+  margin-top: 12px;
+  padding: 0 14px;
+}
+
+.modelGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.modelCard {
+  display: grid;
+  min-height: 250px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background:
+    radial-gradient(circle at 50% 70%, rgba(149, 182, 188, 0.24), transparent 44%),
+    rgba(0, 0, 0, 0.2);
+  color: inherit;
+  overflow: hidden;
+  text-decoration: none;
+}
+
+.modelThumb {
+  display: grid;
+  height: 142px;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.modelThumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.modelThumb span {
+  color: rgba(255, 255, 255, 0.42);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.modelCard div:not(.modelThumb) {
+  padding: 14px 14px 0;
+}
+
+.modelCard strong {
+  display: block;
+  color: #fff8ee;
+  font-size: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.modelCard div:not(.modelThumb) span {
+  display: block;
+  margin-top: 6px;
+  color: rgba(255, 255, 255, 0.46);
+  font-size: 12px;
+}
+
+.modelCard footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px 14px;
+}
+
+.modelCard em,
+.modelCard small {
+  color: #f4d18a;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.modelCard small {
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.activityItem,
+.paymentItem {
+  display: grid;
+  grid-template-columns: 82px 1fr 128px;
+  align-items: center;
+  gap: 16px;
+  min-height: 66px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.2);
+  color: inherit;
+  padding: 12px 16px;
+  text-decoration: none;
+}
+
+.activityItem > span {
+  color: #f1cb82;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.activityItem strong,
+.paymentItem strong,
+.settingsGrid strong {
+  display: block;
+  color: #fff8ee;
+  font-size: 15px;
+}
+
+.activityItem em,
+.paymentItem span {
+  display: block;
+  margin-top: 6px;
+  color: rgba(255, 255, 255, 0.46);
+  font-size: 13px;
+  font-style: normal;
+  line-height: 18px;
+}
+
+.activityItem small,
+.paymentItem small {
+  justify-self: end;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 12px;
+}
+
+.paymentItem {
+  grid-template-columns: 1fr 160px 128px;
+}
+
+.paymentItem em {
+  color: #f4d18a;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.dataTable {
+  margin-top: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  max-height: 430px;
+  overflow: hidden;
+}
+
+.tableHead,
+.tableRow {
+  display: grid;
+  grid-template-columns: 1.2fr 0.7fr 0.7fr 1fr;
+  min-height: 46px;
+}
+
+.tableHead {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.tableHead span,
+.tableRow span,
+.tableRow strong,
+.tableRow time {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  padding: 0 16px;
+}
+
+.tableHead span {
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 700;
+}
+
+.tableRow {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tableRow strong {
+  color: #f4d18a;
+}
+
+.tableRow time,
+.tableRow span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tableEmpty,
+.emptyState {
+  color: rgba(255, 255, 255, 0.56);
+  font-size: 14px;
+  line-height: 22px;
+  padding: 22px;
+}
+
+.emptyState {
+  border: 1px dashed rgba(255, 255, 255, 0.16);
+}
+
+.emptyState strong {
+  display: block;
+  color: #ffffff;
+}
+
+.emptyState p {
+  margin: 8px 0 0;
+}
+
+.accountSettingsFrame {
+  display: grid;
+  grid-template-columns: 0.92fr 1.08fr;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.mediaSettings,
+.profileFormGrid,
+.passwordPanel,
+.readOnlyAccount {
+  display: grid;
+  gap: 8px;
+}
+
+.profileFormGrid {
+  grid-template-columns: 1fr 1fr;
+}
+
+.profileFormGrid label,
+.passwordPanel,
+.readOnlyAccount {
+  min-height: 68px;
+}
+
+.profileFormGrid span,
+.passwordPanel span,
+.readOnlyAccount span {
+  display: block;
+  margin-bottom: 8px;
+  color: rgba(241, 203, 130, 0.7);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.profileFormGrid input,
+.profileFormGrid select,
+.profileFormGrid textarea,
+.passwordFields input {
+  width: 100%;
+  min-width: 0;
+  height: 30px;
+  box-sizing: border-box;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(0, 0, 0, 0.28);
+  color: #fff8ee;
+  font-size: 13px;
+  outline: none;
+  padding: 0 10px;
+}
+
+.profileFormGrid textarea {
+  height: 50px;
+  resize: none;
+  padding: 10px;
+}
+
+.bioField {
+  grid-column: span 2;
+}
+
+.passwordPanel {
+  grid-column: span 2;
+  display: grid;
+  grid-template-columns: 1fr 1.55fr 160px;
+  align-items: center;
+  gap: 10px;
+}
+
+.passwordPanel strong,
+.readOnlyAccount strong {
+  display: block;
+  color: #fff8ee;
+  font-size: 15px;
+  overflow-wrap: anywhere;
+}
+
+.passwordPanel p {
+  margin: 6px 0 0;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.passwordFields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.passwordPanel button {
+  height: 42px;
+  background: linear-gradient(180deg, #ffe2a0, #c87a26);
+  color: #351b05;
+}
+
+.readOnlyAccount {
+  grid-column: span 2;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+@media (max-width: 1279px) {
+  .pageShell {
+    min-width: 0;
+    height: auto;
+    min-height: 100dvh;
+    overflow: auto;
+  }
+
+  .stageViewport {
+    overflow: visible;
+  }
+
+  .boundTopNavigation {
+    display: none;
+  }
+
+  .stage {
+    left: auto;
+    width: 100%;
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+    transform: none;
+    padding: 20px;
+  }
+
+  .heroBackdrop {
+    inset: 0;
+  }
+
+  .sideNav,
+  .mainPanel {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: auto;
+  }
+
+  .sideNav {
+    margin-bottom: 18px;
+  }
+
+  .sideFrame {
+    display: none;
+  }
+
+  .sideContent,
+  .mainPanel {
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    padding: 24px;
+  }
+
+  .metricGrid,
+  .settingsGrid,
+  .overviewGrid,
+  .profileEditorGrid,
+  .modelGrid,
+  .accountSettingsFrame,
+  .profileFormGrid,
+  .passwordPanel,
+  .passwordFields,
+  .readOnlyAccount {
+    grid-template-columns: 1fr;
+  }
+
+  .overviewHero,
+  .bioField,
+  .passwordPanel,
+  .readOnlyAccount {
+    grid-column: auto;
+  }
+
+  .contentFrame {
+    height: auto;
+  }
+
+  .activityItem,
+  .paymentItem,
+  .tableHead,
+  .tableRow {
+    grid-template-columns: 1fr;
+  }
+
+  .activityItem small,
+  .paymentItem small {
+    justify-self: start;
+  }
+}

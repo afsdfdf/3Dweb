@@ -4,7 +4,7 @@ import { rejectRateLimitedEndpoint } from "@/lib/endpointRateLimit";
 import { getModelGLBSourceURL } from "@/lib/modelAssetURL";
 import { queryPostgres } from "@/lib/postgres";
 import { isAllowedRemoteAssetURL } from "@/lib/remoteAssetSecurity";
-import { getMediaAccessURL } from "@/lib/s3SignedURL";
+import { getMediaAccessURL } from "@/lib/mediaAccessURL";
 
 const defaultMimeTypeByFormat: Record<string, string> = {
   glb: "model/gltf-binary",

@@ -23,6 +23,11 @@ test('AI Provider Settings keeps dedicated Meshy and image-generation groups', (
 
   assert.ok(meshyNames.includes('textTo3DAiModel'))
   assert.ok(meshyNames.includes('imageTo3DAiModel'))
+  assert.ok(meshyNames.includes('apiKeyMode'))
+  assert.ok(meshyNames.includes('apiKey'))
+  assert.ok(meshyNames.includes('multiImageEnabled'))
+  assert.ok(meshyNames.includes('pricing'))
+  assert.ok(meshyNames.includes('targetFormats'))
   assert.ok(imageGenerationNames.includes('official'))
   assert.ok(imageGenerationNames.includes('thirdParty'))
 })

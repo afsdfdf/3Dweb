@@ -39,8 +39,14 @@ export const enum_users_profile_visibility = pgEnum(
   "enum_users_profile_visibility",
   ["private", "public"],
 );
+export const enum_avatar_frame_styles_unlock_rule = pgEnum(
+  "enum_avatar_frame_styles_unlock_rule",
+  ["free", "subscription", "event", "achievement"],
+);
 export const enum_media_purpose = pgEnum("enum_media_purpose", [
   "input",
+  "avatar",
+  "profile-banner",
   "preview",
   "model",
   "document",
@@ -251,6 +257,10 @@ export const enum_homepage_content_featured_works_tone = pgEnum(
   "enum_homepage_content_featured_works_tone",
   ["violet", "blue", "pink"],
 );
+export const enum_ai_provider_settings_meshy_target_formats = pgEnum(
+  "enum_ai_provider_settings_meshy_target_formats",
+  ["glb", "obj", "fbx", "stl", "usdz", "3mf"],
+);
 export const enum_ai_provider_settings_providers_provider = pgEnum(
   "enum_ai_provider_settings_providers_provider",
   ["custom", "meshy", "tripo"],
@@ -259,6 +269,10 @@ export const enum_ai_provider_settings_default_provider = pgEnum(
   "enum_ai_provider_settings_default_provider",
   ["custom", "meshy", "tripo"],
 );
+export const enum_ai_provider_settings_meshy_api_key_mode = pgEnum(
+  "enum_ai_provider_settings_meshy_api_key_mode",
+  ["environment", "payload"],
+);
 export const enum_ai_provider_settings_meshy_text_to3_d_ai_model = pgEnum(
   "enum_ai_provider_settings_meshy_text_to3_d_ai_model",
   ["latest", "meshy-6", "meshy-5"],
@@ -266,6 +280,14 @@ export const enum_ai_provider_settings_meshy_text_to3_d_ai_model = pgEnum(
 export const enum_ai_provider_settings_meshy_image_to3_d_ai_model = pgEnum(
   "enum_ai_provider_settings_meshy_image_to3_d_ai_model",
   ["latest", "meshy-6", "meshy-5"],
+);
+export const enum_ai_provider_settings_meshy_model_type = pgEnum(
+  "enum_ai_provider_settings_meshy_model_type",
+  ["standard", "lowpoly"],
+);
+export const enum_ai_provider_settings_meshy_topology = pgEnum(
+  "enum_ai_provider_settings_meshy_topology",
+  ["triangle", "quad"],
 );
 export const enum_ai_provider_settings_image_generation_default_provider =
   pgEnum("enum_ai_provider_settings_image_generation_default_provider", [
@@ -326,6 +348,12 @@ export const users = pgTable(
         onDelete: "set null",
       },
     ),
+    profileBannerFocalX: numeric("profile_banner_focal_x", {
+      mode: "number",
+    }).default(50),
+    profileBannerFocalY: numeric("profile_banner_focal_y", {
+      mode: "number",
+    }).default(50),
     avatarFrame: enum_users_avatar_frame("avatar_frame").default("none"),
     profileVisibility:
       enum_users_profile_visibility("profile_visibility").default("private"),
@@ -420,6 +448,68 @@ export const user_follows = pgTable(
     index("user_follows_followee_idx").on(columns.followee),
     index("user_follows_updated_at_idx").on(columns.updatedAt),
     index("user_follows_created_at_idx").on(columns.createdAt),
+  ],
+);
+
+export const avatar_frame_styles = pgTable(
+  "avatar_frame_styles",
+  {
+    id: serial("id").primaryKey(),
+    key: varchar("key").notNull(),
+    thumbnail: integer("thumbnail_id").references(() => media.id, {
+      onDelete: "set null",
+    }),
+    frameImage: integer("frame_image_id").references(() => media.id, {
+      onDelete: "set null",
+    }),
+    unlockRule:
+      enum_avatar_frame_styles_unlock_rule("unlock_rule").default("free"),
+    isActive: boolean("is_active").default(true),
+    isUserSelectable: boolean("is_user_selectable").default(true),
+    sortOrder: numeric("sort_order", { mode: "number" }).default(0),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+  },
+  (columns) => [
+    uniqueIndex("avatar_frame_styles_key_idx").on(columns.key),
+    index("avatar_frame_styles_thumbnail_idx").on(columns.thumbnail),
+    index("avatar_frame_styles_frame_image_idx").on(columns.frameImage),
+    index("avatar_frame_styles_updated_at_idx").on(columns.updatedAt),
+    index("avatar_frame_styles_created_at_idx").on(columns.createdAt),
+  ],
+);
+
+export const avatar_frame_styles_locales = pgTable(
+  "avatar_frame_styles_locales",
+  {
+    title: varchar("title").notNull(),
+    description: varchar("description"),
+    id: serial("id").primaryKey(),
+    _locale: enum__locales("_locale").notNull(),
+    _parentID: integer("_parent_id").notNull(),
+  },
+  (columns) => [
+    uniqueIndex("avatar_frame_styles_locales_locale_parent_id_unique").on(
+      columns._locale,
+      columns._parentID,
+    ),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [avatar_frame_styles.id],
+      name: "avatar_frame_styles_locales_parent_id_fk",
+    }).onDelete("cascade"),
   ],
 );
 
@@ -865,6 +955,10 @@ export const homepage_items_locales = pgTable(
   {
     title: varchar("title"),
     summary: varchar("summary"),
+    badgeLabel: varchar("badge_label"),
+    ribbonLabel: varchar("ribbon_label"),
+    ctaLabel: varchar("cta_label"),
+    altText: varchar("alt_text"),
     itemCountLabel: varchar("item_count_label"),
     id: serial("id").primaryKey(),
     _locale: enum__locales("_locale").notNull(),
@@ -1023,6 +1117,10 @@ export const _homepage_items_v_locales = pgTable(
   {
     version_title: varchar("version_title"),
     version_summary: varchar("version_summary"),
+    version_badgeLabel: varchar("version_badge_label"),
+    version_ribbonLabel: varchar("version_ribbon_label"),
+    version_ctaLabel: varchar("version_cta_label"),
+    version_altText: varchar("version_alt_text"),
     version_itemCountLabel: varchar("version_item_count_label"),
     id: serial("id").primaryKey(),
     _locale: enum__locales("_locale").notNull(),
@@ -2147,6 +2245,7 @@ export const payload_locked_documents_rels = pgTable(
     path: varchar("path").notNull(),
     usersID: integer("users_id"),
     "user-followsID": integer("user_follows_id"),
+    "avatar-frame-stylesID": integer("avatar_frame_styles_id"),
     mediaID: integer("media_id"),
     "generation-tasksID": integer("generation_tasks_id"),
     "task-eventsID": integer("task_events_id"),
@@ -2174,6 +2273,9 @@ export const payload_locked_documents_rels = pgTable(
     index("payload_locked_documents_rels_users_id_idx").on(columns.usersID),
     index("payload_locked_documents_rels_user_follows_id_idx").on(
       columns["user-followsID"],
+    ),
+    index("payload_locked_documents_rels_avatar_frame_styles_id_idx").on(
+      columns["avatar-frame-stylesID"],
     ),
     index("payload_locked_documents_rels_media_id_idx").on(columns.mediaID),
     index("payload_locked_documents_rels_generation_tasks_id_idx").on(
@@ -2238,6 +2340,11 @@ export const payload_locked_documents_rels = pgTable(
       columns: [columns["user-followsID"]],
       foreignColumns: [user_follows.id],
       name: "payload_locked_documents_rels_user_follows_fk",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["avatar-frame-stylesID"]],
+      foreignColumns: [avatar_frame_styles.id],
+      name: "payload_locked_documents_rels_avatar_frame_styles_fk",
     }).onDelete("cascade"),
     foreignKey({
       columns: [columns["mediaID"]],
@@ -2643,6 +2750,20 @@ export const site_settings = pgTable("site_settings", {
     "generation_pricing_download_credits",
     { mode: "number" },
   ).default(5),
+  modelAccessPolicy_chargePreviewCredits: boolean(
+    "model_access_policy_charge_preview_credits",
+  ).default(false),
+  modelAccessPolicy_previewCredits: numeric(
+    "model_access_policy_preview_credits",
+    { mode: "number" },
+  ).default(0),
+  modelAccessPolicy_chargeDownloadCredits: boolean(
+    "model_access_policy_charge_download_credits",
+  ).default(false),
+  modelAccessPolicy_downloadCredits: numeric(
+    "model_access_policy_download_credits",
+    { mode: "number" },
+  ).default(5),
   emailSettings_sender_fromName: varchar(
     "email_settings_sender_from_name",
   ).default("Thorns Tavern"),
@@ -2914,6 +3035,29 @@ export const homepage_content = pgTable("homepage_content", {
   }),
 });
 
+export const ai_provider_settings_meshy_target_formats = pgTable(
+  "ai_provider_settings_meshy_target_formats",
+  {
+    order: integer("order").notNull(),
+    parent: integer("parent_id").notNull(),
+    value: enum_ai_provider_settings_meshy_target_formats("value"),
+    id: serial("id").primaryKey(),
+  },
+  (columns) => [
+    index("ai_provider_settings_meshy_target_formats_order_idx").on(
+      columns.order,
+    ),
+    index("ai_provider_settings_meshy_target_formats_parent_idx").on(
+      columns.parent,
+    ),
+    foreignKey({
+      columns: [columns["parent"]],
+      foreignColumns: [ai_provider_settings.id],
+      name: "ai_provider_settings_meshy_target_formats_parent_fk",
+    }).onDelete("cascade"),
+  ],
+);
+
 export const ai_provider_settings_providers = pgTable(
   "ai_provider_settings_providers",
   {
@@ -2947,7 +3091,7 @@ export const ai_provider_settings = pgTable("ai_provider_settings", {
     ),
   mockMode: boolean("mock_mode").default(true),
   credentialsNotice: varchar("credentials_notice").default(
-    "Meshy API key, AI webhook secret, S3 access key ID, and S3 secret access key are no longer stored in Payload globals. Configure them in your hosting environment or secret manager instead.",
+    "Meshy API key, AI webhook secret, and Supabase service credentials are no longer stored in Payload globals. Configure them in your hosting environment or secret manager instead.",
   ),
   polling_enabled: boolean("polling_enabled").default(true),
   polling_intervalSeconds: numeric("polling_interval_seconds", {
@@ -2966,6 +3110,11 @@ export const ai_provider_settings = pgTable("ai_provider_settings", {
     "environment",
   ),
   meshy_baseURL: varchar("meshy_base_u_r_l").default("https://api.meshy.ai"),
+  meshy_apiKeyMode:
+    enum_ai_provider_settings_meshy_api_key_mode("meshy_api_key_mode").default(
+      "environment",
+    ),
+  meshy_apiKey: varchar("meshy_api_key"),
   meshy_textTo3DAiModel: enum_ai_provider_settings_meshy_text_to3_d_ai_model(
     "meshy_text_to3_d_ai_model",
   ).default("latest"),
@@ -2974,6 +3123,29 @@ export const ai_provider_settings = pgTable("ai_provider_settings", {
   ).default("latest"),
   meshy_shouldTexture: boolean("meshy_should_texture").default(true),
   meshy_enablePBR: boolean("meshy_enable_p_b_r").default(false),
+  meshy_hdTexture: boolean("meshy_hd_texture").default(false),
+  meshy_multiImageEnabled: boolean("meshy_multi_image_enabled").default(true),
+  meshy_pricing_textTo3DCredits: numeric("meshy_pricing_text_to3_d_credits", {
+    mode: "number",
+  }).default(30),
+  meshy_pricing_imageTo3DCredits: numeric("meshy_pricing_image_to3_d_credits", {
+    mode: "number",
+  }).default(30),
+  meshy_pricing_multiImageTo3DCredits: numeric(
+    "meshy_pricing_multi_image_to3_d_credits",
+    { mode: "number" },
+  ).default(30),
+  meshy_modelType:
+    enum_ai_provider_settings_meshy_model_type("meshy_model_type").default(
+      "standard",
+    ),
+  meshy_topology:
+    enum_ai_provider_settings_meshy_topology("meshy_topology").default(
+      "triangle",
+    ),
+  meshy_targetPolycount: numeric("meshy_target_polycount", {
+    mode: "number",
+  }).default(30000),
   meshy_moderation: boolean("meshy_moderation").default(false),
   meshy_imageEnhancement: boolean("meshy_image_enhancement").default(true),
   meshy_removeLighting: boolean("meshy_remove_lighting").default(true),
@@ -3026,7 +3198,6 @@ export const storage_settings = pgTable("storage_settings", {
   id: serial("id").primaryKey(),
   enabled: boolean("enabled").default(false),
   bucket: varchar("bucket").default(""),
-  region: varchar("region").default("us-east-1"),
   prefix: varchar("prefix").default("media"),
   baseURL: varchar("base_u_r_l").default(""),
   signedDownloads: boolean("signed_downloads").default(true),
@@ -3190,6 +3361,34 @@ export const relations_user_follows = relations(user_follows, ({ one }) => ({
     relationName: "followee",
   }),
 }));
+export const relations_avatar_frame_styles_locales = relations(
+  avatar_frame_styles_locales,
+  ({ one }) => ({
+    _parentID: one(avatar_frame_styles, {
+      fields: [avatar_frame_styles_locales._parentID],
+      references: [avatar_frame_styles.id],
+      relationName: "_locales",
+    }),
+  }),
+);
+export const relations_avatar_frame_styles = relations(
+  avatar_frame_styles,
+  ({ one, many }) => ({
+    thumbnail: one(media, {
+      fields: [avatar_frame_styles.thumbnail],
+      references: [media.id],
+      relationName: "thumbnail",
+    }),
+    frameImage: one(media, {
+      fields: [avatar_frame_styles.frameImage],
+      references: [media.id],
+      relationName: "frameImage",
+    }),
+    _locales: many(avatar_frame_styles_locales, {
+      relationName: "_locales",
+    }),
+  }),
+);
 export const relations_media = relations(media, ({ one }) => ({
   owner: one(users, {
     fields: [media.owner],
@@ -3790,6 +3989,11 @@ export const relations_payload_locked_documents_rels = relations(
       references: [user_follows.id],
       relationName: "user-follows",
     }),
+    "avatar-frame-stylesID": one(avatar_frame_styles, {
+      fields: [payload_locked_documents_rels["avatar-frame-stylesID"]],
+      references: [avatar_frame_styles.id],
+      relationName: "avatar-frame-styles",
+    }),
     mediaID: one(media, {
       fields: [payload_locked_documents_rels.mediaID],
       references: [media.id],
@@ -4062,6 +4266,16 @@ export const relations_homepage_content = relations(
     }),
   }),
 );
+export const relations_ai_provider_settings_meshy_target_formats = relations(
+  ai_provider_settings_meshy_target_formats,
+  ({ one }) => ({
+    parent: one(ai_provider_settings, {
+      fields: [ai_provider_settings_meshy_target_formats.parent],
+      references: [ai_provider_settings.id],
+      relationName: "meshy_targetFormats",
+    }),
+  }),
+);
 export const relations_ai_provider_settings_providers = relations(
   ai_provider_settings_providers,
   ({ one }) => ({
@@ -4075,6 +4289,9 @@ export const relations_ai_provider_settings_providers = relations(
 export const relations_ai_provider_settings = relations(
   ai_provider_settings,
   ({ many }) => ({
+    meshy_targetFormats: many(ai_provider_settings_meshy_target_formats, {
+      relationName: "meshy_targetFormats",
+    }),
     providers: many(ai_provider_settings_providers, {
       relationName: "providers",
     }),
@@ -4128,6 +4345,7 @@ type DatabaseSchema = {
   enum_users_role: typeof enum_users_role;
   enum_users_avatar_frame: typeof enum_users_avatar_frame;
   enum_users_profile_visibility: typeof enum_users_profile_visibility;
+  enum_avatar_frame_styles_unlock_rule: typeof enum_avatar_frame_styles_unlock_rule;
   enum_media_purpose: typeof enum_media_purpose;
   enum_generation_tasks_input_mode: typeof enum_generation_tasks_input_mode;
   enum_generation_tasks_provider: typeof enum_generation_tasks_provider;
@@ -4169,16 +4387,22 @@ type DatabaseSchema = {
   enum_site_settings_payment_providers_subscription_provider: typeof enum_site_settings_payment_providers_subscription_provider;
   enum_site_settings_payment_providers_order_provider: typeof enum_site_settings_payment_providers_order_provider;
   enum_homepage_content_featured_works_tone: typeof enum_homepage_content_featured_works_tone;
+  enum_ai_provider_settings_meshy_target_formats: typeof enum_ai_provider_settings_meshy_target_formats;
   enum_ai_provider_settings_providers_provider: typeof enum_ai_provider_settings_providers_provider;
   enum_ai_provider_settings_default_provider: typeof enum_ai_provider_settings_default_provider;
+  enum_ai_provider_settings_meshy_api_key_mode: typeof enum_ai_provider_settings_meshy_api_key_mode;
   enum_ai_provider_settings_meshy_text_to3_d_ai_model: typeof enum_ai_provider_settings_meshy_text_to3_d_ai_model;
   enum_ai_provider_settings_meshy_image_to3_d_ai_model: typeof enum_ai_provider_settings_meshy_image_to3_d_ai_model;
+  enum_ai_provider_settings_meshy_model_type: typeof enum_ai_provider_settings_meshy_model_type;
+  enum_ai_provider_settings_meshy_topology: typeof enum_ai_provider_settings_meshy_topology;
   enum_ai_provider_settings_image_generation_default_provider: typeof enum_ai_provider_settings_image_generation_default_provider;
   enum_runtime_deployment_settings_database_connection_mode: typeof enum_runtime_deployment_settings_database_connection_mode;
   enum_runtime_deployment_settings_aws_rds_ssl_mode: typeof enum_runtime_deployment_settings_aws_rds_ssl_mode;
   users_sessions: typeof users_sessions;
   users: typeof users;
   user_follows: typeof user_follows;
+  avatar_frame_styles: typeof avatar_frame_styles;
+  avatar_frame_styles_locales: typeof avatar_frame_styles_locales;
   media: typeof media;
   generation_tasks: typeof generation_tasks;
   task_events: typeof task_events;
@@ -4236,6 +4460,7 @@ type DatabaseSchema = {
   homepage_content_process_steps: typeof homepage_content_process_steps;
   homepage_content_faq: typeof homepage_content_faq;
   homepage_content: typeof homepage_content;
+  ai_provider_settings_meshy_target_formats: typeof ai_provider_settings_meshy_target_formats;
   ai_provider_settings_providers: typeof ai_provider_settings_providers;
   ai_provider_settings: typeof ai_provider_settings;
   storage_settings: typeof storage_settings;
@@ -4246,6 +4471,8 @@ type DatabaseSchema = {
   relations_users_sessions: typeof relations_users_sessions;
   relations_users: typeof relations_users;
   relations_user_follows: typeof relations_user_follows;
+  relations_avatar_frame_styles_locales: typeof relations_avatar_frame_styles_locales;
+  relations_avatar_frame_styles: typeof relations_avatar_frame_styles;
   relations_media: typeof relations_media;
   relations_generation_tasks: typeof relations_generation_tasks;
   relations_task_events: typeof relations_task_events;
@@ -4303,6 +4530,7 @@ type DatabaseSchema = {
   relations_homepage_content_process_steps: typeof relations_homepage_content_process_steps;
   relations_homepage_content_faq: typeof relations_homepage_content_faq;
   relations_homepage_content: typeof relations_homepage_content;
+  relations_ai_provider_settings_meshy_target_formats: typeof relations_ai_provider_settings_meshy_target_formats;
   relations_ai_provider_settings_providers: typeof relations_ai_provider_settings_providers;
   relations_ai_provider_settings: typeof relations_ai_provider_settings;
   relations_storage_settings: typeof relations_storage_settings;

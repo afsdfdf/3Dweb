@@ -65,8 +65,68 @@
 .leftPanel {
   left: var(--panel-edge);
   padding: 34px 24px 26px;
+  display: flex;
+  flex-direction: column;
   transform: scale(var(--panel-scale));
   transform-origin: top left;
+}
+
+.leftPanelDual .imageBox {
+  height: 200px;
+}
+
+.leftPanelDual .fieldLabel {
+  margin-top: 14px;
+}
+
+.leftPanelDual .fieldGroup {
+  margin-top: 15px;
+}
+
+.leftPanelDual .mediaSection,
+.leftPanelDual .metaSection,
+.leftPanelDual .optionalSection {
+  margin-top: 14px;
+}
+
+.leftPanelDual .promptOnlyBox {
+  height: 136px;
+  padding: 16px 18px;
+}
+
+.leftPanelDual .referenceBox {
+  min-height: 98px;
+  padding: 14px 16px;
+}
+
+.leftPanelDual .mediaSectionHint,
+.leftPanelDual .metaHint,
+.leftPanelDual .optionalHint {
+  margin-top: 4px;
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.leftPanelDual .optionalHeaderRow h2 {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.leftPanelDual .optionalBox {
+  margin-top: 6px;
+  max-height: 102px;
+  overflow: hidden;
+  padding: 4px 8px 6px;
+}
+
+.leftPanelDual .multiBox.multiBoxCompact {
+  margin-top: 0;
+  gap: 8px;
+}
+
+.leftPanelDual .selectWrap,
+.leftPanelDual .inputWrap {
+  margin-top: 6px;
 }
 
 .rightPanel {
@@ -155,28 +215,122 @@
 }
 
 .modeTabsMountDual > div {
-  width: 226px;
-  min-width: 226px;
-  max-width: 226px;
-  flex-basis: 226px;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  flex: 1 1 auto;
+}
+
+.modeTabsMountDual > div > img {
+  display: none;
+}
+
+.modeTabsMountDual > div::before {
+  background-color: #000000;
+  border-image: url("/ui-lab/formal-components/assets/small-button-pair/toggle-bar-dark-alt.png") 12 28 fill / 12px 28px / 0 stretch;
+  border-style: solid;
+  border-width: 12px 28px;
+  box-sizing: border-box;
+  content: "";
+  display: block;
+  height: 62px;
+  inset: -1px;
+  pointer-events: none;
+  position: absolute;
+  width: calc(100% + 2px);
 }
 
 .modeTabsMountDual > div > div {
   left: 9px;
-  right: auto;
-  width: 208px;
+  right: 9px;
+  width: auto;
 }
 
 .modeTabsMountDual button {
-  width: 101px;
+  background-color: #42414b;
+  border-style: solid;
+  border-width: 0 20px;
+  box-sizing: border-box;
+  transition: filter 120ms ease, transform 120ms ease;
+  width: calc((100% - 6px) / 2);
+}
+
+.modeTabsMountDual button:nth-child(1) {
+  background-color: #42414b;
+  border-image: url("/ui-lab/formal-components/assets/small-button-pair/button-purple-small-normal.png") 0 20 fill / 0 20px / 0 stretch;
+  left: 0;
 }
 
 .modeTabsMountDual button:nth-child(2) {
-  left: 107px;
+  background-color: #42414b;
+  border-image: url("/ui-lab/formal-components/assets/small-button-pair/button-purple-small-normal.png") 0 20 fill / 0 20px / 0 stretch;
+  left: calc((100% - 6px) / 2 + 6px);
 }
 
 .modeTabsMountDual button:nth-child(3) {
   left: auto;
+}
+
+.modeTabsMountDual button:nth-child(1):hover {
+  background-color: #42414b;
+  border-image-source: url("/ui-lab/formal-components/assets/small-button-pair/button-purple-small-hover.png");
+}
+
+.modeTabsMountDual button:nth-child(2):hover {
+  background-color: #42414b;
+  border-image-source: url("/ui-lab/formal-components/assets/small-button-pair/button-purple-small-hover.png");
+}
+
+.modeTabsMountDual button:nth-child(1):active,
+.modeTabsMountDual button:nth-child(1)[aria-pressed="true"] {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-image-source: url("/ui-lab/formal-components/assets/small-button-pair/button-dark-small-pushed.png");
+  border-radius: 3px;
+}
+
+.modeTabsMountDual button:nth-child(2):active,
+.modeTabsMountDual button:nth-child(2)[aria-pressed="true"] {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-image-source: url("/ui-lab/formal-components/assets/small-button-pair/button-dark-small-pushed.png");
+  border-radius: 3px;
+}
+
+.modeTabsMountDual button:hover {
+  filter: brightness(1.12) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.34));
+  transform: translateY(-2px);
+}
+
+.modeTabsMountDual button:active {
+  filter: brightness(0.9);
+  transform: translateY(2px) scale(0.97);
+}
+
+.modeTabsMountDual button[aria-pressed="true"] {
+  filter: brightness(0.96) saturate(1.08);
+  transform: translateY(1px) scale(0.985);
+}
+
+.modeTabsMountDual button img,
+.modeTabsMountDual button:hover img,
+.modeTabsMountDual button:active img,
+.modeTabsMountDual button[aria-pressed="true"] img {
+  opacity: 0 !important;
+}
+
+.modeTabsMountDual > div > div > span {
+  font-size: 12px;
+  height: 18px;
+  line-height: 18px;
+  top: 10px;
+  width: calc((100% - 6px) / 2 - 10px);
+}
+
+.modeTabsMountDual > div > div > span:nth-of-type(1) {
+  left: 5px;
+}
+
+.modeTabsMountDual > div > div > span:nth-of-type(2) {
+  left: calc((100% - 6px) / 2 + 11px);
 }
 
 .tabs {
@@ -214,6 +368,39 @@
   margin-top: 75px;
 }
 
+.panelScrollArea {
+  position: relative;
+  z-index: 20;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+  padding-bottom: 18px;
+  scrollbar-gutter: stable;
+}
+
+.panelScrollArea::-webkit-scrollbar {
+  width: 8px;
+}
+
+.panelScrollArea::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.panelScrollArea::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.panelFooterArea {
+  position: relative;
+  z-index: 21;
+  flex: 0 0 auto;
+  margin-top: auto;
+  padding-top: 12px;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.86) 18%, rgba(0, 0, 0, 0.96) 100%);
+}
+
 .formSection h2,
 .fieldLabel,
 .libraryHeader h2 {
@@ -235,11 +422,146 @@
   padding: 22px;
 }
 
+.promptOnlyBox {
+  height: 156px;
+  padding: 18px 20px;
+}
+
 .imageToolsBox {
   display: grid;
   grid-template-rows: 112px 1px 1fr;
   gap: 16px;
   padding: 18px 22px;
+}
+
+.mediaSection {
+  margin-top: 18px;
+}
+
+.metaSection {
+  margin-top: 18px;
+}
+
+.metaHeader h2 {
+  margin: 0;
+  color: #ffffff;
+  font-family: PingFangSC, "PingFang SC", Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 22px;
+}
+
+.metaHint {
+  margin: 6px 0 0;
+  color: rgba(255, 255, 255, 0.42);
+  font-family: PingFangSC, "PingFang SC", Arial, sans-serif;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.mediaSectionHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mediaSectionHeader h2 {
+  margin: 0;
+  color: #ffffff;
+  font-family: PingFangSC, "PingFang SC", Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 22px;
+}
+
+.mediaSectionHeader span {
+  color: rgba(255, 255, 255, 0.52);
+  font-family: PingFangSC, "PingFang SC", Arial, sans-serif;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.mediaSectionHint {
+  margin: 6px 0 0;
+  color: rgba(255, 255, 255, 0.48);
+  font-family: PingFangSC, "PingFang SC", Arial, sans-serif;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.referenceBox {
+  margin-top: 8px;
+  min-height: 123px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0);
+  padding: 18px 20px;
+}
+
+.optionalSection {
+  margin-top: 18px;
+}
+
+.optionalHeaderRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.optionalTitleBlock {
+  min-width: 0;
+}
+
+.optionalHeaderRow h2 {
+  margin: 0;
+  color: #ffffff;
+  font-family: PingFangSC, "PingFang SC", Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 22px;
+}
+
+.optionalHint {
+  margin: 6px 0 0;
+  color: rgba(255, 255, 255, 0.48);
+  font-family: PingFangSC, "PingFang SC", Arial, sans-serif;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.optionalBox {
+  margin-top: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0);
+  max-height: 146px;
+  overflow-y: auto;
+  padding: 10px 12px 12px;
+  scrollbar-gutter: stable;
+}
+
+.multiHeaderInline {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 1px;
+  color: rgba(255, 255, 255, 0.5);
+  font-family: PingFangSC, "PingFang SC", Arial, sans-serif;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.optionalBox::-webkit-scrollbar {
+  width: 8px;
+}
+
+.optionalBox::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.optionalBox::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .thumbGrid {
@@ -320,16 +642,72 @@
   align-content: start;
 }
 
+.generationWorkflow {
+  margin-top: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 10px 11px 11px;
+}
+
+.workflowHeader,
+.workflowSteps {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.workflowHeader span,
+.workflowHeader strong {
+  color: #ffffff;
+  font-family: PingFangSC, "PingFang SC", Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+}
+
+.workflowHeader strong {
+  color: #ffce79;
+  font-size: 11px;
+}
+
+.workflowSteps {
+  margin-top: 8px;
+}
+
+.workflowSteps span {
+  flex: 1 1 0;
+  height: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #090909;
+  color: rgba(255, 255, 255, 0.46);
+  font-family: PingFangSC, "PingFang SC", Arial, sans-serif;
+  font-size: 11px;
+  line-height: 20px;
+  text-align: center;
+}
+
+.workflowSteps .workflowStepActive {
+  border-color: rgba(255, 206, 121, 0.38);
+  color: #ffce79;
+}
+
 .addImageCard,
 .multiCard {
   display: flex;
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  gap: 9px;
+  gap: 7px;
   color: rgba(255, 255, 255, 0.72);
   cursor: pointer;
   font-size: 13px;
+}
+
+.multiCard {
+  height: 86px;
+  min-height: 86px;
+  font-size: 12px;
 }
 
 .hiddenFileInput {
@@ -358,6 +736,12 @@
   margin-top: 18px;
 }
 
+.mediaSection + .fieldLabel,
+.mediaSection + .fieldGroup,
+.mediaSection + .multiHeader {
+  margin-top: 18px;
+}
+
 .inputWrap,
 .selectWrap {
   position: relative;
@@ -365,19 +749,34 @@
 }
 
 .inputWrap input,
-.selectWrap select {
+.selectWrap select,
+.selectButton {
   width: 100%;
   height: 33px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 2px;
-  background: rgba(0, 0, 0, 0);
+  background-color: #050505;
   color: #ffffff;
+  color-scheme: dark;
   font-family: PingFangSC, "PingFang SC", Arial, sans-serif;
   font-size: 14px;
   font-weight: 400;
   line-height: 20px;
   outline: none;
   padding: 0 40px 0 8px;
+}
+
+.selectButton {
+  position: relative;
+  cursor: pointer;
+  text-align: left;
+}
+
+.selectButton span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .inputWrap input::placeholder {
@@ -397,6 +796,10 @@
 
 .fieldGroup {
   margin-top: 19px;
+}
+
+.metaSection + .fieldGroup {
+  margin-top: 18px;
 }
 
 .fieldGroup .fieldLabel {
@@ -430,7 +833,17 @@
   text-align: left;
 }
 
-.tagChip button,
+.tagTextButton {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  line-height: inherit;
+  padding: 0;
+}
+
+.tagChip > button:last-child,
 .addTag {
   display: grid;
   width: 16px;
@@ -445,9 +858,146 @@
   line-height: 1;
 }
 
+.tagChip > button:last-child {
+  flex: 0 0 16px;
+}
+
 .addTag {
   background: #ffce79;
   font-weight: 800;
+}
+
+.addTag:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.tagEditor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 8px;
+}
+
+.tagEditorInput {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: #030303;
+  color: #ffffff;
+  font-family: PingFangSC, "PingFang SC", Arial, sans-serif;
+  font-size: 12px;
+  outline: none;
+  padding: 0 8px;
+}
+
+.tagEditorInput::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.tagEditorAction,
+.tagEditorGhost {
+  height: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  cursor: pointer;
+  font-family: PingFangSC, "PingFang SC", Arial, sans-serif;
+  font-size: 12px;
+  padding: 0 10px;
+}
+
+.tagEditorAction {
+  background: rgba(255, 206, 121, 0.14);
+}
+
+.tagEditorGhost {
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.advancedSection {
+  margin-top: 14px;
+}
+
+.advancedToggle {
+  display: flex;
+  width: 100%;
+  height: 30px;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.03);
+  color: #ffffff;
+  cursor: pointer;
+  font-family: PingFangSC, "PingFang SC", Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 0 10px;
+}
+
+.advancedToggle em {
+  color: rgba(255, 255, 255, 0.48);
+  font-size: 11px;
+  font-style: normal;
+}
+
+.advancedGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px 10px;
+  margin-top: 9px;
+}
+
+.advancedGrid label {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.advancedGrid label span {
+  color: rgba(255, 255, 255, 0.68);
+  font-family: PingFangSC, "PingFang SC", Arial, sans-serif;
+  font-size: 11px;
+  line-height: 14px;
+}
+
+.advancedGrid select,
+.advancedGrid input {
+  width: 100%;
+  height: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: #030303;
+  color: #ffffff;
+  font-family: PingFangSC, "PingFang SC", Arial, sans-serif;
+  font-size: 12px;
+  outline: none;
+  padding: 0 7px;
+}
+
+.advancedSwitches {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.advancedSwitches button {
+  height: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: #080808;
+  color: rgba(255, 255, 255, 0.56);
+  cursor: pointer;
+  font-family: PingFangSC, "PingFang SC", Arial, sans-serif;
+  font-size: 12px;
+}
+
+.advancedSwitches button[aria-pressed="true"] {
+  border-color: rgba(255, 206, 121, 0.42);
+  color: #ffce79;
 }
 
 .multiHeader {
@@ -479,13 +1029,26 @@
   cursor: pointer;
 }
 
+.toggle[aria-pressed="true"] {
+  border-color: rgba(255, 206, 121, 0.72);
+  background: rgba(255, 206, 121, 0.12);
+}
+
 .toggle span {
   position: absolute;
-  right: 2px;
+  left: 2px;
   top: 2px;
   width: 18px;
   height: 18px;
   border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  transition:
+    left 0.16s ease,
+    background-color 0.16s ease;
+}
+
+.toggle[aria-pressed="true"] span {
+  left: calc(100% - 20px);
   background: #ffd48f;
 }
 
@@ -500,23 +1063,83 @@
   padding: 23px;
 }
 
+.multiBox.multiBoxCompact {
+  margin-top: 0;
+  height: auto;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  gap: 12px;
+  min-width: 0;
+}
+
 .multiHidden {
   opacity: 0.4;
 }
 
-.selectWrap select {
+.selectWrap select,
+.selectButton {
+  -webkit-appearance: none;
   appearance: none;
   background:
     linear-gradient(45deg, transparent 50%, #ffffff 50%) calc(100% - 16px) 50% / 6px 6px no-repeat,
     linear-gradient(135deg, #ffffff 50%, transparent 50%) calc(100% - 12px) 50% / 6px 6px no-repeat,
-    rgba(0, 0, 0, 0);
+    #050505;
+  color: #ffffff;
+}
+
+.selectWrap select:focus,
+.selectWrap select:active {
+  background:
+    linear-gradient(45deg, transparent 50%, #ffffff 50%) calc(100% - 16px) 50% / 6px 6px no-repeat,
+    linear-gradient(135deg, #ffffff 50%, transparent 50%) calc(100% - 12px) 50% / 6px 6px no-repeat,
+    #050505;
+  color: #ffffff;
+}
+
+.selectWrap select option {
+  background: #050505;
+  color: #ffffff;
+}
+
+.selectMenu {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 40;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+  background: #050505;
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.36);
+  overflow: hidden;
+}
+
+.selectOption {
+  width: 100%;
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: #050505;
+  color: rgba(255, 255, 255, 0.88);
+  cursor: pointer;
+  font-family: PingFangSC, "PingFang SC", Arial, sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  padding: 9px 10px;
+  text-align: left;
+}
+
+.selectOption:first-child {
+  border-top: 0;
+}
+
+.selectOption:hover,
+.selectOptionActive {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
 }
 
 .bottomActions {
-  position: absolute;
-  left: 31px;
-  right: 31px;
-  bottom: 28px;
   display: grid;
   grid-template-columns: 138px 246px;
   align-items: end;
@@ -548,14 +1171,11 @@
 }
 
 .formError {
-  position: absolute;
-  left: 31px;
-  right: 31px;
-  bottom: 9px;
-  z-index: 31;
+  display: block;
+  margin-top: 8px;
   color: #f2c371;
   font-size: 11px;
-  line-height: 14px;
+  line-height: 15px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

@@ -159,12 +159,41 @@ export const Users: CollectionConfig = {
       ],
     },
     { name: 'avatar', type: 'upload', relationTo: 'media', label: 'Avatar' },
-    { name: 'profileBackground', type: 'upload', relationTo: 'media', label: 'Profile background' },
+    {
+      name: 'profileBackground',
+      type: 'upload',
+      relationTo: 'media',
+      label: 'Profile banner',
+      admin: {
+        description: 'Creator profile banner shown on account and model detail surfaces. Field name is kept for compatibility.',
+      },
+    },
+    {
+      name: 'profileBannerFocalX',
+      type: 'number',
+      defaultValue: 50,
+      label: 'Profile banner focal X',
+      admin: {
+        description: 'Horizontal focal point percentage for banner cropping.',
+      },
+    },
+    {
+      name: 'profileBannerFocalY',
+      type: 'number',
+      defaultValue: 50,
+      label: 'Profile banner focal Y',
+      admin: {
+        description: 'Vertical focal point percentage for banner cropping.',
+      },
+    },
     {
       name: 'avatarFrame',
       type: 'select',
       defaultValue: 'none',
       label: 'Avatar frame',
+      admin: {
+        description: 'Compatibility frame key. Rich frame metadata is managed in Avatar Frame Styles.',
+      },
       options: [
         { label: 'None', value: 'none' },
         { label: 'Ember', value: 'ember' },

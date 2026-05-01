@@ -11,7 +11,7 @@ import { getMarketingSiteData } from '../../_lib/marketing'
 import { getCurrentUser } from '../../_lib/session'
 import { getCachedPayload } from '@/lib/getCachedPayload'
 import { buildModelViewerURL, getModelGLBSourceURL, getModelPreviewURL } from '@/lib/modelAssetURL'
-import { getMediaAccessURL } from '@/lib/s3SignedURL'
+import { getMediaAccessURL } from '@/lib/mediaAccessURL'
 
 async function getShowcaseModel(id: number) {
   const payload = await getCachedPayload()
