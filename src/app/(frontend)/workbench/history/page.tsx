@@ -13,7 +13,7 @@ export default async function WorkbenchHistoryPage() {
 
   return (
     <SiteShell
-      currentPath="/generate"
+      currentPath="/workbench"
       showFooter={false}
       showUtilityNav={false}
       user={user}

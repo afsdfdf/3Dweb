@@ -84,12 +84,11 @@ Remaining backend gaps:
 Already wired:
 
 - top navigation current user through `getCurrentNavUser()`
-- avatar, display name, email, credit balance, and points history through server-side current-user Local API helpers
+- avatar, display name, email, credit balance, transactions, tasks, models, and orders through server-side current-user Local API helpers
+- profile and password forms submit to the registered `/api/account/profile` and `/api/account/password` endpoints
 
 Remaining backend gaps:
 
-- client-side profile edit/save needs registered `/api/account/profile`
-- password change needs registered `/api/account/password`
 - profile banner edit uses the profile endpoint plus `/api/account/profile-media/upload-url` for Supabase signed uploads and media ownership
 - avatar frame selection can use the backend-managed `avatar-frame-styles` catalog
 
@@ -408,7 +407,7 @@ Recommended future path:
 
 - `docs/PROJECT_AUDIT_MEMO.md` is the current full-stack audit source for route/backend/deployment risk.
 - Current database probe shows the imported public model set is internally consistent: 42 public models, 42 guest-readable previews, and 42 GLB format rows backed by Supabase public object URLs.
-- `/personal-center-legacy` was removed from the app route tree in the 2026-05-01 remediation pass. `/personal-center-test` is intentionally kept as a local-only personal center design review route and must stay production-gated. Keep the UI-lab components as design assets only.
+- `/personal-center-legacy` was removed from the app route tree in the 2026-05-01 remediation pass. `/account` now owns the formal personal center UI, while `/personal-center-test` redirects to `/account` to avoid parallel account surfaces.
 - The download endpoint now uses `site-settings.modelAccessPolicy` for download charging and returns a controlled error when no real asset exists. Preview/download policy UI can build on that server-side behavior.
 
 ## Supabase Service Consolidation Memo

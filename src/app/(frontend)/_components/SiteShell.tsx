@@ -1,13 +1,14 @@
 import type { ReactNode } from 'react'
 
 import { AuthModalStage } from '@/components/auth/AuthModalStage'
+import { TopNavigation } from '@/components/ui-lab/top-navigation'
+import { getPublicNavigationActiveID, publicNavigationItems } from '@/lib/publicNavigation'
 
 import type { FooterContent, NavigationItem } from '../_lib/marketing-content'
 import { getDefaultFooter, getDefaultSiteSettings } from '../_lib/marketing-content'
 import { getCurrentLocale } from '../_lib/locale-server'
 import { getCurrentNavUser } from '../_lib/session'
 import { FooterBar } from './shell/FooterBar'
-import { TopNavBar } from './shell/TopNavBar'
 
 type SiteShellProps = {
   announcement?: null | string
@@ -41,47 +42,40 @@ export async function SiteShell({
   const navUser = await getCurrentNavUser()
   const defaultSiteSettings = getDefaultSiteSettings(locale)
   const footerContent = { ...getDefaultFooter(locale), ...footer }
+  const navigationUser = navUser
+    ? {
+        avatarUrl: navUser.avatarUrl,
+        creditsBalance: navUser.creditsBalance,
+        displayName: navUser.displayName,
+        email: navUser.email,
+      }
+    : user
+      ? { email: user.email }
+      : null
 
   const fixedStageStyle = {
-    '--app-stage-scale': 'max(calc(100vw / 1920px), calc(100vh / 1080px))',
+    '--app-stage-scale': 'max(calc(100vw / 1920px), calc((100vh - 60px) / 1020px))',
   } as React.CSSProperties
+  void announcement
+  void showLocaleSwitcher
 
   return (
     <>
       {mobileChildren ? <div className="h-screen w-screen overflow-y-auto bg-[#181818] text-[#ededee] md:hidden">{mobileChildren}</div> : null}
       <div className={`${mobileChildren ? 'hidden md:block' : ''} h-screen w-screen overflow-hidden bg-[#181818] text-[#ededee]`} style={fixedStageStyle}>
+        <TopNavigation
+          active={getPublicNavigationActiveID(currentPath)}
+          className="absolute left-0 right-0 top-0 z-[60]"
+          items={publicNavigationItems}
+          showAuthEntry={showAuthEntry}
+          user={navigationUser}
+        />
       <div
-        className="absolute left-1/2 top-1/2 h-[1080px] w-[1920px] origin-center bg-[#181818]"
+        className="absolute left-1/2 top-[60px] h-[1020px] w-[1920px] origin-top bg-[#181818]"
         style={{
-          transform: 'translate(-50%, -50%) scale(var(--app-stage-scale))',
+          transform: 'translateX(-50%) scale(var(--app-stage-scale))',
         }}
       >
-        {announcement ? (
-          <div className="border-b border-[#403f46] bg-[#181818]">
-            <div className="mx-auto max-w-[1600px] px-4 py-2 text-center text-[10px] uppercase tracking-[0.3em] text-[#8f9199] sm:px-6">
-              {announcement}
-            </div>
-          </div>
-        ) : null}
-
-        <TopNavBar
-          currentPath={currentPath}
-          locale={locale}
-          navigation={[]}
-          showAuthEntry={showAuthEntry}
-          showLocaleSwitcher={showLocaleSwitcher}
-          user={
-            navUser
-              ? {
-                  avatarUrl: navUser.avatarUrl,
-                  creditsBalance: navUser.creditsBalance,
-                  displayName: navUser.displayName,
-                  email: navUser.email,
-                }
-              : user
-          }
-        />
-
         <main className="h-[1020px] overflow-hidden">
           <AuthModalStage>{children}</AuthModalStage>
         </main>

@@ -13,13 +13,16 @@ const componentPath = path.join(
   'personal-center-test.tsx',
 )
 const routePath = path.join(rootDir, 'src', 'app', '(frontend)', 'personal-center-test', 'page.tsx')
+const accountRoutePath = path.join(rootDir, 'src', 'app', '(frontend)', 'account', 'page.tsx')
 
-test('personal center test route remains available for local design review and hidden in production', () => {
+test('personal center is promoted to the default account route', () => {
   assert.equal(existsSync(componentPath), true)
   assert.equal(existsSync(routePath), true)
+  assert.equal(existsSync(accountRoutePath), true)
 
   const source = readFileSync(componentPath, 'utf8')
   const routeSource = readFileSync(routePath, 'utf8')
+  const accountRouteSource = readFileSync(accountRoutePath, 'utf8')
 
   assert.match(source, /BorderComboFrame2/)
   assert.match(source, /accountFrameContainer/)
@@ -28,13 +31,16 @@ test('personal center test route remains available for local design review and h
   assert.doesNotMatch(source, /PurpleMediumActionButton/)
   assert.match(source, /mediumActionSlot/)
   assert.match(source, /TopNavigation/)
-  assert.match(source, /href: "\/generate"/)
-  assert.match(source, /href: "\/dashboard"/)
-  assert.match(routeSource, /NODE_ENV === "production"/)
-  assert.match(routeSource, /notFound\(\)/)
+  assert.match(source, /publicNavigationItems/)
+  assert.doesNotMatch(source, /realNavigationItems/)
+  assert.match(source, /fetch\("\/api\/account\/profile"/)
+  assert.match(source, /fetch\("\/api\/account\/password"/)
+  assert.match(routeSource, /redirect\("\/account"\)/)
+  assert.match(accountRouteSource, /PersonalCenterTest/)
+  assert.doesNotMatch(accountRouteSource, /AccountTestPage/)
   assert.doesNotMatch(routeSource, /SiteShell/)
 
-  for (const label of ['Overview', 'Account Settings', 'Orders', 'Model Library', 'Generation Tasks', 'Billing', 'Change avatar', 'Creator Banner', 'Save Settings']) {
+  for (const label of ['Overview', 'Account Settings', 'Orders', 'Model Library', 'Generation Tasks', 'Billing', 'Change avatar', 'Creator Banner', 'Save Profile', 'Save Password']) {
     assert.match(source, new RegExp(label))
   }
 

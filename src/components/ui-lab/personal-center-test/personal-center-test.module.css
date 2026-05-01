@@ -384,16 +384,11 @@
 }
 
 .mediumActionSlot :global(button) {
-  inset: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  border: 0 !important;
-  border-image-source: none !important;
-  border-image-slice: 0 !important;
-  background-image: var(--button-image) !important;
-  background-position: center !important;
-  background-repeat: no-repeat !important;
-  background-size: 100% 100% !important;
+  inset: 0 auto auto 0 !important;
+  width: 292px !important;
+  height: 52px !important;
+  transform: scaleX(0.692) !important;
+  transform-origin: left top !important;
 }
 
 .mediumActionSlot :global(span) {
@@ -401,6 +396,15 @@
   font-weight: 700;
   line-height: 1;
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.62);
+}
+
+.mediumActionSlot :global(button > span > span) {
+  display: inline-block;
+  transform: scaleX(1.445);
+}
+
+.mediumActionSlot :global(button:active) {
+  transform: scaleX(0.692) translateY(1px) !important;
 }
 
 .sidebarMediumButton {
@@ -686,6 +690,11 @@
   gap: 30px 28px;
 }
 
+.profileFormGrid > button {
+  align-self: end;
+  justify-self: end;
+}
+
 .profileFormGrid label {
   display: grid;
   gap: 10px;
@@ -737,6 +746,15 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 14px;
+}
+
+.saveMessage {
+  grid-column: 2 / -1;
+  margin: -12px 0 0;
+  color: rgba(245, 211, 142, 0.78);
+  font-size: 12px;
+  line-height: 16px;
+  text-align: right;
 }
 
 .recordsToolbar {
