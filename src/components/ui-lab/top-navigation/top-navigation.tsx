@@ -7,6 +7,7 @@ import { useAuthModal } from "@/components/auth/AuthModalProvider";
 import { publicNavigationItems } from "@/lib/publicNavigation";
 
 import styles from "./top-navigation.module.css";
+import { formatTopNavigationUserLabel, getTopNavigationUserLabel } from "./user-label";
 
 const assetBase = "/ui-lab/top-navigation";
 
@@ -86,10 +87,6 @@ function AuthEntryButtons({
   );
 }
 
-const getUserLabel = (user: TopNavigationUser, fallback?: null | string) => {
-  return user.displayName || user.name || user.email || fallback || "Account";
-};
-
 const getUserCredits = (user: TopNavigationUser, fallback: number) => {
   const value = user.creditsBalance ?? user.credits;
   return typeof value === "number" && Number.isFinite(value) ? Math.max(0, value) : fallback;
@@ -106,7 +103,8 @@ export function TopNavigation({
   userName = null,
 }: TopNavigationProps) {
   const { closeAuthModal } = useAuthModal();
-  const displayName = user ? getUserLabel(user, userName) : null;
+  const displayName = user ? getTopNavigationUserLabel(user, userName) : null;
+  const visibleDisplayName = displayName ? formatTopNavigationUserLabel(displayName) : null;
   const displayCredits = user ? getUserCredits(user, credits) : credits;
   const avatarUrl = user?.avatarUrl || `${assetBase}/icon-user-avatar-placeholder.png`;
 
@@ -138,8 +136,8 @@ export function TopNavigation({
           <Link aria-label="Account profile" className={styles.avatar} href="/account">
             <img alt={displayName || "Account avatar"} decoding="async" src={avatarUrl} />
           </Link>
-          <Link className={styles.userName} href="/account">
-            {displayName}
+          <Link className={styles.userName} href="/account" title={displayName ?? undefined}>
+            {visibleDisplayName}
           </Link>
         </>
       ) : (
