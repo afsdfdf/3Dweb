@@ -50,7 +50,7 @@ test('critical payment and webhook lookup fields are indexed in collection confi
   assert.equal(subscriptionCustomerField?.index, true)
 })
 
-test('PostgreSQL pool config uses safe RDS defaults', () => {
+test('PostgreSQL pool config uses safe Supabase/Postgres defaults', () => {
   assert.deepEqual(readPostgresPoolConfig(), {
     connectionTimeoutMillis: 5000,
     idleTimeoutMillis: 30000,
@@ -97,6 +97,29 @@ test('resolveDatabaseRuntimeConfig accepts Supabase database URLs as the single 
       if (result.provider === 'postgres') {
         assert.equal(result.connectionString.includes('db.supabase.example'), true)
       }
+    },
+  )
+})
+
+test('resolveDatabaseRuntimeConfig does not build runtime connections from legacy composed database fields', async () => {
+  await withEnv(
+    {
+      AWS_RDS_DB_NAME: 'payload_app',
+      AWS_RDS_HOST: 'legacy-db.example.com',
+      AWS_RDS_PASSWORD: 'password',
+      AWS_RDS_USERNAME: 'payload_user',
+      DATABASE_PROVIDER: 'postgres',
+      DATABASE_URL: undefined,
+      POSTGRES_URL: undefined,
+      POSTGRES_URL_NON_POOLING: undefined,
+      SUPABASE_DATABASE_URL: undefined,
+      SUPABASE_DB_URL: undefined,
+    },
+    async () => {
+      assert.throws(
+        () => resolveDatabaseRuntimeConfig(),
+        /DATABASE_URL/,
+      )
     },
   )
 })

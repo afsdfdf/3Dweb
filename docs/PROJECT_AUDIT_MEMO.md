@@ -48,10 +48,10 @@ pnpm run build
 Result:
 
 - TypeScript passed.
-- Unit tests passed: 107 tests, 107 passed, 0 failed.
+- Unit tests passed: 112 tests, 112 passed, 0 failed after the remediation test additions.
 - Production build passed.
 - Build output still logged SMTP `EAUTH` verification failures from the configured local SMTP credentials, but the build completed successfully. SMTP remains a configuration/noise issue rather than a compile blocker.
-- Build route output includes `/personal-center-legacy` and `/personal-center-test`, confirming these are currently production-visible routes unless explicitly gated or removed.
+- Build route output from the original audit included `/personal-center-legacy` and `/personal-center-test`. The 2026-05-01 remediation pass removed `/personal-center-legacy`; a later account promotion made `/account` the single formal personal center route and changed `/personal-center-test` to redirect there.
 
 Read-only database probe:
 
@@ -69,11 +69,11 @@ Worktree note:
 
 The project is now much healthier than the older 2026-04-28 memo suggested. The social collections are active, TypeScript is green, unit tests are green, Supabase Storage is backing the current imported model set, and Workbench follows the intended anonymous-view/authenticated-action boundary.
 
-The highest-risk remaining issue is not general public model visibility. The live database has public model data and storage URLs in the expected shape. The highest-risk issue is that `GET /api/platform/models/:modelId/download` can still return a mock file when no real asset URL is available, and it hardcodes the download charging gate instead of honoring the backend policy in `site-settings.modelAccessPolicy`.
+The highest-risk original issue was not general public model visibility. The live database has public model data and storage URLs in the expected shape. The 2026-05-01 remediation pass fixed the original download risk: `GET /api/platform/models/:modelId/download` no longer returns mock files and now honors `site-settings.modelAccessPolicy`.
 
-The second highest-risk area is configuration drift: active runtime direction is Supabase Postgres plus Supabase Storage, but several runtime/admin/env helper surfaces still mention AWS RDS or S3. Those should be cleaned without reintroducing AWS/S3 runtime media behavior.
+The second highest-risk area was configuration drift. The 2026-05-01 remediation pass cleaned active runtime/admin/env guidance around Supabase Postgres plus Supabase Storage without reintroducing AWS/S3 runtime media behavior.
 
-The third highest-risk area is production route cleanup. `/test` and `/formal-components` correctly return `notFound()` in production, but `personal-center-test` and `personal-center-legacy` are currently routable app pages and should be protected, removed, or moved out of production routes.
+The third highest-risk area was production route cleanup. `/test` and `/formal-components` correctly return `notFound()` in production, `/personal-center-test` redirects to `/account`, and the 2026-05-01 remediation pass removed the legacy personal center route page.
 
 ## Frontend Audit
 
@@ -91,7 +91,7 @@ The third highest-risk area is production route cleanup. `/test` and `/formal-co
 
 ### Risks
 
-- `src/app/(frontend)/personal-center-test/page.tsx` and `src/app/(frontend)/personal-center-legacy/page.tsx` are routable production pages. The legacy page contains hardcoded demo data and Chinese UI literals.
+- `/account` owns the formal personal center UI. `/personal-center-test` redirects to `/account`, and `/personal-center-legacy` has been removed from the app route tree.
 - `src/app/(frontend)/workbench/models/[id]/page.tsx` still contains static/demo model details and fixed download-credit sample data. It has production `notFound()` protection for unauthenticated/missing data in parts of the route, but it still needs a focused pass before treating it as final account-owned detail UI.
 - Some older helper components and test assets remain under `src/components/ui-lab/*` and `public/ui-lab/*`. They are acceptable as component assets only if no public route exposes them as production UX.
 - Clipboard copy errors should not trigger runtime overlays. Browser clipboard APIs require a user gesture and permission; any copy action should catch `NotAllowedError` and show a non-blocking UI message.
@@ -99,7 +99,7 @@ The third highest-risk area is production route cleanup. `/test` and `/formal-co
 
 ### Frontend Priority Actions
 
-- P1: Remove, protect, or production-gate `personal-center-test` and `personal-center-legacy`.
+- P1: Keep UI-lab account variants out of production; local-only design review routes must use `notFound()` in production.
 - P1: Keep Model Detail and Workbench current-model-first: one visible `ModelViewer`, one selected GLB request, visible-range thumbnails only.
 - P2: Replace remaining demo/static account and Workbench detail copy with data adapters or remove the route from production navigation.
 - P2: Add copy-action error handling where `navigator.clipboard.writeText` is used.
@@ -157,17 +157,16 @@ The older statement that social collections are dormant is no longer true.
 
 ### Backend Risks
 
-- `src/endpoints/modelDownloads.ts` still returns `# Mock 3D File` when a selected format has no resolvable asset URL. Production downloads must fail clearly with controlled 404/502 instead of returning fake assets.
-- `src/endpoints/modelDownloads.ts` uses `const shouldCharge = true`. Download charging must honor `site-settings.modelAccessPolicy.chargeDownloadCredits`, keep imported public downloads free by default, and stay idempotent/refundable.
+- `src/endpoints/modelDownloads.ts` now returns a controlled error when a selected format has no resolvable asset URL. Production downloads must continue to fail clearly instead of returning fake assets.
+- `src/endpoints/modelDownloads.ts` now honors `site-settings.modelAccessPolicy.chargeDownloadCredits`. Keep imported public downloads free by default, and keep charged download flows idempotent/refundable.
 - `src/endpoints/modelViewer.ts` intentionally uses an access-checked read first, then an internal asset read. Keep this as a documented exception and do not widen it into a general `overrideAccess: true` pattern.
-- `runtime-deployment-settings`, `RuntimeEnvPreview`, `.env.example`, and Vercel env examples still carry AWS RDS/S3 wording. That is now configuration drift against the Supabase direction.
+- `runtime-deployment-settings`, `RuntimeEnvPreview`, `.env.example`, and active docs now point operators toward `DATABASE_URL`, Supabase Postgres, and Supabase Storage.
 - `src/lib/creditLedger.ts` contains Chinese source literals. Unless intentionally localized/admin-facing, backend service text should stay English or move to a localization/content layer.
 
 ### Backend Priority Actions
 
-- P0: Replace mock download fallback with a real error path and test it.
-- P0: Wire download charging to backend policy instead of hardcoded `shouldCharge`.
-- P1: Remove AWS/S3 runtime wording from active env examples and admin runtime UI, while keeping legacy notes archived.
+- P1: Keep the download endpoint's no-mock and policy-driven charging tests in place.
+- P1: Keep active env examples and admin runtime UI aligned with Supabase Postgres plus Supabase Storage.
 - P1: Keep social collection docs aligned with active registration and migrations.
 - P2: Move durable service error/copy text out of Chinese source literals.
 
@@ -187,7 +186,7 @@ The older statement that social collections are dormant is no longer true.
 
 ### Database And Storage Risks
 
-- The project still has active docs/env/admin remnants that mention AWS RDS/S3. These are now documentation/configuration drift, not the intended runtime strategy.
+- Active docs/env/admin setup now uses the Supabase/Postgres plus Supabase Storage runtime strategy.
 - `src/lib/supabase/billing.ts` and `src/lib/supabase/queries.ts` still use direct SQL for some flows. Direct SQL can be valid for reporting/performance paths, but it must not become the default replacement for Payload access-controlled reads.
 - Live table cleanup/orphan-table decisions require a separate migration-grade review. This audit did a read-only table/count probe only.
 - `homepage_items` and `avatar_frame_styles` are empty in the probed database. That is acceptable for launch only if the frontend has intentional empty states or static fallback content for those surfaces.
@@ -273,7 +272,7 @@ The older statement that social collections are dormant is no longer true.
 
 ### Security Priority Actions
 
-- P1: Add route-level checks for `personal-center-test` and `personal-center-legacy` or remove them.
+- P1: Keep `/account` as the single formal personal center route and keep `/personal-center-legacy` out of the app route tree.
 - P1: Add a recurring `rg` audit for `user:` Local API calls without nearby `overrideAccess: false`.
 - P2: Add smoke tests for anonymous Workbench browse, authenticated generation gate, anonymous public model preview, and dashboard protection.
 
@@ -287,7 +286,7 @@ The older statement that social collections are dormant is no longer true.
 
 ### Deployment Risks
 
-- Active env examples still include AWS/S3 variables, which makes operator setup confusing and can cause Vercel variable sprawl.
+- Active env examples now avoid AWS/S3 runtime variables, reducing Vercel variable sprawl risk.
 - SMTP should not be a deployment blocker. If SMTP variables are present and invalid, Nodemailer verification can produce noisy build/runtime logs.
 - Vercel environment variables must be set in the correct scope: Production, Preview, and Development. A value added only to Preview will not fix master Production deploys.
 - Meshy, Stripe, Supabase service role, Payload secret, SMTP, and webhook secrets must never be exposed as `NEXT_PUBLIC_*`.
@@ -358,7 +357,7 @@ Deprecated from active runtime direction:
 ### Current Good State
 
 - TypeScript passed.
-- Unit tests passed with 107 tests.
+- Unit tests passed with 112 tests after the remediation test additions.
 - Tests cover several critical backend rules: media access, model viewer, remote asset security, Meshy, storage settings, webhooks, ledger, rate limiting, and operator access.
 
 ### Test Gaps
@@ -366,27 +365,33 @@ Deprecated from active runtime direction:
 - No single smoke test currently proves the full browser path: anonymous public model detail -> viewer endpoint -> Supabase range request -> GLB parsed in browser.
 - No single smoke test proves Workbench anonymous browse -> login modal on generate -> authenticated generation request.
 - Meshy live provider tests should stay mocked by default; production keys should not be required for CI/build.
-- No formal test currently prevents mock download fallback from shipping.
+- `tests/backendIntegration.test.ts` prevents mock download fallback from shipping.
 
 ### Quality Priority Actions
 
-- P0: Add a unit test that download endpoint returns an error instead of mock content when no asset exists.
+- P0: Covered by the new backend integration test for missing download assets.
 - P1: Add mocked Meshy 3D end-to-end task tests for text, image, and multi-image paths.
 - P1: Add browser smoke tests for public model preview and Workbench login gate.
 - P2: Add an env inventory test or script that prints required/missing variable names without values.
 
 ## Priority Backlog
 
+### Completed In 2026-05-01 Remediation Pass
+
+- `modelDownloads` no longer returns mock model-file content when no real asset exists.
+- Download charging now reads `site-settings.modelAccessPolicy.chargeDownloadCredits` and remains disabled by default for current imported public model downloads.
+- `/personal-center-legacy` was removed from the app route tree. `/account` is the single formal personal center route, and `/personal-center-test` redirects to it.
+- Active env/admin guidance was cleaned around `DATABASE_URL`, Supabase Postgres, and Supabase Storage.
+- `ModelViewer` loading telemetry now separates network download, file validation, parse/prepare, and ready phases without changing the one-current-model viewer path.
+- Homepage curated cards now consume managed `homepage-items` display metadata for ribbon/alt copy.
+- Model detail's side banner now uses the creator profile banner when the media is guest-readable.
+
 ### P0
 
-- Remove mock download success output from `modelDownloads`.
-- Make download credit charging read `site-settings.modelAccessPolicy` and keep it disabled by default for current imported public models.
-- Add regression tests for both behaviors.
+- No open P0 items remain from this audit after the 2026-05-01 remediation pass.
 
 ### P1
 
-- Protect or remove `personal-center-test` and `personal-center-legacy` routes.
-- Clean active AWS/S3/AWS RDS wording from runtime env examples and admin runtime UI.
 - Add browser smoke coverage for anonymous public model preview and Workbench auth gate.
 - Keep Meshy strict local ingestion before task success/credit settlement.
 - Resolve direct SQL billing ownership so Payload ledger and Supabase helper paths cannot double-count.

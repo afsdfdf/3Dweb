@@ -34,7 +34,7 @@ Core product path:
 - Payload CMS 3
 - PostgreSQL runtime
 - Stripe for active billing and checkout flows
-- S3-compatible storage support through Payload storage and project helpers
+- Supabase Storage for model, media, preview, and user asset delivery
 
 Important entry points:
 

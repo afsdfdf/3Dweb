@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useState } from "react";
 
 import { BorderComboFrame2 } from "@/components/ui-lab/border-combo-frame-2";
-import { TopNavigation, type TopNavigationItem, type TopNavigationUser } from "@/components/ui-lab/top-navigation";
+import { TopNavigation, type TopNavigationUser } from "@/components/ui-lab/top-navigation";
+import { publicNavigationItems } from "@/lib/publicNavigation";
 
 import styles from "./personal-center.module.css";
 
@@ -67,13 +68,6 @@ type PersonalCenterProps = {
   navUser?: null | TopNavigationUser;
 };
 
-const personalCenterNavItems: TopNavigationItem[] = [
-  { href: "/", id: "HOME", label: "首页" },
-  { href: "/workbench", id: "WORKBENCH", label: "工作台" },
-  { href: "/personal-center", id: "ACCOUNT", label: "个人中心" },
-  { href: "/model-detail", id: "DETAIL", label: "模型详情" },
-];
-
 type SectionId = "overview" | "models" | "tasks" | "points" | "payments" | "settings";
 
 export function PersonalCenter({ data, navUser = null }: PersonalCenterProps) {
@@ -132,7 +126,7 @@ export function PersonalCenter({ data, navUser = null }: PersonalCenterProps) {
   return (
     <main className={styles.pageShell}>
       <div className={styles.stageViewport}>
-        <TopNavigation active="ACCOUNT" className={styles.boundTopNavigation} items={personalCenterNavItems} user={navDisplayUser} />
+        <TopNavigation active="ACCOUNT" className={styles.boundTopNavigation} items={publicNavigationItems} user={navDisplayUser} />
 
         <section aria-label="个人中心" className={styles.stage}>
           <div className={styles.heroBackdrop} aria-hidden="true" />

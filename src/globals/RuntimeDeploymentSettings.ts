@@ -35,11 +35,11 @@ export const RuntimeDeploymentSettings: GlobalConfig = {
             {
               name: 'databaseConnectionMode',
               type: 'select',
-              defaultValue: 'aws-rds-fields',
+              defaultValue: 'database-url',
               label: text('Connection mode', '连接模式'),
               options: [
                 {
-                  label: text('Compose from AWS RDS variables', '根据 AWS RDS 变量拼接'),
+                  label: text('Legacy composed Postgres variables', '旧版 Postgres 拼接变量'),
                   value: 'aws-rds-fields',
                 },
                 {
@@ -55,7 +55,7 @@ export const RuntimeDeploymentSettings: GlobalConfig = {
               admin: {
                 condition: (_, siblingData) => siblingData?.databaseConnectionMode === 'database-url',
                 description: text(
-                  'Paste the deployment DATABASE_URL template without the real password if you want.',
+                  'Paste the deployment DATABASE_URL template without the real password if you want. Supabase Postgres is the preferred production database.',
                   '如有需要，可填写不含真实密码的部署 DATABASE_URL 模板。',
                 ),
               },
@@ -65,53 +65,59 @@ export const RuntimeDeploymentSettings: GlobalConfig = {
               name: 'awsRdsHost',
               type: 'text',
               admin: {
-                condition: (_, siblingData) => siblingData?.databaseConnectionMode === 'aws-rds-fields',
+                condition: () => false,
               },
-              label: 'AWS_RDS_HOST',
+              label: 'Legacy composed Postgres host',
             },
             {
               name: 'awsRdsPort',
               type: 'number',
               admin: {
-                condition: (_, siblingData) => siblingData?.databaseConnectionMode === 'aws-rds-fields',
+                condition: () => false,
               },
               defaultValue: 5432,
-              label: 'AWS_RDS_PORT',
+              label: 'Legacy composed Postgres port',
             },
             {
               name: 'awsRdsDbName',
               type: 'text',
               admin: {
-                condition: (_, siblingData) => siblingData?.databaseConnectionMode === 'aws-rds-fields',
+                condition: () => false,
               },
               defaultValue: 'payload_local_demo',
-              label: 'AWS_RDS_DB_NAME',
+              label: 'Legacy composed Postgres database',
             },
             {
               name: 'awsRdsUsername',
               type: 'text',
               admin: {
-                condition: (_, siblingData) => siblingData?.databaseConnectionMode === 'aws-rds-fields',
+                condition: () => false,
               },
               defaultValue: 'payload_admin',
-              label: 'AWS_RDS_USERNAME',
+              label: 'Legacy composed Postgres username',
             },
             {
               name: 'awsRdsSslMode',
               type: 'select',
               defaultValue: 'require',
-              label: 'AWS_RDS_SSL_MODE',
+              label: 'Legacy composed Postgres SSL mode',
               options: [
                 { label: 'require', value: 'require' },
                 { label: 'verify-full', value: 'verify-full' },
                 { label: 'disable', value: 'disable' },
               ],
+              admin: {
+                condition: () => false,
+              },
             },
             {
               name: 'awsRdsSslRejectUnauthorized',
               type: 'checkbox',
               defaultValue: false,
-              label: 'AWS_RDS_SSL_REJECT_UNAUTHORIZED',
+              label: 'Legacy composed Postgres SSL reject unauthorized',
+              admin: {
+                condition: () => false,
+              },
             },
             {
               name: 'databaseSecurityChecklist',

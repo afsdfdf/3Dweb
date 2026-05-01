@@ -1,6 +1,7 @@
 import { getCachedPayload } from "@/lib/getCachedPayload";
 import { buildModelViewerURL, getModelPreviewURL } from "@/lib/modelAssetURL";
 import { getMediaAccessURL } from "@/lib/mediaAccessURL";
+import { isGuestReadableMedia } from "@/lib/mediaVisibility";
 import type { Where } from "payload";
 
 type ImageLike = {
@@ -20,6 +21,12 @@ type OwnerLike = {
   followingCount?: null | number;
   fullName?: null | string;
   id?: number | string;
+  profileBackground?:
+    | null
+    | number
+    | (ImageLike & { publicAccess?: null | boolean; purpose?: null | string });
+  profileBannerFocalX?: null | number;
+  profileBannerFocalY?: null | number;
   profileVisibility?: null | string;
 };
 
@@ -72,6 +79,9 @@ export type ModelDetailData = {
   authorAvatarSrc: null | string;
   authorDescription: string;
   authorName: string;
+  authorProfileBannerFocalX: number;
+  authorProfileBannerFocalY: number;
+  authorProfileBannerSrc: null | string;
   commentsLabel: string;
   downloadCreditsLabel: string;
   favoritesLabel: string;
@@ -208,11 +218,24 @@ const getPublicAvatarURL = (owner: null | OwnerLike | undefined) => {
   const avatar = owner?.avatar;
   if (!isRecord(avatar)) return null;
 
-  if (avatar.publicAccess === true || avatar.purpose === "preview") {
+  if (isGuestReadableMedia(avatar)) {
     return getImageURL(avatar);
   }
 
   return null;
+};
+
+const getPublicProfileBannerURL = (owner: null | OwnerLike | undefined) => {
+  const banner = owner?.profileBackground;
+  if (!isRecord(banner) || !isGuestReadableMedia(banner)) return null;
+
+  return getImageURL(banner);
+};
+
+const normalizeFocalPoint = (value: unknown) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return 50;
+  return Math.max(0, Math.min(100, numeric));
 };
 
 async function getPublicOwner(
@@ -224,8 +247,13 @@ async function getPublicOwner(
 
   try {
     const ownerDoc = isRecord(owner) ? (owner as OwnerLike) : null;
+    const ownerDocHasProfileMedia =
+      ownerDoc?.profileVisibility !== undefined &&
+      ownerDoc?.profileBackground !== undefined &&
+      ownerDoc?.profileBannerFocalX !== undefined &&
+      ownerDoc?.profileBannerFocalY !== undefined;
     const resolvedOwner =
-      ownerDoc?.profileVisibility !== undefined
+      ownerDocHasProfileMedia
         ? ownerDoc
         : ((await payload.findByID({
             collection: "users",
@@ -240,6 +268,9 @@ async function getPublicOwner(
               followersCount: true,
               followingCount: true,
               fullName: true,
+              profileBackground: true,
+              profileBannerFocalX: true,
+              profileBannerFocalY: true,
               profileVisibility: true,
             },
           })) as OwnerLike);
@@ -405,6 +436,12 @@ export async function getModelDetailData(args: {
       normalizeText(model.description) ||
       "Public creator model available for preview and reference.",
     authorName: getOwnerName(owner),
+    authorProfileBannerFocalX: normalizeFocalPoint(owner?.profileBannerFocalX),
+    authorProfileBannerFocalY: normalizeFocalPoint(owner?.profileBannerFocalY),
+    authorProfileBannerSrc: await resolveMediaAccessURL(
+      payload,
+      getPublicProfileBannerURL(owner),
+    ),
     commentsLabel: compactCount(model.commentsCount),
     downloadCreditsLabel: getDownloadCreditsLabel(model),
     favoritesLabel: compactCount(model.favoritesCount),

@@ -46,7 +46,7 @@
   background: transparent;
 }
 
-.boundTopNavigation {
+.scaleStage > .boundTopNavigation {
   left: 0;
   position: absolute;
   right: 0;
@@ -82,7 +82,7 @@
   list-style: none;
 }
 
-.pageRoot :global(button) {
+.pageRoot :global(.uc-detail button) {
   margin: 0;
   padding: 0;
   background: none;
@@ -95,7 +95,7 @@
   -moz-appearance: none;
   -ms-appearance: none;
   -o-appearance: none;
-}.pageRoot :global(button:after) {
+}.pageRoot :global(.uc-detail button:after) {
   display: none;
 }.pageRoot :global(.uc-input),
 .pageRoot :global(.uc-select),

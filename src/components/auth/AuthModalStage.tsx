@@ -4,8 +4,9 @@ import type { CSSProperties, ReactNode } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
+import { useAuthModal } from '@/components/auth/AuthModalProvider'
+
 import { AuthFlowCard } from './AuthFlowCard'
-import { useAuthModal } from './AuthModalProvider'
 import styles from './AuthModalStage.module.css'
 
 export function AuthModalStage({

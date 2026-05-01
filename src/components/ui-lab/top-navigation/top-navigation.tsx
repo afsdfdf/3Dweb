@@ -4,6 +4,7 @@
 import Link from "next/link";
 
 import { useAuthModal } from "@/components/auth/AuthModalProvider";
+import { publicNavigationItems } from "@/lib/publicNavigation";
 
 import styles from "./top-navigation.module.css";
 
@@ -28,7 +29,7 @@ type TopNavigationProps = {
   active?: string;
   className?: string;
   credits?: number;
-  items?: TopNavigationItem[];
+  items?: readonly TopNavigationItem[];
   loginHref?: string;
   registerHref?: string;
   showAuthEntry?: boolean;
@@ -36,19 +37,9 @@ type TopNavigationProps = {
   userName?: null | string;
 };
 
-const defaultNavItems: TopNavigationItem[] = [
-  { href: "#home", id: "HOME", label: "HOME" },
-  { href: "#workbench", id: "WORKBENCH", label: "WORKBENCH" },
-  { href: "#account", id: "ACCOUNT", label: "ACCOUNT" },
-  { href: "#admin", id: "ADMIN", label: "ADMIN" },
-];
+const defaultNavItems = publicNavigationItems;
 
-export const migrationTestNavItems: TopNavigationItem[] = [
-  { href: "/", id: "HOME", label: "HOME" },
-  { href: "/workbench", id: "WORKBENCH", label: "WORKBENCH" },
-  { href: "/account", id: "ACCOUNT", label: "ACCOUNT" },
-  { href: "/model-detail", id: "DETAIL", label: "DETAIL" },
-];
+export const migrationTestNavItems = publicNavigationItems;
 
 function NotificationBellButton({ count = 0 }: { count?: number }) {
   return (
@@ -114,6 +105,7 @@ export function TopNavigation({
   user = null,
   userName = null,
 }: TopNavigationProps) {
+  const { closeAuthModal } = useAuthModal();
   const displayName = user ? getUserLabel(user, userName) : null;
   const displayCredits = user ? getUserCredits(user, credits) : credits;
   const avatarUrl = user?.avatarUrl || `${assetBase}/icon-user-avatar-placeholder.png`;
@@ -129,6 +121,7 @@ export function TopNavigation({
             className={`${styles.navLink} ${item.id === active ? styles.activeNav : ""}`}
             href={item.href}
             key={item.id}
+            onClick={closeAuthModal}
           >
             {item.label}
           </Link>

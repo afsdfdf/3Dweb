@@ -31,6 +31,41 @@ type ResolvedModelFormatAsset = {
   url: null | string
 }
 
+type DownloadAccessPolicy = {
+  chargeDownloadCredits: boolean
+  downloadCredits: number
+}
+
+const defaultDownloadAccessPolicy: DownloadAccessPolicy = {
+  chargeDownloadCredits: false,
+  downloadCredits: 0,
+}
+
+function readPositiveNumber(value: unknown) {
+  const numeric = Number(value)
+  if (!Number.isFinite(numeric) || numeric <= 0) return 0
+  return numeric
+}
+
+async function getDownloadAccessPolicy(req: PayloadRequest): Promise<DownloadAccessPolicy> {
+  try {
+    const settings = await req.payload.findGlobal({
+      depth: 0,
+      overrideAccess: true,
+      req,
+      slug: 'site-settings',
+    })
+    const policy = isRecord(settings?.modelAccessPolicy) ? settings.modelAccessPolicy : null
+
+    return {
+      chargeDownloadCredits: policy?.chargeDownloadCredits === true,
+      downloadCredits: readPositiveNumber(policy?.downloadCredits),
+    }
+  } catch {
+    return defaultDownloadAccessPolicy
+  }
+}
+
 async function resolveModelFormatAsset(modelId: number, format: string): Promise<ResolvedModelFormatAsset | null> {
   const result = await queryPostgres<ResolvedModelFormatAsset>(
     `
@@ -103,7 +138,11 @@ export const modelDownloadEndpoint = {
       return Response.json({ message: 'The selected format is not available for this model.' }, { status: 400 })
     }
 
-    const downloadCredits = Math.max(0, Number(selectedFormat.downloadCredits || 0))
+    const downloadPolicy = await getDownloadAccessPolicy(req)
+    const selectedFormatDownloadCredits = readPositiveNumber(selectedFormat.downloadCredits)
+    const downloadCredits = downloadPolicy.chargeDownloadCredits
+      ? selectedFormatDownloadCredits || downloadPolicy.downloadCredits
+      : 0
     const fileRelation = selectedFormat.file
     const remoteFromMedia =
       fileRelation && typeof fileRelation === 'object' && 'url' in fileRelation && typeof fileRelation.url === 'string'
@@ -120,6 +159,10 @@ export const modelDownloadEndpoint = {
         ? null
         : await (modelDownloadEndpointTestHooks?.resolveModelFormatAsset || resolveModelFormatAsset)(Number(model.id), format)
     const remoteURL = remoteFromMedia || remoteFromTask || resolvedFormatAsset?.url
+
+    if (!remoteURL) {
+      return Response.json({ message: 'No downloadable model asset is available for this format.' }, { status: 404 })
+    }
 
     if (remoteURL) {
       const allowedSource = await (modelDownloadEndpointTestHooks?.isAllowedRemoteAssetURL || isAllowedRemoteAssetURL)({
@@ -138,7 +181,7 @@ export const modelDownloadEndpoint = {
       }
     }
 
-    const shouldCharge = true
+    const shouldCharge = downloadPolicy.chargeDownloadCredits
     let chargeResult: { applied?: boolean } | null = null
 
     if (shouldCharge) {
@@ -166,57 +209,46 @@ export const modelDownloadEndpoint = {
     }
 
     try {
-      if (remoteURL) {
-        const accessURL = await (modelDownloadEndpointTestHooks?.getMediaAccessURL || getMediaAccessURL)({
-          payload: req.payload,
-          ttlSeconds: inline ? 3600 : 600,
-          url: remoteURL,
-        })
-        if (!accessURL) {
-          throw new Error('ASSET_URL_INVALID')
-        }
-
-        const fetchURL = accessURL
-
-        const allowedFetchTarget = await (modelDownloadEndpointTestHooks?.isAllowedRemoteAssetURL || isAllowedRemoteAssetURL)({
-          payload: req.payload,
-          url: fetchURL,
-        })
-
-        if (!allowedFetchTarget) {
-          throw new Error('ASSET_HOST_NOT_ALLOWED')
-        }
-
-        if (!inline) {
-          return Response.redirect(fetchURL, 307)
-        }
-
-        const upstream = await fetch(fetchURL)
-        if (!upstream.ok) {
-          throw new Error(`ASSET_FETCH_FAILED:${upstream.status}`)
-        }
-
-        const mimeType =
-          resolvedFormatAsset?.mimeType ||
-          (fileRelation && typeof fileRelation === 'object' && 'mimeType' in fileRelation && typeof fileRelation.mimeType === 'string'
-            ? fileRelation.mimeType
-            : 'application/octet-stream')
-
-        const safeName = String(resolvedFormatAsset?.filename || model.title || `model-${model.id}`).replace(/["\r\n\\]/g, '')
-        return new Response(upstream.body, {
-          headers: {
-            'Content-Disposition': `inline; filename="${safeName}"`,
-            'Content-Type': mimeType,
-          },
-          status: 200,
-        })
+      const accessURL = await (modelDownloadEndpointTestHooks?.getMediaAccessURL || getMediaAccessURL)({
+        payload: req.payload,
+        ttlSeconds: inline ? 3600 : 600,
+        url: remoteURL,
+      })
+      if (!accessURL) {
+        throw new Error('ASSET_URL_INVALID')
       }
 
-      const content = `# Mock 3D File\nmodel=${modelId}\nformat=${format}\ngenerated_at=${new Date().toISOString()}\n`
-      return new Response(content, {
+      const fetchURL = accessURL
+
+      const allowedFetchTarget = await (modelDownloadEndpointTestHooks?.isAllowedRemoteAssetURL || isAllowedRemoteAssetURL)({
+        payload: req.payload,
+        url: fetchURL,
+      })
+
+      if (!allowedFetchTarget) {
+        throw new Error('ASSET_HOST_NOT_ALLOWED')
+      }
+
+      if (!inline) {
+        return Response.redirect(fetchURL, 307)
+      }
+
+      const upstream = await fetch(fetchURL)
+      if (!upstream.ok) {
+        throw new Error(`ASSET_FETCH_FAILED:${upstream.status}`)
+      }
+
+      const mimeType =
+        resolvedFormatAsset?.mimeType ||
+        (fileRelation && typeof fileRelation === 'object' && 'mimeType' in fileRelation && typeof fileRelation.mimeType === 'string'
+          ? fileRelation.mimeType
+          : 'application/octet-stream')
+
+      const safeName = String(resolvedFormatAsset?.filename || model.title || `model-${model.id}`).replace(/["\r\n\\]/g, '')
+      return new Response(upstream.body, {
         headers: {
-          'Content-Disposition': `${inline ? 'inline' : 'attachment'}; filename="mock-model-${modelId}.${format}"`,
-          'Content-Type': 'application/octet-stream',
+          'Content-Disposition': `inline; filename="${safeName}"`,
+          'Content-Type': mimeType,
         },
         status: 200,
       })

@@ -1,12 +1,14 @@
 import Link from 'next/link'
 
+import { publicNavigationItems } from '@/lib/publicNavigation'
+
 import { AuthEntryButton } from './AuthEntryButton'
 import { Locale } from '../../_lib/locale'
 
 type TopNavBarProps = {
   currentPath?: string
   locale: Locale
-  navigation: { href: string; label: string }[]
+  navigation?: readonly { href: string; label: string }[]
   showAuthEntry?: boolean
   showLocaleSwitcher?: boolean
   user?: null | {
@@ -23,12 +25,7 @@ const isActivePath = (href: string, currentPath?: string) => {
 }
 
 const NAV_ITEM_WIDTH_CLASS = 'w-[132px]'
-const STANDARD_NAVIGATION = [
-  { href: '/', label: 'Home' },
-  { href: '/generate', label: 'Workbench' },
-  { href: '/dashboard', label: 'Account' },
-  { href: '/admin', label: 'Admin' },
-]
+const STANDARD_NAVIGATION = publicNavigationItems
 
 function HeaderBrand() {
   return (

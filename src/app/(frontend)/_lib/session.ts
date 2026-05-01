@@ -87,6 +87,40 @@ export async function getCurrentNavUser() {
   }
 }
 
+export async function getCurrentAccountProfileSummary() {
+  const { payload, user } = await getPayloadWithUser()
+  if (!user) return null
+
+  const [userDoc, frameStyles] = await Promise.all([
+    payload.findByID({
+      collection: 'users',
+      depth: 1,
+      id: user.id,
+      overrideAccess: false,
+      user,
+    }),
+    payload.find({
+      collection: 'avatar-frame-styles',
+      depth: 1,
+      limit: 20,
+      overrideAccess: false,
+      pagination: false,
+      sort: ['sortOrder', 'key'],
+      user,
+    }),
+  ])
+
+  return {
+    avatarFrame: typeof userDoc.avatarFrame === 'string' ? userDoc.avatarFrame : 'none',
+    avatarFrameStyles: frameStyles.docs.map((style) => ({
+      key: String(style.key || ''),
+      thumbnailUrl: getMediaUrl(style.thumbnail),
+      title: String(style.title || style.key || ''),
+    })).filter((style) => style.key && style.title),
+    backgroundUrl: getMediaUrl(userDoc.profileBackground),
+  }
+}
+
 export async function requireUser() {
   const user = await getCurrentUser()
   if (!user) redirect('/login')

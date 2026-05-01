@@ -42,7 +42,7 @@
   color: #ffffff;
 }
 
-.boundTopNavigation {
+.stage > .boundTopNavigation {
   left: 0;
   position: absolute;
   right: 0;
@@ -64,9 +64,9 @@
 
 .leftPanel {
   left: var(--panel-edge);
-  padding: 34px 24px 26px;
-  display: flex;
-  flex-direction: column;
+  box-sizing: border-box;
+  display: block;
+  padding: 0;
   transform: scale(var(--panel-scale));
   transform-origin: top left;
 }
@@ -365,13 +365,17 @@
 }
 
 .formSection {
-  margin-top: 75px;
+  margin-top: 0;
 }
 
 .panelScrollArea {
-  position: relative;
+  bottom: 100px;
+  box-sizing: border-box;
+  left: 24px;
+  position: absolute;
+  right: 24px;
+  top: 109px;
   z-index: 20;
-  flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   padding-right: 4px;
@@ -392,10 +396,13 @@
 }
 
 .panelFooterArea {
-  position: relative;
+  bottom: 26px;
+  box-sizing: border-box;
+  height: 74px;
+  left: 24px;
+  position: absolute;
+  right: 24px;
   z-index: 21;
-  flex: 0 0 auto;
-  margin-top: auto;
   padding-top: 12px;
   background:
     linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.86) 18%, rgba(0, 0, 0, 0.96) 100%);
@@ -1141,9 +1148,9 @@
 
 .bottomActions {
   display: grid;
-  grid-template-columns: 138px 246px;
+  grid-template-columns: 96px minmax(0, 1fr);
   align-items: end;
-  gap: 21px;
+  gap: 17px;
 }
 
 .priceButton {
@@ -1165,9 +1172,12 @@
   object-fit: contain;
 }
 
-.generateCta {
-  width: 246px;
-  height: 62px;
+.bottomActions .generateCta {
+  aspect-ratio: 434 / 90;
+  justify-self: stretch;
+  min-width: 0;
+  width: 100%;
+  height: auto;
 }
 
 .formError {

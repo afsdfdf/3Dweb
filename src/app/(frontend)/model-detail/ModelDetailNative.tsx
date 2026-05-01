@@ -5,6 +5,7 @@ import {
   OrangeMediumActionButton,
   SourcePurpleMediumButton,
 } from "@/components/ui-lab/action-buttons";
+import { AuthModalStage } from "@/components/auth/AuthModalStage";
 import { ButtonBoxFrame } from "@/components/ui-lab/button-box-frame";
 import { ModelAuthorCard } from "@/components/ui-lab/model-author-card";
 import { ModelDetailAdBanner } from "@/components/ui-lab/model-detail-ad-banner";
@@ -41,6 +42,9 @@ const fallbackData: ModelDetailData = {
   authorDescription:
     "Public creator model available for preview and reference.",
   authorName: "Xing Mu",
+  authorProfileBannerFocalX: 50,
+  authorProfileBannerFocalY: 50,
+  authorProfileBannerSrc: null,
   commentsLabel: "0",
   downloadCreditsLabel: "15.00",
   favoritesLabel: "267",
@@ -174,6 +178,7 @@ export default function ModelDetailNative({
         <div className={styles.scaleStage}>
           <ModelDetailHeader navUser={navUser} />
 
+          <AuthModalStage fitViewport topOffset={60}>
           <section className="uc-detail">
             <section className="detail-main">
               <div className="detail-left-top">
@@ -282,7 +287,10 @@ export default function ModelDetailNative({
               >
                 <div className="scroll-box">
                   <div className="banner">
-                    <ModelDetailAdBanner />
+                    <ModelDetailAdBanner
+                      imageSrc={detail.authorProfileBannerSrc || undefined}
+                      imagePosition={`${detail.authorProfileBannerFocalX}% ${detail.authorProfileBannerFocalY}%`}
+                    />
                   </div>
                   <ModelAuthorCard
                     avatarAlt={detail.authorName}
@@ -555,6 +563,7 @@ export default function ModelDetailNative({
               </div>
             </section>
           </section>
+          </AuthModalStage>
         </div>
       </div>
     </main>

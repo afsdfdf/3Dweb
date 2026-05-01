@@ -19,11 +19,11 @@ import type { CSSProperties } from "react";
 
 import { FrameButton } from "@/components/ui/frame-button";
 import { LineFrame } from "@/components/ui/line-frame";
+import { TopNavigation } from "@/components/ui-lab/top-navigation";
+import { publicNavigationItems } from "@/lib/publicNavigation";
 
 import { ModelViewer } from "../../../_components/ModelViewer";
 import { SiteShell } from "../../../_components/SiteShell";
-import { TopNavBar } from "../../../_components/shell/TopNavBar";
-import { getCurrentLocale } from "../../../_lib/locale-server";
 import { getCurrentNavUser, requireUser } from "../../../_lib/session";
 import { SketchExactPreview } from "./SketchExactPreview";
 import {
@@ -321,10 +321,7 @@ export default async function WorkbenchModelDetailPage({
   const visibleGalleryModels = galleryModels.slice(0, 5);
 
   if (previewMode) {
-    const [locale, navUser] = await Promise.all([
-      getCurrentLocale(),
-      getCurrentNavUser(),
-    ]);
+    const navUser = await getCurrentNavUser();
     const previewViewportStyle = {
       "--preview-stage-width": "min(100vw, calc(100vh * 16 / 9))",
       "--preview-stage-height": "min(100vh, calc(100vw * 9 / 16))",
@@ -349,15 +346,9 @@ export default async function WorkbenchModelDetailPage({
             style={{ transform: "scale(var(--preview-scale))" }}
           >
             <div className="flex h-full flex-col">
-              <TopNavBar
-                currentPath="/generate"
-                locale={locale}
-                navigation={[
-                  { href: "/", label: "Home" },
-                  { href: "/generate", label: "Workbench" },
-                  { href: "/dashboard", label: "Account" },
-                  { href: "/admin", label: "Admin" },
-                ]}
+              <TopNavigation
+                active="WORKBENCH"
+                items={publicNavigationItems}
                 user={navUser}
               />
               <SketchExactPreview
@@ -376,7 +367,7 @@ export default async function WorkbenchModelDetailPage({
 
   return (
     <SiteShell
-      currentPath="/generate"
+      currentPath="/workbench"
       showFooter={false}
       showUtilityNav={false}
       user={user}
