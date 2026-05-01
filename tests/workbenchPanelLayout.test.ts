@@ -5,6 +5,7 @@ import test from 'node:test'
 
 const rootDir = process.cwd()
 const workbenchCssPath = path.join(rootDir, 'src', 'app', '(frontend)', 'workbench', 'page.module.css')
+const workbenchClientPath = path.join(rootDir, 'src', 'app', '(frontend)', 'workbench', 'WorkbenchClient.tsx')
 
 function getRuleBlock(source: string, selector: string) {
   const start = source.indexOf(`${selector} {`)
@@ -18,9 +19,21 @@ function getRuleBlock(source: string, selector: string) {
   return source.slice(bodyStart + 1, bodyEnd)
 }
 
+function getLastRuleBlock(source: string, selector: string) {
+  const start = source.lastIndexOf(`${selector} {`)
+  assert.notEqual(start, -1, `Missing CSS rule for ${selector}`)
+
+  const bodyStart = source.indexOf('{', start)
+  const bodyEnd = source.indexOf('}', bodyStart)
+  assert.notEqual(bodyStart, -1, `Missing opening brace for ${selector}`)
+  assert.notEqual(bodyEnd, -1, `Missing closing brace for ${selector}`)
+
+  return source.slice(bodyStart + 1, bodyEnd)
+}
+
 test('Workbench left panel keeps tab clearance on the scroll container', () => {
   const source = readFileSync(workbenchCssPath, 'utf8')
-  const leftPanel = getRuleBlock(source, '.leftPanel')
+  const leftPanel = getLastRuleBlock(source, '.leftPanel')
   const modeTabsMount = getRuleBlock(source, '.modeTabsMount')
   const panelScrollArea = getRuleBlock(source, '.panelScrollArea')
   const panelFooterArea = getRuleBlock(source, '.panelFooterArea')
@@ -52,4 +65,18 @@ test('Workbench left panel keeps tab clearance on the scroll container', () => {
 
   assert.match(formSection, /margin-top:\s*0;/)
   assert.doesNotMatch(formSection, /margin-top:\s*75px;/)
+})
+
+test('Workbench right library placement does not depend on component CSS order', () => {
+  const source = readFileSync(workbenchCssPath, 'utf8')
+  const clientSource = readFileSync(workbenchClientPath, 'utf8')
+  const rightPanel = getLastRuleBlock(source, '.rightPanel')
+
+  assert.match(rightPanel, /right:\s*var\(--panel-edge\);/)
+  assert.match(rightPanel, /transform:\s*scale\(var\(--panel-scale\)\);/)
+  assert.doesNotMatch(rightPanel, /position:\s*relative;/)
+  assert.doesNotMatch(rightPanel, /padding:\s*24px\s+24px\s+28px;/)
+
+  assert.match(clientSource, /<div className=\{styles\.rightPanel\}>\s*<ModelLibraryPanel/s)
+  assert.doesNotMatch(clientSource, /<ModelLibraryPanel[\s\S]{0,120}className=\{styles\.rightPanel\}/)
 })

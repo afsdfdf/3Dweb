@@ -329,35 +329,36 @@ export function WorkbenchClient({
             </div>
           </main>
 
-          <ModelLibraryPanel
-            cards={rightPanelCards}
-            className={styles.rightPanel}
-            onSelectCard={(card) => {
-              const sourceAsset = card.sourceAsset;
-              if (card.kind === "image" && sourceAsset) {
-                setImages((current) => {
-                  if (current.some((image) => image.sourceAsset?.publicUrl === sourceAsset.publicUrl)) {
-                    return current;
-                  }
+          <div className={styles.rightPanel}>
+            <ModelLibraryPanel
+              cards={rightPanelCards}
+              onSelectCard={(card) => {
+                const sourceAsset = card.sourceAsset;
+                if (card.kind === "image" && sourceAsset) {
+                  setImages((current) => {
+                    if (current.some((image) => image.sourceAsset?.publicUrl === sourceAsset.publicUrl)) {
+                      return current;
+                    }
 
-                  return [
-                    ...current,
-                    {
-                      id: `generated-${sourceAsset.mediaId ?? card.id}`,
-                      previewUrl: sourceAsset.publicUrl,
-                      sourceAsset,
-                    },
-                  ].slice(0, 4);
-                });
-                setActiveMode("image3d");
-                setMultiView(true);
-                return;
-              }
+                    return [
+                      ...current,
+                      {
+                        id: `generated-${sourceAsset.mediaId ?? card.id}`,
+                        previewUrl: sourceAsset.publicUrl,
+                        sourceAsset,
+                      },
+                    ].slice(0, 4);
+                  });
+                  setActiveMode("image3d");
+                  setMultiView(true);
+                  return;
+                }
 
-              setSelectedModelSrc(card.modelSrc ?? null);
-            }}
-            title={rightPanelTitle}
-          />
+                setSelectedModelSrc(card.modelSrc ?? null);
+              }}
+              title={rightPanelTitle}
+            />
+          </div>
           </AuthModalStage>
         </section>
       </div>

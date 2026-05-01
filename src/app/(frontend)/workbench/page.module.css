@@ -57,6 +57,9 @@
   top: 84px;
   width: var(--panel-base-width);
   height: var(--panel-base-height);
+}
+
+.leftPanel {
   background: rgba(0, 0, 0, 0.94);
   box-shadow: 0 24px 40px rgba(0, 0, 0, 0.62);
   overflow: hidden;
@@ -130,7 +133,6 @@
 }
 
 .rightPanel {
-  padding: 24px 24px 28px;
   left: auto;
   right: var(--panel-edge);
   transform: scale(var(--panel-scale));
