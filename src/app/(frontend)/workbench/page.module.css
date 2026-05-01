@@ -1148,9 +1148,9 @@
 
 .bottomActions {
   display: grid;
-  grid-template-columns: 138px 246px;
+  grid-template-columns: 96px minmax(0, 1fr);
   align-items: end;
-  gap: 21px;
+  gap: 17px;
 }
 
 .priceButton {
@@ -1172,9 +1172,12 @@
   object-fit: contain;
 }
 
-.generateCta {
-  width: 246px;
-  height: 62px;
+.bottomActions .generateCta {
+  aspect-ratio: 434 / 90;
+  justify-self: stretch;
+  min-width: 0;
+  width: 100%;
+  height: auto;
 }
 
 .formError {

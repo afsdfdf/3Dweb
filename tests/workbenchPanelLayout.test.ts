@@ -24,6 +24,8 @@ test('Workbench left panel keeps tab clearance on the scroll container', () => {
   const modeTabsMount = getRuleBlock(source, '.modeTabsMount')
   const panelScrollArea = getRuleBlock(source, '.panelScrollArea')
   const panelFooterArea = getRuleBlock(source, '.panelFooterArea')
+  const bottomActions = getRuleBlock(source, '.bottomActions')
+  const generateCta = getRuleBlock(source, '.bottomActions .generateCta')
   const formSection = getRuleBlock(source, '.formSection')
 
   assert.match(leftPanel, /display:\s*block;/)
@@ -39,6 +41,14 @@ test('Workbench left panel keeps tab clearance on the scroll container', () => {
 
   assert.match(panelFooterArea, /position:\s*absolute;/)
   assert.match(panelFooterArea, /bottom:\s*26px;/)
+
+  assert.match(bottomActions, /grid-template-columns:\s*96px\s+minmax\(0,\s*1fr\);/)
+  assert.match(generateCta, /aspect-ratio:\s*434\s*\/\s*90;/)
+  assert.match(generateCta, /min-width:\s*0;/)
+  assert.match(generateCta, /width:\s*100%;/)
+  assert.match(generateCta, /height:\s*auto;/)
+  assert.doesNotMatch(generateCta, /width:\s*246px;/)
+  assert.doesNotMatch(generateCta, /height:\s*62px;/)
 
   assert.match(formSection, /margin-top:\s*0;/)
   assert.doesNotMatch(formSection, /margin-top:\s*75px;/)
