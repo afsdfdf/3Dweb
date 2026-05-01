@@ -427,11 +427,11 @@ Current evergreen references:
 ### 2026-05-01 Full-Stack Audit
 
 - `docs/PROJECT_AUDIT_MEMO.md` is refreshed as the current full-stack audit source. It supersedes older notes that said TypeScript was failing or that social collections were dormant.
-- Fresh validation during the audit: `pnpm exec tsc --noEmit` passed, `pnpm test:unit` passed with `107/107` tests, and `pnpm run build` passed. Build still logged SMTP `EAUTH` verification noise from configured SMTP credentials, so SMTP config remains a deployment hygiene item even though it is not a compile blocker.
+- Fresh validation during the audit and remediation: `pnpm exec tsc --noEmit` passed, `pnpm test:unit` passed with `112/112` tests after the latest remediation tests were added, and `pnpm run build` passed. Build still logged SMTP `EAUTH` verification noise from configured SMTP credentials, so SMTP config remains a deployment hygiene item even though it is not a compile blocker.
 - Read-only Supabase/Postgres probe found `70` public tables. Current imported public resource set is internally consistent: `42` public `models`, `42` `models_formats`, `123` `media` rows, all media URLs are Supabase public object URLs, and all 42 public models have guest-readable preview media plus Supabase-backed GLB format rows.
 - Highest-priority backend risk: `src/endpoints/modelDownloads.ts` must stop returning mock download content when no real asset exists. It should return a controlled error and refund any charged credits.
 - Download charging must honor `site-settings.modelAccessPolicy` instead of a hardcoded gate. Current imported public previews and downloads remain free until backend policy enforcement is deliberately enabled.
-- `personal-center-test` and `personal-center-legacy` are still routable app pages. Remove, production-gate, or move them out of the app route tree before launch.
+- `personal-center-test` and `personal-center-legacy` were identified as cleanup candidates. Preserve intentional local design review pages only with production `notFound()` gates.
 - Active env/admin docs still contain AWS RDS/S3 wording. Runtime direction remains Supabase Postgres plus Supabase Storage only; clean the active examples/admin UI without reintroducing AWS S3 runtime media behavior.
 - Workbench image-generation assets and 3D model assets remain separate: image-generation results are private source assets, while `models` records are created only by 3D/result model flows.
 
@@ -440,7 +440,7 @@ Current evergreen references:
 - `GET /api/platform/models/:modelId/download` now returns a controlled `404` when no real model asset URL can be resolved. It must not return generated mock model-file content in production paths.
 - Download credit charging is policy-driven by `site-settings.modelAccessPolicy.chargeDownloadCredits`. Current imported public downloads remain free by default; if charging is enabled later, charges happen only after a real source asset is resolved and are refunded on delivery failure.
 - Runtime environment guidance is consolidated around `DATABASE_PROVIDER=postgres`, `DATABASE_URL`, Supabase project variables, and Supabase Storage settings. Active `.env.example`, admin runtime preview, and active docs must not guide operators toward AWS/S3 runtime setup.
-- `/personal-center-legacy` and `/personal-center-test` route entries were removed from the frontend app route tree. The UI-lab components can remain as design assets, but they are not production pages.
+- `/personal-center-legacy` was removed from the frontend app route tree. `/personal-center-test` is intentionally kept as a local-only personal center design review route and must call `notFound()` in production. The UI-lab components can remain as design assets, but they are not production pages.
 - `ModelViewer` keeps the current-model-first architecture and still fetches only the selected viewer URL, but the loading UI is split into network, verify, parse, and ready phases so fast downloads with slower GLB/Draco parsing are visible without changing the fast Supabase redirect path.
 - Homepage managed items now read `homepage-items.badgeLabel`, `ribbonLabel`, and `altText` for homepage card display metadata instead of forcing the same hardcoded ribbon copy for curated cards.
 - Model detail's right-side image slot is the creator profile banner. The frontend uses `users.profileBackground` only when that media is guest-readable, with focal point fields applied as object positioning. Do not model this slot as a generic ad/promotion placement.

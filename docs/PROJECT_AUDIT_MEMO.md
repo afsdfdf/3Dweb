@@ -48,10 +48,10 @@ pnpm run build
 Result:
 
 - TypeScript passed.
-- Unit tests passed: 107 tests, 107 passed, 0 failed.
+- Unit tests passed: 112 tests, 112 passed, 0 failed after the remediation test additions.
 - Production build passed.
 - Build output still logged SMTP `EAUTH` verification failures from the configured local SMTP credentials, but the build completed successfully. SMTP remains a configuration/noise issue rather than a compile blocker.
-- Build route output from the original audit included `/personal-center-legacy` and `/personal-center-test`. The 2026-05-01 remediation pass removed those route page files from the app route tree.
+- Build route output from the original audit included `/personal-center-legacy` and `/personal-center-test`. The 2026-05-01 remediation pass removed `/personal-center-legacy` and kept `/personal-center-test` as a production-gated local design review page.
 
 Read-only database probe:
 
@@ -73,7 +73,7 @@ The highest-risk original issue was not general public model visibility. The liv
 
 The second highest-risk area was configuration drift. The 2026-05-01 remediation pass cleaned active runtime/admin/env guidance around Supabase Postgres plus Supabase Storage without reintroducing AWS/S3 runtime media behavior.
 
-The third highest-risk area was production route cleanup. `/test` and `/formal-components` correctly return `notFound()` in production, and the 2026-05-01 remediation pass removed `personal-center-test` and `personal-center-legacy` route pages.
+The third highest-risk area was production route cleanup. `/test`, `/formal-components`, and `/personal-center-test` correctly return `notFound()` in production, and the 2026-05-01 remediation pass removed the legacy personal center route page.
 
 ## Frontend Audit
 
@@ -91,7 +91,7 @@ The third highest-risk area was production route cleanup. `/test` and `/formal-c
 
 ### Risks
 
-- The former `personal-center-test` and `personal-center-legacy` route pages have been removed. Their UI-lab components remain design assets only.
+- `/personal-center-test` is intentionally available for local personal-center design review and production-gated with `notFound()`. `/personal-center-legacy` has been removed. Their UI-lab components remain design assets only.
 - `src/app/(frontend)/workbench/models/[id]/page.tsx` still contains static/demo model details and fixed download-credit sample data. It has production `notFound()` protection for unauthenticated/missing data in parts of the route, but it still needs a focused pass before treating it as final account-owned detail UI.
 - Some older helper components and test assets remain under `src/components/ui-lab/*` and `public/ui-lab/*`. They are acceptable as component assets only if no public route exposes them as production UX.
 - Clipboard copy errors should not trigger runtime overlays. Browser clipboard APIs require a user gesture and permission; any copy action should catch `NotAllowedError` and show a non-blocking UI message.
@@ -99,7 +99,7 @@ The third highest-risk area was production route cleanup. `/test` and `/formal-c
 
 ### Frontend Priority Actions
 
-- P1: Keep removed UI-lab account variants out of the production app route tree.
+- P1: Keep UI-lab account variants out of production; local-only design review routes must use `notFound()` in production.
 - P1: Keep Model Detail and Workbench current-model-first: one visible `ModelViewer`, one selected GLB request, visible-range thumbnails only.
 - P2: Replace remaining demo/static account and Workbench detail copy with data adapters or remove the route from production navigation.
 - P2: Add copy-action error handling where `navigator.clipboard.writeText` is used.
@@ -272,7 +272,7 @@ The older statement that social collections are dormant is no longer true.
 
 ### Security Priority Actions
 
-- P1: Keep `personal-center-test` and `personal-center-legacy` out of the app route tree.
+- P1: Keep `personal-center-test` production-gated and keep `personal-center-legacy` out of the app route tree.
 - P1: Add a recurring `rg` audit for `user:` Local API calls without nearby `overrideAccess: false`.
 - P2: Add smoke tests for anonymous Workbench browse, authenticated generation gate, anonymous public model preview, and dashboard protection.
 
@@ -357,7 +357,7 @@ Deprecated from active runtime direction:
 ### Current Good State
 
 - TypeScript passed.
-- Unit tests passed with 107 tests.
+- Unit tests passed with 112 tests after the remediation test additions.
 - Tests cover several critical backend rules: media access, model viewer, remote asset security, Meshy, storage settings, webhooks, ledger, rate limiting, and operator access.
 
 ### Test Gaps
@@ -380,7 +380,7 @@ Deprecated from active runtime direction:
 
 - `modelDownloads` no longer returns mock model-file content when no real asset exists.
 - Download charging now reads `site-settings.modelAccessPolicy.chargeDownloadCredits` and remains disabled by default for current imported public model downloads.
-- `/personal-center-test` and `/personal-center-legacy` route pages were removed from the app route tree.
+- `/personal-center-legacy` was removed from the app route tree, and `/personal-center-test` is production-gated for local design review only.
 - Active env/admin guidance was cleaned around `DATABASE_URL`, Supabase Postgres, and Supabase Storage.
 - `ModelViewer` loading telemetry now separates network download, file validation, parse/prepare, and ready phases without changing the one-current-model viewer path.
 - Homepage curated cards now consume managed `homepage-items` display metadata for ribbon/alt copy.

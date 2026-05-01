@@ -408,7 +408,7 @@ Recommended future path:
 
 - `docs/PROJECT_AUDIT_MEMO.md` is the current full-stack audit source for route/backend/deployment risk.
 - Current database probe shows the imported public model set is internally consistent: 42 public models, 42 guest-readable previews, and 42 GLB format rows backed by Supabase public object URLs.
-- `personal-center-test` and `personal-center-legacy` route pages were removed from the app route tree in the 2026-05-01 remediation pass. Keep the UI-lab components as design assets only.
+- `/personal-center-legacy` was removed from the app route tree in the 2026-05-01 remediation pass. `/personal-center-test` is intentionally kept as a local-only personal center design review route and must stay production-gated. Keep the UI-lab components as design assets only.
 - The download endpoint now uses `site-settings.modelAccessPolicy` for download charging and returns a controlled error when no real asset exists. Preview/download policy UI can build on that server-side behavior.
 
 ## Supabase Service Consolidation Memo
