@@ -46,7 +46,7 @@
   background: transparent;
 }
 
-.boundTopNavigation {
+.scaleStage > .boundTopNavigation {
   left: 0;
   position: absolute;
   right: 0;

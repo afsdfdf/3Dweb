@@ -7,9 +7,11 @@ const rootDir = process.cwd()
 const authModalStagePath = path.join(rootDir, 'src', 'components', 'auth', 'AuthModalStage.tsx')
 const authModalProviderPath = path.join(rootDir, 'src', 'components', 'auth', 'AuthModalProvider.tsx')
 const authModalStageCssPath = path.join(rootDir, 'src', 'components', 'auth', 'AuthModalStage.module.css')
+const homePageCssPath = path.join(rootDir, 'src', 'app', '(frontend)', '_home', 'homePage.module.css')
 const modelDetailNativePath = path.join(rootDir, 'src', 'app', '(frontend)', 'model-detail', 'ModelDetailNative.tsx')
 const modelDetailCssPath = path.join(rootDir, 'src', 'app', '(frontend)', 'model-detail', 'page.module.css')
 const topNavigationPath = path.join(rootDir, 'src', 'components', 'ui-lab', 'top-navigation', 'top-navigation.tsx')
+const workbenchCssPath = path.join(rootDir, 'src', 'app', '(frontend)', 'workbench', 'page.module.css')
 
 test('AuthModalStage uses the canonical provider import to avoid duplicate auth modal contexts', () => {
   const source = readFileSync(authModalStagePath, 'utf8')
@@ -61,4 +63,14 @@ test('Model Detail mounts the shared auth modal stage for top navigation login',
 
   assert.match(source, /@\/components\/auth\/AuthModalStage/)
   assert.match(source, /<AuthModalStage fitViewport topOffset=\{60\}>/)
+})
+
+test('Page-level top navigation positioning wins over shared TopNavigation base styles', () => {
+  const homeSource = readFileSync(homePageCssPath, 'utf8')
+  const workbenchSource = readFileSync(workbenchCssPath, 'utf8')
+  const modelDetailSource = readFileSync(modelDetailCssPath, 'utf8')
+
+  assert.match(homeSource, /\.stage\s*>\s*\.boundTopNavigation\s*\{[\s\S]*position:\s*absolute;/)
+  assert.match(workbenchSource, /\.stage\s*>\s*\.boundTopNavigation\s*\{[\s\S]*position:\s*absolute;/)
+  assert.match(modelDetailSource, /\.scaleStage\s*>\s*\.boundTopNavigation\s*\{[\s\S]*position:\s*absolute;/)
 })
