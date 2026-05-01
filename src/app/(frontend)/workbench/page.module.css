@@ -365,7 +365,7 @@
 }
 
 .formSection {
-  margin-top: 75px;
+  margin-top: 0;
 }
 
 .panelScrollArea {
@@ -374,6 +374,7 @@
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
+  margin-top: 75px;
   padding-right: 4px;
   padding-bottom: 18px;
   scrollbar-gutter: stable;
