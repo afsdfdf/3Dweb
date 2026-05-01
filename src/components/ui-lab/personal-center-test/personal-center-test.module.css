@@ -23,6 +23,10 @@
   color: rgba(244, 202, 132, 0.8);
 }
 
+.hiddenFileInput {
+  display: none;
+}
+
 .stage {
   --page-scale: 1;
   --stage-height: 1080px;
@@ -54,7 +58,11 @@
 }
 
 .accountFrameContainer {
-  --upper-height: calc(var(--surface-width) - (var(--profile-width) - var(--bottom-height) - 58px) - var(--top-height) - var(--middle-height) - var(--bottom-height));
+  --upper-height: calc(
+    var(--surface-width) -
+      (var(--profile-width) - var(--bottom-height) - 58px) - var(--top-height) -
+      var(--middle-height) - var(--bottom-height)
+  );
   --lower-height: calc(var(--profile-width) - var(--bottom-height) - 58px);
   position: absolute;
   left: 50%;
@@ -90,7 +98,6 @@
   min-height: 0;
   overflow: hidden;
 }
-
 
 .panelFrameContent,
 .accountFrameContent {
@@ -274,7 +281,12 @@
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, rgba(0, 0, 0, 0.78), rgba(0, 0, 0, 0.24) 62%, rgba(0, 0, 0, 0.48));
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.78),
+    rgba(0, 0, 0, 0.24) 62%,
+    rgba(0, 0, 0, 0.48)
+  );
 }
 
 .profileBackgroundCard div {
@@ -810,8 +822,11 @@
 
 .recordsTable th {
   height: 42px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.08),
+    rgba(255, 255, 255, 0.04)
+  );
   color: rgba(255, 248, 232, 0.96);
   font-weight: 700;
 }
@@ -890,6 +905,11 @@
   border-color: rgba(255, 255, 255, 0.5);
   background: #1d1d22;
   outline: none;
+}
+
+.pagination button:disabled {
+  cursor: not-allowed;
+  opacity: 0.38;
 }
 
 .pagination .currentPage {

@@ -83,14 +83,16 @@ Remaining backend gaps:
 
 Already wired:
 
+- `/account` requires a signed-in user through `requireUser()`
 - top navigation current user through `getCurrentNavUser()`
 - avatar, display name, email, credit balance, transactions, tasks, models, and orders through server-side current-user Local API helpers
 - profile and password forms submit to the registered `/api/account/profile` and `/api/account/password` endpoints
+- profile banner edit uses the profile endpoint plus `/api/account/profile-media/upload-url` for Supabase signed uploads and media ownership
+- avatar frame selection can use the backend-managed `avatar-frame-styles` catalog
 
 Remaining backend gaps:
 
-- profile banner edit uses the profile endpoint plus `/api/account/profile-media/upload-url` for Supabase signed uploads and media ownership
-- avatar frame selection can use the backend-managed `avatar-frame-styles` catalog
+- future profile public page work should decide how public avatar/banner media approval is governed when `profileVisibility = public`
 
 ## Existing Backend Support
 

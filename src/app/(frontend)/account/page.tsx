@@ -1,4 +1,7 @@
-import { PersonalCenterTest, type PersonalCenterData } from "@/components/ui-lab/personal-center-test";
+import {
+  PersonalCenterTest,
+  type PersonalCenterData,
+} from "@/components/ui-lab/personal-center-test";
 import type { GenerationTask, Model, PrintOrder } from "@/payload-types";
 
 import {
@@ -9,6 +12,7 @@ import {
   getCurrentUserModels,
   getCurrentUserOrders,
   getCurrentUserTasks,
+  requireUser,
 } from "../_lib/session";
 
 const transactionTypeLabels: Record<string, string> = {
@@ -61,7 +65,17 @@ const getRelationTitle = (value: unknown, fallback: string) => {
 };
 
 export default async function AccountPage() {
-  const [navUser, accountProfile, creditAccount, creditTransactions, tasks, models, orders] = await Promise.all([
+  await requireUser();
+
+  const [
+    navUser,
+    accountProfile,
+    creditAccount,
+    creditTransactions,
+    tasks,
+    models,
+    orders,
+  ] = await Promise.all([
     getCurrentNavUser(),
     getCurrentAccountProfileSummary(),
     getCurrentUserCreditAccount(),
@@ -71,17 +85,25 @@ export default async function AccountPage() {
     getCurrentUserOrders(),
   ]);
 
-  const activeTasks = tasks.docs.filter((task: GenerationTask) => ["queued", "processing"].includes(String(task.status))).length;
-  const activeOrders = orders.docs.filter((order: PrintOrder) => ["paid", "in-production", "shipped"].includes(String(order.status))).length;
+  const activeTasks = tasks.docs.filter((task: GenerationTask) =>
+    ["queued", "processing"].includes(String(task.status)),
+  ).length;
+  const activeOrders = orders.docs.filter((order: PrintOrder) =>
+    ["paid", "in-production", "shipped"].includes(String(order.status)),
+  ).length;
 
   const accountData: PersonalCenterData = {
     avatarUrl: navUser?.avatarUrl ?? null,
     avatarFrame: accountProfile?.avatarFrame ?? "none",
     avatarFrameStyles: accountProfile?.avatarFrameStyles ?? [],
     backgroundUrl: accountProfile?.backgroundUrl ?? null,
-    creditsBalance: Number(creditAccount?.balance ?? navUser?.creditsBalance ?? 0),
+    bio: accountProfile?.bio ?? null,
+    creditsBalance: Number(
+      creditAccount?.balance ?? navUser?.creditsBalance ?? 0,
+    ),
     displayName: navUser?.displayName ?? null,
     email: navUser?.email ?? null,
+    fullName: accountProfile?.fullName ?? null,
     metrics: {
       activeOrders,
       activeTasks,
@@ -89,15 +111,30 @@ export default async function AccountPage() {
       orderCount: "totalDocs" in orders ? orders.totalDocs : orders.docs.length,
       taskCount: "totalDocs" in tasks ? tasks.totalDocs : tasks.docs.length,
     },
+    phone: accountProfile?.phone ?? null,
+    profileVisibility:
+      accountProfile?.profileVisibility === "public" ? "public" : "private",
     rows: {
-      billing: creditTransactions.docs.slice(0, 10).map((transaction, index) => ({
-        amount: formatSignedNumber(transaction.amount),
-        id: String(transaction.referenceCode || transaction.id || index + 1),
-        item: String(transaction.referenceCode || transaction.type || "Credit transaction"),
-        status: transaction.balanceAfter === null || transaction.balanceAfter === undefined ? "Posted" : `Balance ${formatNumber(transaction.balanceAfter)}`,
-        time: formatDate(transaction.createdAt),
-        type: transactionTypeLabels[String(transaction.type)] ?? String(transaction.type || "Transaction"),
-      })),
+      billing: creditTransactions.docs
+        .slice(0, 10)
+        .map((transaction, index) => ({
+          amount: formatSignedNumber(transaction.amount),
+          id: String(transaction.referenceCode || transaction.id || index + 1),
+          item: String(
+            transaction.referenceCode ||
+              transaction.type ||
+              "Credit transaction",
+          ),
+          status:
+            transaction.balanceAfter === null ||
+            transaction.balanceAfter === undefined
+              ? "Posted"
+              : `Balance ${formatNumber(transaction.balanceAfter)}`,
+          time: formatDate(transaction.createdAt),
+          type:
+            transactionTypeLabels[String(transaction.type)] ??
+            String(transaction.type || "Transaction"),
+        })),
       models: models.docs.slice(0, 10).map((model: Model) => ({
         amount: "-",
         id: String(model.id),
@@ -107,7 +144,10 @@ export default async function AccountPage() {
         type: String(model.visibility || "Model"),
       })),
       orders: orders.docs.slice(0, 10).map((order: PrintOrder) => ({
-        amount: order.amount === null || order.amount === undefined ? "-" : `$${formatNumber(order.amount)}`,
+        amount:
+          order.amount === null || order.amount === undefined
+            ? "-"
+            : `$${formatNumber(order.amount)}`,
         id: String(order.orderNumber || order.id),
         item: getRelationTitle(order.model, `Order ${order.id}`),
         status: String(order.status || "Pending"),
@@ -115,7 +155,10 @@ export default async function AccountPage() {
         type: "Print order",
       })),
       tasks: tasks.docs.slice(0, 10).map((task: GenerationTask) => ({
-        amount: task.creditsSpent === null || task.creditsSpent === undefined ? "0" : `-${formatNumber(task.creditsSpent)}`,
+        amount:
+          task.creditsSpent === null || task.creditsSpent === undefined
+            ? "0"
+            : `-${formatNumber(task.creditsSpent)}`,
         id: String(task.taskCode || task.id),
         item: String(task.prompt || task.taskCode || `Task ${task.id}`),
         status: String(task.status || "Queued"),
