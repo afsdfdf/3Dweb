@@ -69,7 +69,7 @@ const frontendPages: PageSpec[] = [
   { path: '/developers', note: 'Marketing route' },
   { path: '/features', note: 'Marketing route' },
   { path: '/forgot-password', note: 'Forgot password modal redirect' },
-  { path: '/formal-components', href: '/formal-components', note: 'Formal component registry' },
+  { path: '/formal-components', href: '/formal-components', note: 'Local-only component registry; blocked in production' },
   { path: '/generate', note: 'Primary generation screen' },
   { path: '/login', href: '/login', note: 'Login modal redirect' },
   { path: '/model-detail', href: '/model-detail?id=74', note: 'Formal model detail page' },
@@ -84,7 +84,8 @@ const frontendPages: PageSpec[] = [
   { path: '/showcase', note: 'Public showcase list' },
   { path: '/showcase/[id]', note: 'Public showcase detail' },
   { path: '/solutions', note: 'Marketing route' },
-  { path: '/test', href: '/test', note: 'Project route index' },
+  { path: '/personal-center-test', note: 'Compatibility redirect to /account' },
+  { path: '/test', href: '/test', note: 'Local-only project route and API index; blocked in production' },
   { path: '/verify-email/[token]', note: 'Email verification landing page' },
   { path: '/workbench', href: '/workbench', note: 'Formal workbench page' },
   { path: '/workbench/history', note: 'Workbench history' },
@@ -98,6 +99,7 @@ const payloadAndAppRoutes: PageSpec[] = [
   { path: '/api/graphql', note: 'Payload GraphQL route' },
   { path: '/api/graphql-playground', note: 'Payload GraphQL playground' },
   { path: '/api/[...slug]', note: 'Payload REST catch-all route' },
+  { path: '/api/account/profile-media/upload-url', note: 'Signed profile media upload bootstrap' },
   { path: '/api/locale', note: 'Locale switch helper' },
   { path: '/api/media/upload-url', note: 'Signed upload bootstrap for source images' },
 ]
@@ -134,6 +136,7 @@ const customEndpoints: EndpointSpec[] = [
   { method: 'POST', path: '/api/studio/ai/tasks', purpose: 'Submit AI task', integration: "fetch('/api/studio/ai/tasks', { method: 'POST', credentials: 'include', body: JSON.stringify({ inputMode, prompt, sourceImageAsset, parameterSnapshot }) })" },
   { method: 'POST', path: '/api/studio/ai/tasks/:taskId/sync', purpose: 'Sync AI task', integration: "fetch(`/api/studio/ai/tasks/${taskId}/sync`, { method: 'POST', credentials: 'include' })" },
   { method: 'POST', path: '/api/studio/ai/images', purpose: 'Generate image', integration: "fetch('/api/studio/ai/images', { method: 'POST', credentials: 'include', body: JSON.stringify({ prompt, mode }) })" },
+  { method: 'GET', path: '/api/studio/ai/images', purpose: 'List current user generated image assets', integration: "fetch('/api/studio/ai/images', { method: 'GET', credentials: 'include' })" },
   { method: 'POST', path: '/api/platform/ai/webhooks/meshy', purpose: 'Meshy webhook', integration: 'Provider callback only' },
   { method: 'POST', path: '/api/platform/ai/webhooks/provider', purpose: 'Generic provider webhook', integration: 'Provider callback only' },
   { method: 'GET', path: '/api/platform/models/:modelId/viewer', purpose: 'Signed/controlled model viewer stream', integration: "const url = `/api/platform/models/${modelId}/viewer`" },
@@ -149,6 +152,7 @@ const customEndpoints: EndpointSpec[] = [
   { method: 'POST', path: '/api/billing/subscriptions/sync', purpose: 'Subscription sync', integration: "fetch('/api/billing/subscriptions/sync', { method: 'POST', credentials: 'include' })" },
   { method: 'POST', path: '/api/billing/subscriptions/portal', purpose: 'Subscription billing portal', integration: "fetch('/api/billing/subscriptions/portal', { method: 'POST', credentials: 'include' })" },
   { method: 'POST', path: '/api/platform/billing/webhooks/stripe', purpose: 'Stripe webhook', integration: 'Stripe callback only' },
+  { method: 'POST', path: '/api/account/profile-media/upload-url', purpose: 'Signed profile avatar/banner upload bootstrap', integration: "fetch('/api/account/profile-media/upload-url', { method: 'POST', credentials: 'include', body: JSON.stringify({ filename, contentType, kind }) })" },
   { method: 'POST', path: '/api/media/upload-url', purpose: 'Signed source image upload bootstrap', integration: "fetch('/api/media/upload-url', { method: 'POST', credentials: 'include', body: JSON.stringify({ filename, contentType, purpose: 'input', size }) })" },
   { method: 'GET', path: '/api/locale', purpose: 'Locale helper route', integration: "fetch('/api/locale', { method: 'GET' })" },
 ]
@@ -156,6 +160,7 @@ const customEndpoints: EndpointSpec[] = [
 const payloadCollectionRoutes: PageSpec[] = [
   { path: '/api/users', note: 'Payload REST collection: users' },
   { path: '/api/user-follows', note: 'Payload REST collection: user-follows' },
+  { path: '/api/avatar-frame-styles', note: 'Payload REST collection: avatar-frame-styles' },
   { path: '/api/media', note: 'Payload REST collection: media' },
   { path: '/api/generation-tasks', note: 'Payload REST collection: generation-tasks' },
   { path: '/api/task-events', note: 'Payload REST collection: task-events' },
@@ -330,9 +335,9 @@ const pageMappings: PageMapSpec[] = [
   {
     path: '/workbench',
     note: 'Main workbench shell',
-    components: ['SiteShell', 'WorkbenchScaffold'],
-    dataSources: ['getCurrentUser()'],
-    endpoints: ['client components later call /api/media/upload-url and /api/studio/ai/tasks'],
+    components: ['WorkbenchClient', 'WorkbenchLeftGenerationPanel', 'ModelViewer', 'ModelLibraryPanel'],
+    dataSources: ['getCurrentUser()', 'getCurrentNavUser()', 'getWorkbenchModels()', 'getWorkbenchImageAssets()'],
+    endpoints: ['/api/media/upload-url', '/api/studio/ai/tasks', '/api/studio/ai/images', '/api/platform/models/:modelId/viewer'],
   },
   {
     path: '/results/[taskCode]',
@@ -706,6 +711,9 @@ export default function ProjectTestPage() {
             <Button asChild variant="outline">
               <Link href="/workbench">Open Workbench</Link>
             </Button>
+            <Button asChild>
+              <Link href="#custom-api-endpoints">Open API Index</Link>
+            </Button>
           </div>
         </section>
 
@@ -898,7 +906,7 @@ export default function ProjectTestPage() {
           <CollectionTable rows={collectionSummaries} />
         </section>
 
-        <section className="space-y-4">
+        <section className="space-y-4" id="frontend-pages">
           <h2 className="text-2xl font-semibold">Frontend Page Paths</h2>
           <SimpleTable rows={frontendPages} />
         </section>
@@ -908,12 +916,12 @@ export default function ProjectTestPage() {
           <PageMapTable rows={pageMappings} />
         </section>
 
-        <section className="space-y-4">
+        <section className="space-y-4" id="payload-and-app-routes">
           <h2 className="text-2xl font-semibold">Payload And App Routes</h2>
           <SimpleTable rows={payloadAndAppRoutes} />
         </section>
 
-        <section className="space-y-4">
+        <section className="space-y-4" id="custom-api-endpoints">
           <h2 className="text-2xl font-semibold">Custom API Endpoints</h2>
           <EndpointTable rows={customEndpoints} />
         </section>
