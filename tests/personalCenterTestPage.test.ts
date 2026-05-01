@@ -14,12 +14,11 @@ const componentPath = path.join(
 )
 const routePath = path.join(rootDir, 'src', 'app', '(frontend)', 'personal-center-test', 'page.tsx')
 
-test('personal center test page keeps the account frame, real navigation routes, and full English account sections', () => {
+test('personal center test component remains available while the route page stays removed', () => {
   assert.equal(existsSync(componentPath), true)
-  assert.equal(existsSync(routePath), true)
+  assert.equal(existsSync(routePath), false)
 
   const source = readFileSync(componentPath, 'utf8')
-  const routeSource = readFileSync(routePath, 'utf8')
 
   assert.match(source, /BorderComboFrame2/)
   assert.match(source, /accountFrameContainer/)
@@ -30,7 +29,6 @@ test('personal center test page keeps the account frame, real navigation routes,
   assert.match(source, /TopNavigation/)
   assert.match(source, /href: "\/generate"/)
   assert.match(source, /href: "\/dashboard"/)
-  assert.doesNotMatch(routeSource, /SiteShell/)
 
   for (const label of ['Overview', 'Account Settings', 'Orders', 'Model Library', 'Generation Tasks', 'Billing', 'Change avatar', 'Creator Banner', 'Save Settings']) {
     assert.match(source, new RegExp(label))

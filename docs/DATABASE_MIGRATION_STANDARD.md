@@ -123,7 +123,7 @@ If generated schema references collections not registered in `src/payload.config
 Before shared or production deployment:
 
 1. Confirm `DATABASE_PROVIDER=postgres`.
-2. Confirm a valid `DATABASE_URL` or AWS RDS connection variables.
+2. Confirm a valid `DATABASE_URL`.
 3. Apply formal migrations.
 4. Regenerate Payload schema and types.
 5. Run `pnpm exec tsc --noEmit`.

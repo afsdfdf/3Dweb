@@ -40,7 +40,10 @@ type UserLike = {
 }
 
 type HomepageItemLike = {
+  altText?: null | string
+  badgeLabel?: null | string
   coverImage?: null | number | ImageLike
+  ctaLabel?: null | string
   customHref?: null | string
   id?: number | string
   itemCountLabel?: null | string
@@ -52,6 +55,7 @@ type HomepageItemLike = {
   linkedModel?: null | number | ModelLike
   placement?: null | string
   railVariant?: null | string
+  ribbonLabel?: null | string
   title?: null | string
 }
 
@@ -356,15 +360,16 @@ async function getManagedHomeItems(payload: Awaited<ReturnType<typeof getCachedP
     if (!imageSrc) continue
 
     const title = typeof item.title === 'string' && item.title.trim() ? item.title.trim() : 'Homepage item'
+    const alt = normalizeItemText(item.altText) || title
     const id = String(item.id ?? title)
 
     if (item.placement === 'featured-rail') {
       featuredItems.push({
-        alt: title,
+        alt,
         href: getHomepageItemHref(item),
         id,
         imageSrc,
-        ribbonLabel: 'New Product',
+        ribbonLabel: normalizeItemText(item.ribbonLabel) || normalizeItemText(item.badgeLabel) || 'Featured',
         variant: item.railVariant === 'wide' ? 'wide' : 'standard',
       })
     }
@@ -389,6 +394,11 @@ async function getManagedHomeItems(payload: Awaited<ReturnType<typeof getCachedP
 const normalizeSearchQuery = (value: null | string | undefined) => {
   if (typeof value !== 'string') return ''
   return value.trim().slice(0, 80)
+}
+
+const normalizeItemText = (value: null | string | undefined) => {
+  if (typeof value !== 'string') return ''
+  return value.trim()
 }
 
 const normalizePageNumber = (value: number | string | null | undefined) => {

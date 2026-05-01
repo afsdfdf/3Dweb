@@ -1,5 +1,6 @@
 import { AccountTestPage } from "@/components/ui-lab/account-page/account-page";
 import {
+  getCurrentAccountProfileSummary,
   getCurrentNavUser,
   getCurrentUserCreditAccount,
   getCurrentUserCreditTransactions,
@@ -47,14 +48,18 @@ const formatDate = (value: unknown) => {
 };
 
 export default async function AccountPage() {
-  const [navUser, creditAccount, creditTransactions] = await Promise.all([
+  const [navUser, accountProfile, creditAccount, creditTransactions] = await Promise.all([
     getCurrentNavUser(),
+    getCurrentAccountProfileSummary(),
     getCurrentUserCreditAccount(),
     getCurrentUserCreditTransactions(),
   ]);
 
   const accountData = {
     avatarUrl: navUser?.avatarUrl ?? null,
+    avatarFrame: accountProfile?.avatarFrame ?? "none",
+    avatarFrameStyles: accountProfile?.avatarFrameStyles ?? [],
+    backgroundUrl: accountProfile?.backgroundUrl ?? null,
     creditsBalance: Number(creditAccount?.balance ?? navUser?.creditsBalance ?? 0),
     displayName: navUser?.displayName ?? "Account",
     email: navUser?.email ?? "",

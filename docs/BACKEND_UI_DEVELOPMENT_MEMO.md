@@ -182,9 +182,9 @@ Current active interfaces for the migrated formal UI:
 
 Remaining backend-owned slots:
 
-- model detail sidebar banner is owned by the creator/user profile banner fields on `users`.
-- avatar frame style metadata is backend-managed through `avatar-frame-styles`.
-- homepage featured strip and collection shelf are backed by `homepage-items`, including editable badge, ribbon, CTA, and image alt fields.
+- model detail sidebar banner is owned by the creator/user profile banner fields on `users`; the formal model detail page now consumes the guest-readable creator banner.
+- avatar frame style metadata is backend-managed through `avatar-frame-styles`; the account page can read and display the active catalog.
+- homepage featured strip and collection shelf are backed by `homepage-items`, including editable badge, ribbon, CTA, and image alt fields; the homepage data adapter now consumes managed ribbon/alt metadata for curated cards.
 
 Frontend rule:
 
@@ -380,7 +380,7 @@ Recommended future path:
 
 1. Wire account profile editing to `/api/account/profile` and profile media uploads to `/api/account/profile-media/upload-url`.
 2. Keep model detail author card wired to public owner data, but remove static fallback identity before formal launch.
-3. Replace `ModelDetailAdBanner` static asset with the creator/user profile banner returned by model detail data.
+3. Continue refining account profile editing and avatar-frame selection actions on top of the now-readable backend catalog.
 4. Keep homepage featured strip and collection shelf on `homepage-items`; use the badge/ribbon/CTA/alt fields for editable copy.
 5. Keep `/pricing` on `site-settings.subscriptionPlans` and the registered `/api/billing/subscriptions/*` endpoints; only add new backend page-content settings after the final pricing UI is confirmed.
 6. Replace residual static fallback author cards on public grids with empty/skeleton states when there is no real public data.
@@ -408,8 +408,8 @@ Recommended future path:
 
 - `docs/PROJECT_AUDIT_MEMO.md` is the current full-stack audit source for route/backend/deployment risk.
 - Current database probe shows the imported public model set is internally consistent: 42 public models, 42 guest-readable previews, and 42 GLB format rows backed by Supabase public object URLs.
-- `pnpm run build` confirms `personal-center-test` and `personal-center-legacy` are still routable app pages. Remove, production-gate, or move them out of the app route tree before launch.
-- The download endpoint still has a mock fallback and hardcoded charging gate; backend UI should expose download/preview credit policy only after the endpoint honors `site-settings.modelAccessPolicy`.
+- `personal-center-test` and `personal-center-legacy` route pages were removed from the app route tree in the 2026-05-01 remediation pass. Keep the UI-lab components as design assets only.
+- The download endpoint now uses `site-settings.modelAccessPolicy` for download charging and returns a controlled error when no real asset exists. Preview/download policy UI can build on that server-side behavior.
 
 ## Supabase Service Consolidation Memo
 

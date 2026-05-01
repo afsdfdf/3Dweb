@@ -1895,7 +1895,7 @@ export interface RuntimeDeploymentSetting {
   id: number;
   databaseConnectionMode: 'aws-rds-fields' | 'database-url';
   /**
-   * Paste the deployment DATABASE_URL template without the real password if you want.
+   * Paste the deployment DATABASE_URL template without the real password if you want. Supabase Postgres is the preferred production database.
    */
   databaseUrlTemplate?: string | null;
   awsRdsHost?: string | null;

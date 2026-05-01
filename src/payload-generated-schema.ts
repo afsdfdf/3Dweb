@@ -3091,7 +3091,7 @@ export const ai_provider_settings = pgTable("ai_provider_settings", {
     ),
   mockMode: boolean("mock_mode").default(true),
   credentialsNotice: varchar("credentials_notice").default(
-    "Meshy API key, AI webhook secret, and Supabase service credentials are no longer stored in Payload globals. Configure them in your hosting environment or secret manager instead.",
+    "Provider API keys should prefer environment variables or a secret manager. Meshy and image-generation keys may be stored here only when operators need backend-admin override; keys are never sent to the frontend.",
   ),
   polling_enabled: boolean("polling_enabled").default(true),
   polling_intervalSeconds: numeric("polling_interval_seconds", {
@@ -3293,7 +3293,7 @@ export const runtime_deployment_settings = pgTable(
         "database_connection_mode",
       )
         .notNull()
-        .default("aws-rds-fields"),
+        .default("database-url"),
     databaseUrlTemplate: varchar("database_url_template"),
     awsRdsHost: varchar("aws_rds_host"),
     awsRdsPort: numeric("aws_rds_port", { mode: "number" }).default(5432),

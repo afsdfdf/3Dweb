@@ -15,6 +15,12 @@ export type AccountTestPageRow = {
 };
 
 export type AccountTestPageData = {
+  avatarFrame?: null | string;
+  avatarFrameStyles?: {
+    key: string;
+    thumbnailUrl?: null | string;
+    title: string;
+  }[];
   avatarUrl?: null | string;
   backgroundUrl?: null | string;
   creditsBalance?: number;
@@ -52,6 +58,11 @@ export function AccountTestPage({ accountData, navUser = null }: AccountTestPage
   const displayName = accountData?.displayName || navUser?.displayName || navUser?.email || "Account";
   const email = accountData?.email || navUser?.email || "";
   const creditsBalance = accountData?.creditsBalance ?? navUser?.creditsBalance ?? navUser?.credits ?? 0;
+  const avatarFrame = accountData?.avatarFrame || "none";
+  const avatarFrameStyles = accountData?.avatarFrameStyles ?? [];
+  const backgroundUrl =
+    accountData?.backgroundUrl ||
+    "/ui-lab/model-detail-uicut/images/detail-side-banner.png";
   const rows = accountData?.rows ?? [];
 
   return (
@@ -82,6 +93,20 @@ export function AccountTestPage({ accountData, navUser = null }: AccountTestPage
                       </div>
                       <EditButton label="EDIT" />
                     </div>
+                    {avatarFrameStyles.length > 0 ? (
+                      <div className={styles.avatarFrameList} aria-label="Avatar frame styles">
+                        {avatarFrameStyles.slice(0, 4).map((style) => (
+                          <span
+                            className={style.key === avatarFrame ? styles.avatarFrameActive : ""}
+                            key={style.key}
+                            title={style.title}
+                          >
+                            {style.thumbnailUrl ? <img alt="" decoding="async" src={style.thumbnailUrl} /> : null}
+                            {style.title}
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
                   </section>
 
                   <label className={styles.field}>
@@ -102,7 +127,7 @@ export function AccountTestPage({ accountData, navUser = null }: AccountTestPage
                       <img
                         alt="Current profile background"
                         decoding="async"
-                        src="/ui-lab/model-detail-uicut/images/detail-side-banner.png"
+                        src={backgroundUrl}
                       />
                       <strong>Hello World</strong>
                       <EditButton label="EDIT" />

@@ -214,6 +214,11 @@ test('model download failure triggers automatic credit refund', async () => {
   try {
     const response = await modelDownloadEndpoint.handler({
       payload: {
+        findGlobal: async () => ({
+          modelAccessPolicy: {
+            chargeDownloadCredits: true,
+          },
+        }),
         findByID: async () => ({
           formats: [
             {
@@ -419,5 +424,137 @@ test('image generation endpoint forwards a single source image asset from the ar
     assert.equal(forwardedSourceImageAsset?.path, 'media/input/a.png')
   } finally {
     __setImageGenerationEndpointTestHooks(null)
+  }
+})
+
+test('model download returns an error instead of mock content when no real asset is available', async () => {
+  let spendCalls = 0
+  let refundCalls = 0
+
+  __setModelDownloadEndpointTestHooks({
+    isAllowedRemoteAssetURL: async () => true,
+    refundDownloadCredits: async () => {
+      refundCalls += 1
+      return {
+        account: {},
+        applied: true,
+      }
+    },
+    resolveModelFormatAsset: async () => ({
+      filename: null,
+      mimeType: null,
+      url: null,
+    }),
+    spendDownloadCredits: async () => {
+      spendCalls += 1
+      return {
+        account: {},
+        applied: true,
+      }
+    },
+  })
+
+  try {
+    const response = await modelDownloadEndpoint.handler({
+      payload: {
+        findGlobal: async () => ({
+          modelAccessPolicy: {
+            chargeDownloadCredits: true,
+            downloadCredits: 8,
+          },
+        }),
+        findByID: async () => ({
+          formats: [
+            {
+              downloadCredits: 2,
+              file: null,
+              format: 'glb',
+            },
+          ],
+          id: 6,
+          sourceTask: null,
+          title: 'Missing Asset Model',
+        }),
+        logger: createLogger(),
+      },
+      query: {
+        format: 'glb',
+      },
+      routeParams: {
+        modelId: '6',
+      },
+      user: {
+        id: 7,
+      },
+    } as never)
+
+    const body = await response.json()
+
+    assert.equal(response.status, 404)
+    assert.equal(spendCalls, 0)
+    assert.equal(refundCalls, 0)
+    assert.match(body.message, /asset is available/i)
+  } finally {
+    __setModelDownloadEndpointTestHooks(null)
+  }
+})
+
+test('model download does not spend credits when download charging is disabled by policy', async () => {
+  let spendCalls = 0
+
+  __setModelDownloadEndpointTestHooks({
+    getMediaAccessURL: async () => 'https://cdn.example.com/model.glb',
+    isAllowedRemoteAssetURL: async () => true,
+    spendDownloadCredits: async () => {
+      spendCalls += 1
+      return {
+        account: {},
+        applied: true,
+      }
+    },
+  })
+
+  try {
+    const response = await modelDownloadEndpoint.handler({
+      payload: {
+        findGlobal: async () => ({
+          modelAccessPolicy: {
+            chargeDownloadCredits: false,
+            downloadCredits: 8,
+          },
+        }),
+        findByID: async () => ({
+          formats: [
+            {
+              downloadCredits: 2,
+              file: {
+                mimeType: 'model/gltf-binary',
+                url: 'https://cdn.example.com/model.glb',
+              },
+              format: 'glb',
+            },
+          ],
+          id: 7,
+          sourceTask: null,
+          title: 'Free Download Model',
+        }),
+        logger: createLogger(),
+      },
+      query: {
+        format: 'glb',
+      },
+      routeParams: {
+        modelId: '7',
+      },
+      user: {
+        id: 7,
+      },
+    } as never)
+
+    assert.equal(response.status, 307)
+    assert.equal(response.headers.get('location'), 'https://cdn.example.com/model.glb')
+    assert.equal(spendCalls, 0)
+  } finally {
+    __setModelDownloadEndpointTestHooks(null)
   }
 })

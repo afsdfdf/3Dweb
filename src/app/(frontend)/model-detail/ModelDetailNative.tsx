@@ -41,6 +41,9 @@ const fallbackData: ModelDetailData = {
   authorDescription:
     "Public creator model available for preview and reference.",
   authorName: "Xing Mu",
+  authorProfileBannerFocalX: 50,
+  authorProfileBannerFocalY: 50,
+  authorProfileBannerSrc: null,
   commentsLabel: "0",
   downloadCreditsLabel: "15.00",
   favoritesLabel: "267",
@@ -282,7 +285,10 @@ export default function ModelDetailNative({
               >
                 <div className="scroll-box">
                   <div className="banner">
-                    <ModelDetailAdBanner />
+                    <ModelDetailAdBanner
+                      imageSrc={detail.authorProfileBannerSrc || undefined}
+                      imagePosition={`${detail.authorProfileBannerFocalX}% ${detail.authorProfileBannerFocalY}%`}
+                    />
                   </div>
                   <ModelAuthorCard
                     avatarAlt={detail.authorName}

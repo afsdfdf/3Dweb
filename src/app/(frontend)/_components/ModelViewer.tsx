@@ -14,6 +14,11 @@ import * as THREE from "three";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
+import {
+  getModelLoadPhaseDisplay,
+  type ModelLoadPhase,
+} from "@/lib/modelLoadProgress";
+
 if (typeof window !== "undefined" && "createImageBitmap" in window) {
   // Force GLTFLoader to use classic image loading instead of ImageBitmap for better
   // compatibility with embedded texture blobs in certain browser/driver combinations.
@@ -218,6 +223,7 @@ function LoadedModel({ onReady, src }: { onReady?: () => void; src: string }) {
 
 type ModelLoadState = {
   objectURL: null | string;
+  phase: ModelLoadPhase;
   progress: number;
   source: null | string;
   status: "error" | "idle" | "loading" | "ready";
@@ -465,15 +471,18 @@ async function cacheModelAssetOnDisk(src: string, blob: Blob) {
 
 const idleLoadState: ModelLoadState = {
   objectURL: null,
+  phase: "idle",
   progress: 0,
   source: null,
   status: "idle",
 };
 
 function ModelLoadingOverlay({
+  phase,
   progress,
   status,
 }: {
+  phase: ModelLoadPhase;
   progress: number;
   status: ModelLoadState["status"];
 }) {
@@ -481,21 +490,42 @@ function ModelLoadingOverlay({
     return null;
   }
 
-  const displayProgress = Math.max(3, Math.min(99, Math.round(progress || 0)));
-  const label = displayProgress >= 99 ? "Preparing Model" : "Loading Model";
+  const display = getModelLoadPhaseDisplay({
+    phase: status === "loading" ? phase : "idle",
+    progress,
+  });
 
   return (
     <div className="model-viewer-loading-overlay pointer-events-none absolute inset-x-6 bottom-6 z-20">
-      <div className="border border-white/15 bg-black/70 px-4 py-3 shadow-[0_12px_26px_rgba(0,0,0,0.42)] backdrop-blur-sm">
-        <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.08em] text-white/75">
-          <span>{label}</span>
-          <span>{displayProgress}%</span>
+      <div className="border border-white/15 bg-black/72 px-4 py-3 shadow-[0_16px_34px_rgba(0,0,0,0.46)] backdrop-blur-md">
+        <div className="flex items-center justify-between gap-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-white/78">
+          <span className="inline-flex items-center gap-2">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#f3c46d] shadow-[0_0_12px_rgba(243,196,109,0.9)]" />
+            {display.label}
+          </span>
+          <span>{display.progress}%</span>
         </div>
-        <div className="mt-2 h-[3px] overflow-hidden bg-white/15">
+        <div className="mt-2 h-[5px] overflow-hidden rounded-full bg-white/12">
           <div
-            className="h-full bg-[#f3c46d] transition-[width] duration-200 ease-out"
-            style={{ width: `${displayProgress}%` }}
+            className="h-full rounded-full bg-[linear-gradient(90deg,#f3c46d,#ffffff,#9ed2ff)] shadow-[0_0_18px_rgba(243,196,109,0.48)] transition-[width] duration-300 ease-out"
+            style={{ width: `${display.progress}%` }}
           />
+        </div>
+        <div className="mt-2 grid grid-cols-4 gap-1 text-[9px] font-semibold uppercase tracking-[0.08em] text-white/45">
+          {["NETWORK", "VERIFY", "PARSE", "READY"].map((stage) => (
+            <span
+              className={
+                stage === display.stage
+                  ? "text-[#f3c46d]"
+                  : display.stage === "READY"
+                    ? "text-white/65"
+                    : ""
+              }
+              key={stage}
+            >
+              {stage}
+            </span>
+          ))}
         </div>
       </div>
     </div>
@@ -584,6 +614,7 @@ export function ModelViewer({
           ? previous
           : {
               ...previous,
+              phase: "ready",
               progress: 100,
               status: "ready",
             }
@@ -603,6 +634,7 @@ export function ModelViewer({
     if (cached) {
       setLoadState({
         objectURL: cached.objectURL,
+        phase: "parse",
         progress: 99,
         source: modelSrc,
         status: "loading",
@@ -616,6 +648,7 @@ export function ModelViewer({
     setLoadState(() => {
       return {
         objectURL: null,
+        phase: "cache",
         progress: 3,
         source: modelSrc,
         status: "loading",
@@ -688,6 +721,7 @@ export function ModelViewer({
               previous.source === modelSrc && previous.status === "loading"
                 ? {
                     ...previous,
+                    phase: "download",
                     progress: nextProgress,
                   }
                 : previous,
@@ -696,6 +730,17 @@ export function ModelViewer({
         }
 
         const blob = new Blob(chunks, { type: contentType });
+        if (!canceled) {
+          setLoadState((previous) =>
+            previous.source === modelSrc && previous.status === "loading"
+              ? {
+                  ...previous,
+                  phase: "validate",
+                  progress: 84,
+                }
+              : previous,
+          );
+        }
         if (!(await isValidGLBBlob(blob))) {
           throw new Error("MODEL_FETCH_INVALID_GLB");
         }
@@ -724,6 +769,7 @@ export function ModelViewer({
 
           setLoadState({
             objectURL,
+            phase: "parse",
             progress: 99,
             source: modelSrc,
             status: "loading",
@@ -743,6 +789,7 @@ export function ModelViewer({
             previous.source === modelSrc && previous.status === "loading"
               ? {
                   ...previous,
+                  phase: "download",
                   progress: 3,
                 }
               : previous,
@@ -764,6 +811,7 @@ export function ModelViewer({
 
         setLoadState({
           objectURL,
+          phase: "parse",
           progress: 99,
           source: modelSrc,
           status: "loading",
@@ -772,6 +820,7 @@ export function ModelViewer({
         if (!canceled) {
           setLoadState({
             objectURL: null,
+            phase: "error",
             progress: 0,
             source: modelSrc,
             status: "error",
@@ -891,6 +940,7 @@ export function ModelViewer({
         </div>
       ) : null}
       <ModelLoadingOverlay
+        phase={loadState.phase}
         progress={loadState.progress}
         status={loadState.status}
       />

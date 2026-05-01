@@ -54,7 +54,7 @@ It replaces temporary worklogs, dated audit notes, and one-off fix memos.
 
 ## PostgreSQL Runtime Defaults
 
-The app now supports explicit PostgreSQL pool tuning for future AWS RDS rollout.
+The app now supports explicit PostgreSQL pool tuning for Supabase/Postgres deployments.
 
 Optional environment variables:
 
