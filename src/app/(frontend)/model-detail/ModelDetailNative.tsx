@@ -5,6 +5,7 @@ import {
   OrangeMediumActionButton,
   SourcePurpleMediumButton,
 } from "@/components/ui-lab/action-buttons";
+import { AuthModalStage } from "@/components/auth/AuthModalStage";
 import { ButtonBoxFrame } from "@/components/ui-lab/button-box-frame";
 import { ModelAuthorCard } from "@/components/ui-lab/model-author-card";
 import { ModelDetailAdBanner } from "@/components/ui-lab/model-detail-ad-banner";
@@ -177,6 +178,7 @@ export default function ModelDetailNative({
         <div className={styles.scaleStage}>
           <ModelDetailHeader navUser={navUser} />
 
+          <AuthModalStage fitViewport topOffset={60}>
           <section className="uc-detail">
             <section className="detail-main">
               <div className="detail-left-top">
@@ -561,6 +563,7 @@ export default function ModelDetailNative({
               </div>
             </section>
           </section>
+          </AuthModalStage>
         </div>
       </div>
     </main>
