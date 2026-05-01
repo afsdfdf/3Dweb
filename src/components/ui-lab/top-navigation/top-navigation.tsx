@@ -114,6 +114,7 @@ export function TopNavigation({
   user = null,
   userName = null,
 }: TopNavigationProps) {
+  const { closeAuthModal } = useAuthModal();
   const displayName = user ? getUserLabel(user, userName) : null;
   const displayCredits = user ? getUserCredits(user, credits) : credits;
   const avatarUrl = user?.avatarUrl || `${assetBase}/icon-user-avatar-placeholder.png`;
@@ -129,6 +130,7 @@ export function TopNavigation({
             className={`${styles.navLink} ${item.id === active ? styles.activeNav : ""}`}
             href={item.href}
             key={item.id}
+            onClick={closeAuthModal}
           >
             {item.label}
           </Link>

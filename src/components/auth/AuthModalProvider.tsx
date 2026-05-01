@@ -1,7 +1,8 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { usePathname } from 'next/navigation'
 
 type AuthModalMode = 'forgot' | 'login' | 'register'
 
@@ -14,8 +15,24 @@ type AuthModalContextValue = {
 }
 
 const AuthModalContext = createContext<AuthModalContextValue | null>(null)
+let didWarnMissingAuthModalProvider = false
+
+function openAuthCompatibilityRoute(mode: AuthModalMode = 'login', redirectTo?: null | string) {
+  if (typeof window === 'undefined') return
+
+  const pathname = mode === 'register' ? '/register' : mode === 'forgot' ? '/forgot-password' : '/login'
+  const url = new URL(pathname, window.location.origin)
+  const safeRedirect = redirectTo?.startsWith('/') ? redirectTo : `${window.location.pathname}${window.location.search}`
+  if (safeRedirect && safeRedirect !== pathname) {
+    url.searchParams.set('redirect', safeRedirect)
+  }
+
+  window.location.href = `${url.pathname}${url.search}`
+}
 
 export function AuthModalProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname()
+  const lastLocationKeyRef = useRef<null | string>(null)
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
   const [mode, setMode] = useState<AuthModalMode>('login')
   const [redirectTo, setRedirectTo] = useState<null | string>(null)
@@ -32,15 +49,27 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const authMode = params.get('auth')
-    if (authMode !== 'login' && authMode !== 'register' && authMode !== 'forgot') return
+    if (!pathname) return
 
-    const nextRedirect = params.get('redirect')
-    openAuthModal(authMode, {
-      redirectTo: nextRedirect?.startsWith('/') ? nextRedirect : null,
-    })
-  }, [openAuthModal])
+    const search = window.location.search
+    const locationKey = `${pathname}${search}`
+    const previousLocationKey = lastLocationKeyRef.current
+    lastLocationKeyRef.current = locationKey
+
+    const params = new URLSearchParams(search)
+    const authMode = params.get('auth')
+    if (authMode === 'login' || authMode === 'register' || authMode === 'forgot') {
+      const nextRedirect = params.get('redirect')
+      openAuthModal(authMode, {
+        redirectTo: nextRedirect?.startsWith('/') ? nextRedirect : null,
+      })
+      return
+    }
+
+    if (previousLocationKey !== null && previousLocationKey !== locationKey) {
+      closeAuthModal()
+    }
+  }, [closeAuthModal, openAuthModal, pathname])
 
   const value = useMemo(
     () => ({
@@ -59,7 +88,18 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
 export function useAuthModal() {
   const context = useContext(AuthModalContext)
   if (!context) {
-    throw new Error('useAuthModal must be used within AuthModalProvider')
+    if (process.env.NODE_ENV !== 'production' && !didWarnMissingAuthModalProvider) {
+      didWarnMissingAuthModalProvider = true
+      console.warn('useAuthModal was used outside AuthModalProvider. Falling back to auth routes.')
+    }
+
+    return {
+      closeAuthModal: () => {},
+      isAuthModalOpen: false,
+      mode: 'login',
+      openAuthModal: (mode = 'login', options) => openAuthCompatibilityRoute(mode, options?.redirectTo),
+      redirectTo: null,
+    } satisfies AuthModalContextValue
   }
 
   return context
