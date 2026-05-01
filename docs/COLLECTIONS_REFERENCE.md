@@ -26,10 +26,15 @@ Primary code sources:
 The currently registered collections are:
 
 - `users`
+- `user-follows`
+- `avatar-frame-styles`
 - `media`
 - `generation-tasks`
 - `task-events`
 - `models`
+- `model-comments`
+- `model-likes`
+- `model-favorites`
 - `homepage-items`
 - `posts`
 - `announcements`
@@ -37,6 +42,7 @@ The currently registered collections are:
 - `credits`
 - `credit-transactions`
 - `credit-products`
+- `engagement-views`
 - `billing-subscriptions`
 - `addresses`
 - `print-orders`
@@ -106,6 +112,35 @@ Frontend and service notes:
 - Account/auth endpoint modules are registered in `src/payload.config.ts`; sensitive auth mutations use origin checks and endpoint-level rate limits.
 - Current-user server reads should go through `src/app/(frontend)/_lib/session.ts`.
 - Do not let customer profile updates write staff-only fields.
+
+### `avatar-frame-styles`
+
+File: `src/collections/AvatarFrameStyles.ts`
+
+Owns the admin-managed avatar frame catalog used by account/profile UI.
+
+Access:
+
+- Create/update/delete: staff/admin according to collection access.
+- Read: active styles are available to the application; staff can manage inactive styles.
+
+Important fields:
+
+- `key`
+- `title`
+- `thumbnail`
+- `frameImage`
+- `description`
+- `isActive`
+- `isUserSelectable`
+- `sortOrder`
+- `unlockRule`
+
+Frontend and service notes:
+
+- `users.avatarFrame` remains the compatibility key.
+- Future account settings should list selectable styles from this collection.
+- Do not hardcode new premium/event frame styles in frontend source.
 
 ### `media`
 
@@ -256,6 +291,72 @@ Frontend and service notes:
 - Public pages must not expose raw `formats.file` or raw `viewerUrl`.
 - `src/endpoints/modelViewer.ts` is registered as `GET /api/platform/models/:modelId/viewer`.
 - Registered download endpoint: `GET /api/platform/models/:modelId/download`.
+
+### `model-comments`
+
+File: `src/collections/ModelComments.ts`
+
+Owns public model comments and moderation state.
+
+Access:
+
+- Signed-in users may create comments according to endpoint rules.
+- Authors and staff may delete according to service/collection rules.
+- Staff/moderation endpoints manage hidden or removed states.
+
+Frontend and service notes:
+
+- Registered social endpoints expose comment list/create/delete/moderation flows.
+- Keep mutation origin checks and social-write rate limits on comment mutations.
+- Do not expose raw collection writes from frontend when the service endpoint provides a safer aggregate contract.
+
+### `model-likes`
+
+File: `src/collections/ModelLikes.ts`
+
+Owns per-user like rows for models.
+
+Access and integrity:
+
+- Signed-in users may like/unlike through registered endpoints.
+- Database migrations include unique constraints to prevent duplicate user/model likes.
+- Counters on `models` and `users` must remain service-managed, not frontend-trusted.
+
+### `model-favorites`
+
+File: `src/collections/ModelFavorites.ts`
+
+Owns per-user saved/favorite models.
+
+Access and integrity:
+
+- Signed-in users may favorite/unfavorite through registered endpoints.
+- Database migrations include unique constraints to prevent duplicate user/model favorites.
+- Current-user favorite lists should use account/social service endpoints rather than broad public collection reads.
+
+### `user-follows`
+
+File: `src/collections/UserFollows.ts`
+
+Owns creator follow relationships.
+
+Access and integrity:
+
+- Signed-in users may follow/unfollow creators through registered endpoints.
+- Database migrations include unique constraints to prevent duplicate follower/followee rows.
+- Follow counters must be maintained in backend services.
+
+### `engagement-views`
+
+File: `src/collections/EngagementViews.ts`
+
+Owns deduplicated creator/model page-view records.
+
+Access and integrity:
+
+- Public view writes go through the registered engagement endpoint.
+- Endpoint rate limiting and service-level hash/window dedupe are required.
+- Do not use raw frontend collection writes for engagement tracking.
 
 ## Marketing And Content
 
@@ -637,7 +738,7 @@ Registered globals:
 - `site-settings`: site branding, contact, integrations, and email settings.
 - `homepage-content`: homepage singleton copy and section settings.
 - `ai-provider-settings`: provider credentials/configuration.
-- `storage-settings`: storage adapter and S3-related configuration.
+- `storage-settings`: non-sensitive Supabase Storage runtime configuration.
 - `security-settings`: security and rate-limit controls.
 - `runtime-deployment-settings`: runtime environment visibility and deployment settings.
 
@@ -648,9 +749,44 @@ Registered globals:
 Currently registered in `src/payload.config.ts`:
 
 - `GET /api/platform/ops/dashboard`
+- `POST /api/account/auth/register`
+- `POST /api/account/auth/login`
+- `POST /api/account/auth/logout`
+- `GET /api/account/auth/me`
+- `POST /api/account/auth/forgot-password`
+- `POST /api/account/auth/reset-password`
+- `POST /api/account/auth/verify-email`
+- `POST /api/account/auth/resend-verification`
+- `GET /api/account/profile`
+- `PATCH /api/account/profile`
+- `POST /api/account/password`
+- `GET /api/account/dashboard`
+- `GET /api/account/follows`
+- `GET /api/account/favorites`
+- `GET /api/creators/:userId`
+- `POST /api/creators/:userId/follow`
+- `DELETE /api/creators/:userId/follow`
+- `GET /api/social/models/:modelId/detail`
+- `GET /api/social/models/:modelId/reactions`
+- `POST /api/social/models/:modelId/like`
+- `DELETE /api/social/models/:modelId/like`
+- `POST /api/social/models/:modelId/favorite`
+- `DELETE /api/social/models/:modelId/favorite`
+- `GET /api/social/models/:modelId/comments`
+- `POST /api/social/models/:modelId/comments`
+- `DELETE /api/social/models/:modelId/comments/:commentId`
+- `PATCH /api/social/models/:modelId/comments/:commentId/moderation`
+- `POST /api/engagement/view`
+- `POST /api/platform/admin/orders/:orderId/status`
+- `POST /api/platform/admin/credits/:userId/adjust`
+- `POST /api/platform/admin/tasks/:taskId/repair`
+- `GET /api/studio/ai/images`
+- `POST /api/studio/ai/images`
 - `POST /api/studio/ai/tasks`
 - `POST /api/studio/ai/tasks/:taskId/sync`
+- `POST /api/platform/ai/webhooks/meshy`
 - `POST /api/platform/ai/webhooks/provider`
+- `GET /api/platform/models/:modelId/viewer`
 - `GET /api/platform/models/:modelId/download`
 - `POST /api/commerce/print-orders`
 - `POST /api/commerce/print-orders/:orderId/sync`
@@ -673,9 +809,9 @@ Additional registered endpoint modules:
 
 Frontend integration may use these endpoint modules through their registered `/api/...` paths, but new calls must preserve the endpoint security contracts.
 
-## Dormant Or Drifted Table Families
+## Active Social Table Families
 
-The following table families appear in generated schema, migrations, services, or endpoint modules, but there are no active collection configs registered in `src/payload.config.ts`:
+The following table families are active collections and must stay aligned with collection config, migrations, generated types, services, and endpoint registration:
 
 - `user-follows` / `user_follows`
 - `model-comments` / `model_comments`
@@ -683,22 +819,12 @@ The following table families appear in generated schema, migrations, services, o
 - `model-favorites` / `model_favorites`
 - `engagement-views` / `engagement_views`
 
-Related files:
-
-- `src/lib/followService.ts`
-- `src/lib/commentService.ts`
-- `src/lib/reactionService.ts`
-- `src/lib/engagementService.ts`
-- `src/endpoints/modelComments.ts`
-- `src/endpoints/modelReactions.ts`
-- `src/endpoints/modelDetails.ts`
-- `src/endpoints/engagement.ts`
-
 Rules:
 
-- Do not integrate a new frontend against these as active REST collections.
-- Do not depend on `/api/social/...` until collection configs and endpoint registration are restored or intentionally removed.
-- If social is enabled later, align collection configs, generated types, migrations, services, and endpoint registration in the same rollout.
+- Treat `/api/social/...`, `/api/creators/...`, and `/api/engagement/view` as production API surface.
+- Keep endpoint auth, origin checks, rate limits, and dedupe/idempotency behavior intact.
+- Do not replace database unique constraints with frontend-only duplicate checks.
+- If any social feature is paused later, pause its route, collection, generated types, migrations, tests, and docs in the same rollout.
 
 ## Frontend Mapping
 

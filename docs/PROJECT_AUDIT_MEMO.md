@@ -2,202 +2,124 @@
 
 ## Purpose
 
-This memo records the current multi-dimensional audit status for `thornstavern`.
+This memo records the 2026-05-01 full-stack audit for `thornstavern` / `payload-local-demo`.
 
-It is a working engineering memo, not a schema migration plan. No backend schema, endpoint, collection, or UI implementation change is implied by this document.
+It is an engineering control document. It does not make schema, endpoint, collection, storage, or UI changes by itself.
 
 ## Audit Date
 
-- 2026-04-28
+- 2026-05-01
 
-## Scope
+## Audit Mode
 
-Reviewed dimensions:
+Reviewed as:
 
-- Payload registration and backend surface
-- frontend routes and formal UI migration state
-- API boundaries and endpoint registration
-- access-control and media-delivery guardrails
-- document/code drift
-- TypeScript and unit-test health
-- source-language and hardcoded-content risk
-- production-readiness boundaries
+- Payload CMS architecture audit
+- Next.js frontend and route audit
+- Supabase Postgres and Supabase Storage audit
+- AI generation flow audit
+- Stripe billing and credit-ledger audit
+- Vercel deployment and environment-variable audit
+- performance, testing, and cleanup audit
 
-Primary sources:
+This audit used the project rules in `AGENTS.md`, `thornstavern-project`, `payload-local-demo-backend`, Vercel React guidance, Stripe guidance, Supabase Postgres guidance, and official public documentation where needed.
 
-- `src/payload.config.ts`
-- `src/app/(frontend)`
-- `src/app/(payload)`
-- `src/app/api`
-- `src/collections`
-- `src/globals`
-- `src/endpoints`
-- `src/lib`
-- `docs/AI_PROJECT_MEMORY.md`
-- `docs/COLLECTIONS_REFERENCE.md`
-- `docs/BACKEND_UI_DEVELOPMENT_MEMO.md`
+Official references checked:
+
+- Payload Local API access control: https://payloadcms.com/docs/local-api/access-control
+- Payload hooks and request context: https://payloadcms.com/docs/hooks/overview
+- Meshy OpenAPI docs: https://docs.meshy.ai/
+- Next.js lazy loading and client boundary docs: https://nextjs.org/docs/app/guides/lazy-loading
+- Supabase Storage signed upload/signed URL docs: https://supabase.com/docs/reference/javascript/storage-from-createsigneduploadurl
+- Stripe webhook signature docs: https://docs.stripe.com/webhooks/signature
+- Stripe idempotency docs: https://docs.stripe.com/api/idempotent_requests
+- Vercel environment variables docs: https://vercel.com/docs/environment-variables
 
 ## Validation Snapshot
 
-### Browser Route Audit
-
-Route-audit findings are folded into this memo; the one-off local JSON artifact is not a project input.
-
-Routes checked:
-
-- `/`
-- `/about`
-- `/features`
-- `/solutions`
-- `/showcase`
-- `/showcase/17`
-- `/pricing`
-- `/resources`
-- `/developers`
-- `/login`
-- `/register`
-- `/forgot-password`
-- `/privacy-policy`
-- `/refund-policy`
-- `/shipping-policy`
-- `/contact`
-- `/workbench`
-- `/model-detail?id=17`
-- `/account`
-- `/home-test`
-- `/workbench-test`
-- `/model-detail-test?id=17`
-- `/account-test`
-- `/dashboard`
-- `/dashboard/tasks`
-- `/dashboard/library`
-- `/dashboard/credits`
-- `/dashboard/orders`
-- `/dashboard/settings`
-- `/formal-components`
-- `/test`
-
-Result:
-
-- all checked routes returned HTTP 200
-- dashboard routes correctly redirected unauthenticated users to `/login?redirect=...`
-- no browser `pageerror`
-- no console errors
-- no failed requests
-- no 4xx/5xx resource responses
-- no visibly broken images
-
-### TypeScript
-
-Command:
+Commands run during this audit:
 
 ```bash
 pnpm exec tsc --noEmit
+pnpm test:unit
+pnpm run build
 ```
 
 Result:
 
-- failed
+- TypeScript passed.
+- Unit tests passed: 107 tests, 107 passed, 0 failed.
+- Production build passed.
+- Build output still logged SMTP `EAUTH` verification failures from the configured local SMTP credentials, but the build completed successfully. SMTP remains a configuration/noise issue rather than a compile blocker.
+- Build route output includes `/personal-center-legacy` and `/personal-center-test`, confirming these are currently production-visible routes unless explicitly gated or removed.
 
-Primary cause:
+Read-only database probe:
 
-- dormant social services still reference collections that are not registered in `src/payload.config.ts`
+- `public` schema table count: 70.
+- Key active tables exist, including `users`, `media`, `models`, `models_formats`, `generation_tasks`, `task_events`, `credits`, `credit_transactions`, `billing_subscriptions`, `user_follows`, `model_comments`, `model_likes`, `model_favorites`, `engagement_views`, `homepage_items`, and `avatar_frame_styles`.
+- Current counts: `users=1`, `media=123`, `models=42`, `models_formats=42`, `generation_tasks=0`, `task_events=0`, `credits=1`, `credit_transactions=1`, `billing_subscriptions=1`.
+- Media URL breakdown: `123/123` media rows use Supabase public object URLs; `0` remaining Payload local file-route URLs; `0` missing URLs.
+- Public model asset check: `42/42` public models have guest-readable preview media and `42/42` format rows point at Supabase public storage URLs.
 
-Affected services:
+Worktree note:
 
-- `src/lib/commentService.ts`
-- `src/lib/engagementService.ts`
-- `src/lib/followService.ts`
-- `src/lib/reactionService.ts`
+- The repository had many pre-existing uncommitted source changes before this audit document update. This memo treats the current worktree as the audited state and does not imply approval of unrelated uncommitted implementation changes.
 
-Missing or inactive collection slugs referenced by those services:
+## Executive Summary
 
-- `model-comments`
-- `engagement-views`
-- `user-follows`
-- `model-likes`
-- `model-favorites`
+The project is now much healthier than the older 2026-04-28 memo suggested. The social collections are active, TypeScript is green, unit tests are green, Supabase Storage is backing the current imported model set, and Workbench follows the intended anonymous-view/authenticated-action boundary.
 
-Impact:
+The highest-risk remaining issue is not general public model visibility. The live database has public model data and storage URLs in the expected shape. The highest-risk issue is that `GET /api/platform/models/:modelId/download` can still return a mock file when no real asset URL is available, and it hardcodes the download charging gate instead of honoring the backend policy in `site-settings.modelAccessPolicy`.
 
-- the project cannot be treated as type-clean until either social collections/endpoints are restored as a coordinated rollout or the dormant social service files are removed/excluded
-- frontend work must not integrate comments, likes, favorites, follows, or engagement endpoints as active features yet
+The second highest-risk area is configuration drift: active runtime direction is Supabase Postgres plus Supabase Storage, but several runtime/admin/env helper surfaces still mention AWS RDS or S3. Those should be cleaned without reintroducing AWS/S3 runtime media behavior.
 
-### Unit Tests
+The third highest-risk area is production route cleanup. `/test` and `/formal-components` correctly return `notFound()` in production, but `personal-center-test` and `personal-center-legacy` are currently routable app pages and should be protected, removed, or moved out of production routes.
 
-Command:
+## Frontend Audit
 
-```bash
-pnpm test:unit
-```
+### Current Good State
 
-Current result after test-suite cleanup:
+- Formal routes are active: `/`, `/workbench`, `/model-detail`, `/account`, `/pricing`, `/dashboard/*`, `/showcase`, and marketing/legal pages.
+- `/login`, `/register`, and `/forgot-password` are compatibility entry points into the shared auth flow, not separate competing login systems.
+- Workbench matches the current product decision:
+  - anonymous users may open `/workbench`;
+  - generation actions call the shared login modal when `navUser` is absent;
+  - the right model library is scoped to the current user's own models;
+  - image-generation assets are shown as private Workbench image assets and can be selected as 3D reference images.
+- `ModelViewer` uses a shared `DRACOLoader`, a controlled viewer endpoint, blob URLs, and a single active canvas pattern on the formal Workbench/Model Detail flows.
+- `/test` and `/formal-components` are blocked in production through `notFound()`.
 
-- 99 tests discovered
-- 99 passed
-- 0 failed
+### Risks
 
-Resolved cleanup:
+- `src/app/(frontend)/personal-center-test/page.tsx` and `src/app/(frontend)/personal-center-legacy/page.tsx` are routable production pages. The legacy page contains hardcoded demo data and Chinese UI literals.
+- `src/app/(frontend)/workbench/models/[id]/page.tsx` still contains static/demo model details and fixed download-credit sample data. It has production `notFound()` protection for unauthenticated/missing data in parts of the route, but it still needs a focused pass before treating it as final account-owned detail UI.
+- Some older helper components and test assets remain under `src/components/ui-lab/*` and `public/ui-lab/*`. They are acceptable as component assets only if no public route exposes them as production UX.
+- Clipboard copy errors should not trigger runtime overlays. Browser clipboard APIs require a user gesture and permission; any copy action should catch `NotAllowedError` and show a non-blocking UI message.
+- The progress bar jumping from a low percentage to complete is expected when the browser gets no reliable `Content-Length` or when download is fast but GLB/Draco parsing is slow. The UX should distinguish network download, blob validation, and model parse/prepare phases.
 
-- obsolete admin service tests were removed because their corresponding `src/lib/admin*.ts` modules are not active source files
-- admin i18n, locked-document migration, AI provider settings, audit logger, credit ledger, and canonical app URL tests now match the current Postgres-only architecture
+### Frontend Priority Actions
 
-Impact:
+- P1: Remove, protect, or production-gate `personal-center-test` and `personal-center-legacy`.
+- P1: Keep Model Detail and Workbench current-model-first: one visible `ModelViewer`, one selected GLB request, visible-range thumbnails only.
+- P2: Replace remaining demo/static account and Workbench detail copy with data adapters or remove the route from production navigation.
+- P2: Add copy-action error handling where `navigator.clipboard.writeText` is used.
 
-- current unit-test suite is back to a reliable green gate for the active code surface
+## Payload Backend Audit
 
-## Architecture Findings
+### Active Registered Collections
 
-### A-01: Formal UI Routes Are Mounted But Test Routes Remain
-
-Current formal routes:
-
-- `/` re-exports `home-test`
-- `/workbench` re-exports `workbench-test`
-- `/model-detail` re-exports `model-detail-test`
-- `/account` re-exports `account-test`
-
-Current retained validation routes:
-
-- `/home-test`
-- `/workbench-test`
-- `/model-detail-test`
-- `/account-test`
-
-Assessment:
-
-- migration is functionally successful
-- keeping test routes is useful for rollback and comparison during UI closeout
-- before launch, decide whether these test routes should remain accessible, move behind a dev flag, or be removed
-
-### A-02: Utility Pages Are Publicly Reachable
-
-Current utility routes:
-
-- `/formal-components`
-- `/test`
-- `/test-auth-preview`
-
-Assessment:
-
-- useful for development
-- should not be publicly exposed in production unless intentionally protected or hidden
-
-Recommended follow-up:
-
-- add a production policy for component/test route availability
-
-## Payload Backend Findings
-
-### B-01: Actual Registered Surface Is Clear
-
-Active collections from `src/payload.config.ts`:
+Current registered collections include:
 
 - `users`
+- `user-follows`
+- `avatar-frame-styles`
 - `media`
 - `generation-tasks`
 - `task-events`
 - `models`
+- `model-comments`
+- `model-likes`
+- `model-favorites`
 - `homepage-items`
 - `posts`
 - `announcements`
@@ -205,12 +127,15 @@ Active collections from `src/payload.config.ts`:
 - `credits`
 - `credit-transactions`
 - `credit-products`
+- `engagement-views`
 - `billing-subscriptions`
 - `addresses`
 - `print-orders`
 - `shopify-payments`
 
-Active globals:
+The older statement that social collections are dormant is no longer true.
+
+### Active Registered Globals
 
 - `site-settings`
 - `homepage-content`
@@ -219,326 +144,266 @@ Active globals:
 - `security-settings`
 - `runtime-deployment-settings`
 
-Registered custom endpoints include:
+`EmailSettings.ts` exists but is not registered; email settings live under `site-settings.emailSettings`.
+
+### Current Good State
 
-- `GET /api/platform/ops/dashboard`
-- `POST /api/account/auth/register`
-- `POST /api/account/auth/login`
-- `POST /api/account/auth/logout`
-- `GET /api/account/auth/me`
-- `POST /api/account/auth/forgot-password`
-- `POST /api/account/auth/reset-password`
-- `POST /api/account/auth/verify-email`
-- `POST /api/account/auth/resend-verification`
-- `POST /api/studio/ai/tasks`
-- `POST /api/studio/ai/tasks/:taskId/sync`
-- `POST /api/platform/ai/webhooks/provider`
-- `GET /api/platform/models/:modelId/viewer`
-- `GET /api/platform/models/:modelId/download`
-- `POST /api/commerce/print-orders`
-- `POST /api/commerce/print-orders/:orderId/sync`
-- `POST /api/billing/subscriptions/checkout`
-- `POST /api/billing/subscriptions/sync`
-- `POST /api/billing/subscriptions/portal`
-- `POST /api/platform/session/logout`
-- `POST /api/platform/billing/webhooks/stripe`
+- `src/payload.config.ts` uses Payload Postgres adapter, typed collections/globals, and custom admin components.
+- Active user-scoped Local API paths mostly use `overrideAccess: false`.
+- Nested Payload writes in the main task/account/media flows generally pass `req`.
+- Project-owned APIs use explicit namespaces such as `/api/platform`, `/api/studio`, `/api/billing`, `/api/commerce`, `/api/social`, and `/api/account`.
+- The custom upload helper routes avoid shadowing Payload REST roots such as `/api/media`.
+- Social collections and endpoints are registered and have tests around rate limiting and public docs exposure.
 
-### B-02: Previously Dormant Endpoint Modules Are Now Active
+### Backend Risks
 
-Current state:
+- `src/endpoints/modelDownloads.ts` still returns `# Mock 3D File` when a selected format has no resolvable asset URL. Production downloads must fail clearly with controlled 404/502 instead of returning fake assets.
+- `src/endpoints/modelDownloads.ts` uses `const shouldCharge = true`. Download charging must honor `site-settings.modelAccessPolicy.chargeDownloadCredits`, keep imported public downloads free by default, and stay idempotent/refundable.
+- `src/endpoints/modelViewer.ts` intentionally uses an access-checked read first, then an internal asset read. Keep this as a documented exception and do not widen it into a general `overrideAccess: true` pattern.
+- `runtime-deployment-settings`, `RuntimeEnvPreview`, `.env.example`, and Vercel env examples still carry AWS RDS/S3 wording. That is now configuration drift against the Supabase direction.
+- `src/lib/creditLedger.ts` contains Chinese source literals. Unless intentionally localized/admin-facing, backend service text should stay English or move to a localization/content layer.
 
-- `src/endpoints/account.ts`
-- `src/endpoints/adminRepair.ts`
-- `src/endpoints/engagement.ts`
-- `src/endpoints/imageGeneration.ts`
-- `src/endpoints/modelComments.ts`
-- `src/endpoints/modelDetails.ts`
-- `src/endpoints/modelReactions.ts`
+### Backend Priority Actions
 
-Assessment:
+- P0: Replace mock download fallback with a real error path and test it.
+- P0: Wire download charging to backend policy instead of hardcoded `shouldCharge`.
+- P1: Remove AWS/S3 runtime wording from active env examples and admin runtime UI, while keeping legacy notes archived.
+- P1: Keep social collection docs aligned with active registration and migrations.
+- P2: Move durable service error/copy text out of Chinese source literals.
 
-- these modules are now registered in `src/payload.config.ts`
-- frontend code may call their paths, but they must be treated as active production API surface
+## Database, Supabase, And Storage Audit
 
-Recommended follow-up:
+### Current Good State
 
-- keep endpoint-level rate limits, origin checks, auth checks, and input validation aligned with any future endpoint changes
+- Runtime database is PostgreSQL only.
+- Current live read-only probe confirms the active Supabase/Postgres schema contains expected Payload tables and active social/profile tables.
+- Current imported public model set is internally consistent:
+  - public models: 42;
+  - public model previews with guest-readable media: 42;
+  - public model format rows: 42;
+  - public model format rows with Supabase public storage URLs: 42.
+- Storage runtime direction is Supabase Storage only.
+- `media`, `models`, and `models_formats` are aligned for the current imported set.
 
-### B-03: `modelViewerEndpoint` Documentation Drift
+### Database And Storage Risks
 
-Actual code:
+- The project still has active docs/env/admin remnants that mention AWS RDS/S3. These are now documentation/configuration drift, not the intended runtime strategy.
+- `src/lib/supabase/billing.ts` and `src/lib/supabase/queries.ts` still use direct SQL for some flows. Direct SQL can be valid for reporting/performance paths, but it must not become the default replacement for Payload access-controlled reads.
+- Live table cleanup/orphan-table decisions require a separate migration-grade review. This audit did a read-only table/count probe only.
+- `homepage_items` and `avatar_frame_styles` are empty in the probed database. That is acceptable for launch only if the frontend has intentional empty states or static fallback content for those surfaces.
 
-- `src/payload.config.ts` imports and registers `modelViewerEndpoint`
-- active path: `GET /api/platform/models/:modelId/viewer`
+### Database Priority Actions
 
-Resolved docs drift:
+- P1: Keep Supabase Storage as the only runtime object-storage path; do not restore AWS S3 plugins or signing helpers.
+- P1: Clean active env examples so required production vars are clear: `PAYLOAD_SECRET`, `DATABASE_PROVIDER=postgres`, `DATABASE_URL`, `NEXT_PUBLIC_APP_URL`, Supabase URL/service keys, Stripe keys if billing is enabled, Meshy key if generation is enabled.
+- P2: Create a read-only database drift report command for future audits, using the probe shape from this memo.
+- P2: Seed or curate `homepage-items` and `avatar-frame-styles` through Payload Admin before launch polish.
 
-- `docs/COLLECTIONS_REFERENCE.md` now describes `modelViewerEndpoint` as registered
-- account, social, model detail, model viewer, image generation, engagement, and admin repair endpoint status should be read from `src/payload.config.ts`
+## AI Generation Flow Audit
 
-Impact:
+### Current Good State
 
-- future developers may incorrectly avoid the correct viewer endpoint or reintroduce raw model URL exposure
+- Workbench submits neutral intent; the backend decides provider behavior.
+- Meshy configuration lives under `ai-provider-settings.meshy`.
+- API keys are backend-side only. Admin override mode exists for operational key rotation, while environment variables remain the safer default.
+- Current Meshy mapping is aligned with the intended flow:
+  - no source image: Text to 3D preview/refine;
+  - one source image: Image to 3D;
+  - two to four source images: Multi-image to 3D when enabled;
+  - prompt with image becomes texture/style prompt.
+- Meshy defaults use official `latest` model settings where configured.
+- Generated Meshy files, thumbnails, and textures are intended to be ingested into Supabase Storage before model delivery.
+- Gemini/image generation is separated from 3D generation. Generated images are private Workbench assets, not public model records.
+- Unit tests cover Meshy settings, multi-image request body, Meshy pricing, image-generation single-image validation, and Supabase ingestion behavior.
 
-Recommended follow-up:
+### AI Flow Risks
 
-- update active docs to match `src/payload.config.ts`
+- `resolveModelFormatAssets` can fall back to allowed remote URLs when Supabase upload fails unless strict ingestion is required. For final production Meshy tasks, strict local ingestion should stay enabled so storage failure becomes a failed/refunded task instead of a model dependent on provider URLs.
+- Provider webhooks and sync paths must remain idempotent. The current locking and terminal-status checks are good, but webhook replay tests should stay in the suite.
+- Image assets and model assets must stay separated in UI and database semantics. Do not create `models` rows for image-generation results.
+- Frontend should not know or branch on provider-specific Meshy keys. Admin can change provider/model/key settings without changing Workbench UI.
 
-## API Boundary Findings
+### AI Priority Actions
 
-### C-01: Mock Download Endpoint Is Still Used By Formal/Legacy UI
+- P1: Keep Meshy strict ingestion for production 3D success finalization.
+- P1: Add smoke tests for Text to 3D, Image to 3D, and Multi-image to 3D task creation with provider calls mocked.
+- P2: Add an operator UI status indicator showing which provider/key mode is active without exposing secrets.
 
-Endpoint:
+## Payments, Credits, And Subscriptions Audit
 
-- `GET /api/platform/models/:modelId/download`
+### Current Good State
 
-Current frontend references:
+- Stripe webhook endpoint is registered under `/api/platform/billing/webhooks/stripe`.
+- Webhook signature verification and replay handling are covered by tests.
+- Subscription grant idempotency uses stable keys such as `subscription-grant:<subscription>:<period>`.
+- Credit ledger tests cover grants, holds, settlement, refunds, insufficient balance, and download refunds.
+- Admin credit adjustment endpoint exists and should remain admin-only.
 
-- `src/app/(frontend)/model-detail-test/ModelDetailNative.tsx`
-- `src/app/(frontend)/dashboard/library/page.tsx`
-- `src/app/(frontend)/results/[taskCode]/page.tsx`
-- `src/app/(frontend)/workbench/_components/WorkbenchPanels.tsx`
-- `src/app/(frontend)/workbench/models/[id]/page.tsx`
-- `src/app/(frontend)/workbench/models/[id]/SketchExactPreview.tsx`
+### Billing Risks
 
-Assessment:
+- Download charging is implemented in the endpoint even though the product decision says imported public previews/downloads are currently free. This is a policy mismatch.
+- `site-settings.modelAccessPolicy` exists but is not the source of truth for the current download endpoint.
+- There are both Payload-owned billing flows and direct SQL billing helpers under `src/lib/supabase/billing.ts`. Avoid a double-ledger or double-checkout architecture.
+- Stripe API version should be confirmed against the current official/account-supported version before final payment launch.
 
-- the endpoint may contain real billing/download behavior, but the namespace and filename still signal mock behavior
-- this creates product and security ambiguity before launch
+### Billing Priority Actions
 
-Recommended follow-up:
+- P0: Make download charging policy-driven and disabled by default for current imported public models.
+- P1: Keep all credit mutations in the ledger service and retain idempotency keys.
+- P1: Decide whether direct Supabase billing helpers are legacy/reporting paths or active payment paths; document one owner.
+- P2: Add smoke tests for checkout, webhook, subscription sync, and admin manual adjustment against mocked Stripe.
 
-- rename or replace the endpoint with a formal download namespace
-- keep credit charging, auth, access control, refund behavior, and file delivery tests in the same rollout
+## Login, Permissions, And Security Audit
 
-### C-02: Custom Next API Routes Do Not Currently Shadow Payload REST Roots
+### Current Good State
 
-Current project-owned Next API routes:
+- Shared auth modal flow is now the primary login UX.
+- Workbench can be browsed anonymously, but generation requires login.
+- Dashboard/account data routes are expected to be user-scoped.
+- Payload Admin is separate from normal user permissions.
+- Public model preview is backend-controlled through `/api/platform/models/:modelId/viewer`, not raw public field exposure.
+- Mutation endpoints use origin checks and rate limiting in important paths.
 
-- `src/app/api/locale/route.ts`
-- `src/app/api/media/upload-url/route.ts`
+### Security Risks
 
-Assessment:
+- Do not rely on frontend hiding for protected data. Continue to enforce protection at endpoint/collection access level.
+- Public model pages can show public creator context, but avatar/banner media must still pass guest-readable media rules.
+- Any endpoint that accepts `user` into Local API must include `overrideAccess: false`.
+- Any new hook doing nested writes must pass `req` and use context flags if recursion is possible.
 
-- no `src/app/api/media/route.ts` route was found
-- this preserves Payload REST `/api/media`
+### Security Priority Actions
 
-## Security And Access Findings
+- P1: Add route-level checks for `personal-center-test` and `personal-center-legacy` or remove them.
+- P1: Add a recurring `rg` audit for `user:` Local API calls without nearby `overrideAccess: false`.
+- P2: Add smoke tests for anonymous Workbench browse, authenticated generation gate, anonymous public model preview, and dashboard protection.
 
-### D-01: User-Scoped Active Flows Mostly Follow `overrideAccess: false`
+## Deployment And Environment Audit
 
-Observed active paths with user-scoped reads:
+### Current Good State
 
-- session helpers
-- showcase reads
-- workbench data reads
-- AI task endpoints
-- print-order endpoints
-- model viewer access check
+- `.env` is not tracked by Git.
+- Vercel build failures seen earlier were correctly caused by missing runtime env (`PAYLOAD_SECRET`, database URL/provider) or bad SMTP credentials, not TypeScript compilation.
+- Payload can fall back to JSON transport when SMTP host is absent, so builds should not require SMTP unless SMTP variables are explicitly configured.
 
-Assessment:
+### Deployment Risks
 
-- active flows appear aligned with the project rule that Local API calls with a user must set `overrideAccess: false`
+- Active env examples still include AWS/S3 variables, which makes operator setup confusing and can cause Vercel variable sprawl.
+- SMTP should not be a deployment blocker. If SMTP variables are present and invalid, Nodemailer verification can produce noisy build/runtime logs.
+- Vercel environment variables must be set in the correct scope: Production, Preview, and Development. A value added only to Preview will not fix master Production deploys.
+- Meshy, Stripe, Supabase service role, Payload secret, SMTP, and webhook secrets must never be exposed as `NEXT_PUBLIC_*`.
 
-Risk note:
+### Environment Variable Inventory
 
-- dormant social/comment/reaction services use many `overrideAccess: true` calls and reference inactive collections; do not expose them without a fresh access-control review
+Required for production core runtime:
 
-### D-02: Public Media Rule Remains A Critical Launch Gate
+- `PAYLOAD_SECRET`
+- `DATABASE_PROVIDER=postgres`
+- `DATABASE_URL`
+- `NEXT_PUBLIC_APP_URL`
+- `CANONICAL_APP_URL` or an equivalent canonical URL path used by project helpers
 
-Current rule:
+Required when Supabase Storage/upload flows are enabled:
 
-- guests can read `media` only when `purpose = preview` or `publicAccess = true`
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- storage bucket/prefix configured in `storage-settings`
 
-Launch risk:
+Required when Meshy 3D generation is enabled:
 
-- public model pages may show a model while thumbnails/viewer assets fail if linked media is still private
+- `MESHY_API_KEY` or a deliberate Payload admin key override
+- optional `MESHY_API_BASE_URL`
 
-Recommended follow-up:
+Required when Stripe billing/subscriptions are enabled:
 
-- run a data-level audit before launch: public models must have guest-readable preview images and controlled viewer assets
+- `STRIPE_SECRET_KEY`
+- `STRIPE_WEBHOOK_SECRET`
+- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
 
-## Frontend Findings
+Optional or feature-gated:
 
-### E-01: Formal UI Migration Is Functionally Passing
+- SMTP sender/transport values
+- Resend values if Resend becomes the active email provider
+- provider request timeout and rate-limit tuning values
 
-Browser audit shows:
+Deprecated from active runtime direction:
 
-- formal pages render
-- test pages render
-- `pricing` renders
-- dashboard unauthenticated redirects work
+- AWS S3 plugin/signing variables
+- S3 bucket/CDN runtime helpers
+- AWS RDS field-composed connection variables, unless kept only as archived migration compatibility notes
 
-Assessment:
+## Performance Audit
 
-- formal route replacement is ready for visual/product review
+### Current Good State
 
-Remaining decision:
+- Model viewer flow is current-model-first.
+- Public viewer endpoint can redirect public Supabase URLs rather than proxying every GLB.
+- Frontend has in-memory/disk cache behavior for viewer blobs and Draco decoder assets.
+- Workbench chooses one active model source instead of mounting all models.
 
-- when to remove or protect `*-test`, `/formal-components`, and `/test`
+### Performance Risks
 
-### E-02: Dashboard Contains Direct Chinese Source Literals
+- Repeated server-function proxying of large GLB files is not a sustainable hot path. Redirect to Supabase Storage should remain the preferred path after access is decided.
+- Rails and libraries must avoid loading all thumbnails and GLBs at once.
+- Next.js client component boundaries should stay tight around `ModelViewer`, Workbench interactions, and auth modal state.
+- Model progress should expose parse/prepare time separately from byte download time to reduce false debugging signals.
 
-Examples:
+### Performance Priority Actions
 
-- `src/app/(frontend)/dashboard/credits/page.tsx`
-- `src/app/(frontend)/dashboard/orders/page.tsx`
-- `src/app/(frontend)/dashboard/orders/[id]/page.tsx`
-- `src/app/(frontend)/dashboard/settings/page.tsx`
+- P1: Keep `/api/platform/models/:id/viewer` redirect hot path for public Supabase assets.
+- P1: Add a no-regression smoke check using `pnpm measure:model-preview -- --ids 1,20,42` after model viewer changes.
+- P2: Consider a viewer manifest/signing response before scale: durable cache key, file size, format, delivery mode, URL, and expiry.
 
-Assessment:
+## Testing And Quality Audit
 
-- this violates the project source-language guardrail for frontend source literals unless these pages are intentionally localized source files
-- it also increases mojibake risk on Windows tooling
+### Current Good State
 
-Recommended follow-up:
+- TypeScript passed.
+- Unit tests passed with 107 tests.
+- Tests cover several critical backend rules: media access, model viewer, remote asset security, Meshy, storage settings, webhooks, ledger, rate limiting, and operator access.
 
-- move durable dashboard copy into `src/app/(frontend)/_lib/ui-text.ts`, Payload-managed content, or a localization layer
+### Test Gaps
 
-### E-03: Formal Migrated Pages Still Depend On Static UI Assets And Fallbacks
+- No single smoke test currently proves the full browser path: anonymous public model detail -> viewer endpoint -> Supabase range request -> GLB parsed in browser.
+- No single smoke test proves Workbench anonymous browse -> login modal on generate -> authenticated generation request.
+- Meshy live provider tests should stay mocked by default; production keys should not be required for CI/build.
+- No formal test currently prevents mock download fallback from shipping.
 
-Current state:
+### Quality Priority Actions
 
-- migrated pages use `/ui-lab` and `/home-test-assets` static assets
-- model detail sidebar banner is static
-- homepage featured strip and shelf have Payload-backed data paths but still retain static fallback behavior
-
-Assessment:
-
-- acceptable during UI closeout
-- should not be mistaken for complete backend-owned content
-
-Recommended follow-up:
-
-- use `homepage-items` for home repeated content
-- add backend promotion slots for model detail banners
-- keep fallback assets only for empty-state safety, not as final content strategy
-
-## Documentation Findings
-
-### F-01: `AGENTS.md` Contains Mojibake
-
-Observed issue:
-
-- tree diagrams and symbols in `AGENTS.md` render as mojibake such as `鈹溾攢`
-- checkmark/cross symbols also render incorrectly
-
-Impact:
-
-- coding-agent rule text is still understandable, but corrupted characters reduce trust and can spread if copied into other docs
-
-Recommended follow-up:
-
-- rewrite `AGENTS.md` as clean UTF-8 ASCII/Markdown
-
-### F-02: Active Docs Have Registration Drift
-
-Observed drift:
-
-- `COLLECTIONS_REFERENCE.md` and `AI_PRODUCT_FRAMEWORK_GUIDE.md` are stale about `modelViewerEndpoint`
-- `COLLECTIONS_REFERENCE.md` says `accountAuth.ts` is present but not registered, while auth endpoints are registered in `src/payload.config.ts`
-
-Impact:
-
-- future frontend/backend work may target the wrong API boundary
-
-Recommended follow-up:
-
-- refresh active docs from `src/payload.config.ts`
-- keep generated or dormant modules clearly separated from active registered modules
-
-## Test And Build Findings
-
-### G-01: TypeScript Is Not Green
-
-Cause:
-
-- inactive social collections referenced by services
-
-Recommended options:
-
-- restore social collections, migrations, generated types, services, and endpoint registration together
-- or archive/remove inactive social service files until the feature is intentionally rebuilt
-
-### G-02: Unit Test Suite Is Not Green
-
-Cause groups:
-
-- tests refer to removed/missing admin service files
-- tests still encode old migration and config shapes
-- ledger tests are not aligned with Postgres transaction client requirements
-
-Recommended options:
-
-- split tests into active and archived suites
-- restore missing admin modules only if those product admin APIs are still desired
-- update tests to current Postgres-only assumptions
-
-## Production Readiness Findings
-
-### H-01: Model And Image Delivery Needs Production Cache Policy
-
-Current state:
-
-- browser route audit passes
-- `ModelViewer` uses controlled viewer endpoint and browser object URLs
-- service worker/browser cache exists for repeat local loads
-
-Remaining production concern:
-
-- large GLB files should not rely on repeated server-function proxying at scale
-
-Recommended follow-up:
-
-- add a viewer manifest/signing layer
-- use CDN/object-storage delivery for approved public hot assets
-- keep controlled proxy fallback for private assets
-- preserve `Vary: Cookie, Authorization` for user-specific model responses
-
-### H-02: Pricing Backend Is Partially Backend-Managed
-
-Current state:
-
-- plan names, prices, credits, descriptions, and features come from `site-settings.subscriptionPlans`
-- checkout/portal/sync endpoints are registered
-
-Remaining gaps:
-
-- plan active state, sort order, featured badge, comparison labels, FAQ, and page-level marketing copy are not fully backend-managed
-
-Recommended follow-up:
-
-- keep current plan keys stable for launch
-- add pricing content settings only after final UI is confirmed
+- P0: Add a unit test that download endpoint returns an error instead of mock content when no asset exists.
+- P1: Add mocked Meshy 3D end-to-end task tests for text, image, and multi-image paths.
+- P1: Add browser smoke tests for public model preview and Workbench login gate.
+- P2: Add an env inventory test or script that prints required/missing variable names without values.
 
 ## Priority Backlog
 
-### P0 Before New Backend Feature Work
+### P0
 
-- Decide social domain direction: restore as active collections/endpoints or archive dormant services.
-- Make `pnpm exec tsc --noEmit` green.
-- Fix or retire stale unit tests so `pnpm test:unit` becomes a useful gate.
+- Remove mock download success output from `modelDownloads`.
+- Make download credit charging read `site-settings.modelAccessPolicy` and keep it disabled by default for current imported public models.
+- Add regression tests for both behaviors.
 
-### P1 Before Public Launch
+### P1
 
-- Protect or remove `/test`, `/test-auth-preview`, `/formal-components`, and `*-test` routes.
-- Keep `/api/platform/models/:modelId/download` as the formal download namespace and do not reintroduce `/api/platform/mock/models/:modelId/download` in production UI.
-- Audit public models and media for guest-readable preview/viewer assets.
-- Update active docs to match registered Payload config.
-- Clean `AGENTS.md` encoding.
+- Protect or remove `personal-center-test` and `personal-center-legacy` routes.
+- Clean active AWS/S3/AWS RDS wording from runtime env examples and admin runtime UI.
+- Add browser smoke coverage for anonymous public model preview and Workbench auth gate.
+- Keep Meshy strict local ingestion before task success/credit settlement.
+- Resolve direct SQL billing ownership so Payload ledger and Supabase helper paths cannot double-count.
 
-### P2 Product Hardening
+### P2
 
-- Move dashboard Chinese source literals into localization or Payload-managed content.
-- Add backend-managed model-detail promotion slot.
-- Add pricing page content and plan state controls if marketing needs runtime edits.
-- Add production model/image delivery manifest and CDN strategy.
+- Improve model progress telemetry: download, validate, parse, prepare.
+- Seed `avatar-frame-styles` and curate `homepage-items`.
+- Add operator-facing provider/key status without exposing secrets.
+- Move remaining Chinese source literals in service/frontend code to localization or Payload-managed content.
+- Add viewer manifest/signing layer before high-traffic production scale.
 
 ## Current Good Signals
 
-- Formal migrated routes render successfully.
-- Public marketing/legal/auth routes render successfully.
-- Dashboard auth redirect behavior is working.
-- `modelViewerEndpoint` is registered and browser-tested through formal pages.
-- Custom Next API routes do not shadow Payload collection REST roots.
-- Core product API namespaces are mostly aligned with `/api/platform`, `/api/studio`, `/api/commerce`, and `/api/billing`.
+- TypeScript is green.
+- Unit test suite is green.
+- Public model data and Supabase model storage are aligned in the probed database.
+- Workbench anonymous browse plus authenticated generation action matches product direction.
+- Payload social/profile/backend UI surfaces are now active and should not be described as dormant.
+- Supabase Storage is the active object-storage direction.

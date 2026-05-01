@@ -10,28 +10,32 @@ No schema change has been made for this memo. Any future Payload schema change s
 
 ## Reviewed Pages
 
-- `src/app/(frontend)/home-test`
-- `src/app/(frontend)/workbench-test`
-- `src/app/(frontend)/model-detail-test`
-- `src/app/(frontend)/account-test`
+- `src/app/(frontend)/page.tsx`
+- `src/app/(frontend)/workbench`
+- `src/app/(frontend)/model-detail`
+- `src/app/(frontend)/account`
+- `src/app/(frontend)/pricing`
+- `src/app/(frontend)/dashboard`
+
+Historical `home-test`, `workbench-test`, `model-detail-test`, and `account-test` route directories were promoted or removed. UI-lab asset/component folder names may still contain historical labels, but future product work should target the formal routes above.
 
 ## Current Wiring Review
 
 ### UI Closeout Check
 
-Current test-page closeout status:
+Current formal-page closeout status:
 
-- `home-test`, `workbench-test`, `model-detail-test`, and `account-test` returned HTTP 200 in the local dev server check.
-- No browser runtime errors were found in the four-page Playwright pass.
-- `home-test` public media URL handling now keeps local `/api/media/file/...` URLs as browser-safe relative URLs instead of sending them through signed URL resolution.
-- Runtime S3 storage settings are cached briefly in process so one page render does not repeatedly read the same `storage-settings` global for every media asset.
-- `home-test` public owner lookup now selects only the fields required by public author cards.
+- `/`, `/workbench`, `/model-detail`, and `/account` are the product routes for the migrated UI.
+- No new backend UI work should target removed validation routes.
+- Homepage public media URL handling now keeps local `/api/media/file/...` URLs as browser-safe relative URLs instead of sending them through signed URL resolution.
+- Runtime Supabase Storage settings are cached briefly in process so one page render does not repeatedly read the same `storage-settings` global for every media asset.
+- Homepage public owner lookup selects only the fields required by public author cards.
 
 Remaining stability note:
 
-- `model-detail-test` uses `/api/platform/models/:modelId/viewer` correctly, but local model asset delivery for `Adventurer.glb` is still slow in dev because the underlying media file is served through `/api/media/file/Adventurer.glb`. Keep the UI loading progress bar, and handle durable model delivery/caching in the later media-performance backend pass.
+- `model-detail` uses `/api/platform/models/:modelId/viewer` correctly. Keep the UI loading progress bar, but treat durable model delivery/caching as a backend media-performance concern rather than a layout workaround.
 
-### `home-test`
+### Homepage `/`
 
 Already wired:
 
@@ -45,7 +49,7 @@ Remaining backend gaps:
 - public inspiration grid should avoid static fake author fallback before formal launch
 - homepage prompt/workbench input area remains UI-only and should later connect to the real studio task flow
 
-### `workbench-test`
+### Workbench `/workbench`
 
 Already wired:
 
@@ -55,11 +59,12 @@ Already wired:
 
 Remaining backend gaps:
 
-- generation form is still UI-only and not connected to `/api/studio/ai/tasks`
-- uploaded image slots are UI-only and need upload/media flow integration
-- model library pagination/search is currently client-local and should later map to a real query interface
+- 3D generation is connected to `/api/studio/ai/tasks`
+- image generation is connected to `/api/studio/ai/images`
+- uploaded image slots use the Workbench source upload flow
+- model library pagination/search is still mostly client-local and should later map to a real query interface
 
-### `model-detail-test`
+### Model Detail `/model-detail`
 
 Already wired:
 
@@ -70,12 +75,11 @@ Already wired:
 
 Remaining backend gaps:
 
-- `ModelDetailAdBanner` is static and needs a backend promotion slot
-- comments form is UI-only because comments endpoints/collections are not active
-- like/favorite/action states are UI-only because reaction endpoints/collections are not active
+- `ModelDetailAdBanner` should be wired to the creator/user profile banner, not an ad or promotion slot
+- comments, reactions, favorites, follows, and engagement endpoints/collections are active; UI work must preserve endpoint auth/rate-limit rules
 - cart/download/print actions need commerce and credit-flow confirmation before formal launch
 
-### `account-test`
+### Account `/account`
 
 Already wired:
 
@@ -86,19 +90,19 @@ Remaining backend gaps:
 
 - client-side profile edit/save needs registered `/api/account/profile`
 - password change needs registered `/api/account/password`
-- profile background edit needs the profile endpoint plus media upload/ownership flow
-- avatar frame selection needs a backend-managed style catalog before it can become an admin-configurable UI
+- profile banner edit uses the profile endpoint plus `/api/account/profile-media/upload-url` for Supabase signed uploads and media ownership
+- avatar frame selection can use the backend-managed `avatar-frame-styles` catalog
 
 ## Existing Backend Support
 
 ### Current User Navigation
 
-The four migrated test pages can already receive the current user through `getCurrentNavUser()`:
+The formal pages can receive the current user through `getCurrentNavUser()`:
 
-- `home-test`
-- `workbench-test`
-- `model-detail-test`
-- `account-test`
+- `/`
+- `/workbench`
+- `/model-detail`
+- `/account`
 
 The current nav user includes:
 
@@ -128,9 +132,9 @@ Primary source:
 
 Current registration status:
 
-- these profile/dashboard endpoints are not registered in `src/payload.config.ts`
-- registered account endpoints currently cover auth flows from `src/endpoints/accountAuth.ts`
-- formal frontend wiring must either register the profile/dashboard endpoints first or use a server-side data adapter that calls the service layer safely
+- these profile/dashboard/password endpoints are registered in `src/payload.config.ts`
+- registered account auth endpoints remain in `src/endpoints/accountAuth.ts`
+- frontend wiring may use the registered `/api/account/profile`, `/api/account/dashboard`, and `/api/account/password` paths, while preserving auth/origin/rate-limit contracts
 
 The account profile currently includes:
 
@@ -145,11 +149,11 @@ The account profile currently includes:
 - `profileVisibility`
 - `creditsBalance`
 
-The `account-test` page now uses a server-side data adapter for avatar, account name, email, balance, and points history. Client-side profile editing should still wait for a registered `/api/account/profile`, `/api/account/password`, and profile media upload flow.
+The account page uses server-side current-user data for avatar, account name, email, balance, and points history. Client-side profile editing should use the registered `/api/account/profile`, `/api/account/password`, and profile media upload flow.
 
 ### Public Model Owner Cards
 
-`home-test` and `model-detail-test` already have partial public creator wiring:
+Homepage and model detail already have partial public creator wiring:
 
 - public model cards use model owner display name when available
 - creator avatar is only exposed when the owner profile is public and avatar media is guest-readable
@@ -157,8 +161,8 @@ The `account-test` page now uses a server-side data adapter for avatar, account 
 
 Primary sources:
 
-- `src/app/(frontend)/home-test/_lib/homeTestData.ts`
-- `src/app/(frontend)/model-detail-test/_lib/modelDetailTestData.ts`
+- `src/app/(frontend)/_home/homeData.ts`
+- `src/app/(frontend)/model-detail/_lib/modelDetailData.ts`
 
 Keep this boundary:
 
@@ -178,13 +182,13 @@ Current active interfaces for the migrated formal UI:
 
 Remaining backend-owned slots:
 
-- model detail sidebar banner has no backend-managed read interface or Payload content slot.
-- avatar frame style catalog has no admin-managed collection/global read interface.
-- homepage featured strip and collection shelf are mostly backed by `homepage-items`, but editable ribbon/badge copy is not currently represented as its own field.
+- model detail sidebar banner is owned by the creator/user profile banner fields on `users`.
+- avatar frame style metadata is backend-managed through `avatar-frame-styles`.
+- homepage featured strip and collection shelf are backed by `homepage-items`, including editable badge, ribbon, CTA, and image alt fields.
 
 Frontend rule:
 
-- use server-side Local API adapters for current test-page validation where safe and already available
+- use server-side Local API adapters for formal-page validation where safe and already available
 - do not client-fetch unregistered endpoint paths
 - record missing backend surface here and defer backend schema/API work until UI integration is stable
 
@@ -233,7 +237,7 @@ Frontend consumers:
 - home public model author cards
 - future creator profile pages
 
-### Model Detail Sidebar Banner
+### Creator Profile Banner
 
 Current UI component:
 
@@ -243,42 +247,37 @@ Current UI component:
 
 Current backend state:
 
-- no dedicated backend slot was found for this model detail sidebar banner
-- the component is currently static frontend UI
+- the visual is the model owner's creator/user profile banner
+- compatibility storage remains `users.profileBackground`
+- account and creator DTOs expose `profileBanner`, `profileBannerUrl`, `profileBannerFocalX`, and `profileBannerFocalY`
 
 Needed backend product shape:
 
-- operator/admin can configure the sidebar banner image
-- operator/admin can set link target
-- operator/admin can set alt/title/campaign label
-- banner should support visibility and scheduling
+- users can upload and select their own profile banner
+- frontend can crop banners with focal point percentages
+- public pages expose banner media only when the media is guest-readable
 
-Recommended future model:
+Implemented backend model:
 
-- Add a general `promotion-slots` collection for cross-page promotional UI, or add a `modelDetail` group in a global only if this remains a single fixed slot.
-- Prefer `promotion-slots` if the same system will also manage account, checkout, detail, or homepage promo surfaces.
+- Keep `users.profileBackground` as the database field name for compatibility.
+- Treat it as `profileBanner` in service responses and future frontend contracts.
+- Use `POST /api/account/profile-media/upload-url` for Supabase signed avatar/profile-banner uploads.
+- Use Supabase Storage only.
 
-Recommended fields:
+Future optional promotion model:
 
-- `slot`: enum such as `model-detail-sidebar-banner`
-- `title`
-- `image`: upload relation to `media`
-- `href`
-- `altText`
-- `isVisible`
-- `publishAt`
-- `expireAt`
-- `sortOrder`
+- A separate promotion system can be added later for operator ads.
+- Do not use promotion slots for creator identity/profile surfaces.
 
 Media rule:
 
-- public model detail banners must use guest-readable media, either `purpose = preview` or approved `publicAccess = true`.
+- public profile banners must be guest-readable before public DTOs expose their URL.
 
 ### Home Featured Strip
 
 Current UI area:
 
-- `home-test` bottom hero strip
+- homepage bottom hero strip
 - visual frame: `heroBottomBanner`
 - component: `HeroImageFrameStrip`
 
@@ -290,20 +289,20 @@ Current backend state:
 
 Needed backend refinement:
 
-- add or reuse a backend field for the displayed ribbon/badge label
-- ensure each promo image has a link target and alt/title mapping
+- use `badgeLabel` and `ribbonLabel` for displayed badge/ribbon copy
+- use `ctaLabel` and `altText` for action copy and image accessibility mapping
 - keep featured strip items operator-managed through Payload
 
 Recommended path:
 
 - Keep using `homepage-items` for this area.
-- Add a field such as `badgeLabel` or `ribbonLabel` if product wants editable text on the card ribbon.
+- `homepage-items` now includes `badgeLabel`, `ribbonLabel`, `ctaLabel`, and `altText`.
 
 ### Home Collection Shelf
 
 Current UI area:
 
-- `home-test` second banner / collection shelf
+- homepage second banner / collection shelf
 - visual frame: `heroSecondBanner`
 - component: `SelectableFrameRow`
 
@@ -379,10 +378,10 @@ Recommended future path:
 
 ## Frontend Wiring Priority
 
-1. Wire `account-test` to real account data after registering the needed account profile/dashboard endpoint or adding a server-side data adapter.
+1. Wire account profile editing to `/api/account/profile` and profile media uploads to `/api/account/profile-media/upload-url`.
 2. Keep model detail author card wired to public owner data, but remove static fallback identity before formal launch.
-3. Replace `ModelDetailAdBanner` static asset with backend-managed promotion slot data after the backend slot exists.
-4. Keep `home-test` featured strip and collection shelf on `homepage-items`; add missing ribbon/badge field only if editable ribbon copy is required.
+3. Replace `ModelDetailAdBanner` static asset with the creator/user profile banner returned by model detail data.
+4. Keep homepage featured strip and collection shelf on `homepage-items`; use the badge/ribbon/CTA/alt fields for editable copy.
 5. Keep `/pricing` on `site-settings.subscriptionPlans` and the registered `/api/billing/subscriptions/*` endpoints; only add new backend page-content settings after the final pricing UI is confirmed.
 6. Replace residual static fallback author cards on public grids with empty/skeleton states when there is no real public data.
 
@@ -396,14 +395,21 @@ Recommended future path:
 
 ## Backend Work Items For Later
 
-- Register or replace `/api/account/profile`, `/api/account/dashboard`, and `/api/account/password` before client-side formal account settings are enabled.
-- Decide whether avatar frame styles should be a collection or a global.
-- Add backend-managed detail sidebar banner slot.
-- Add editable ribbon/badge label for `homepage-items` if required by the formal home design.
+- Wire frontend account settings to the registered account/profile/password endpoints.
+- Wire frontend avatar frame selection to the `avatar-frame-styles` collection.
+- Wire model detail sidebar image to the creator/user profile banner.
+- Wire homepage cards to the `homepage-items` badge/ribbon/CTA/alt fields.
 - Decide whether `/pricing` needs a dedicated backend-managed content global or whether `site-settings` is enough.
 - Add active/sort/featured/badge controls for subscription plans if marketing needs runtime plan changes.
-- Build a server-side account-test data adapter or register and client-fetch `/api/account/dashboard`.
+- Keep account dashboard/profile data on the registered account endpoints and server-side adapters; do not revive the old account-test route as a production dependency.
 - Review public media rules for all promotional images before exposing them on anonymous pages.
+
+## 2026-05-01 Audit Addendum
+
+- `docs/PROJECT_AUDIT_MEMO.md` is the current full-stack audit source for route/backend/deployment risk.
+- Current database probe shows the imported public model set is internally consistent: 42 public models, 42 guest-readable previews, and 42 GLB format rows backed by Supabase public object URLs.
+- `pnpm run build` confirms `personal-center-test` and `personal-center-legacy` are still routable app pages. Remove, production-gate, or move them out of the app route tree before launch.
+- The download endpoint still has a mock fallback and hardcoded charging gate; backend UI should expose download/preview credit policy only after the endpoint honors `site-settings.modelAccessPolicy`.
 
 ## Supabase Service Consolidation Memo
 
@@ -436,6 +442,12 @@ Preview and download credit policy:
 - Future implementation should expose admin-managed backend settings for preview credit cost and download credit cost instead of hardcoding values in frontend components.
 - Download charging must stay server-side and idempotent, with automatic refund on failed asset delivery.
 - Preview charging, if enabled later, should be rate-aware and abuse-resistant so normal gallery browsing does not drain credits unexpectedly.
+
+Workbench image asset rule:
+
+- Generated images are private Workbench source assets, not model records.
+- The right Image Assets panel should be backed by succeeded Gemini image-generation tasks and their `callbackPayload.imageGeneration.resultMediaId` media records, so refresh/navigation does not lose the user's generated image set.
+- Image generation accepts at most one source image. Multi-image source arrays belong to Meshy 3D generation, where selected images become reference images for Image/Multi-Image to 3D.
 
 Optimization rule:
 

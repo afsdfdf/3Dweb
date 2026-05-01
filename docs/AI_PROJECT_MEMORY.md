@@ -57,6 +57,7 @@ Registered collections:
 
 - `users`
 - `media`
+- `avatar-frame-styles`
 - `generation-tasks`
 - `task-events`
 - `models`
@@ -212,6 +213,35 @@ Frontend asset caching is layered:
 - Model viewer redirect responses must include `Vary: Cookie, Authorization` so browser persistent caches do not mix authenticated model access across different login states.
 - Browser persistent cache size is best-effort and subject to browser quota and eviction; do not treat it as the only production hot-model cache.
 
+### Meshy 3D Generation Flow
+
+Workbench 3D generation is backend-owned and provider-agnostic from the browser's perspective.
+
+The frontend should submit neutral task intent to `POST /api/studio/ai/tasks`:
+
+- prompt
+- source image asset array
+- requested title
+- tags
+- public/private visibility
+- desired output formats
+
+Payload decides the Meshy route:
+
+- no source images: Meshy Text to 3D preview/refine
+- one source image: Meshy Image to 3D
+- two to four source images: Meshy Multi Image to 3D when enabled in `ai-provider-settings`
+
+Meshy model choice, texture generation, PBR, topology, target polycount, target formats, and multi-image enablement belong to the `ai-provider-settings.meshy` global. Meshy API keys are never sent to the frontend. Runtime can use `MESHY_API_KEY`, or admins can explicitly switch `ai-provider-settings.meshy.apiKeyMode` to the Payload admin override for operational key rotation convenience.
+
+Meshy 3D credit pricing is separate from generic image-generation pricing. Default Meshy text/image/multi-image 3D pricing is 30 internal credits, and admins can change the values under `ai-provider-settings.meshy.pricing` without changing Gemini image-generation pricing.
+
+Generated Meshy model files, thumbnails, and textures must be ingested into Supabase Storage before model delivery. Result models should preserve the Workbench title, tags, visibility, owner, source task, preview image when available, and generated format media records. Public requested models only become `visibility = public` when a guest-readable preview image was created; otherwise they stay private to avoid creating invalid public model records. Do not settle reserved generation credits until result model/media ingestion has succeeded; if local asset ingestion or model creation fails after provider success, mark the task failed and refund reserved credits according to the configured credit rules.
+
+Meshy result assets are served from `assets.meshy.ai`; keep that official host allowed for backend result ingestion even when admins use the Payload-stored Meshy API key instead of `MESHY_API_KEY`. Workbench source images should be passed to Meshy through short-lived Supabase signed URLs when bucket/path metadata is available, including the multi-image flow. Do not rely on public bucket policy as the only path for provider-side source image reads.
+
+Workbench image-generation results are private source assets, not model records. The image-generation flow may create owner-scoped `media` rows with `purpose = asset` and `publicAccess = false`, but it must not create `models` rows or publish those images to public model discovery. In the Workbench UI, generated images belong in an Image Assets panel; selecting one adds it as a source image for the next Image-to-3D/Multi-Image-to-3D task.
+
 Future production delivery refactor:
 
 - Keep `/api/platform/models/:modelId/viewer` as the stable access-controlled signing/redirect entry while the Workbench integration is being completed.
@@ -335,7 +365,7 @@ Current evergreen references:
 - Public model discovery/detail and Workbench ownership are separate. `/model-detail?id=<modelId>` is the formal public detail route; Workbench library panels should keep showing only the current user's own models, with other users' public models used only as read-only references.
 - Backend UI development memo added for formal page wiring. Current findings: `users.avatarFrame` and `accountService` support a basic avatar frame value, but there is no admin-managed style catalog; account profile/dashboard/password endpoints are registered; model detail sidebar banner is still static and needs a backend promotion slot; the homepage featured strip and collection shelf are mostly covered by `homepage-items`, with a possible missing editable ribbon/badge label.
 - `/account` now uses existing server-side current-user Local API helpers for display name, email, avatar, credit balance, and credit transaction history. Client-side account editing remains blocked on registered profile/password endpoints and the future avatar-frame style catalog.
-- Formal page UI closeout kept the migrated layout intact while improving data stability: the homepage now short-circuits local `/api/media/file/...` URLs, public owner card lookups select only required fields, and runtime S3 storage settings use a brief in-process cache to avoid repeated global reads during media-heavy renders. `/model-detail` still depends on `/api/platform/models/:modelId/viewer`; dev delivery of local GLB media can be slow and should be handled in the later media/cache backend pass rather than by changing UI layout.
+- Formal page UI closeout kept the migrated layout intact while improving data stability: the homepage now short-circuits local `/api/media/file/...` URLs, public owner card lookups select only required fields, and runtime Supabase Storage settings use a brief in-process cache to avoid repeated global reads during media-heavy renders. `/model-detail` still depends on `/api/platform/models/:modelId/viewer`; dev delivery of local GLB media can be slow and should be handled in the later media/cache backend pass rather than by changing UI layout.
 - Formal frontend route replacement points `/`, `/workbench`, `/model-detail`, and `/account` at the validated migrated UI implementations. Formal navigation should link to formal paths. The shared security header allows `blob:` in `connect-src` because `ModelViewer` creates browser object URLs before Three.js parses GLB assets.
 - Project and default runtime branding now use `thornstavern` / `Thorns Tavern`. Historical migrations, filesystem paths, and Stripe subscription lookup keys intentionally remain unchanged unless a later billing/data migration explicitly renames them.
 
@@ -368,7 +398,7 @@ Current evergreen references:
 - Vercel/Supabase cutover check found that social service code depends on `user-follows`, `model-comments`, `model-likes`, `model-favorites`, and `engagement-views`. These collections must stay registered in `src/payload.config.ts`, and empty/new Supabase databases must include the 2026-04-29 social baseline migration so comments, likes, favorites, follows, and view dedupe do not fail at runtime.
 - `D:\py\thornstavern_downloads` was imported into the new Supabase-backed database after the first admin account was created. Import owner is `admin@thornstavern.com`; `42` public `models`, `42` GLB `models_formats`, and `123` `media` rows were created. Assets are stored in Supabase Storage bucket `media` under `media/imports/thornstavern-downloads-20260429`; do not re-import this set through AWS S3. Three optional source images referenced by the manifest were absent, but every model has a GLB and preview image.
 - Current imported public model previews and downloads do not require credit charging. Future backend work should keep preview credit cost and download credit cost independently configurable from admin/runtime settings, with charging performed server-side and download refunds issued automatically when asset delivery fails.
-- Workbench is an authenticated workspace, not a public gallery. `/workbench`, `/workbench/history`, and `/workbench/models/:id` should require login and keep the library scoped to the current user's own models. Anonymous public model preview belongs on `/model-detail?id=<modelId>` through `/api/platform/models/:modelId/viewer`.
+- Workbench is an authenticated action workspace, not a public gallery. Anonymous visitors may enter `/workbench` to inspect the UI, but generation and user-owned model/image library data require login. `/workbench/history` and `/workbench/models/:id` remain account-specific routes. Anonymous public model preview belongs on `/model-detail?id=<modelId>` through `/api/platform/models/:modelId/viewer`.
 - Model detail should reuse the same `ModelViewer` canvas when selecting creator-rail models. Do not key `ModelViewer` by `viewerURL` on that page; forcing a remount creates new WebGL contexts and browsers can stop loading models after roughly six selections even though the viewer endpoint and GLB files are healthy.
 - `ModelViewer` should keep GLTF/Draco loading resources singleton-style where possible. Reuse the shared Draco decoder loader instead of creating a new `DRACOLoader` per selected model, and release WebGL renderers on unmount so route changes or dev remounts do not leak contexts. On model detail, keep the slide key stable too; keying the parent slide by preview image URL still remounts the canvas even if `ModelViewer` itself has no key.
 
@@ -376,8 +406,31 @@ Current evergreen references:
 
 - Backend architecture audit cleanup formalized model downloads at `GET /api/platform/models/:modelId/download`; do not use the old mock download namespace in production UI.
 - Sensitive account auth mutations, follow/unfollow mutations, and engagement view writes now use endpoint-level rate limiting in addition to existing origin/auth checks.
-- `/test`, `/test-auth-preview`, and `/formal-components` remain available for local development but return `notFound()` in production builds.
+- `/test` and `/formal-components` remain available for local development but return `notFound()` in production builds. The old `/test-auth-preview` route was removed after auth moved to the shared modal flow.
 - Obsolete admin service tests for removed `src/lib/admin*.ts` modules were retired. The active unit test suite is 99/99 passing, and `pnpm exec tsc --noEmit` plus `pnpm run build` passed after the cleanup.
 - Public model preview latency is optimized in two layers: `/model-detail` should keep Payload reads narrow with `depth`, `select`, and parallel data preparation, while `/api/platform/models/:modelId/viewer` may use a read-only public fast path against `models -> models_formats -> media.url` before falling back to Payload access for non-public/authenticated cases. The fast path must still require `models.visibility = public`, keep endpoint rate limiting, and only bypass remote-asset global reads for configured Supabase public storage URLs.
 - Model preview performance work should use the shared measurement command `pnpm measure:model-preview -- --ids 1,20,42`. It records page HTML time, viewer endpoint 302 time, Supabase range probe time, browser GLB start/finish, final ready/error, and related thumbnail count so Model Detail and Workbench preview changes can be compared against the same baseline.
 - Model Detail and Workbench must keep the preview flow current-model-first: mount only one active `ModelViewer` canvas, request only the selected model's GLB, and load rail/library thumbnails by visible range instead of loading every card image immediately. The 2026-04-30 check for models `1,20,42` returned page `200`, viewer `302`, Supabase range `206`, one canvas, no visible errors, and only about `9-10` real related image requests instead of the previous full rail burst.
+
+### 2026-05-01
+
+- Backend UI profile/banner milestone added `avatar-frame-styles` as the admin-managed avatar frame catalog. `users.avatarFrame` remains the compatibility key, while frame thumbnails, images, unlock rules, active flags, selection flags, and ordering live in the new collection.
+- User profile side banners are creator/user profile banners, not advertising or promotion slots. Compatibility storage remains `users.profileBackground`, but account and creator/model-detail service DTOs expose `profileBanner`, `profileBannerUrl`, `profileBannerFocalX`, and `profileBannerFocalY`.
+- Public creator/model-detail DTOs must not leak private profile media. Avatar and profile banner URLs are returned only when the related media is guest-readable through `purpose = preview` or explicit `publicAccess = true`.
+- Profile media uploads use `POST /api/account/profile-media/upload-url`, a non-shadowing Next route that creates Supabase Storage signed upload URLs and Payload `media` records for `purpose = avatar` or `profile-banner`. Runtime object storage remains Supabase Storage only.
+- `homepage-items` now owns editable `badgeLabel`, `ribbonLabel`, `ctaLabel`, and `altText` fields for homepage cards. Keep homepage repeated UI content in Payload instead of hardcoding new card labels.
+- `site-settings.modelAccessPolicy` records disabled-by-default preview/download credit charging controls. Imported public model previews and downloads remain free until backend policy enforcement is deliberately enabled server-side.
+- Workbench image-generation assets are recoverable from backend state. The right-side Image Assets panel should be seeded from the current user's succeeded Gemini image-generation tasks by resolving `callbackPayload.imageGeneration.resultMediaId` to private owner-readable `media` records; do not rely only on transient React state for generated images.
+- Image generation and 3D generation have intentionally different image-input contracts. Gemini image generation accepts at most one source image; multi-image source arrays are reserved for Meshy Image/Multi-Image to 3D. Backend endpoints must reject extra image-generation inputs with a clear error rather than silently ignoring them.
+- Provider source-image access should prefer short-lived Supabase signed URLs when `bucket/path` is available, then fall back to public URLs or `mediaId` resolution. This applies to both Meshy source images and Gemini image-to-image reads so private buckets can be supported later without changing the frontend contract.
+
+### 2026-05-01 Full-Stack Audit
+
+- `docs/PROJECT_AUDIT_MEMO.md` is refreshed as the current full-stack audit source. It supersedes older notes that said TypeScript was failing or that social collections were dormant.
+- Fresh validation during the audit: `pnpm exec tsc --noEmit` passed, `pnpm test:unit` passed with `107/107` tests, and `pnpm run build` passed. Build still logged SMTP `EAUTH` verification noise from configured SMTP credentials, so SMTP config remains a deployment hygiene item even though it is not a compile blocker.
+- Read-only Supabase/Postgres probe found `70` public tables. Current imported public resource set is internally consistent: `42` public `models`, `42` `models_formats`, `123` `media` rows, all media URLs are Supabase public object URLs, and all 42 public models have guest-readable preview media plus Supabase-backed GLB format rows.
+- Highest-priority backend risk: `src/endpoints/modelDownloads.ts` must stop returning mock download content when no real asset exists. It should return a controlled error and refund any charged credits.
+- Download charging must honor `site-settings.modelAccessPolicy` instead of a hardcoded gate. Current imported public previews and downloads remain free until backend policy enforcement is deliberately enabled.
+- `personal-center-test` and `personal-center-legacy` are still routable app pages. Remove, production-gate, or move them out of the app route tree before launch.
+- Active env/admin docs still contain AWS RDS/S3 wording. Runtime direction remains Supabase Postgres plus Supabase Storage only; clean the active examples/admin UI without reintroducing AWS S3 runtime media behavior.
+- Workbench image-generation assets and 3D model assets remain separate: image-generation results are private source assets, while `models` records are created only by 3D/result model flows.
