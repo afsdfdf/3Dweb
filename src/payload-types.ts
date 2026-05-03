@@ -70,6 +70,7 @@ export interface Config {
     users: User;
     'user-follows': UserFollow;
     'avatar-frame-styles': AvatarFrameStyle;
+    'email-verification-codes': EmailVerificationCode;
     media: Media;
     'generation-tasks': GenerationTask;
     'task-events': TaskEvent;
@@ -99,6 +100,7 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     'user-follows': UserFollowsSelect<false> | UserFollowsSelect<true>;
     'avatar-frame-styles': AvatarFrameStylesSelect<false> | AvatarFrameStylesSelect<true>;
+    'email-verification-codes': EmailVerificationCodesSelect<false> | EmailVerificationCodesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     'generation-tasks': GenerationTasksSelect<false> | GenerationTasksSelect<true>;
     'task-events': TaskEventsSelect<false> | TaskEventsSelect<true>;
@@ -294,6 +296,23 @@ export interface AvatarFrameStyle {
   isActive?: boolean | null;
   isUserSelectable?: boolean | null;
   sortOrder?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Short-lived hashed verification codes for registration and account security flows.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "email-verification-codes".
+ */
+export interface EmailVerificationCode {
+  id: number;
+  email: string;
+  purpose: 'register';
+  codeHash: string;
+  expiresAt: string;
+  consumedAt?: string | null;
+  attempts: number;
   updatedAt: string;
   createdAt: string;
 }
@@ -874,6 +893,10 @@ export interface PayloadLockedDocument {
         value: number | AvatarFrameStyle;
       } | null)
     | ({
+        relationTo: 'email-verification-codes';
+        value: number | EmailVerificationCode;
+      } | null)
+    | ({
         relationTo: 'media';
         value: number | Media;
       } | null)
@@ -1057,6 +1080,20 @@ export interface AvatarFrameStylesSelect<T extends boolean = true> {
   isActive?: T;
   isUserSelectable?: T;
   sortOrder?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "email-verification-codes_select".
+ */
+export interface EmailVerificationCodesSelect<T extends boolean = true> {
+  email?: T;
+  purpose?: T;
+  codeHash?: T;
+  expiresAt?: T;
+  consumedAt?: T;
+  attempts?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1882,6 +1919,14 @@ export interface SecuritySetting {
         id?: string | null;
       }[]
     | null;
+  /**
+   * Email code is the default signup flow. Email link keeps the legacy Payload verification link flow available.
+   */
+  registrationVerificationMode?: ('email-code' | 'email-link') | null;
+  /**
+   * Used only when registration verification mode is Email code.
+   */
+  registrationCodeExpiresMinutes?: number | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -2323,6 +2368,8 @@ export interface SecuritySettingsSelect<T extends boolean = true> {
         host?: T;
         id?: T;
       };
+  registrationVerificationMode?: T;
+  registrationCodeExpiresMinutes?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

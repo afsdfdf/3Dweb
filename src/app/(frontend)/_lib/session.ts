@@ -134,9 +134,10 @@ export async function getCurrentAccountProfileSummary() {
   };
 }
 
-export async function requireUser() {
+export async function requireUser(redirectTo = "/dashboard/tasks") {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  const safeRedirect = redirectTo.startsWith("/") ? redirectTo : "/dashboard/tasks";
+  if (!user) redirect(`/login?redirect=${encodeURIComponent(safeRedirect)}`);
   return user;
 }
 

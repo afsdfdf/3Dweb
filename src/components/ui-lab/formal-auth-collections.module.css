@@ -134,8 +134,16 @@
   top: 306px;
 }
 
+.registerPasswordLinkMode {
+  top: 232px;
+}
+
 .registerConfirm {
   top: 380px;
+}
+
+.registerConfirmLinkMode {
+  top: 306px;
 }
 
 .fieldLabel {
@@ -419,6 +427,10 @@
   left: 40px;
   top: 478px;
   width: 300px;
+}
+
+.registerTermsLinkMode {
+  top: 404px;
 }
 
 .registerTerms .checkbox {

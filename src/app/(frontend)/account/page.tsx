@@ -65,7 +65,7 @@ const getRelationTitle = (value: unknown, fallback: string) => {
 };
 
 export default async function AccountPage() {
-  await requireUser();
+  await requireUser("/account");
 
   const [
     navUser,

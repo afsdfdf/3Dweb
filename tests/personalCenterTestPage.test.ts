@@ -28,6 +28,26 @@ const accountRoutePath = path.join(
   "account",
   "page.tsx",
 );
+const uploadURLRoutePath = path.join(
+  rootDir,
+  "src",
+  "app",
+  "api",
+  "account",
+  "profile-media",
+  "upload-url",
+  "route.ts",
+);
+const completeRoutePath = path.join(
+  rootDir,
+  "src",
+  "app",
+  "api",
+  "account",
+  "profile-media",
+  "complete",
+  "route.ts",
+);
 
 test("personal center is promoted to the default account route", () => {
   assert.equal(existsSync(componentPath), true);
@@ -53,6 +73,10 @@ test("personal center is promoted to the default account route", () => {
     source,
     /fetch\(\s*["']\/api\/account\/profile-media\/upload-url["']/,
   );
+  assert.match(
+    source,
+    /fetch\(\s*["']\/api\/account\/profile-media\/complete["']/,
+  );
   assert.match(source, /getSupabaseBrowserClient/);
   assert.match(source, /router\.refresh\(\)/);
   assert.match(source, /router\.push\("\/workbench"\)/);
@@ -61,7 +85,7 @@ test("personal center is promoted to the default account route", () => {
   assert.match(source, /AuthModalStage/);
   assert.match(routeSource, /redirect\("\/account"\)/);
   assert.match(accountRouteSource, /PersonalCenterTest/);
-  assert.match(accountRouteSource, /requireUser\(\)/);
+  assert.match(accountRouteSource, /requireUser\("\/account"\)/);
   assert.match(accountRouteSource, /fullName:/);
   assert.match(accountRouteSource, /phone:/);
   assert.match(accountRouteSource, /bio:/);
@@ -108,4 +132,20 @@ test("personal center is promoted to the default account route", () => {
   ]) {
     assert.match(source, new RegExp(tableHeader));
   }
+});
+
+test("profile media upload creates media only after Supabase upload completion", () => {
+  assert.equal(existsSync(uploadURLRoutePath), true);
+  assert.equal(existsSync(completeRoutePath), true);
+
+  const uploadURLSource = readFileSync(uploadURLRoutePath, "utf8");
+  const completeSource = readFileSync(completeRoutePath, "utf8");
+
+  assert.doesNotMatch(uploadURLSource, /url:\s*publicUrl/);
+  assert.match(uploadURLSource, /mediaId:\s*media\.id/);
+  assert.match(uploadURLSource, /INSERT INTO media/);
+  assert.match(completeSource, /exists\(objectPath\)/);
+  assert.match(completeSource, /UPDATE media/);
+  assert.match(completeSource, /url = \$5/);
+  assert.match(completeSource, /owner_id = \$7/);
 });

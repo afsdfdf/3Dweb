@@ -1,7 +1,7 @@
 'use client'
 
 import type { CSSProperties, FormEvent, ReactNode } from 'react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { OrangeMediumActionButton, PurpleMediumActionButton } from '@/components/ui-lab/action-buttons'
 import { BorderComboFrame1 } from '@/components/ui-lab/border-combo-frame-1'
@@ -16,6 +16,8 @@ type AuthFlowCardProps = {
   onSuccess?: () => void
   redirectTo?: string
 }
+
+type RegistrationVerificationMode = 'email-code' | 'email-link'
 
 const safeRedirect = (value?: null | string) => {
   if (!value || typeof value !== 'string') return '/generate'
@@ -98,12 +100,53 @@ export function AuthFlowCard({ initialMode = 'login', onSuccess, redirectTo }: A
   const [message, setMessage] = useState('')
   const [messageTone, setMessageTone] = useState<'error' | 'success' | null>(null)
   const [loading, setLoading] = useState(false)
+  const [sendCodeLoading, setSendCodeLoading] = useState(false)
+  const [sendCodeCooldown, setSendCodeCooldown] = useState(0)
+  const [registrationVerificationMode, setRegistrationVerificationMode] =
+    useState<RegistrationVerificationMode>('email-code')
 
   const resolvedRedirect = safeRedirect(redirectTo)
   const isLogin = mode === 'login'
   const isRegister = mode === 'register'
   const isForgot = mode === 'forgot'
   const isForgotSuccess = mode === 'forgot-success'
+  const requiresVerificationCode = registrationVerificationMode === 'email-code'
+
+  useEffect(() => {
+    let alive = true
+
+    const loadAuthSettings = async () => {
+      try {
+        const response = await fetch('/api/account/auth/settings', {
+          headers: { Accept: 'application/json' },
+          method: 'GET',
+        })
+        const json = await response.json().catch(() => null)
+        if (!alive || !response.ok) return
+        if (json?.registrationVerificationMode === 'email-link' || json?.registrationVerificationMode === 'email-code') {
+          setRegistrationVerificationMode(json.registrationVerificationMode)
+        }
+      } catch {
+        // Keep the secure default.
+      }
+    }
+
+    void loadAuthSettings()
+
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  useEffect(() => {
+    if (sendCodeCooldown <= 0) return
+
+    const timer = window.setTimeout(() => {
+      setSendCodeCooldown((value) => Math.max(0, value - 1))
+    }, 1000)
+
+    return () => window.clearTimeout(timer)
+  }, [sendCodeCooldown])
 
   const waitForSession = async () => {
     for (let attempt = 0; attempt < 8; attempt += 1) {
@@ -131,9 +174,37 @@ export function AuthFlowCard({ initialMode = 'login', onSuccess, redirectTo }: A
     setLoading(false)
   }
 
-  const handleSendCode = () => {
-    setMessage('Verification is completed by email after sign up in the current flow.')
-    setMessageTone('success')
+  const handleSendCode = async () => {
+    if (!email.trim()) {
+      setMessage('Please enter your email first.')
+      setMessageTone('error')
+      return
+    }
+
+    setSendCodeLoading(true)
+    setMessage('')
+    setMessageTone(null)
+
+    try {
+      const response = await fetch('/api/account/auth/send-register-code', {
+        body: JSON.stringify({ email }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
+      })
+      const json = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        throw new Error(json?.message || 'Unable to send verification code.')
+      }
+
+      setSendCodeCooldown(60)
+      setMessage(json?.message || 'Please check your email for the verification code.')
+      setMessageTone('success')
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Unable to send verification code.')
+      setMessageTone('error')
+    } finally {
+      setSendCodeLoading(false)
+    }
   }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -144,7 +215,7 @@ export function AuthFlowCard({ initialMode = 'login', onSuccess, redirectTo }: A
 
     try {
       if (isRegister) {
-        if (!verificationCode.trim()) {
+        if (requiresVerificationCode && !verificationCode.trim()) {
           throw new Error('Please enter the verification code.')
         }
 
@@ -160,6 +231,7 @@ export function AuthFlowCard({ initialMode = 'login', onSuccess, redirectTo }: A
           body: JSON.stringify({
             email,
             password,
+            verificationCode: requiresVerificationCode ? verificationCode : undefined,
           }),
           headers: { 'Content-Type': 'application/json' },
           method: 'POST',
@@ -174,7 +246,11 @@ export function AuthFlowCard({ initialMode = 'login', onSuccess, redirectTo }: A
           throw new Error(registerJson?.message || 'Registration failed.')
         }
 
-        setMessage('Registration complete. Please check your email to verify the account.')
+        setMessage(
+          requiresVerificationCode
+            ? 'Registration complete. You can sign in now.'
+            : 'Registration complete. Please check your email to verify the account.',
+        )
         setMessageTone('success')
         return
       }
@@ -287,21 +363,31 @@ export function AuthFlowCard({ initialMode = 'login', onSuccess, redirectTo }: A
                   value={email}
                 />
 
-                <AuthField
-                  className={[styles.codeField, styles.registerCode].join(' ')}
-                  label="Verification Code"
-                  onChange={setVerificationCode}
-                  placeholder="Enter Email Verification Code"
-                  type="text"
-                  value={verificationCode}
-                >
-                  <button className={styles.sendCode} onClick={handleSendCode} type="button">
-                    Send Code
-                  </button>
-                </AuthField>
+                {requiresVerificationCode ? (
+                  <AuthField
+                    className={[styles.codeField, styles.registerCode].join(' ')}
+                    label="Verification Code"
+                    onChange={setVerificationCode}
+                    placeholder="Enter Email Verification Code"
+                    type="text"
+                    value={verificationCode}
+                  >
+                    <button
+                      className={styles.sendCode}
+                      disabled={sendCodeLoading || sendCodeCooldown > 0}
+                      onClick={handleSendCode}
+                      type="button"
+                    >
+                      {sendCodeLoading ? 'Sending...' : sendCodeCooldown > 0 ? `${sendCodeCooldown}s` : 'Send Code'}
+                    </button>
+                  </AuthField>
+                ) : null}
 
                 <AuthField
-                  className={styles.registerPassword}
+                  className={[
+                    styles.registerPassword,
+                    requiresVerificationCode ? '' : styles.registerPasswordLinkMode,
+                  ].join(' ')}
                   label="Password"
                   onChange={setPassword}
                   placeholder="Please enter your password"
@@ -312,7 +398,10 @@ export function AuthFlowCard({ initialMode = 'login', onSuccess, redirectTo }: A
                 </AuthField>
 
                 <AuthField
-                  className={styles.registerConfirm}
+                  className={[
+                    styles.registerConfirm,
+                    requiresVerificationCode ? '' : styles.registerConfirmLinkMode,
+                  ].join(' ')}
                   label="Confirm Password"
                   onChange={setConfirmPassword}
                   placeholder="Please enter your password again"
@@ -325,7 +414,13 @@ export function AuthFlowCard({ initialMode = 'login', onSuccess, redirectTo }: A
                   />
                 </AuthField>
 
-                <label className={[styles.terms, styles.registerTerms].join(' ')}>
+                <label
+                  className={[
+                    styles.terms,
+                    styles.registerTerms,
+                    requiresVerificationCode ? '' : styles.registerTermsLinkMode,
+                  ].join(' ')}
+                >
                   <input
                     checked={agreed}
                     className={styles.checkbox}

@@ -650,11 +650,37 @@ export function PersonalCenterTest({
       );
     }
 
+    const completeResponse = await fetch(
+      "/api/account/profile-media/complete",
+      {
+        body: JSON.stringify({
+          contentType: file.type || config.contentType || "application/octet-stream",
+          filename: file.name || "profile-media",
+          mediaId: Number(config.mediaId),
+          path: config.path,
+          publicAccess: profileData.profileVisibility === "public",
+          purpose,
+          size: file.size,
+        }),
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        method: "POST",
+      },
+    );
+    const completedMedia = await completeResponse.json().catch(() => ({}));
+
+    if (!completeResponse.ok) {
+      throw new Error(
+        completedMedia.message ||
+          "Profile media was uploaded, but media registration failed.",
+      );
+    }
+
     const profileResponse = await fetch("/api/account/profile", {
       body: JSON.stringify(
         purpose === "avatar"
-          ? { avatar: Number(config.mediaId) }
-          : { profileBanner: Number(config.mediaId) },
+          ? { avatar: Number(completedMedia.mediaId) }
+          : { profileBanner: Number(completedMedia.mediaId) },
       ),
       credentials: "include",
       headers: { "Content-Type": "application/json" },

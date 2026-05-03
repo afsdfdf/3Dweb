@@ -11,6 +11,7 @@ import {
   verifyAccountEmail,
 } from '@/lib/authService'
 import { rejectRateLimitedEndpoint } from '@/lib/endpointRateLimit'
+import { getAuthVerificationSettings, sendRegistrationVerificationCode } from '@/lib/emailVerificationCodes'
 import { ensurePayloadRequestUser } from '@/lib/payloadAuthFallback'
 import { rejectDisallowedMutationOrigin } from '@/lib/requestSecurity'
 
@@ -38,7 +39,47 @@ export const registerAccountEndpoint = {
           fullName: String(body.fullName || ''),
           password: String(body.password || ''),
           phone: String(body.phone || ''),
+          verificationCode: String(body.verificationCode || ''),
         },
+        req,
+      })
+
+      return Response.json(result)
+    } catch (error) {
+      return Response.json({ message: getErrorMessage(error) }, { status: 400 })
+    }
+  },
+}
+
+export const getAuthSettingsEndpoint = {
+  path: '/account/auth/settings',
+  method: 'get' as const,
+  handler: async (req: PayloadRequest) => {
+    try {
+      const settings = await getAuthVerificationSettings(req)
+      return Response.json(settings)
+    } catch (error) {
+      return Response.json({ message: getErrorMessage(error) }, { status: 400 })
+    }
+  },
+}
+
+export const sendRegistrationVerificationCodeEndpoint = {
+  path: '/account/auth/send-register-code',
+  method: 'post' as const,
+  handler: async (req: PayloadRequest) => {
+    const blocked = await rejectDisallowedMutationOrigin(req)
+    if (blocked) return blocked
+    const rateLimited = await rejectRateLimitedEndpoint({
+      req,
+      scope: 'auth-email',
+    })
+    if (rateLimited) return rateLimited
+
+    try {
+      const body = req.json ? await req.json() : {}
+      const result = await sendRegistrationVerificationCode({
+        email: String(body.email || ''),
         req,
       })
 

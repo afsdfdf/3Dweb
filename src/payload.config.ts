@@ -16,6 +16,7 @@ import { CreditProducts } from './collections/CreditProducts'
 import { CreditTransactions } from './collections/CreditTransactions'
 import { Credits } from './collections/Credits'
 import { EngagementViews } from './collections/EngagementViews'
+import { EmailVerificationCodes } from './collections/EmailVerificationCodes'
 import { GenerationTasks } from './collections/GenerationTasks'
 import { HomepageItems } from './collections/HomepageItems'
 import { Media } from './collections/Media'
@@ -47,12 +48,14 @@ import {
 } from './endpoints/account'
 import {
   forgotPasswordEndpoint,
+  getAuthSettingsEndpoint,
   getCurrentAuthAccountEndpoint,
   loginAccountEndpoint,
   logoutAccountEndpoint,
   registerAccountEndpoint,
   resendVerificationEndpoint,
   resetPasswordEndpoint,
+  sendRegistrationVerificationCodeEndpoint,
   verifyEmailEndpoint,
 } from './endpoints/accountAuth'
 import { aiWebhookEndpoint, meshyWebhookEndpoint, submitAITaskEndpoint, syncAITaskEndpoint } from './endpoints/aiTasks'
@@ -159,6 +162,7 @@ export default buildConfig({
     Users,
     UserFollows,
     AvatarFrameStyles,
+    EmailVerificationCodes,
     Media,
     GenerationTasks,
     TaskEvents,
@@ -196,6 +200,8 @@ export default buildConfig({
   email: emailAdapter,
   endpoints: [
     opsDashboardEndpoint,
+    getAuthSettingsEndpoint,
+    sendRegistrationVerificationCodeEndpoint,
     registerAccountEndpoint,
     loginAccountEndpoint,
     logoutAccountEndpoint,

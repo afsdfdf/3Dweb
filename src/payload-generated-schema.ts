@@ -43,6 +43,10 @@ export const enum_avatar_frame_styles_unlock_rule = pgEnum(
   "enum_avatar_frame_styles_unlock_rule",
   ["free", "subscription", "event", "achievement"],
 );
+export const enum_email_verification_codes_purpose = pgEnum(
+  "enum_email_verification_codes_purpose",
+  ["register"],
+);
 export const enum_media_purpose = pgEnum("enum_media_purpose", [
   "input",
   "avatar",
@@ -294,6 +298,10 @@ export const enum_ai_provider_settings_image_generation_default_provider =
     "gemini-official",
     "gemini-third-party",
   ]);
+export const enum_security_settings_registration_verification_mode = pgEnum(
+  "enum_security_settings_registration_verification_mode",
+  ["email-code", "email-link"],
+);
 export const enum_runtime_deployment_settings_database_connection_mode = pgEnum(
   "enum_runtime_deployment_settings_database_connection_mode",
   ["aws-rds-fields", "database-url"],
@@ -510,6 +518,51 @@ export const avatar_frame_styles_locales = pgTable(
       foreignColumns: [avatar_frame_styles.id],
       name: "avatar_frame_styles_locales_parent_id_fk",
     }).onDelete("cascade"),
+  ],
+);
+
+export const email_verification_codes = pgTable(
+  "email_verification_codes",
+  {
+    id: serial("id").primaryKey(),
+    email: varchar("email").notNull(),
+    purpose: enum_email_verification_codes_purpose("purpose")
+      .notNull()
+      .default("register"),
+    codeHash: varchar("code_hash").notNull(),
+    expiresAt: timestamp("expires_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }).notNull(),
+    consumedAt: timestamp("consumed_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    attempts: numeric("attempts", { mode: "number" }).notNull().default(0),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+  },
+  (columns) => [
+    index("email_verification_codes_email_idx").on(columns.email),
+    index("email_verification_codes_purpose_idx").on(columns.purpose),
+    index("email_verification_codes_expires_at_idx").on(columns.expiresAt),
+    index("email_verification_codes_consumed_at_idx").on(columns.consumedAt),
+    index("email_verification_codes_updated_at_idx").on(columns.updatedAt),
+    index("email_verification_codes_created_at_idx").on(columns.createdAt),
   ],
 );
 
@@ -2246,6 +2299,7 @@ export const payload_locked_documents_rels = pgTable(
     usersID: integer("users_id"),
     "user-followsID": integer("user_follows_id"),
     "avatar-frame-stylesID": integer("avatar_frame_styles_id"),
+    "email-verification-codesID": integer("email_verification_codes_id"),
     mediaID: integer("media_id"),
     "generation-tasksID": integer("generation_tasks_id"),
     "task-eventsID": integer("task_events_id"),
@@ -2276,6 +2330,9 @@ export const payload_locked_documents_rels = pgTable(
     ),
     index("payload_locked_documents_rels_avatar_frame_styles_id_idx").on(
       columns["avatar-frame-stylesID"],
+    ),
+    index("payload_locked_documents_rels_email_verification_codes_i_idx").on(
+      columns["email-verification-codesID"],
     ),
     index("payload_locked_documents_rels_media_id_idx").on(columns.mediaID),
     index("payload_locked_documents_rels_generation_tasks_id_idx").on(
@@ -2345,6 +2402,11 @@ export const payload_locked_documents_rels = pgTable(
       columns: [columns["avatar-frame-stylesID"]],
       foreignColumns: [avatar_frame_styles.id],
       name: "payload_locked_documents_rels_avatar_frame_styles_fk",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["email-verification-codesID"]],
+      foreignColumns: [email_verification_codes.id],
+      name: "payload_locked_documents_rels_email_verification_codes_fk",
     }).onDelete("cascade"),
     foreignKey({
       columns: [columns["mediaID"]],
@@ -3272,6 +3334,13 @@ export const security_settings_allowed_remote_asset_hosts = pgTable(
 
 export const security_settings = pgTable("security_settings", {
   id: serial("id").primaryKey(),
+  registrationVerificationMode:
+    enum_security_settings_registration_verification_mode(
+      "registration_verification_mode",
+    ).default("email-code"),
+  registrationCodeExpiresMinutes: numeric("registration_code_expires_minutes", {
+    mode: "number",
+  }).default(10),
   updatedAt: timestamp("updated_at", {
     mode: "string",
     withTimezone: true,
@@ -3388,6 +3457,10 @@ export const relations_avatar_frame_styles = relations(
       relationName: "_locales",
     }),
   }),
+);
+export const relations_email_verification_codes = relations(
+  email_verification_codes,
+  () => ({}),
 );
 export const relations_media = relations(media, ({ one }) => ({
   owner: one(users, {
@@ -3994,6 +4067,11 @@ export const relations_payload_locked_documents_rels = relations(
       references: [avatar_frame_styles.id],
       relationName: "avatar-frame-styles",
     }),
+    "email-verification-codesID": one(email_verification_codes, {
+      fields: [payload_locked_documents_rels["email-verification-codesID"]],
+      references: [email_verification_codes.id],
+      relationName: "email-verification-codes",
+    }),
     mediaID: one(media, {
       fields: [payload_locked_documents_rels.mediaID],
       references: [media.id],
@@ -4346,6 +4424,7 @@ type DatabaseSchema = {
   enum_users_avatar_frame: typeof enum_users_avatar_frame;
   enum_users_profile_visibility: typeof enum_users_profile_visibility;
   enum_avatar_frame_styles_unlock_rule: typeof enum_avatar_frame_styles_unlock_rule;
+  enum_email_verification_codes_purpose: typeof enum_email_verification_codes_purpose;
   enum_media_purpose: typeof enum_media_purpose;
   enum_generation_tasks_input_mode: typeof enum_generation_tasks_input_mode;
   enum_generation_tasks_provider: typeof enum_generation_tasks_provider;
@@ -4396,6 +4475,7 @@ type DatabaseSchema = {
   enum_ai_provider_settings_meshy_model_type: typeof enum_ai_provider_settings_meshy_model_type;
   enum_ai_provider_settings_meshy_topology: typeof enum_ai_provider_settings_meshy_topology;
   enum_ai_provider_settings_image_generation_default_provider: typeof enum_ai_provider_settings_image_generation_default_provider;
+  enum_security_settings_registration_verification_mode: typeof enum_security_settings_registration_verification_mode;
   enum_runtime_deployment_settings_database_connection_mode: typeof enum_runtime_deployment_settings_database_connection_mode;
   enum_runtime_deployment_settings_aws_rds_ssl_mode: typeof enum_runtime_deployment_settings_aws_rds_ssl_mode;
   users_sessions: typeof users_sessions;
@@ -4403,6 +4483,7 @@ type DatabaseSchema = {
   user_follows: typeof user_follows;
   avatar_frame_styles: typeof avatar_frame_styles;
   avatar_frame_styles_locales: typeof avatar_frame_styles_locales;
+  email_verification_codes: typeof email_verification_codes;
   media: typeof media;
   generation_tasks: typeof generation_tasks;
   task_events: typeof task_events;
@@ -4473,6 +4554,7 @@ type DatabaseSchema = {
   relations_user_follows: typeof relations_user_follows;
   relations_avatar_frame_styles_locales: typeof relations_avatar_frame_styles_locales;
   relations_avatar_frame_styles: typeof relations_avatar_frame_styles;
+  relations_email_verification_codes: typeof relations_email_verification_codes;
   relations_media: typeof relations_media;
   relations_generation_tasks: typeof relations_generation_tasks;
   relations_task_events: typeof relations_task_events;

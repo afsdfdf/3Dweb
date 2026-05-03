@@ -5,6 +5,7 @@ import { generateExpiredPayloadCookie, generatePayloadCookie, logoutOperation } 
 
 import { getAccountProfile } from '@/lib/accountService'
 import { generateVerifyEmailHTML, generateVerifyEmailSubject } from '@/lib/emailTemplates'
+import { getAuthVerificationSettings, verifyRegistrationCode } from '@/lib/emailVerificationCodes'
 import { registrationPrivacyMessage } from '@/lib/registrationPrivacy'
 import { extractRequestToken } from '@/lib/requestSecurity'
 import { revokeToken } from '@/lib/tokenRevocation'
@@ -14,6 +15,7 @@ type RegisterAccountInput = {
   fullName?: string
   password: string
   phone?: string
+  verificationCode?: string
 }
 
 type LoginAccountInput = {
@@ -86,22 +88,45 @@ export async function registerAccount(args: {
     throw new Error('Email and password are required.')
   }
 
+  const verificationSettings = await getAuthVerificationSettings(req)
+
+  if (verificationSettings.registrationVerificationMode === 'email-code') {
+    if (!String(input.verificationCode || '').trim()) {
+      throw new Error('Verification code is required.')
+    }
+
+    await verifyRegistrationCode({
+      code: input.verificationCode || '',
+      email,
+      req,
+    })
+  }
+
   try {
     await req.payload.create({
       collection: 'users',
       data: {
+        ...(verificationSettings.registrationVerificationMode === 'email-code' ? { _verified: true } : {}),
         email,
         fullName: normalizeText(input.fullName) || undefined,
         password,
         phone: normalizeText(input.phone) || undefined,
         role: 'customer',
       },
+      ...(verificationSettings.registrationVerificationMode === 'email-code'
+        ? {
+            disableVerificationEmail: true,
+          }
+        : {}),
       overrideAccess: true,
       req,
     })
 
     return {
-      message: registrationSuccessMessage,
+      message:
+        verificationSettings.registrationVerificationMode === 'email-code'
+          ? 'Registration complete. You can sign in now.'
+          : registrationSuccessMessage,
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : registrationPrivacyMessage

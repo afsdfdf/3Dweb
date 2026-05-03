@@ -70,6 +70,47 @@ export const SecuritySettings: GlobalConfig = {
             },
           ],
         },
+        {
+          label: text('Authentication', '认证'),
+          fields: [
+            {
+              name: 'registrationVerificationMode',
+              type: 'select',
+              defaultValue: 'email-code',
+              label: text('Registration verification mode', '注册验证方式'),
+              admin: {
+                description: text(
+                  'Email code is the default signup flow. Email link keeps the legacy Payload verification link flow available.',
+                  '邮箱验证码是默认注册流程。邮箱链接保留旧版 Payload 验证链接流程。',
+                ),
+              },
+              options: [
+                {
+                  label: text('Email code', '邮箱验证码'),
+                  value: 'email-code',
+                },
+                {
+                  label: text('Email link', '邮箱链接'),
+                  value: 'email-link',
+                },
+              ],
+            },
+            {
+              name: 'registrationCodeExpiresMinutes',
+              type: 'number',
+              defaultValue: 10,
+              min: 3,
+              max: 60,
+              label: text('Registration code expiry minutes', '注册验证码有效分钟数'),
+              admin: {
+                description: text(
+                  'Used only when registration verification mode is Email code.',
+                  '仅在注册验证方式为邮箱验证码时使用。',
+                ),
+              },
+            },
+          ],
+        },
       ],
     },
   ],

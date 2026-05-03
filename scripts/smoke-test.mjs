@@ -2,8 +2,8 @@ const baseURL = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || 'http:
 
 const checks = [
   { path: '/', expected: [200] },
-  { path: '/login', expected: [200] },
-  { path: '/register', expected: [200] },
+  { path: '/login', expected: [200, 307, 308] },
+  { path: '/register', expected: [200, 307, 308] },
   { path: '/generate', expected: [200, 307, 308] },
   { path: '/pricing', expected: [200] },
   { path: '/showcase', expected: [200] },

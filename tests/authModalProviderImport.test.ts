@@ -6,6 +6,7 @@ import test from 'node:test'
 const rootDir = process.cwd()
 const authModalStagePath = path.join(rootDir, 'src', 'components', 'auth', 'AuthModalStage.tsx')
 const authModalProviderPath = path.join(rootDir, 'src', 'components', 'auth', 'AuthModalProvider.tsx')
+const authFlowCardPath = path.join(rootDir, 'src', 'components', 'auth', 'AuthFlowCard.tsx')
 const authModalStageCssPath = path.join(rootDir, 'src', 'components', 'auth', 'AuthModalStage.module.css')
 const homePageCssPath = path.join(rootDir, 'src', 'app', '(frontend)', '_home', 'homePage.module.css')
 const modelDetailNativePath = path.join(rootDir, 'src', 'app', '(frontend)', 'model-detail', 'ModelDetailNative.tsx')
@@ -42,6 +43,15 @@ test('TopNavigation route links dismiss the auth modal before navigation', () =>
 
   assert.match(source, /const \{ closeAuthModal \} = useAuthModal\(\)/)
   assert.match(source, /onClick=\{closeAuthModal\}/)
+})
+
+test('AuthFlowCard reads backend auth settings and requests registration codes', () => {
+  const source = readFileSync(authFlowCardPath, 'utf8')
+
+  assert.match(source, /\/api\/account\/auth\/settings/)
+  assert.match(source, /registrationVerificationMode/)
+  assert.match(source, /\/api\/account\/auth\/send-register-code/)
+  assert.match(source, /verificationCode: requiresVerificationCode \? verificationCode : undefined/)
 })
 
 test('Auth modal overlay remains below the fixed top navigation layer', () => {

@@ -45,6 +45,33 @@ export const generateVerifyEmailSubject = async ({ req }: { req: PayloadRequest;
   return settings.templates.verify.subject
 }
 
+export const generateRegistrationCodeEmailHTML = async ({
+  code,
+  expiresMinutes,
+  req,
+}: {
+  code: string
+  expiresMinutes: number
+  req: PayloadRequest
+}) => {
+  const settings = await getEmailSettings(req)
+
+  return renderEmailShell({
+    body: `
+      <p>Use this verification code to finish creating your Thorns Tavern account:</p>
+      <p style="font-size:28px;letter-spacing:6px;font-weight:700;margin:18px 0;">${code}</p>
+      <p>This code expires in ${expiresMinutes} minutes. If you did not request it, you can ignore this email.</p>
+    `,
+    footerText: settings.branding.footerText,
+    title: 'Your Thorns Tavern verification code',
+  })
+}
+
+export const generateRegistrationCodeEmailSubject = async ({ req }: { req: PayloadRequest }) => {
+  const settings = await getEmailSettings(req)
+  return `${settings.branding.productName} verification code`
+}
+
 export const generateForgotPasswordEmailHTML = async (args?: { req?: PayloadRequest; token?: string; user?: any }) => {
   const { req, token, user } = args || {}
   const appURL = getAppURL()
