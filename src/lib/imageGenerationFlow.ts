@@ -228,7 +228,7 @@ export async function submitImageGeneration(args: SubmitImageGenerationArgs) {
 
     await createTaskEvent({
       eventType: 'submitted',
-      message: 'Image generation request dispatched to Gemini.',
+      message: 'Image generation request dispatched to provider.',
       provider: selectedProvider,
       req,
       taskId: task.id,

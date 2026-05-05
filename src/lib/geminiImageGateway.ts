@@ -102,6 +102,35 @@ async function parseOpenAICompatibleError(response: Response) {
   }
 }
 
+function isTimeoutError(error: unknown) {
+  if (!(error instanceof Error)) return false
+
+  return (
+    error.name === 'TimeoutError' ||
+    error.name === 'AbortError' ||
+    /aborted due to timeout|operation was aborted|timeout/i.test(error.message)
+  )
+}
+
+async function fetchWithProviderTimeout(args: {
+  input: string
+  init: RequestInit
+  provider: ImageGenerationProvider
+  timeoutSeconds: number
+}) {
+  try {
+    return await fetch(args.input, args.init)
+  } catch (error) {
+    if (isTimeoutError(error)) {
+      throw new Error(
+        `The ${args.provider} image provider timed out after ${args.timeoutSeconds} seconds. Increase Image generation > Provider timeout seconds or use a faster provider/model.`,
+      )
+    }
+
+    throw error
+  }
+}
+
 const readImageGenerationDefaultProvider = (value: unknown): ImageGenerationProvider => {
   if (value === 'gemini-third-party' || value === 'openai-compatible') {
     return value
@@ -381,26 +410,36 @@ async function generateOpenAICompatibleImage(args: GenerateProviderImageArgs & {
     if (settings.size) formData.set('size', settings.size)
     formData.set('n', '1')
 
-    response = await fetch(`${settings.baseURL}${path}`, {
-      body: formData,
-      headers,
-      method: 'POST',
-      signal: timeoutSignal,
+    response = await fetchWithProviderTimeout({
+      input: `${settings.baseURL}${path}`,
+      init: {
+        body: formData,
+        headers,
+        method: 'POST',
+        signal: timeoutSignal,
+      },
+      provider: settings.provider,
+      timeoutSeconds: settings.timeoutSeconds,
     })
   } else {
-    response = await fetch(`${settings.baseURL}${path}`, {
-      body: JSON.stringify({
-        model: settings.model,
-        n: 1,
-        prompt,
-        ...(settings.size ? { size: settings.size } : {}),
-      }),
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json',
+    response = await fetchWithProviderTimeout({
+      input: `${settings.baseURL}${path}`,
+      init: {
+        body: JSON.stringify({
+          model: settings.model,
+          n: 1,
+          prompt,
+          ...(settings.size ? { size: settings.size } : {}),
+        }),
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json',
+        },
+        method: 'POST',
+        signal: timeoutSignal,
       },
-      method: 'POST',
-      signal: timeoutSignal,
+      provider: settings.provider,
+      timeoutSeconds: settings.timeoutSeconds,
     })
   }
 
@@ -461,9 +500,9 @@ export async function generateProviderImage(args: GenerateProviderImageArgs) {
     })
   }
 
-  const response = await fetch(
-    `${settings.baseURL}/v1beta/models/${encodeURIComponent(settings.model)}:generateContent`,
-    {
+  const response = await fetchWithProviderTimeout({
+    input: `${settings.baseURL}/v1beta/models/${encodeURIComponent(settings.model)}:generateContent`,
+    init: {
       body: JSON.stringify({
         contents: [{ parts }],
         generationConfig: {
@@ -477,7 +516,9 @@ export async function generateProviderImage(args: GenerateProviderImageArgs) {
       method: 'POST',
       signal: AbortSignal.timeout(settings.timeoutSeconds * 1000),
     },
-  )
+    provider: settings.provider,
+    timeoutSeconds: settings.timeoutSeconds,
+  })
 
   if (!response.ok) {
     const detail = await parseGeminiError(response)

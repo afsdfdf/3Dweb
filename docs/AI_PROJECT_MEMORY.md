@@ -469,6 +469,7 @@ Current evergreen references:
 - Image generation now supports an `openai-compatible` provider in addition to Gemini official and Gemini third-party. Admin settings live under `ai-provider-settings.imageGeneration.openAICompatible` with `baseURL`, `model`, `apiKey`, and `size`; environment fallback order is `OPENAI_IMAGE_COMPATIBLE_*` first, then generic `OPENAI_*` where applicable.
 - OpenAI-compatible text image generation posts JSON to `/images/generations`; image-to-image posts multipart data to `/images/edits`. Keep this separate from Gemini-compatible gateways, which use `x-goog-api-key` and `generateContent`.
 - `/api/studio/ai/images` must not force `gemini-official` when no provider is supplied. Let the image-generation global default provider select Gemini official, Gemini third-party, or OpenAI-compatible so backend admin configuration is the source of truth.
+- `media.upload.disableLocalStorage` must stay enabled. Runtime assets are uploaded to Supabase Storage first, then represented by Payload media rows with external URLs. Leaving Payload local upload storage enabled can make generated Meshy/image assets fail during finalization with local `media` directory filesystem errors.
 
 ### 2026-05-03
 

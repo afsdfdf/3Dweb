@@ -206,3 +206,10 @@ test('resolveModelFormatAssets rejects Meshy-style strict ingestion when Supabas
     __setAITaskFlowStorageTestHooks(null)
   }
 })
+
+test('Media upload collection does not write generated assets to local disk', async () => {
+  const { Media } = await import('../src/collections/Media.ts')
+
+  assert.equal(typeof Media.upload, 'object')
+  assert.equal(Media.upload && typeof Media.upload === 'object' ? Media.upload.disableLocalStorage : false, true)
+})
