@@ -1386,6 +1386,59 @@
   background: transparent !important;
 }
 
+.imagePreviewCard {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 2;
+  display: grid;
+  width: min(72%, 480px);
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border: 1px solid rgba(255, 206, 121, 0.28);
+  background:
+    radial-gradient(circle at 50% 76%, rgba(156, 190, 197, 0.24), transparent 54%),
+    linear-gradient(180deg, rgba(8, 8, 8, 0.94), rgba(36, 37, 39, 0.82));
+  box-shadow:
+    0 24px 90px rgba(0, 0, 0, 0.48),
+    inset 0 0 0 12px rgba(0, 0, 0, 0.24);
+  place-items: center;
+  transform: translate(-50%, -44%) perspective(1100px) rotateX(6deg) rotateY(-7deg);
+}
+
+.imagePreviewCard::before {
+  position: absolute;
+  inset: 14px;
+  z-index: 2;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  content: "";
+  pointer-events: none;
+}
+
+.imagePreviewCard img {
+  display: block;
+  width: calc(100% - 34px);
+  height: calc(100% - 34px);
+  object-fit: contain;
+  object-position: center center;
+}
+
+.imagePreviewPlaceholder {
+  display: grid;
+  width: calc(100% - 34px);
+  height: calc(100% - 34px);
+  place-items: center;
+  background:
+    linear-gradient(135deg, rgba(255, 206, 121, 0.1), transparent 42%),
+    #080808;
+}
+
+.imagePreviewPlaceholder span {
+  color: rgba(255, 255, 255, 0.42);
+  font-size: 18px;
+  font-weight: 800;
+}
+
 .viewerLoadingOverlay {
   position: absolute;
   inset: 0;

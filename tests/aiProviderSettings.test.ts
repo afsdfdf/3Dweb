@@ -33,5 +33,6 @@ test('AI Provider Settings keeps dedicated Meshy and image-generation groups', (
   assert.ok(imageGenerationNames.includes('official'))
   assert.ok(imageGenerationNames.includes('thirdParty'))
   assert.ok(imageGenerationNames.includes('openAICompatible'))
+  assert.ok(imageGenerationNames.includes('defaultPrompt'))
   assert.ok(defaultProviderOptions.includes('openai-compatible'))
 })

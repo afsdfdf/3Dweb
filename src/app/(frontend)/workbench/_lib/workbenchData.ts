@@ -67,6 +67,7 @@ export type WorkbenchPendingGenerationTask = {
   cardId: number;
   createdAt: string;
   failureReason?: null | string;
+  kind: "image" | "model";
   license: "Private" | "Public";
   previewSrc?: null | string;
   progress: number;
@@ -318,10 +319,13 @@ function getPendingTaskTitle(task: unknown) {
   if (!isRecord(task)) return "Generating model";
   const snapshot = isRecord(task.parameterSnapshot) ? task.parameterSnapshot : {};
   const workbench = isRecord(snapshot.workbench) ? snapshot.workbench : {};
+  const fallbackTitle = isImageGenerationTask(task)
+    ? "Generating image"
+    : "Generating model";
   return (
     normalizeText(workbench.requestedTitle) ||
     normalizeText(task.taskCode) ||
-    "Generating model"
+    fallbackTitle
   );
 }
 
@@ -370,23 +374,40 @@ function getPendingTaskProgress(task: unknown) {
     : 0;
 }
 
-function isPendingModelGenerationTask(task: unknown) {
+function isImageGenerationTask(task: unknown) {
   if (!isRecord(task)) return false;
+
+  const snapshot = isRecord(task.parameterSnapshot) ? task.parameterSnapshot : {};
+  const imageGeneration = isRecord(snapshot.imageGeneration)
+    ? snapshot.imageGeneration
+    : {};
+
   return (
-    (task.status === "queued" || task.status === "processing") &&
-    (task.provider === "custom" ||
-      task.provider === "meshy" ||
-      task.provider === "tripo")
+    task.taskType === "image-generation" ||
+    imageGeneration.taskType === "image-generation" ||
+    task.provider === "gemini-official" ||
+    task.provider === "gemini-third-party" ||
+    task.provider === "openai-compatible"
   );
+}
+
+function isPendingGenerationTask(task: unknown) {
+  if (!isRecord(task)) return false;
+  return task.status === "queued" || task.status === "processing";
+}
+
+function isPendingModelGenerationTask(task: unknown) {
+  if (!isPendingGenerationTask(task) || !isRecord(task)) return false;
+  return !isImageGenerationTask(task);
+}
+
+function isPendingImageGenerationTask(task: unknown) {
+  return isPendingGenerationTask(task) && isImageGenerationTask(task);
 }
 
 function isImageAssetGenerationTask(task: unknown) {
   if (!isRecord(task)) return false;
-  return (
-    task.status === "succeeded" &&
-    (task.provider === "gemini-official" ||
-      task.provider === "gemini-third-party")
-  );
+  return task.status === "succeeded" && isImageGenerationTask(task);
 }
 
 export async function getWorkbenchGenerationTaskState(
@@ -424,11 +445,6 @@ export async function getWorkbenchGenerationTaskState(
                     in: ["queued", "processing"],
                   },
                 },
-                {
-                  provider: {
-                    in: ["custom", "meshy", "tripo"],
-                  },
-                },
               ],
             },
             {
@@ -452,10 +468,13 @@ export async function getWorkbenchGenerationTaskState(
   });
 
   const pendingGenerationTasks = tasks.docs
-    .filter(isPendingModelGenerationTask)
+    .filter((task) => isPendingModelGenerationTask(task) || isPendingImageGenerationTask(task))
     .slice(0, 8)
     .map((task: any) => {
       const taskId = Number(task.id);
+      const kind: WorkbenchPendingGenerationTask["kind"] = isImageGenerationTask(task)
+        ? "image"
+        : "model";
 
       return {
         cardId: -Math.max(1, taskId || Date.now()),
@@ -465,6 +484,7 @@ export async function getWorkbenchGenerationTaskState(
             : new Date().toISOString(),
         failureReason:
           typeof task.failureReason === "string" ? task.failureReason : null,
+        kind,
         license: getPendingTaskLicense(task),
         previewSrc: getPendingTaskPreview(task),
         progress: getPendingTaskProgress(task),

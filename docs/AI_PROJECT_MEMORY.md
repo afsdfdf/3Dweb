@@ -470,6 +470,7 @@ Current evergreen references:
 - OpenAI-compatible text image generation posts JSON to `/images/generations`; image-to-image posts multipart data to `/images/edits`. Keep this separate from Gemini-compatible gateways, which use `x-goog-api-key` and `generateContent`.
 - `/api/studio/ai/images` must not force `gemini-official` when no provider is supplied. Let the image-generation global default provider select Gemini official, Gemini third-party, or OpenAI-compatible so backend admin configuration is the source of truth.
 - `media.upload.disableLocalStorage` must stay enabled. Runtime assets are uploaded to Supabase Storage first, then represented by Payload media rows with external URLs. Leaving Payload local upload storage enabled can make generated Meshy/image assets fail during finalization with local `media` directory filesystem errors.
+- Workbench image generation is asynchronous. `POST /api/studio/ai/images` creates a queued `generation-tasks` row and returns immediately with `/api/studio/ai/images/:taskId/sync`; provider work runs after the response and the Workbench polls until the private generated media asset is ready. Image-generation tasks use `taskType = image-generation`, while 3D/model tasks use `taskType = model-generation`; do not infer the product task type from `inputMode` labels. Admins can set `ai-provider-settings.imageGeneration.defaultPrompt`, which is prepended to the user prompt and stored in the task snapshot for provider dispatch.
 
 ### 2026-05-03
 

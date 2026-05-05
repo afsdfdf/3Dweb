@@ -419,7 +419,7 @@ test('image generation endpoint forwards a single source image asset from the ar
       },
     } as never)
 
-    assert.equal(response.status, 200)
+    assert.equal(response.status, 202)
     assert.equal(forwardedSourceImageAsset?.bucket, 'media')
     assert.equal(forwardedSourceImageAsset?.path, 'media/input/a.png')
   } finally {
@@ -463,8 +463,67 @@ test('image generation endpoint forwards OpenAI-compatible provider requests', a
       },
     } as never)
 
-    assert.equal(response.status, 200)
+    assert.equal(response.status, 202)
     assert.equal(forwardedProvider, 'openai-compatible')
+  } finally {
+    __setImageGenerationEndpointTestHooks(null)
+  }
+})
+
+test('image generation endpoint returns a queued task and schedules provider work', async () => {
+  let scheduledTask: (() => Promise<void>) | null = null
+  let dispatchedTaskId = 0
+
+  __setImageGenerationEndpointTestHooks({
+    runImageGenerationTask: async ({ taskId }) => {
+      dispatchedTaskId = taskId
+      return {
+        media: null,
+        task: {
+          id: taskId,
+        },
+      } as never
+    },
+    scheduleAfterResponse: (task) => {
+      scheduledTask = task
+    },
+    submitImageGeneration: async ({ dispatchProvider }) => {
+      assert.equal(dispatchProvider, false)
+      return {
+        media: null,
+        task: {
+          id: 11,
+          status: 'queued',
+          taskCode: 'IMG-TEST',
+        },
+      } as never
+    },
+  })
+
+  try {
+    const response = await submitImageGenerationEndpoint.handler({
+      headers: new Headers(),
+      json: async () => ({
+        inputMode: 'text',
+        prompt: 'make a clean concept image',
+      }),
+      payload: {
+        config: { cookiePrefix: 'payload' },
+        logger: createLogger(),
+      },
+      user: {
+        id: 7,
+      },
+    } as never)
+    const body = await response.json()
+
+    assert.equal(response.status, 202)
+    assert.equal(body.next.syncEndpoint, '/api/studio/ai/images/11/sync')
+    assert.ok(scheduledTask)
+
+    await scheduledTask()
+
+    assert.equal(dispatchedTaskId, 11)
   } finally {
     __setImageGenerationEndpointTestHooks(null)
   }

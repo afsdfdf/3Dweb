@@ -61,7 +61,11 @@ import {
 import { aiWebhookEndpoint, meshyWebhookEndpoint, submitAITaskEndpoint, syncAITaskEndpoint } from './endpoints/aiTasks'
 import { createCreditTopupCheckoutEndpoint, syncCreditTopupCheckoutEndpoint } from './endpoints/creditTopups'
 import { recordEngagementViewEndpoint } from './endpoints/engagement'
-import { listImageGenerationAssetsEndpoint, submitImageGenerationEndpoint } from './endpoints/imageGeneration'
+import {
+  listImageGenerationAssetsEndpoint,
+  submitImageGenerationEndpoint,
+  syncImageGenerationEndpoint,
+} from './endpoints/imageGeneration'
 import { modelDownloadEndpoint } from './endpoints/modelDownloads'
 import {
   createModelCommentEndpoint,
@@ -238,6 +242,7 @@ export default buildConfig({
     listImageGenerationAssetsEndpoint,
     submitAITaskEndpoint,
     submitImageGenerationEndpoint,
+    syncImageGenerationEndpoint,
     syncAITaskEndpoint,
     meshyWebhookEndpoint,
     aiWebhookEndpoint,

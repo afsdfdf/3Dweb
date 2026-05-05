@@ -10,7 +10,7 @@ export const GenerationTasks: CollectionConfig = {
     description: adminTextKey('collections.generationTasks.description'),
     group: adminTextKey('groups.aiProduction'),
     useAsTitle: 'taskCode',
-    defaultColumns: ['taskCode', 'user', 'inputMode', 'status', 'progress', 'updatedAt'],
+    defaultColumns: ['taskCode', 'user', 'taskType', 'inputMode', 'status', 'progress', 'updatedAt'],
   },
   access: {
     create: ownerOrStaff('user'),
@@ -23,14 +23,25 @@ export const GenerationTasks: CollectionConfig = {
     { name: 'taskCode', type: 'text', required: true, unique: true, label: 'Task code' },
     { name: 'user', type: 'relationship', relationTo: 'users', required: true, label: 'User' },
     {
+      name: 'taskType',
+      type: 'select',
+      required: true,
+      defaultValue: 'model-generation',
+      label: 'Task type',
+      options: [
+        { label: 'Model generation', value: 'model-generation' },
+        { label: 'Image generation', value: 'image-generation' },
+      ],
+    },
+    {
       name: 'inputMode',
       type: 'select',
       required: true,
       label: 'Input mode',
       options: [
-        { label: 'Image to 3D', value: 'image' },
-        { label: 'Text to 3D', value: 'text' },
-        { label: 'Hybrid', value: 'hybrid' },
+        { label: 'Image input', value: 'image' },
+        { label: 'Text prompt', value: 'text' },
+        { label: 'Hybrid input', value: 'hybrid' },
       ],
     },
     { name: 'prompt', type: 'textarea', label: 'Prompt' },

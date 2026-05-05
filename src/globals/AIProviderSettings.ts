@@ -236,6 +236,15 @@ export const AIProviderSettings: GlobalConfig = {
           label: 'Provider timeout seconds',
         },
         {
+          name: 'defaultPrompt',
+          type: 'textarea',
+          label: 'Default style prompt',
+          admin: {
+            description:
+              'Optional style instructions prepended to every Workbench image-generation prompt. Leave empty to use only the user prompt.',
+          },
+        },
+        {
           name: 'official',
           type: 'group',
           label: 'Gemini official',

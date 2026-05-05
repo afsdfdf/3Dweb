@@ -2011,6 +2011,7 @@ export async function submitAITask(args: {
       sourceImage,
       startedAt: new Date().toISOString(),
       status: 'queued',
+      taskType: 'model-generation',
       taskCode: randomCode('TASK'),
       user: req.user.id,
     },

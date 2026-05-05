@@ -56,6 +56,10 @@ export const enum_media_purpose = pgEnum("enum_media_purpose", [
   "document",
   "asset",
 ]);
+export const enum_generation_tasks_task_type = pgEnum(
+  "enum_generation_tasks_task_type",
+  ["model-generation", "image-generation"],
+);
 export const enum_generation_tasks_input_mode = pgEnum(
   "enum_generation_tasks_input_mode",
   ["image", "text", "hybrid"],
@@ -626,6 +630,9 @@ export const generation_tasks = pgTable(
       .references(() => users.id, {
         onDelete: "set null",
       }),
+    taskType: enum_generation_tasks_task_type("task_type")
+      .notNull()
+      .default("model-generation"),
     inputMode: enum_generation_tasks_input_mode("input_mode").notNull(),
     prompt: varchar("prompt"),
     sourceImage: integer("source_image_id").references(() => media.id, {
@@ -3236,6 +3243,7 @@ export const ai_provider_settings = pgTable("ai_provider_settings", {
   imageGeneration_timeoutSeconds: numeric("image_generation_timeout_seconds", {
     mode: "number",
   }).default(60),
+  imageGeneration_defaultPrompt: varchar("image_generation_default_prompt"),
   imageGeneration_official_baseURL: varchar(
     "image_generation_official_base_u_r_l",
   ).default("https://generativelanguage.googleapis.com"),
@@ -4446,6 +4454,7 @@ type DatabaseSchema = {
   enum_avatar_frame_styles_unlock_rule: typeof enum_avatar_frame_styles_unlock_rule;
   enum_email_verification_codes_purpose: typeof enum_email_verification_codes_purpose;
   enum_media_purpose: typeof enum_media_purpose;
+  enum_generation_tasks_task_type: typeof enum_generation_tasks_task_type;
   enum_generation_tasks_input_mode: typeof enum_generation_tasks_input_mode;
   enum_generation_tasks_provider: typeof enum_generation_tasks_provider;
   enum_generation_tasks_status: typeof enum_generation_tasks_status;

@@ -2,13 +2,15 @@ import type { PayloadRequest } from 'payload'
 
 import { InsufficientCreditsError } from '@/lib/creditLedger'
 import { rejectRateLimitedEndpoint } from '@/lib/endpointRateLimit'
-import { submitImageGeneration } from '@/lib/imageGenerationFlow'
+import { runImageGenerationTask, submitImageGeneration } from '@/lib/imageGenerationFlow'
 import { ensurePayloadRequestUser } from '@/lib/payloadAuthFallback'
 import { rejectDisallowedMutationOrigin } from '@/lib/requestSecurity'
 
 const unauthorized = () => Response.json({ message: 'Please sign in first.' }, { status: 401 })
 
 type ImageGenerationEndpointTestHooks = {
+  runImageGenerationTask?: typeof runImageGenerationTask
+  scheduleAfterResponse?: (task: () => Promise<void>) => void
   submitImageGeneration?: typeof submitImageGeneration
 }
 
@@ -32,6 +34,23 @@ const normalizeImageGenerationProvider = (value: unknown) => {
   }
 
   return undefined
+}
+
+const scheduleImageGenerationWork = (task: () => Promise<void>) => {
+  if (imageGenerationEndpointTestHooks?.scheduleAfterResponse) {
+    imageGenerationEndpointTestHooks.scheduleAfterResponse(task)
+    return
+  }
+
+  void import('next/server')
+    .then(({ after }) => {
+      after(() => {
+        void task()
+      })
+    })
+    .catch(() => {
+      void task()
+    })
 }
 
 export const submitImageGenerationEndpoint = {
@@ -64,7 +83,9 @@ export const submitImageGenerationEndpoint = {
 
       const sourceImageAsset = isRecord(body.sourceImageAsset) ? body.sourceImageAsset : sourceImageAssets[0]
       const result = await (imageGenerationEndpointTestHooks?.submitImageGeneration || submitImageGeneration)({
+        dispatchProvider: false,
         inputMode,
+        parameterSnapshot: isRecord(body.parameterSnapshot) ? body.parameterSnapshot : undefined,
         prompt: String(body.prompt || ''),
         provider: normalizeImageGenerationProvider(body.provider),
         req,
@@ -72,16 +93,114 @@ export const submitImageGenerationEndpoint = {
         sourceImageAsset,
       })
 
-      return Response.json({
-        media: result.media,
-        message: 'Image generated successfully.',
-        task: result.task,
-      })
+      const taskId = readNumber((result.task as unknown as Record<string, unknown>)?.id)
+      if (!taskId) {
+        return Response.json({ message: 'Image generation task was not created.' }, { status: 400 })
+      }
+
+      if (!imageGenerationEndpointTestHooks?.submitImageGeneration || imageGenerationEndpointTestHooks.runImageGenerationTask) {
+        scheduleImageGenerationWork(async () => {
+          try {
+            await (imageGenerationEndpointTestHooks?.runImageGenerationTask || runImageGenerationTask)({
+              req,
+              taskId,
+            })
+          } catch (error) {
+            req.payload.logger.error(
+              {
+                err: error,
+                taskId,
+              },
+              'Image generation background worker failed.',
+            )
+          }
+        })
+      }
+
+      return Response.json(
+        {
+          media: result.media,
+          message: 'Image generation task submitted.',
+          next: {
+            syncEndpoint: `/api/studio/ai/images/${taskId}/sync`,
+          },
+          task: result.task,
+        },
+        { status: 202 },
+      )
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Image generation failed.'
       const status = error instanceof InsufficientCreditsError ? 402 : 400
       return Response.json({ message }, { status })
     }
+  },
+}
+
+export const syncImageGenerationEndpoint = {
+  path: '/studio/ai/images/:taskId/sync',
+  method: 'post' as const,
+  handler: async (req: PayloadRequest) => {
+    const blocked = await rejectDisallowedMutationOrigin(req)
+    if (blocked) return blocked
+
+    await ensurePayloadRequestUser(req)
+    if (!req.user) return unauthorized()
+
+    const rateLimited = await rejectRateLimitedEndpoint({
+      req,
+      scope: 'ai-sync',
+    })
+    if (rateLimited) return rateLimited
+
+    const taskId = Number(String(req.routeParams?.taskId ?? '0'))
+    const tasks = await req.payload.find({
+      collection: 'generation-tasks',
+      depth: 0,
+      limit: 1,
+      overrideAccess: false,
+      pagination: false,
+      req,
+      user: req.user,
+      where: {
+        and: [
+          {
+            id: {
+              equals: taskId,
+            },
+          },
+          {
+            user: {
+              equals: req.user.id,
+            },
+          },
+        ],
+      },
+    })
+
+    const task = tasks.docs[0] as unknown as Record<string, unknown> | undefined
+    if (!task) {
+      return Response.json({ message: 'Task not found.' }, { status: 404 })
+    }
+
+    const mediaId = getResultMediaId(task)
+    const media = mediaId
+      ? await req.payload
+          .findByID({
+            collection: 'media',
+            depth: 0,
+            id: mediaId,
+            overrideAccess: false,
+            req,
+            user: req.user,
+          })
+          .catch(() => null)
+      : null
+
+    return Response.json({
+      media,
+      message: 'Image generation task sync completed.',
+      task,
+    })
   },
 }
 

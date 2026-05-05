@@ -326,6 +326,7 @@ export interface GenerationTask {
   id: number;
   taskCode: string;
   user: number | User;
+  taskType: 'model-generation' | 'image-generation';
   inputMode: 'image' | 'text' | 'hybrid';
   prompt?: string | null;
   sourceImage?: (number | null) | Media;
@@ -1125,6 +1126,7 @@ export interface MediaSelect<T extends boolean = true> {
 export interface GenerationTasksSelect<T extends boolean = true> {
   taskCode?: T;
   user?: T;
+  taskType?: T;
   inputMode?: T;
   prompt?: T;
   sourceImage?: T;
@@ -1833,6 +1835,10 @@ export interface AiProviderSetting {
   imageGeneration?: {
     defaultProvider?: ('gemini-official' | 'gemini-third-party' | 'openai-compatible') | null;
     timeoutSeconds?: number | null;
+    /**
+     * Optional style instructions prepended to every Workbench image-generation prompt. Leave empty to use only the user prompt.
+     */
+    defaultPrompt?: string | null;
     official?: {
       baseURL?: string | null;
       model?: string | null;
@@ -2333,6 +2339,7 @@ export interface AiProviderSettingsSelect<T extends boolean = true> {
     | {
         defaultProvider?: T;
         timeoutSeconds?: T;
+        defaultPrompt?: T;
         official?:
           | T
           | {

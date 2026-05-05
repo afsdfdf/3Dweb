@@ -49,6 +49,7 @@ type PendingGenerationTask = {
   cardId: number;
   createdAt: string;
   failureReason?: null | string;
+  kind: "image" | "model";
   license: "Private" | "Public";
   previewSrc?: null | string;
   progress: number;
@@ -110,6 +111,37 @@ const getTaskThumbnailURL = (task: unknown) => {
 
   const thumbnailUrl = (callbackPayload as { thumbnailUrl?: unknown }).thumbnailUrl;
   return typeof thumbnailUrl === "string" && thumbnailUrl.trim() ? thumbnailUrl.trim() : null;
+};
+
+const getImageTaskMedia = (payload: unknown) => {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) return null;
+
+  const media = (payload as { media?: unknown }).media;
+  if (media && typeof media === "object" && !Array.isArray(media)) {
+    return media as Record<string, unknown>;
+  }
+
+  const task = (payload as { task?: unknown }).task;
+  if (!task || typeof task !== "object" || Array.isArray(task)) return null;
+
+  const callbackPayload = (task as { callbackPayload?: unknown }).callbackPayload;
+  if (!callbackPayload || typeof callbackPayload !== "object" || Array.isArray(callbackPayload)) return null;
+
+  const imageGeneration = (callbackPayload as { imageGeneration?: unknown }).imageGeneration;
+  if (!imageGeneration || typeof imageGeneration !== "object" || Array.isArray(imageGeneration)) return null;
+
+  const resultMediaUrl = (imageGeneration as { resultMediaUrl?: unknown }).resultMediaUrl;
+  const resultMediaId = (imageGeneration as { resultMediaId?: unknown }).resultMediaId;
+  const mediaUrl = typeof resultMediaUrl === "string" ? resultMediaUrl : "";
+
+  if (!mediaUrl) return null;
+
+  return {
+    id: resultMediaId,
+    mimeType: "image/png",
+    thumbnailURL: mediaUrl,
+    url: mediaUrl,
+  };
 };
 
 const getTaskStatus = (value: unknown): PendingGenerationStatus => {
@@ -186,10 +218,10 @@ const isInsufficientCreditsFailure = (args: { message: string; status: number })
 const getPendingGenerationStatusLabel = (task: PendingGenerationTask) => {
   if (task.status === "uploading") return "Preparing request";
   if (task.status === "queued") return "Queued";
-  if (task.status === "finalizing") return "Finalizing model";
+  if (task.status === "finalizing") return task.kind === "image" ? "Finalizing image" : "Finalizing model";
   if (task.status === "failed") return "Generation failed";
   if (task.status === "timeout") return "Generation timed out";
-  return "Generating model";
+  return task.kind === "image" ? "Generating image" : "Generating model";
 };
 
 const getPendingGenerationDetail = (task: PendingGenerationTask) => {
@@ -206,7 +238,7 @@ const getOptimisticProgressCeiling = (task: PendingGenerationTask) => {
   return task.progress;
 };
 
-const toPendingModelCard = (task: PendingGenerationTask): ModelLibraryPanelCard => ({
+const toPendingCard = (task: PendingGenerationTask): ModelLibraryPanelCard => ({
   date: formatLocalCardDate(task.createdAt),
   generationProgress: task.progress,
   generationState: task.status === "failed" || task.status === "timeout" ? "failed" : "generating",
@@ -214,7 +246,7 @@ const toPendingModelCard = (task: PendingGenerationTask): ModelLibraryPanelCard 
   generationTaskCode: task.taskCode ?? null,
   generationTaskId: task.taskId ?? null,
   id: task.cardId,
-  kind: "model",
+  kind: task.kind,
   license: task.status === "failed" || task.status === "timeout" ? "Failed" : "Queued",
   name: task.title,
   previewAlt: `${task.title} generation preview`,
@@ -237,7 +269,9 @@ export function WorkbenchClient({
   const [activePendingCardId, setActivePendingCardId] = useState<null | number>(
     () => initialPendingTasks[0]?.cardId ?? null,
   );
-  const [activeMode, setActiveMode] = useState<WorkbenchMode>("image3d");
+  const [activeMode, setActiveMode] = useState<WorkbenchMode>(
+    () => (initialPendingTasks[0]?.kind === "image" ? "imageTools" : "image3d"),
+  );
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [multiView, setMultiView] = useState(false);
@@ -251,6 +285,7 @@ export function WorkbenchClient({
     () => initialPendingTasks,
   );
   const [prompt, setPrompt] = useState(workbenchDefaultPrompt);
+  const [selectedImageCard, setSelectedImageCard] = useState<ModelLibraryPanelCard | null>(null);
   const [selectedModelSrc, setSelectedModelSrc] = useState<null | string>(firstModelSrc);
   const showImageInputs = activeMode === "image3d" || activeMode === "imageTools";
   const activeGenerationCreditCost = getActiveGenerationCreditCost({
@@ -260,26 +295,69 @@ export function WorkbenchClient({
   });
   const rightPanelModelCards = useMemo(() => {
     const localModelIds = new Set(localModelCards.map((card) => card.id));
+    const pendingModelCards = pendingTasks.filter((task) => task.kind === "model").map(toPendingCard);
 
     return [
-      ...pendingTasks.map(toPendingModelCard),
+      ...pendingModelCards,
       ...localModelCards,
       ...libraryCards.filter((card) => !localModelIds.has(card.id)),
     ];
   }, [libraryCards, localModelCards, pendingTasks]);
+  const rightPanelImageCards = useMemo(
+    () => [
+      ...pendingTasks.filter((task) => task.kind === "image").map(toPendingCard),
+      ...imageAssetCards,
+    ],
+    [imageAssetCards, pendingTasks],
+  );
   const rightPanelCards = useMemo(
-    () => (activeMode === "imageTools" ? imageAssetCards : rightPanelModelCards),
-    [activeMode, imageAssetCards, rightPanelModelCards],
+    () => (activeMode === "imageTools" ? rightPanelImageCards : rightPanelModelCards),
+    [activeMode, rightPanelImageCards, rightPanelModelCards],
   );
   const rightPanelTitle = activeMode === "imageTools" ? "Image Assets" : "Model Library";
+  const selectedPendingTask = pendingTasks.find((task) => task.cardId === activePendingCardId) ?? null;
   const activePendingTask =
-    activeMode === "imageTools" ? null : pendingTasks.find((task) => task.cardId === activePendingCardId) ?? null;
-  const activeModelSrc = activePendingTask ? null : selectedModelSrc ?? firstModelSrc;
+    selectedPendingTask &&
+    ((activeMode === "imageTools" && selectedPendingTask.kind === "image") ||
+      (activeMode !== "imageTools" && selectedPendingTask.kind === "model"))
+      ? selectedPendingTask
+      : null;
+  const activeModelPendingTask = activePendingTask?.kind === "model" ? activePendingTask : null;
+  const activeImagePendingTask = activePendingTask?.kind === "image" ? activePendingTask : null;
+  const activeModelSrc = activeModelPendingTask ? null : selectedModelSrc ?? firstModelSrc;
   const activeModelCard = rightPanelModelCards.find((card) => card.modelSrc === activeModelSrc);
-  const activeDisplayName = activePendingTask?.title || activeModelCard?.name || libraryCards[0]?.name || "Workbench";
-  const activeDisplayLicense = activePendingTask
-    ? getPendingGenerationStatusLabel(activePendingTask)
-    : activeModelCard?.license || libraryCards[0]?.license || "Private";
+  const activeImagePreview = activeImagePendingTask
+    ? {
+        license: getPendingGenerationStatusLabel(activeImagePendingTask),
+        name: activeImagePendingTask.title,
+        previewAlt: `${activeImagePendingTask.title} image preview`,
+        previewSrc: activeImagePendingTask.previewSrc ?? null,
+      }
+    : selectedImageCard;
+  const showImagePreview = activeMode === "imageTools" && Boolean(activeImagePreview || activeImagePendingTask);
+  const activeDisplayName =
+    activeImagePreview?.name ||
+    activeModelPendingTask?.title ||
+    activeModelCard?.name ||
+    libraryCards[0]?.name ||
+    "Workbench";
+  const activeDisplayLicense =
+    activeImagePreview?.license ||
+    (activeModelPendingTask
+      ? getPendingGenerationStatusLabel(activeModelPendingTask)
+      : activeModelCard?.license || libraryCards[0]?.license || "Private");
+  const activeStats =
+    activeMode === "imageTools"
+      ? [
+          { label: "TYPE", value: "Image" },
+          { label: "STATUS", value: activeImagePendingTask ? getPendingGenerationStatusLabel(activeImagePendingTask) : "Preview" },
+          { label: "SOURCE", value: images.length > 0 ? "Reference" : "Prompt" },
+        ]
+      : [
+          { label: "TOPOLOGY", value: "Triangle" },
+          { label: "FACE COUNT", value: "16,101" },
+          { label: "VERTEX COUNT", value: "25,981" },
+        ];
   const hasSyncablePendingTasks = pendingTasks.some((task) => task.taskId && !isTerminalGenerationStatus(task.status));
 
   useEffect(() => {
@@ -367,7 +445,11 @@ export function WorkbenchClient({
       syncingTaskIdsRef.current.add(task.taskId);
 
       try {
-        const response = await fetch(`/api/studio/ai/tasks/${task.taskId}/sync`, {
+        const syncEndpoint =
+          task.kind === "image"
+            ? `/api/studio/ai/images/${task.taskId}/sync`
+            : `/api/studio/ai/tasks/${task.taskId}/sync`;
+        const response = await fetch(syncEndpoint, {
           credentials: "include",
           method: "POST",
         });
@@ -382,6 +464,61 @@ export function WorkbenchClient({
         const progress = getTaskProgress(syncedTask?.progress ?? task.progress);
         const taskCode = typeof syncedTask?.taskCode === "string" ? syncedTask.taskCode : task.taskCode;
         const modelId = getTaskModelId(syncedTask);
+
+        if (task.kind === "image" && status === "succeeded") {
+          const media = getImageTaskMedia(json);
+          const mediaUrl =
+            typeof media?.url === "string"
+              ? media.url
+              : typeof media?.thumbnailURL === "string"
+                ? media.thumbnailURL
+                : "";
+
+          if (!mediaUrl) {
+            setPendingTasks((current) =>
+              current.map((item) =>
+                item.cardId === task.cardId
+                  ? {
+                      ...item,
+                      progress: Math.min(99, Math.max(progress, 96)),
+                      status: "finalizing",
+                      taskCode,
+                    }
+                  : item,
+              ),
+            );
+            return;
+          }
+
+          const sourceAsset: WorkbenchSourceImageAsset = {
+            contentType: typeof media?.mimeType === "string" ? media.mimeType : "image/png",
+            fileName:
+              typeof media?.filename === "string" ? media.filename : `image-${media?.id ?? Date.now()}.png`,
+            mediaId: typeof media?.id === "number" ? media.id : Number(media?.id) || undefined,
+            publicUrl: mediaUrl,
+          };
+          const completedCard: ModelLibraryPanelCard = {
+            date: formatLocalCardDate(new Date()),
+            id: sourceAsset.mediaId ?? Date.now(),
+            kind: "image",
+            license: "Private",
+            name: sourceAsset.fileName,
+            previewAlt: sourceAsset.fileName,
+            previewSrc: sourceAsset.publicUrl,
+            sourceAsset,
+          };
+
+          setImageAssetCards((current) => [
+            completedCard,
+            ...current.filter((card) => card.id !== completedCard.id),
+          ]);
+          setSelectedImageCard(completedCard);
+          setPendingTasks((current) => current.filter((item) => item.cardId !== task.cardId));
+          setActivePendingCardId((current) => (current === task.cardId ? null : current));
+          setSelectedModelSrc(null);
+          router.refresh();
+          return;
+        }
 
         if (status === "succeeded" && modelId) {
           const viewerURL = buildViewerURL(modelId);
@@ -548,14 +685,15 @@ export function WorkbenchClient({
 
     setError("");
     setIsSubmitting(true);
-    const isModelGenerationMode = activeMode !== "imageTools";
-    const pendingCardId = isModelGenerationMode ? createPendingCardId() : null;
+    const pendingKind: PendingGenerationTask["kind"] = activeMode === "imageTools" ? "image" : "model";
+    const pendingCardId = createPendingCardId();
     const requestedTitle = modelTitle.trim() || "Unnamed";
 
     if (pendingCardId) {
       const pendingTask: PendingGenerationTask = {
         cardId: pendingCardId,
         createdAt: new Date().toISOString(),
+        kind: pendingKind,
         license,
         previewSrc: showImageInputs ? images[0]?.previewUrl ?? null : null,
         progress: 1,
@@ -568,6 +706,9 @@ export function WorkbenchClient({
       setPendingTasks((current) => [pendingTask, ...current]);
       setActivePendingCardId(pendingCardId);
       setSelectedModelSrc(null);
+      if (pendingKind === "image") {
+        setSelectedImageCard(null);
+      }
     }
 
     try {
@@ -637,32 +778,27 @@ export function WorkbenchClient({
       }
 
       if (activeMode === "imageTools") {
-        const media = json.media;
-        const mediaUrl = typeof media?.url === "string" ? media.url : typeof media?.thumbnailURL === "string" ? media.thumbnailURL : "";
-        if (!mediaUrl) {
-          throw new Error("Image generated, but no image URL was returned.");
+        const task = json.task;
+        const taskId = Number(task?.id);
+        const taskCode = typeof task?.taskCode === "string" ? task.taskCode : "";
+
+        if (!Number.isFinite(taskId) || taskId <= 0 || !taskCode) {
+          throw new Error("Image generation task was submitted, but no task code was returned.");
         }
 
-        const sourceAsset: WorkbenchSourceImageAsset = {
-          contentType: typeof media?.mimeType === "string" ? media.mimeType : "image/png",
-          fileName: typeof media?.filename === "string" ? media.filename : `image-${media?.id ?? Date.now()}.png`,
-          mediaId: typeof media?.id === "number" ? media.id : Number(media?.id) || undefined,
-          publicUrl: mediaUrl,
-        };
-
-        setImageAssetCards((current) => [
-          {
-            date: new Date().toISOString().slice(0, 10),
-            id: sourceAsset.mediaId ?? Date.now(),
-            kind: "image",
-            license: "Private",
-            name: sourceAsset.fileName,
-            previewAlt: sourceAsset.fileName,
-            previewSrc: sourceAsset.publicUrl,
-            sourceAsset,
-          },
-          ...current,
-        ]);
+        setPendingTasks((current) =>
+          current.map((item) =>
+            item.cardId === pendingCardId
+              ? {
+                  ...item,
+                  progress: getTaskProgress(task?.progress ?? 5),
+                  status: getTaskStatus(task?.status),
+                  taskCode,
+                  taskId,
+                }
+              : item,
+          ),
+        );
         return;
       }
 
@@ -774,30 +910,39 @@ export function WorkbenchClient({
             </div>
 
             <div className={styles.statsBox}>
-              <div>
-                <span>TOPOLOGY</span>
-                <strong>Triangle</strong>
-              </div>
-              <div>
-                <span>FACE COUNT</span>
-                <strong>16,101</strong>
-              </div>
-              <div>
-                <span>VERTEX COUNT</span>
-                <strong>25,981</strong>
-              </div>
+              {activeStats.map((item) => (
+                <div key={item.label}>
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              ))}
             </div>
 
             <div className={styles.viewerStage}>
               <div className={styles.viewerSquare}>
                 <div className={styles.viewerSurface}>
-                  <ModelViewer
-                    className={styles.viewerCanvas}
-                    showPlaceholderModel={false}
-                    showGround={false}
-                    src={activeModelSrc}
-                    transparentBackground
-                  />
+                  {showImagePreview ? (
+                    <div className={styles.imagePreviewCard}>
+                      {activeImagePreview?.previewSrc ? (
+                        <img
+                          alt={activeImagePreview.previewAlt || "Generated image preview"}
+                          src={activeImagePreview.previewSrc}
+                        />
+                      ) : (
+                        <div className={styles.imagePreviewPlaceholder}>
+                          <span>IMAGE</span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <ModelViewer
+                      className={styles.viewerCanvas}
+                      showPlaceholderModel={false}
+                      showGround={false}
+                      src={activeModelSrc}
+                      transparentBackground
+                    />
+                  )}
                   {activePendingTask ? (
                     <div className={styles.viewerLoadingOverlay} aria-live="polite">
                       <span>{getPendingGenerationStatusLabel(activePendingTask)}</span>
@@ -817,6 +962,10 @@ export function WorkbenchClient({
                 if (card.generationState) {
                   setActivePendingCardId(card.id);
                   setSelectedModelSrc(null);
+                  if (card.kind === "image") {
+                    setActiveMode("imageTools");
+                    setSelectedImageCard(null);
+                  }
                   return;
                 }
 
@@ -836,13 +985,16 @@ export function WorkbenchClient({
                       },
                     ].slice(0, 4);
                   });
-                  setActiveMode("image3d");
-                  setMultiView(true);
+                  setActiveMode("imageTools");
+                  setMultiView(false);
+                  setSelectedImageCard(card);
+                  setSelectedModelSrc(null);
                   setActivePendingCardId(null);
                   return;
                 }
 
                 setActivePendingCardId(null);
+                setSelectedImageCard(null);
                 setSelectedModelSrc(card.modelSrc ?? null);
               }}
               title={rightPanelTitle}

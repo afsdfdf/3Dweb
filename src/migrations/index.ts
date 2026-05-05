@@ -13,6 +13,7 @@ import * as migration_20260501_055200_meshy_3d_pricing from './20260501_055200_m
 import * as migration_20260501_114300_runtime_env_guidance_defaults from './20260501_114300_runtime_env_guidance_defaults';
 import * as migration_20260503_124500_registration_email_codes from './20260503_124500_registration_email_codes';
 import * as migration_20260505_133000_openai_compatible_image_provider from './20260505_133000_openai_compatible_image_provider';
+import * as migration_20260505_160000_image_generation_async_and_task_type from './20260505_160000_image_generation_async_and_task_type';
 
 export const migrations = [
   {
@@ -89,5 +90,10 @@ export const migrations = [
     up: migration_20260505_133000_openai_compatible_image_provider.up,
     down: migration_20260505_133000_openai_compatible_image_provider.down,
     name: '20260505_133000_openai_compatible_image_provider'
+  },
+  {
+    up: migration_20260505_160000_image_generation_async_and_task_type.up,
+    down: migration_20260505_160000_image_generation_async_and_task_type.down,
+    name: '20260505_160000_image_generation_async_and_task_type'
   },
 ];
