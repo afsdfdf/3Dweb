@@ -2,7 +2,11 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import { aiWebhookEndpoint, meshyWebhookEndpoint, __setAITasksEndpointTestHooks } from '../src/endpoints/aiTasks.ts'
-import { submitImageGenerationEndpoint, __setImageGenerationEndpointTestHooks } from '../src/endpoints/imageGeneration.ts'
+import {
+  submitImageGenerationEndpoint,
+  syncImageGenerationEndpoint,
+  __setImageGenerationEndpointTestHooks,
+} from '../src/endpoints/imageGeneration.ts'
 import { __setModelDownloadEndpointTestHooks, modelDownloadEndpoint } from '../src/endpoints/modelDownloads.ts'
 import { __setStripeWebhookTestHooks, stripeWebhookEndpoint } from '../src/endpoints/stripeWebhook.ts'
 import { __setSubscriptionFlowTestHooks, syncStripeSubscriptionState } from '../src/lib/subscriptionFlow.ts'
@@ -114,7 +118,13 @@ test('subscription credit grant stays idempotent across repeated syncs', async (
         }
         return billingSubscription
       },
-      find: async ({ collection, where }: { collection: string; where: Record<string, any> }) => {
+      find: async ({
+        collection,
+        where,
+      }: {
+        collection: string
+        where: Record<string, { equals?: unknown } | undefined>
+      }) => {
         if (collection === 'billing-subscriptions') {
           if (where?.stripeSubscriptionId?.equals === 'sub_test_123' && billingSubscription) {
             return { docs: [billingSubscription] }
@@ -524,6 +534,62 @@ test('image generation endpoint returns a queued task and schedules provider wor
     await scheduledTask()
 
     assert.equal(dispatchedTaskId, 11)
+  } finally {
+    __setImageGenerationEndpointTestHooks(null)
+  }
+})
+
+test('image generation sync endpoint schedules unfinished provider work recovery', async () => {
+  let scheduledTask: (() => Promise<void>) | null = null
+  let dispatchedTaskId = 0
+
+  __setImageGenerationEndpointTestHooks({
+    runImageGenerationTask: async ({ taskId }) => {
+      dispatchedTaskId = taskId
+      return {
+        media: null,
+        task: {
+          id: taskId,
+        },
+      } as never
+    },
+    scheduleAfterResponse: (task) => {
+      scheduledTask = task
+    },
+  })
+
+  try {
+    const response = await syncImageGenerationEndpoint.handler({
+      headers: new Headers(),
+      payload: {
+        find: async () => ({
+          docs: [
+            {
+              id: 12,
+              callbackPayload: null,
+              status: 'queued',
+              user: 7,
+            },
+          ],
+        }),
+        logger: createLogger(),
+      },
+      routeParams: {
+        taskId: '12',
+      },
+      user: {
+        id: 7,
+      },
+    } as never)
+    const body = await response.json()
+
+    assert.equal(response.status, 200)
+    assert.equal(body.task.id, 12)
+    assert.ok(scheduledTask)
+
+    await scheduledTask()
+
+    assert.equal(dispatchedTaskId, 12)
   } finally {
     __setImageGenerationEndpointTestHooks(null)
   }

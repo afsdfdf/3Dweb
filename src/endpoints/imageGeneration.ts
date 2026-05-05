@@ -44,13 +44,34 @@ const scheduleImageGenerationWork = (task: () => Promise<void>) => {
 
   void import('next/server')
     .then(({ after }) => {
-      after(() => {
-        void task()
-      })
+      after(() => task())
     })
     .catch(() => {
       void task()
     })
+}
+
+const isRunnableImageGenerationStatus = (value: unknown) => {
+  return value === 'queued' || value === 'processing'
+}
+
+const scheduleTaskRun = (args: { req: PayloadRequest; taskId: number }) => {
+  scheduleImageGenerationWork(async () => {
+    try {
+      await (imageGenerationEndpointTestHooks?.runImageGenerationTask || runImageGenerationTask)({
+        req: args.req,
+        taskId: args.taskId,
+      })
+    } catch (error) {
+      args.req.payload.logger.error(
+        {
+          err: error,
+          taskId: args.taskId,
+        },
+        'Image generation background worker failed.',
+      )
+    }
+  })
 }
 
 export const submitImageGenerationEndpoint = {
@@ -99,22 +120,7 @@ export const submitImageGenerationEndpoint = {
       }
 
       if (!imageGenerationEndpointTestHooks?.submitImageGeneration || imageGenerationEndpointTestHooks.runImageGenerationTask) {
-        scheduleImageGenerationWork(async () => {
-          try {
-            await (imageGenerationEndpointTestHooks?.runImageGenerationTask || runImageGenerationTask)({
-              req,
-              taskId,
-            })
-          } catch (error) {
-            req.payload.logger.error(
-              {
-                err: error,
-                taskId,
-              },
-              'Image generation background worker failed.',
-            )
-          }
-        })
+        scheduleTaskRun({ req, taskId })
       }
 
       return Response.json(
@@ -196,6 +202,10 @@ export const syncImageGenerationEndpoint = {
           .catch(() => null)
       : null
 
+    if (!media && isRunnableImageGenerationStatus(task.status)) {
+      scheduleTaskRun({ req, taskId })
+    }
+
     return Response.json({
       media,
       message: 'Image generation task sync completed.',
@@ -212,6 +222,8 @@ const readNumber = (value: unknown) => {
 const readString = (value: unknown) => {
   return typeof value === 'string' && value.trim() ? value.trim() : ''
 }
+
+type ImageMediaRecord = Record<string, unknown>
 
 const getResultMediaId = (task: Record<string, unknown>) => {
   const callbackPayload = isRecord(task.callbackPayload) ? task.callbackPayload : {}
@@ -256,7 +268,7 @@ export const listImageGenerationAssetsEndpoint = {
       },
     })
 
-    const mediaById = new Map<number, any>()
+    const mediaById = new Map<number, ImageMediaRecord>()
     await Promise.all(
       tasks.docs.map(async (task) => {
         const mediaId = getResultMediaId(task as unknown as Record<string, unknown>)
@@ -274,7 +286,7 @@ export const listImageGenerationAssetsEndpoint = {
           .catch(() => null)
 
         if (media) {
-          mediaById.set(mediaId, media)
+          mediaById.set(mediaId, media as unknown as ImageMediaRecord)
         }
       }),
     )

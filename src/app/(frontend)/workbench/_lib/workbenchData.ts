@@ -5,13 +5,23 @@ import {
   getModelPreviewURL,
 } from "@/lib/modelAssetURL";
 import { getMediaAccessURL } from "@/lib/mediaAccessURL";
+import type { GenerationTask, Model } from "@/payload-types";
 
 import { getCurrentUser } from "../../_lib/session";
+
+type WorkbenchModelDocument = Model;
+type WorkbenchModelFormatDocument = NonNullable<WorkbenchModelDocument["formats"]>[number];
+type WorkbenchModelTagDocument = NonNullable<WorkbenchModelDocument["tags"]>[number];
+type WorkbenchGenerationTaskDocument = GenerationTask;
 
 type WorkbenchModelFormat = {
   downloadCredits: null | number;
   fileSizeMb: null | number;
   format: string;
+};
+
+const isWorkbenchModelFormat = (value: WorkbenchModelFormat | null): value is WorkbenchModelFormat => {
+  return Boolean(value);
 };
 
 type WorkbenchOwnerProfile = {
@@ -192,7 +202,7 @@ export async function getWorkbenchModels(
   });
 
   return Promise.all(
-    result.docs.map(async (model: any) => {
+    result.docs.map(async (model: WorkbenchModelDocument) => {
       const owner = isRecord(model.owner) ? model.owner : null;
       const [previewURL, ownerAvatarUrl, ownerBackgroundUrl] =
         await Promise.all([
@@ -218,21 +228,21 @@ export async function getWorkbenchModels(
         "Unknown creator";
       const formats = Array.isArray(model.formats)
         ? model.formats
-            .map((item: any) => {
-              const format = normalizeText(item?.format);
+            .map((item: WorkbenchModelFormatDocument) => {
+              const format = normalizeText(item.format);
               if (!format) return null;
 
               return {
                 downloadCredits:
-                  typeof item?.downloadCredits === "number"
+                  typeof item.downloadCredits === "number"
                     ? item.downloadCredits
                     : null,
                 fileSizeMb:
-                  typeof item?.fileSizeMb === "number" ? item.fileSizeMb : null,
+                  typeof item.fileSizeMb === "number" ? item.fileSizeMb : null,
                 format,
               };
             })
-            .filter(Boolean)
+            .filter(isWorkbenchModelFormat)
         : [];
 
       return {
@@ -284,7 +294,7 @@ export async function getWorkbenchModels(
         status: typeof model.status === "string" ? model.status : "draft",
         tags: Array.isArray(model.tags)
           ? model.tags
-              .map((tag: any) => String(tag?.label || "").trim())
+              .map((tag: WorkbenchModelTagDocument) => String(tag.label || "").trim())
               .filter(Boolean)
           : [],
         title:
@@ -470,7 +480,7 @@ export async function getWorkbenchGenerationTaskState(
   const pendingGenerationTasks = tasks.docs
     .filter((task) => isPendingModelGenerationTask(task) || isPendingImageGenerationTask(task))
     .slice(0, 8)
-    .map((task: any) => {
+    .map((task: WorkbenchGenerationTaskDocument) => {
       const taskId = Number(task.id);
       const kind: WorkbenchPendingGenerationTask["kind"] = isImageGenerationTask(task)
         ? "image"
@@ -497,7 +507,7 @@ export async function getWorkbenchGenerationTaskState(
 
   const seen = new Set<number>();
   const assets = await Promise.all(
-    tasks.docs.filter(isImageAssetGenerationTask).slice(0, 24).map(async (task: any) => {
+    tasks.docs.filter(isImageAssetGenerationTask).slice(0, 24).map(async (task: WorkbenchGenerationTaskDocument) => {
       const mediaId = getImageGenerationResultMediaId(task);
       if (!mediaId || seen.has(mediaId)) return null;
       seen.add(mediaId);

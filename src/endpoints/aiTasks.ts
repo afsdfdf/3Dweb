@@ -60,9 +60,7 @@ const scheduleWebhookWork = (task: () => Promise<void>) => {
 
   void import('next/server')
     .then(({ after }) => {
-      after(() => {
-        void task()
-      })
+      after(() => task())
     })
     .catch(() => {
       void task()

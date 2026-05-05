@@ -12,7 +12,7 @@ import { ResultStatus } from '../../_components/ResultStatus'
 import { SiteShell } from '../../_components/SiteShell'
 import { getTaskByCode } from '../../_lib/payload-data'
 import { getCurrentUser } from '../../_lib/session'
-import { formatDateTime, formatInputMode, formatModelStatus, formatTaskStatus } from '../../_lib/ui-text'
+import { formatDateTime, formatModelStatus, formatTaskGenerationType, formatTaskStatus } from '../../_lib/ui-text'
 
 const viewerModes = ['Perspective', 'Lighting', 'Wireframe', 'Print preview']
 const deliveryNotes = [
@@ -20,6 +20,18 @@ const deliveryNotes = [
   'You can continue from here into downloads and delivery files.',
   'If you need a physical sample, move directly into the print-order flow.',
 ]
+
+function formatModelFormatList(formats: unknown[]) {
+  const labels = formats
+    .map((item) => {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) return ''
+      const format = (item as { format?: unknown }).format
+      return typeof format === 'string' && format.trim() ? format.trim().toUpperCase() : ''
+    })
+    .filter(Boolean)
+
+  return labels.length > 0 ? labels.join(' / ') : 'GLB / STL'
+}
 
 function getTaskBadgeVariant(status?: string | null) {
   if (status === 'succeeded') return 'secondary' as const
@@ -66,6 +78,7 @@ export default async function ResultDetailPage({ params }: { params: Promise<{ t
 
   const model = getModelFromTask(task)
   const modelFormats = Array.isArray(model?.formats) ? model.formats : []
+  const modelFormatLabel = formatModelFormatList(modelFormats)
   const primaryModelURL = model ? getPrimaryModelURL(task, model) : null
   const progressWidth = Math.max(12, Number(task.progress ?? 0))
 
@@ -99,7 +112,7 @@ export default async function ResultDetailPage({ params }: { params: Promise<{ t
                     <CardTitle className="mt-2 text-2xl tracking-tight">{model?.title || 'Result model'}</CardTitle>
                   </div>
                   <Badge variant="outline">
-                    {modelFormats.length > 0 ? modelFormats.map((item: any) => String(item.format).toUpperCase()).join(' / ') : 'GLB / STL'}
+                    {modelFormatLabel}
                   </Badge>
                 </div>
               </CardHeader>
@@ -110,7 +123,7 @@ export default async function ResultDetailPage({ params }: { params: Promise<{ t
                     Result preview
                   </div>
                   <div className="pointer-events-none absolute right-4 top-4 rounded-full bg-background/85 px-3 py-1 text-xs text-foreground shadow-sm">
-                    {modelFormats.length > 0 ? modelFormats.map((item: any) => String(item.format).toUpperCase()).join(' / ') : 'GLB / STL'}
+                    {modelFormatLabel}
                   </div>
                   <div className="pointer-events-none absolute inset-x-4 bottom-4 flex flex-wrap gap-2">
                     {viewerModes.map((mode) => (
@@ -143,7 +156,9 @@ export default async function ResultDetailPage({ params }: { params: Promise<{ t
               <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 <div>
                   <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Input mode</p>
-                  <p className="mt-2 text-sm font-medium">{formatInputMode(task.inputMode)}</p>
+                  <p className="mt-2 text-sm font-medium">
+                    {formatTaskGenerationType({ inputMode: task.inputMode, taskType: task.taskType })}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Provider</p>
@@ -212,7 +227,7 @@ export default async function ResultDetailPage({ params }: { params: Promise<{ t
                 <div>
                   <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Available formats</p>
                   <p className="mt-2 text-sm font-medium">
-                    {modelFormats.length > 0 ? modelFormats.map((item: any) => String(item.format).toUpperCase()).join(' / ') : 'GLB / STL'}
+                    {modelFormatLabel}
                   </p>
                 </div>
                 <div>

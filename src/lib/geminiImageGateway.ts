@@ -59,6 +59,28 @@ const readString = (value: unknown) => {
   return typeof value === 'string' && value.trim().length > 0 ? value.trim() : ''
 }
 
+const readFirstString = (values: unknown[]) => {
+  for (const value of values) {
+    const text = readString(value)
+    if (text) return text
+  }
+
+  return ''
+}
+
+const readConfiguredString = (args: {
+  defaultValue?: string
+  envValues?: unknown[]
+  storedValue: unknown
+}) => {
+  const defaultValue = args.defaultValue || ''
+  const storedValue = readString(args.storedValue)
+  const envValue = readFirstString(args.envValues || [])
+
+  if (storedValue && storedValue !== defaultValue) return storedValue
+  return envValue || storedValue || defaultValue
+}
+
 const readSourceImageAssetUrl = (value: unknown) => {
   if (!isRecord(value)) return ''
   return readString(value.publicUrl)
@@ -187,9 +209,17 @@ async function readImageSettings(args: {
 
   if (provider === 'gemini-third-party') {
     return {
-      apiKey: readString(process.env.GEMINI_IMAGE_THIRD_PARTY_API_KEY) || readString(thirdParty.apiKey),
-      baseURL: normalizeBaseURL(readString(process.env.GEMINI_IMAGE_THIRD_PARTY_BASE_URL) || readString(thirdParty.baseURL)),
-      model: readString(process.env.GEMINI_IMAGE_THIRD_PARTY_MODEL) || readString(thirdParty.model),
+      apiKey: readString(thirdParty.apiKey) || readString(process.env.GEMINI_IMAGE_THIRD_PARTY_API_KEY),
+      baseURL: normalizeBaseURL(
+        readConfiguredString({
+          envValues: [process.env.GEMINI_IMAGE_THIRD_PARTY_BASE_URL],
+          storedValue: thirdParty.baseURL,
+        }),
+      ),
+      model: readConfiguredString({
+        envValues: [process.env.GEMINI_IMAGE_THIRD_PARTY_MODEL],
+        storedValue: thirdParty.model,
+      }),
       provider,
       timeoutSeconds,
     }
@@ -198,33 +228,45 @@ async function readImageSettings(args: {
   if (provider === 'openai-compatible') {
     return {
       apiKey:
+        readString(openAICompatible.apiKey) ||
         readString(process.env.OPENAI_IMAGE_COMPATIBLE_API_KEY) ||
-        readString(process.env.OPENAI_API_KEY) ||
-        readString(openAICompatible.apiKey),
+        readString(process.env.OPENAI_API_KEY),
       baseURL: normalizeBaseURL(
-        readString(process.env.OPENAI_IMAGE_COMPATIBLE_BASE_URL) ||
-          readString(process.env.OPENAI_BASE_URL) ||
-          readString(openAICompatible.baseURL) ||
-          DEFAULT_OPENAI_COMPATIBLE_BASE_URL,
+        readConfiguredString({
+          defaultValue: DEFAULT_OPENAI_COMPATIBLE_BASE_URL,
+          envValues: [process.env.OPENAI_IMAGE_COMPATIBLE_BASE_URL, process.env.OPENAI_BASE_URL],
+          storedValue: openAICompatible.baseURL,
+        }),
       ),
-      model:
-        readString(process.env.OPENAI_IMAGE_COMPATIBLE_MODEL) ||
-        readString(process.env.OPENAI_IMAGE_MODEL) ||
-        readString(openAICompatible.model) ||
-        DEFAULT_OPENAI_COMPATIBLE_MODEL,
+      model: readConfiguredString({
+        defaultValue: DEFAULT_OPENAI_COMPATIBLE_MODEL,
+        envValues: [process.env.OPENAI_IMAGE_COMPATIBLE_MODEL, process.env.OPENAI_IMAGE_MODEL],
+        storedValue: openAICompatible.model,
+      }),
       provider,
-      size:
-        readString(process.env.OPENAI_IMAGE_COMPATIBLE_SIZE) ||
-        readString(openAICompatible.size) ||
-        DEFAULT_OPENAI_COMPATIBLE_SIZE,
+      size: readConfiguredString({
+        defaultValue: DEFAULT_OPENAI_COMPATIBLE_SIZE,
+        envValues: [process.env.OPENAI_IMAGE_COMPATIBLE_SIZE],
+        storedValue: openAICompatible.size,
+      }),
       timeoutSeconds,
     }
   }
 
   return {
-    apiKey: readString(process.env.GEMINI_IMAGE_API_KEY) || readString(official.apiKey),
-    baseURL: normalizeBaseURL(readString(process.env.GEMINI_IMAGE_API_BASE_URL) || readString(official.baseURL) || DEFAULT_OFFICIAL_BASE_URL),
-    model: readString(process.env.GEMINI_IMAGE_MODEL) || readString(official.model) || DEFAULT_OFFICIAL_MODEL,
+    apiKey: readString(official.apiKey) || readString(process.env.GEMINI_IMAGE_API_KEY),
+    baseURL: normalizeBaseURL(
+      readConfiguredString({
+        defaultValue: DEFAULT_OFFICIAL_BASE_URL,
+        envValues: [process.env.GEMINI_IMAGE_API_BASE_URL],
+        storedValue: official.baseURL,
+      }),
+    ),
+    model: readConfiguredString({
+      defaultValue: DEFAULT_OFFICIAL_MODEL,
+      envValues: [process.env.GEMINI_IMAGE_MODEL],
+      storedValue: official.model,
+    }),
     provider,
     timeoutSeconds,
   }

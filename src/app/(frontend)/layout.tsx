@@ -10,6 +10,14 @@ import { getCurrentLocale } from './_lib/locale-server'
 
 export const metadata = {
   description: 'AI 3D character generation, model management, and print fulfillment platform built with Payload CMS and Next.js.',
+  icons: {
+    apple: '/apple-touch-icon.png',
+    icon: [
+      { sizes: '16x16', type: 'image/png', url: '/favicon-16x16.png' },
+      { sizes: '32x32', type: 'image/png', url: '/favicon-32x32.png' },
+    ],
+    shortcut: '/favicon.ico',
+  },
   title: 'Thorns Tavern',
 }
 

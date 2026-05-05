@@ -36,6 +36,8 @@ type RunImageGenerationTaskArgs = {
   taskId: number
 }
 
+const imageGenerationTaskLocks = new Set<number>()
+
 const accessOptions = (req: PayloadRequest) => {
   return req.user ? { overrideAccess: false as const } : {}
 }
@@ -69,6 +71,24 @@ const readImageGenerationSnapshot = (parameterSnapshot: unknown) => {
 const readImageGenerationEffectivePrompt = (parameterSnapshot: unknown) => {
   const imageGeneration = readImageGenerationSnapshot(parameterSnapshot)
   return readString(imageGeneration.effectivePrompt)
+}
+
+const getImageGenerationDispatchStaleMs = () => {
+  const configuredValue = Number(process.env.IMAGE_GENERATION_DISPATCH_STALE_MS || 300_000)
+  return Number.isFinite(configuredValue) ? Math.max(60_000, configuredValue) : 300_000
+}
+
+const hasRecentImageGenerationDispatch = (task: Record<string, unknown>) => {
+  if (task.status !== 'processing') return false
+
+  const imageGeneration = readImageGenerationSnapshot(task.parameterSnapshot)
+  const dispatchStartedAt = readString(imageGeneration.dispatchStartedAt)
+  if (!dispatchStartedAt) return false
+
+  const dispatchStartedAtMs = new Date(dispatchStartedAt).getTime()
+  if (!Number.isFinite(dispatchStartedAtMs) || dispatchStartedAtMs <= 0) return false
+
+  return Date.now() - dispatchStartedAtMs < getImageGenerationDispatchStaleMs()
 }
 
 const buildEffectiveImagePrompt = (args: { defaultPrompt: string; prompt: string }) => {
@@ -196,10 +216,6 @@ export async function createImageGenerationTask(args: SubmitImageGenerationArgs)
   }
 
   const trimmedPrompt = prompt.trim()
-  if (!trimmedPrompt) {
-    throw new Error('Prompt is required.')
-  }
-
   if (inputMode === 'image' && !sourceImage && !sourceImageAsset) {
     throw new Error('Image-to-image generation requires a source image.')
   }
@@ -219,6 +235,10 @@ export async function createImageGenerationTask(args: SubmitImageGenerationArgs)
     defaultPrompt,
     prompt: trimmedPrompt,
   })
+  if (!effectivePrompt) {
+    throw new Error('Prompt is required.')
+  }
+
   const baseSnapshot = isRecord(parameterSnapshot) ? parameterSnapshot : {}
   const imageGenerationSnapshot = readImageGenerationSnapshot(baseSnapshot)
 
@@ -358,6 +378,21 @@ async function readGeneratedMediaRecord(args: {
 
 export async function runImageGenerationTask(args: RunImageGenerationTaskArgs) {
   const { req, taskId } = args
+  if (imageGenerationTaskLocks.has(taskId)) {
+    const lockedTask = await req.payload.findByID({
+      collection: 'generation-tasks',
+      depth: 0,
+      id: taskId,
+      req,
+      ...accessOptions(req),
+    })
+
+    return {
+      media: null,
+      task: lockedTask,
+    }
+  }
+
   const task = await req.payload.findByID({
     collection: 'generation-tasks',
     depth: 0,
@@ -365,7 +400,7 @@ export async function runImageGenerationTask(args: RunImageGenerationTaskArgs) {
     req,
     ...accessOptions(req),
   })
-  const taskRecord = task as Record<string, any>
+  const taskRecord = task as unknown as Record<string, unknown>
   const userId = readTaskUserId(taskRecord)
 
   if (!userId) {
@@ -390,6 +425,13 @@ export async function runImageGenerationTask(args: RunImageGenerationTaskArgs) {
     }
   }
 
+  if (hasRecentImageGenerationDispatch(taskRecord)) {
+    return {
+      media: null,
+      task,
+    }
+  }
+
   const inputMode = taskRecord.inputMode === 'image' ? 'image' : 'text'
   const selectedProvider =
     taskRecord.provider === 'gemini-official' ||
@@ -404,12 +446,25 @@ export async function runImageGenerationTask(args: RunImageGenerationTaskArgs) {
   }
   const effectivePrompt = readImageGenerationEffectivePrompt(taskRecord.parameterSnapshot) || readString(taskRecord.prompt)
   const snapshot = isRecord(taskRecord.parameterSnapshot) ? taskRecord.parameterSnapshot : {}
+  const imageGenerationSnapshot = readImageGenerationSnapshot(snapshot)
   const sourceImageAsset = isRecord(snapshot.sourceImageAsset) ? snapshot.sourceImageAsset : undefined
 
+  imageGenerationTaskLocks.add(taskId)
+
   try {
+    const dispatchStartedAt = new Date().toISOString()
+
     await req.payload.update({
       collection: 'generation-tasks',
       data: {
+        parameterSnapshot: {
+          ...snapshot,
+          imageGeneration: {
+            ...imageGenerationSnapshot,
+            dispatchStartedAt,
+            taskType: 'image-generation',
+          },
+        },
         progress: Math.max(readNumber(taskRecord.progress), 25),
         status: 'processing',
       },
@@ -554,6 +609,8 @@ export async function runImageGenerationTask(args: RunImageGenerationTaskArgs) {
     }).catch(() => null)
 
     throw error
+  } finally {
+    imageGenerationTaskLocks.delete(taskId)
   }
 }
 

@@ -14,6 +14,7 @@ import {
   getCurrentUserTasks,
   requireUser,
 } from "../_lib/session";
+import { formatTaskGenerationType } from "../_lib/ui-text";
 
 const transactionTypeLabels: Record<string, string> = {
   download_spend: "Download",
@@ -185,7 +186,10 @@ export default async function AccountPage({
         item: String(task.prompt || task.taskCode || `Task ${task.id}`),
         status: String(task.status || "Queued"),
         time: formatDate(task.updatedAt || task.createdAt),
-        type: String(task.inputMode || "Generation"),
+        type: formatTaskGenerationType({
+          inputMode: task.inputMode,
+          taskType: task.taskType,
+        }),
       })),
     },
   };

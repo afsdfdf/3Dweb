@@ -7,9 +7,13 @@ const rootDir = process.cwd()
 const workbenchClientPath = path.join(rootDir, 'src', 'app', '(frontend)', 'workbench', 'WorkbenchClient.tsx')
 const workbenchDataPath = path.join(rootDir, 'src', 'app', '(frontend)', 'workbench', '_lib', 'workbenchData.ts')
 const workbenchPagePath = path.join(rootDir, 'src', 'app', '(frontend)', 'workbench', 'page.tsx')
+const accountPagePath = path.join(rootDir, 'src', 'app', '(frontend)', 'account', 'page.tsx')
 const aiTasksEndpointPath = path.join(rootDir, 'src', 'endpoints', 'aiTasks.ts')
+const imageGenerationEndpointPath = path.join(rootDir, 'src', 'endpoints', 'imageGeneration.ts')
 const aiTaskFlowPath = path.join(rootDir, 'src', 'lib', 'aiTaskFlow.ts')
 const imageGenerationFlowPath = path.join(rootDir, 'src', 'lib', 'imageGenerationFlow.ts')
+const resultsPagePath = path.join(rootDir, 'src', 'app', '(frontend)', 'results', '[taskCode]', 'page.tsx')
+const uiTextPath = path.join(rootDir, 'src', 'app', '(frontend)', '_lib', 'ui-text.ts')
 
 test('Workbench keeps 3D generation on the current page and polls task sync', () => {
   const source = readFileSync(workbenchClientPath, 'utf8')
@@ -119,4 +123,40 @@ test('Workbench uses a moderate provider sync interval by default', () => {
   const source = readFileSync(workbenchClientPath, 'utf8')
 
   assert.match(source, /NEXT_PUBLIC_TASK_SYNC_INTERVAL_MS \|\| 5000/)
+})
+
+test('image generation background work can be recovered by sync polling', () => {
+  const endpointSource = readFileSync(imageGenerationEndpointPath, 'utf8')
+  const flowSource = readFileSync(imageGenerationFlowPath, 'utf8')
+
+  assert.match(endpointSource, /after\(\(\) => task\(\)\)/)
+  assert.match(endpointSource, /scheduleTaskRun\(\{ req, taskId \}\)/)
+  assert.match(endpointSource, /isRunnableImageGenerationStatus\(task\.status\)/)
+  assert.match(flowSource, /imageGenerationTaskLocks/)
+  assert.match(flowSource, /dispatchStartedAt/)
+  assert.match(flowSource, /hasRecentImageGenerationDispatch/)
+})
+
+test('image generation default prompt can satisfy prompt validation', () => {
+  const source = readFileSync(imageGenerationFlowPath, 'utf8')
+  const defaultPrompt = source.indexOf('const defaultPrompt = await readImageGenerationDefaultPrompt(req)')
+  const effectivePrompt = source.indexOf('const effectivePrompt = buildEffectiveImagePrompt', defaultPrompt)
+  const promptRequired = source.indexOf("throw new Error('Prompt is required.')", effectivePrompt)
+
+  assert.ok(defaultPrompt >= 0)
+  assert.ok(effectivePrompt > defaultPrompt)
+  assert.ok(promptRequired > effectivePrompt)
+})
+
+test('image generation tasks render as image tasks outside Workbench', () => {
+  const accountSource = readFileSync(accountPagePath, 'utf8')
+  const resultsSource = readFileSync(resultsPagePath, 'utf8')
+  const uiTextSource = readFileSync(uiTextPath, 'utf8')
+
+  assert.match(uiTextSource, /export function formatTaskGenerationType/)
+  assert.match(uiTextSource, /taskType === 'image-generation'/)
+  assert.match(uiTextSource, /Text to Image/)
+  assert.match(uiTextSource, /Image to Image/)
+  assert.match(accountSource, /formatTaskGenerationType/)
+  assert.match(resultsSource, /formatTaskGenerationType/)
 })

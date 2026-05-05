@@ -92,6 +92,32 @@ export function formatInputMode(mode?: string | null, locale: Locale = 'en') {
   return labels[locale][mode as keyof (typeof labels)[typeof locale]] || fallbackLabel(mode)
 }
 
+export function formatTaskGenerationType(args: {
+  inputMode?: string | null
+  locale?: Locale
+  taskType?: string | null
+}) {
+  const locale = args.locale ?? 'en'
+
+  if (args.taskType === 'image-generation') {
+    const labels = {
+      en: {
+        image: 'Image to Image',
+        text: 'Text to Image',
+      },
+      zh: {
+        image: '\u56fe\u751f\u56fe',
+        text: '\u6587\u751f\u56fe',
+      },
+    } as const
+
+    const mode = args.inputMode === 'image' ? 'image' : 'text'
+    return labels[locale][mode]
+  }
+
+  return formatInputMode(args.inputMode, locale)
+}
+
 export function formatCreditType(type?: string | null, locale: Locale = 'en') {
   const labels = {
     en: {
