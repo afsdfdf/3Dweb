@@ -28,6 +28,23 @@ const normalizeSourceImageAssets = (value: unknown) => {
   return Array.isArray(value) ? value.filter(isRecord) : []
 }
 
+const normalizeImageGenerationParameterSnapshot = (args: {
+  parameterSnapshot?: Record<string, unknown>
+  sourceImageAsset?: Record<string, unknown>
+}) => {
+  const snapshot = args.parameterSnapshot
+  if (!snapshot || !args.sourceImageAsset) return snapshot
+
+  const workbench = isRecord(snapshot.workbench) ? snapshot.workbench : null
+
+  return {
+    ...snapshot,
+    sourceImageAsset: args.sourceImageAsset,
+    ...(Array.isArray(snapshot.sourceImageAssets) ? { sourceImageAssets: [args.sourceImageAsset] } : {}),
+    ...(workbench ? { workbench: { ...workbench, sourceImageAssets: [args.sourceImageAsset] } } : {}),
+  }
+}
+
 const normalizeImageGenerationProvider = (value: unknown) => {
   if (value === 'gemini-official' || value === 'gemini-third-party' || value === 'openai-compatible') {
     return value
@@ -94,19 +111,15 @@ export const submitImageGenerationEndpoint = {
       const body = req.json ? await req.json() : {}
       const inputMode = body.inputMode === 'image' ? 'image' : 'text'
       const sourceImageAssets = normalizeSourceImageAssets(body.sourceImageAssets)
-
-      if (sourceImageAssets.length > 1) {
-        return Response.json(
-          { message: 'Image generation accepts one source image. Use Image to 3D for multi-image model generation.' },
-          { status: 400 },
-        )
-      }
-
       const sourceImageAsset = isRecord(body.sourceImageAsset) ? body.sourceImageAsset : sourceImageAssets[0]
+      const parameterSnapshot = normalizeImageGenerationParameterSnapshot({
+        parameterSnapshot: isRecord(body.parameterSnapshot) ? body.parameterSnapshot : undefined,
+        sourceImageAsset,
+      })
       const result = await (imageGenerationEndpointTestHooks?.submitImageGeneration || submitImageGeneration)({
         dispatchProvider: false,
         inputMode,
-        parameterSnapshot: isRecord(body.parameterSnapshot) ? body.parameterSnapshot : undefined,
+        parameterSnapshot,
         prompt: String(body.prompt || ''),
         provider: normalizeImageGenerationProvider(body.provider),
         req,

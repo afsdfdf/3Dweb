@@ -91,6 +91,7 @@ export function WorkbenchLeftGenerationPanel({
   const isTextToImage = activeMode === "text3d";
   const isImageGenerationMode = isTextToImage || isImageToImage;
   const showMultiView = isImage3D;
+  const maxReferenceImages = isImageToImage ? 1 : 4;
   const activeModeButton =
     activeMode === "image3d"
       ? "purple"
@@ -232,7 +233,7 @@ export function WorkbenchLeftGenerationPanel({
           <section className={styles.mediaSection}>
             <div className={styles.mediaSectionHeader}>
               <h2>{isImageToImage ? "Reference Image" : "Reference Images"}</h2>
-              <span>{images.length}/4</span>
+              <span>{images.length}/{maxReferenceImages}</span>
             </div>
             <p className={styles.mediaSectionHint}>
               {isImageToImage
@@ -266,8 +267,8 @@ export function WorkbenchLeftGenerationPanel({
                   <input
                     accept={getWorkbenchUploadAccept()}
                     className={styles.hiddenFileInput}
-                    disabled={images.length >= 4}
-                    multiple
+                    disabled={images.length >= maxReferenceImages}
+                    multiple={!isImageToImage}
                     onChange={(event) => {
                       onAddImages(event.target.files);
                       event.target.value = "";

@@ -368,29 +368,59 @@ test('Meshy webhook accepts token and schedules provider sync after response', a
   }
 })
 
-test('image generation endpoint rejects multiple source image assets', async () => {
-  const response = await submitImageGenerationEndpoint.handler({
-    headers: new Headers(),
-    json: async () => ({
-      inputMode: 'image',
-      prompt: 'make a clean concept image',
-      sourceImageAssets: [
-        { publicUrl: 'https://storage.example.com/a.png' },
-        { publicUrl: 'https://storage.example.com/b.png' },
-      ],
-    }),
-    payload: {
-      config: { cookiePrefix: 'payload' },
-      logger: createLogger(),
-    },
-    user: {
-      id: 7,
-    },
-  } as never)
-  const body = await response.json()
+test('image generation endpoint tolerates multiple source image assets by using the first one', async () => {
+  let forwardedParameterSnapshot: Record<string, unknown> | undefined
+  let forwardedSourceImageAsset: Record<string, unknown> | undefined
 
-  assert.equal(response.status, 400)
-  assert.match(body.message, /one source image/i)
+  __setImageGenerationEndpointTestHooks({
+    submitImageGeneration: async ({ parameterSnapshot, sourceImageAsset }) => {
+      forwardedParameterSnapshot = parameterSnapshot
+      forwardedSourceImageAsset = sourceImageAsset
+      return {
+        media: null,
+        task: {
+          id: 9,
+        },
+      } as never
+    },
+  })
+
+  try {
+    const response = await submitImageGenerationEndpoint.handler({
+      headers: new Headers(),
+      json: async () => ({
+        inputMode: 'image',
+        parameterSnapshot: {
+          workbench: {
+            sourceImageAssets: [
+              { publicUrl: 'https://storage.example.com/a.png' },
+              { publicUrl: 'https://storage.example.com/b.png' },
+            ],
+          },
+        },
+        prompt: 'make a clean concept image',
+        sourceImageAssets: [
+          { publicUrl: 'https://storage.example.com/a.png' },
+          { publicUrl: 'https://storage.example.com/b.png' },
+        ],
+      }),
+      payload: {
+        config: { cookiePrefix: 'payload' },
+        logger: createLogger(),
+      },
+      user: {
+        id: 7,
+      },
+    } as never)
+
+    assert.equal(response.status, 202)
+    assert.equal(forwardedSourceImageAsset?.publicUrl, 'https://storage.example.com/a.png')
+
+    const workbench = forwardedParameterSnapshot?.workbench as { sourceImageAssets?: unknown[] } | undefined
+    assert.equal(workbench?.sourceImageAssets?.length, 1)
+  } finally {
+    __setImageGenerationEndpointTestHooks(null)
+  }
 })
 
 test('image generation endpoint forwards a single source image asset from the array payload', async () => {

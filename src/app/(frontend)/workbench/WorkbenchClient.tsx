@@ -288,6 +288,7 @@ export function WorkbenchClient({
   const [selectedImageCard, setSelectedImageCard] = useState<ModelLibraryPanelCard | null>(null);
   const [selectedModelSrc, setSelectedModelSrc] = useState<null | string>(firstModelSrc);
   const showImageInputs = activeMode === "image3d" || activeMode === "imageTools";
+  const maxReferenceImageCount = activeMode === "imageTools" ? 1 : 4;
   const activeGenerationCreditCost = getActiveGenerationCreditCost({
     activeMode,
     costs: generationCreditCosts,
@@ -404,6 +405,20 @@ export function WorkbenchClient({
   useEffect(() => {
     imagesRef.current = images;
   }, [images]);
+
+  useEffect(() => {
+    if (activeMode !== "imageTools") return;
+
+    setImages((current) => {
+      if (current.length <= 1) return current;
+
+      current.slice(1).forEach((image) => {
+        if (image.file) URL.revokeObjectURL(image.previewUrl);
+      });
+
+      return current.slice(0, 1);
+    });
+  }, [activeMode]);
 
   useEffect(() => {
     pendingTasksRef.current = pendingTasks;
@@ -640,7 +655,7 @@ export function WorkbenchClient({
 
     setError("");
     setImages((current) => {
-      const availableSlots = Math.max(0, 4 - current.length);
+      const availableSlots = Math.max(0, maxReferenceImageCount - current.length);
       const selectedFiles = Array.from(files).slice(0, availableSlots);
       const nextImages = selectedFiles
         .filter((file) => workbenchAllowedImageTypes.has(file.type) && file.size <= workbenchMaxUploadBytes)
@@ -654,7 +669,7 @@ export function WorkbenchClient({
         setError("Some images were skipped. Use JPEG, PNG, or WEBP under the upload size limit.");
       }
 
-      return [...current, ...nextImages];
+      return [...current, ...nextImages].slice(0, maxReferenceImageCount);
     });
   };
 
@@ -712,9 +727,10 @@ export function WorkbenchClient({
     }
 
     try {
+      const imagesForGeneration = activeMode === "imageTools" ? images.slice(0, 1) : images;
       const sourceImageAssets = showImageInputs
         ? await Promise.all(
-            images.map((image) => {
+            imagesForGeneration.map((image) => {
               if (image.sourceAsset) return Promise.resolve(image.sourceAsset);
               if (image.file) return uploadWorkbenchSourceImage(image.file);
               return Promise.reject(new Error("Image upload failed."));
@@ -972,18 +988,17 @@ export function WorkbenchClient({
                 const sourceAsset = card.sourceAsset;
                 if (card.kind === "image" && sourceAsset) {
                   setImages((current) => {
-                    if (current.some((image) => image.sourceAsset?.publicUrl === sourceAsset.publicUrl)) {
-                      return current;
-                    }
+                    current.forEach((image) => {
+                      if (image.file) URL.revokeObjectURL(image.previewUrl);
+                    });
 
                     return [
-                      ...current,
                       {
                         id: `generated-${sourceAsset.mediaId ?? card.id}`,
                         previewUrl: sourceAsset.publicUrl,
                         sourceAsset,
                       },
-                    ].slice(0, 4);
+                    ];
                   });
                   setActiveMode("imageTools");
                   setMultiView(false);
