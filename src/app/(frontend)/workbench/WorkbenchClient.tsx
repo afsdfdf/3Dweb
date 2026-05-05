@@ -335,6 +335,8 @@ export function WorkbenchClient({
         previewSrc: activeImagePendingTask.previewSrc ?? null,
       }
     : selectedImageCard;
+  const canUseSelectedImageFor3D =
+    activeMode === "imageTools" && !activeImagePendingTask && Boolean(selectedImageCard?.sourceAsset);
   const showImagePreview = activeMode === "imageTools" && Boolean(activeImagePreview || activeImagePendingTask);
   const activeDisplayName =
     activeImagePreview?.name ||
@@ -681,6 +683,37 @@ export function WorkbenchClient({
     });
   };
 
+  const setGeneratedImageAsReference = (card: ModelLibraryPanelCard) => {
+    const sourceAsset = card.sourceAsset;
+    if (!sourceAsset) return false;
+
+    setImages((current) => {
+      current.forEach((image) => {
+        if (image.file) URL.revokeObjectURL(image.previewUrl);
+      });
+
+      return [
+        {
+          id: `generated-${sourceAsset.mediaId ?? card.id}`,
+          previewUrl: sourceAsset.publicUrl,
+          sourceAsset,
+        },
+      ];
+    });
+
+    return true;
+  };
+
+  const handleUseSelectedImageFor3D = () => {
+    if (!selectedImageCard || !setGeneratedImageAsReference(selectedImageCard)) return;
+
+    setActiveMode("image3d");
+    setMultiView(false);
+    setSelectedImageCard(null);
+    setSelectedModelSrc(null);
+    setActivePendingCardId(null);
+  };
+
   const handleGenerate = async () => {
     if (isSubmitting) return;
 
@@ -938,17 +971,24 @@ export function WorkbenchClient({
               <div className={styles.viewerSquare}>
                 <div className={styles.viewerSurface}>
                   {showImagePreview ? (
-                    <div className={styles.imagePreviewCard}>
-                      {activeImagePreview?.previewSrc ? (
-                        <img
-                          alt={activeImagePreview.previewAlt || "Generated image preview"}
-                          src={activeImagePreview.previewSrc}
-                        />
-                      ) : (
-                        <div className={styles.imagePreviewPlaceholder}>
-                          <span>IMAGE</span>
-                        </div>
-                      )}
+                    <div className={styles.imagePreviewCluster}>
+                      <div className={styles.imagePreviewCard}>
+                        {activeImagePreview?.previewSrc ? (
+                          <img
+                            alt={activeImagePreview.previewAlt || "Generated image preview"}
+                            src={activeImagePreview.previewSrc}
+                          />
+                        ) : (
+                          <div className={styles.imagePreviewPlaceholder}>
+                            <span>IMAGE</span>
+                          </div>
+                        )}
+                      </div>
+                      {canUseSelectedImageFor3D ? (
+                        <button className={styles.imageTo3DAction} onClick={handleUseSelectedImageFor3D} type="button">
+                          Use for 3D
+                        </button>
+                      ) : null}
                     </div>
                   ) : (
                     <ModelViewer
@@ -987,19 +1027,7 @@ export function WorkbenchClient({
 
                 const sourceAsset = card.sourceAsset;
                 if (card.kind === "image" && sourceAsset) {
-                  setImages((current) => {
-                    current.forEach((image) => {
-                      if (image.file) URL.revokeObjectURL(image.previewUrl);
-                    });
-
-                    return [
-                      {
-                        id: `generated-${sourceAsset.mediaId ?? card.id}`,
-                        previewUrl: sourceAsset.publicUrl,
-                        sourceAsset,
-                      },
-                    ];
-                  });
+                  setGeneratedImageAsReference(card);
                   setActiveMode("imageTools");
                   setMultiView(false);
                   setSelectedImageCard(card);

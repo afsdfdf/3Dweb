@@ -1386,13 +1386,22 @@
   background: transparent !important;
 }
 
-.imagePreviewCard {
+.imagePreviewCluster {
   position: absolute;
   left: 50%;
   top: 50%;
   z-index: 2;
   display: grid;
   width: min(72%, 480px);
+  gap: 14px;
+  justify-items: center;
+  transform: translate(-50%, -44%) perspective(1100px) rotateX(6deg) rotateY(-7deg);
+}
+
+.imagePreviewCard {
+  position: relative;
+  display: grid;
+  width: 100%;
   aspect-ratio: 1 / 1;
   overflow: hidden;
   border: 1px solid rgba(255, 206, 121, 0.28);
@@ -1403,7 +1412,6 @@
     0 24px 90px rgba(0, 0, 0, 0.48),
     inset 0 0 0 12px rgba(0, 0, 0, 0.24);
   place-items: center;
-  transform: translate(-50%, -44%) perspective(1100px) rotateX(6deg) rotateY(-7deg);
 }
 
 .imagePreviewCard::before {
@@ -1437,6 +1445,27 @@
   color: rgba(255, 255, 255, 0.42);
   font-size: 18px;
   font-weight: 800;
+}
+
+.imageTo3DAction {
+  width: 150px;
+  height: 34px;
+  border: 1px solid rgba(255, 206, 121, 0.52);
+  border-radius: 3px;
+  background: rgba(4, 4, 4, 0.84);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.34);
+  color: #ffce79;
+  cursor: pointer;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 32px;
+  text-align: center;
+}
+
+.imageTo3DAction:hover {
+  background: rgba(255, 206, 121, 0.12);
 }
 
 .viewerLoadingOverlay {

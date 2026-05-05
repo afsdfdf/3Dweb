@@ -119,6 +119,17 @@ test('Workbench submits image generation as an async pending image task', () => 
   assert.match(imageTaskSource, /dispatchProvider === false/)
 })
 
+test('Workbench can promote a generated image into an Image to 3D reference', () => {
+  const clientSource = readFileSync(workbenchClientPath, 'utf8')
+  const cssSource = readFileSync(path.join(rootDir, 'src', 'app', '(frontend)', 'workbench', 'page.module.css'), 'utf8')
+
+  assert.match(clientSource, /const handleUseSelectedImageFor3D = \(\) =>/)
+  assert.match(clientSource, /setGeneratedImageAsReference\(selectedImageCard\)/)
+  assert.match(clientSource, /setActiveMode\("image3d"\)/)
+  assert.match(clientSource, /Use for 3D/)
+  assert.match(cssSource, /\.imageTo3DAction/)
+})
+
 test('Workbench uses a moderate provider sync interval by default', () => {
   const source = readFileSync(workbenchClientPath, 'utf8')
 
