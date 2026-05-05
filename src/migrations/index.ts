@@ -12,6 +12,7 @@ import * as migration_20260501_053500_meshy_unified_flow_settings from './202605
 import * as migration_20260501_055200_meshy_3d_pricing from './20260501_055200_meshy_3d_pricing';
 import * as migration_20260501_114300_runtime_env_guidance_defaults from './20260501_114300_runtime_env_guidance_defaults';
 import * as migration_20260503_124500_registration_email_codes from './20260503_124500_registration_email_codes';
+import * as migration_20260505_133000_openai_compatible_image_provider from './20260505_133000_openai_compatible_image_provider';
 
 export const migrations = [
   {
@@ -83,5 +84,10 @@ export const migrations = [
     up: migration_20260503_124500_registration_email_codes.up,
     down: migration_20260503_124500_registration_email_codes.down,
     name: '20260503_124500_registration_email_codes'
+  },
+  {
+    up: migration_20260505_133000_openai_compatible_image_provider.up,
+    down: migration_20260505_133000_openai_compatible_image_provider.down,
+    name: '20260505_133000_openai_compatible_image_provider'
   },
 ];

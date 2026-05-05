@@ -464,6 +464,12 @@ Current evergreen references:
 - Workbench must hydrate unfinished backend 3D generation tasks on page load. Pending model cards cannot rely only on React memory because refreshes, route changes, HMR, or transient database errors can stop frontend polling while a `generation-tasks` row remains `queued` or `processing`. Seed `/workbench` from the current user's unfinished `custom`/`meshy`/`tripo` tasks so reopening the page resumes `/api/studio/ai/tasks/:id/sync`.
 - Workbench generation polling should be sized for real Meshy task duration. Keep the client sync interval moderate and authenticated `ai-sync` rate limits high enough for multi-minute provider runs; a low sync cap can leave legitimate long-running tasks looking stuck even though provider polling is the intended local-dev fallback when webhooks are unavailable.
 
+### 2026-05-05
+
+- Image generation now supports an `openai-compatible` provider in addition to Gemini official and Gemini third-party. Admin settings live under `ai-provider-settings.imageGeneration.openAICompatible` with `baseURL`, `model`, `apiKey`, and `size`; environment fallback order is `OPENAI_IMAGE_COMPATIBLE_*` first, then generic `OPENAI_*` where applicable.
+- OpenAI-compatible text image generation posts JSON to `/images/generations`; image-to-image posts multipart data to `/images/edits`. Keep this separate from Gemini-compatible gateways, which use `x-goog-api-key` and `generateContent`.
+- `/api/studio/ai/images` must not force `gemini-official` when no provider is supplied. Let the image-generation global default provider select Gemini official, Gemini third-party, or OpenAI-compatible so backend admin configuration is the source of truth.
+
 ### 2026-05-03
 
 - Customer registration now supports backend-configurable verification modes through `security-settings`: `registrationVerificationMode = email-code` is the default, while `email-link` preserves the legacy Payload verification-link flow.

@@ -440,7 +440,7 @@ export async function getWorkbenchGenerationTaskState(
                 },
                 {
                   provider: {
-                    in: ["gemini-official", "gemini-third-party"],
+                    in: ["gemini-official", "gemini-third-party", "openai-compatible"],
                   },
                 },
               ],

@@ -45,6 +45,7 @@ export const GenerationTasks: CollectionConfig = {
         { label: 'Tripo', value: 'tripo' },
         { label: 'Gemini official', value: 'gemini-official' },
         { label: 'Gemini third-party', value: 'gemini-third-party' },
+        { label: 'OpenAI compatible', value: 'openai-compatible' },
         { label: 'Custom', value: 'custom' },
       ],
     },

@@ -48,7 +48,7 @@ const randomCode = (prefix: string) => {
 
 type TaskStatus = 'failed' | 'processing' | 'queued' | 'succeeded' | 'timeout'
 
-type SupportedProvider = 'custom' | 'gemini-official' | 'gemini-third-party' | 'meshy' | 'tripo'
+type SupportedProvider = 'custom' | 'gemini-official' | 'gemini-third-party' | 'openai-compatible' | 'meshy' | 'tripo'
 
 type SupportedModelFormat = '3mf' | 'fbx' | 'glb' | 'obj' | 'stl' | 'usdz'
 

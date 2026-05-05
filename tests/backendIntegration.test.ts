@@ -427,6 +427,49 @@ test('image generation endpoint forwards a single source image asset from the ar
   }
 })
 
+test('image generation endpoint forwards OpenAI-compatible provider requests', async () => {
+  let forwardedProvider: string | undefined
+
+  __setImageGenerationEndpointTestHooks({
+    submitImageGeneration: async ({ provider }) => {
+      forwardedProvider = provider
+      return {
+        media: {
+          id: 3,
+          mimeType: 'image/png',
+          url: 'https://storage.example.com/result.png',
+        },
+        task: {
+          id: 9,
+        },
+      } as never
+    },
+  })
+
+  try {
+    const response = await submitImageGenerationEndpoint.handler({
+      headers: new Headers(),
+      json: async () => ({
+        inputMode: 'text',
+        prompt: 'make a clean concept image',
+        provider: 'openai-compatible',
+      }),
+      payload: {
+        config: { cookiePrefix: 'payload' },
+        logger: createLogger(),
+      },
+      user: {
+        id: 7,
+      },
+    } as never)
+
+    assert.equal(response.status, 200)
+    assert.equal(forwardedProvider, 'openai-compatible')
+  } finally {
+    __setImageGenerationEndpointTestHooks(null)
+  }
+})
+
 test('model download returns an error instead of mock content when no real asset is available', async () => {
   let spendCalls = 0
   let refundCalls = 0

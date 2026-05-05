@@ -226,6 +226,7 @@ export const AIProviderSettings: GlobalConfig = {
           options: [
             { label: 'Gemini official', value: 'gemini-official' },
             { label: 'Gemini third-party', value: 'gemini-third-party' },
+            { label: 'OpenAI compatible', value: 'openai-compatible' },
           ],
         },
         {
@@ -274,6 +275,45 @@ export const AIProviderSettings: GlobalConfig = {
               label: 'API key',
               admin: {
                 description: 'Optional. If empty, runtime falls back to GEMINI_IMAGE_THIRD_PARTY_API_KEY.',
+              },
+            },
+          ],
+        },
+        {
+          name: 'openAICompatible',
+          type: 'group',
+          label: 'OpenAI compatible',
+          fields: [
+            {
+              name: 'baseURL',
+              type: 'text',
+              defaultValue: 'https://api.openai.com/v1',
+              label: 'Base URL',
+              admin: {
+                description: 'Use the root OpenAI-compatible API URL, for example https://api.example.com/v1.',
+              },
+            },
+            {
+              name: 'model',
+              type: 'text',
+              defaultValue: 'gpt-image-1',
+              label: 'Model',
+            },
+            {
+              name: 'apiKey',
+              type: 'text',
+              label: 'API key',
+              admin: {
+                description: 'Optional. If empty, runtime falls back to OPENAI_IMAGE_COMPATIBLE_API_KEY, then OPENAI_API_KEY.',
+              },
+            },
+            {
+              name: 'size',
+              type: 'text',
+              defaultValue: '1024x1024',
+              label: 'Image size',
+              admin: {
+                description: 'OpenAI-compatible image size, for example 1024x1024.',
               },
             },
           ],

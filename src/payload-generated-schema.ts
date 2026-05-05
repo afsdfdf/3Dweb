@@ -62,7 +62,14 @@ export const enum_generation_tasks_input_mode = pgEnum(
 );
 export const enum_generation_tasks_provider = pgEnum(
   "enum_generation_tasks_provider",
-  ["meshy", "tripo", "gemini-official", "gemini-third-party", "custom"],
+  [
+    "meshy",
+    "tripo",
+    "gemini-official",
+    "gemini-third-party",
+    "openai-compatible",
+    "custom",
+  ],
 );
 export const enum_generation_tasks_status = pgEnum(
   "enum_generation_tasks_status",
@@ -297,6 +304,7 @@ export const enum_ai_provider_settings_image_generation_default_provider =
   pgEnum("enum_ai_provider_settings_image_generation_default_provider", [
     "gemini-official",
     "gemini-third-party",
+    "openai-compatible",
   ]);
 export const enum_security_settings_registration_verification_mode = pgEnum(
   "enum_security_settings_registration_verification_mode",
@@ -3244,6 +3252,18 @@ export const ai_provider_settings = pgTable("ai_provider_settings", {
   imageGeneration_thirdParty_apiKey: varchar(
     "image_generation_third_party_api_key",
   ),
+  imageGeneration_openAICompatible_baseURL: varchar(
+    "image_generation_open_a_i_compatible_base_u_r_l",
+  ).default("https://api.openai.com/v1"),
+  imageGeneration_openAICompatible_model: varchar(
+    "image_generation_open_a_i_compatible_model",
+  ).default("gpt-image-1"),
+  imageGeneration_openAICompatible_apiKey: varchar(
+    "image_generation_open_a_i_compatible_api_key",
+  ),
+  imageGeneration_openAICompatible_size: varchar(
+    "image_generation_open_a_i_compatible_size",
+  ).default("1024x1024"),
   updatedAt: timestamp("updated_at", {
     mode: "string",
     withTimezone: true,

@@ -7,16 +7,18 @@ import {
   settleReservedTaskCredits,
   spendTaskCredits,
 } from '@/lib/creditLedger'
-import { generateGeminiImage } from '@/lib/geminiImageGateway'
+import {
+  generateProviderImage,
+  resolveImageGenerationProvider,
+  type ImageGenerationProvider,
+} from '@/lib/geminiImageGateway'
 import { uploadToSupabaseStorage, getRuntimeStorageSettings } from '@/lib/supabase/storage'
 import { defaultTaskCreditRules, getTaskBillingSettings, resolveGenerationCredits } from '@/lib/taskBilling'
-
-type ImageTaskProvider = 'gemini-official' | 'gemini-third-party'
 
 type SubmitImageGenerationArgs = {
   inputMode: 'image' | 'text'
   prompt: string
-  provider?: ImageTaskProvider
+  provider?: ImageGenerationProvider
   req: PayloadRequest
   sourceImage?: number
   sourceImageAsset?: Record<string, unknown>
@@ -142,7 +144,10 @@ export async function submitImageGeneration(args: SubmitImageGenerationArgs) {
     inputMode,
     pricing: generationPricing,
   })
-  const selectedProvider = provider || 'gemini-official'
+  const selectedProvider = await resolveImageGenerationProvider({
+    preferredProvider: provider,
+    req,
+  })
 
   if ((creditRules || defaultTaskCreditRules).reserveOnSubmit && configuredCredits > 0) {
     await assertTaskCreditsAvailable({
@@ -230,7 +235,7 @@ export async function submitImageGeneration(args: SubmitImageGenerationArgs) {
       userId: Number(req.user.id),
     })
 
-    const generated = await generateGeminiImage({
+    const generated = await generateProviderImage({
       inputMode,
       prompt: trimmedPrompt,
       provider: selectedProvider,

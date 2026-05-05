@@ -26,6 +26,14 @@ const normalizeSourceImageAssets = (value: unknown) => {
   return Array.isArray(value) ? value.filter(isRecord) : []
 }
 
+const normalizeImageGenerationProvider = (value: unknown) => {
+  if (value === 'gemini-official' || value === 'gemini-third-party' || value === 'openai-compatible') {
+    return value
+  }
+
+  return undefined
+}
+
 export const submitImageGenerationEndpoint = {
   path: '/studio/ai/images',
   method: 'post' as const,
@@ -58,7 +66,7 @@ export const submitImageGenerationEndpoint = {
       const result = await (imageGenerationEndpointTestHooks?.submitImageGeneration || submitImageGeneration)({
         inputMode,
         prompt: String(body.prompt || ''),
-        provider: body.provider === 'gemini-third-party' ? 'gemini-third-party' : 'gemini-official',
+        provider: normalizeImageGenerationProvider(body.provider),
         req,
         sourceImage: typeof body.sourceImage === 'number' ? body.sourceImage : undefined,
         sourceImageAsset,

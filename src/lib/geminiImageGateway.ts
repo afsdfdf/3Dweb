@@ -4,22 +4,35 @@ import { getCanonicalAppURL } from '@/lib/getCanonicalAppURL'
 import { getMediaAccessURL } from '@/lib/mediaAccessURL'
 import { createSupabaseStorageSignedUrl } from '@/lib/supabase/storage'
 
-type ImageGenerationProvider = 'gemini-official' | 'gemini-third-party'
+export type ImageGenerationProvider = 'gemini-official' | 'gemini-third-party' | 'openai-compatible'
 
 type GeminiInlineImage = {
   data: string
   mimeType: string
 }
 
+type SourceImageData = GeminiInlineImage & {
+  buffer: Buffer
+}
+
 type GeminiImageSettings = {
   apiKey: string
   baseURL: string
   model: string
-  provider: ImageGenerationProvider
+  provider: Exclude<ImageGenerationProvider, 'openai-compatible'>
   timeoutSeconds: number
 }
 
-type GenerateGeminiImageArgs = {
+type OpenAICompatibleImageSettings = {
+  apiKey: string
+  baseURL: string
+  model: string
+  provider: 'openai-compatible'
+  size: string
+  timeoutSeconds: number
+}
+
+type GenerateProviderImageArgs = {
   inputMode: 'image' | 'text'
   prompt: string
   req: PayloadRequest
@@ -28,8 +41,13 @@ type GenerateGeminiImageArgs = {
   provider?: ImageGenerationProvider
 }
 
+type ImageProviderSettings = GeminiImageSettings | OpenAICompatibleImageSettings
+
 const DEFAULT_OFFICIAL_BASE_URL = 'https://generativelanguage.googleapis.com'
 const DEFAULT_OFFICIAL_MODEL = 'gemini-2.5-flash-image-preview'
+const DEFAULT_OPENAI_COMPATIBLE_BASE_URL = 'https://api.openai.com/v1'
+const DEFAULT_OPENAI_COMPATIBLE_MODEL = 'gpt-image-1'
+const DEFAULT_OPENAI_COMPATIBLE_SIZE = '1024x1024'
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
@@ -73,10 +91,41 @@ async function parseGeminiError(response: Response) {
   }
 }
 
-async function readGeminiSettings(args: {
+async function parseOpenAICompatibleError(response: Response) {
+  try {
+    const payload = (await response.json()) as Record<string, unknown>
+    const error = isRecord(payload.error) ? payload.error : null
+    const message = readString(error?.message) || readString(payload.message)
+    return message || JSON.stringify(payload)
+  } catch {
+    return await response.text()
+  }
+}
+
+const readImageGenerationDefaultProvider = (value: unknown): ImageGenerationProvider => {
+  if (value === 'gemini-third-party' || value === 'openai-compatible') {
+    return value
+  }
+
+  return 'gemini-official'
+}
+
+const readPreferredProvider = (value: unknown): ImageGenerationProvider | undefined => {
+  if (value === 'gemini-official' || value === 'gemini-third-party' || value === 'openai-compatible') {
+    return value
+  }
+
+  return undefined
+}
+
+export async function resolveImageGenerationProvider(args: {
   preferredProvider?: ImageGenerationProvider
   req: PayloadRequest
-}): Promise<GeminiImageSettings> {
+}): Promise<ImageGenerationProvider> {
+  if (args.preferredProvider) {
+    return args.preferredProvider
+  }
+
   const config = await args.req.payload
     .findGlobal({
       slug: 'ai-provider-settings',
@@ -85,12 +134,27 @@ async function readGeminiSettings(args: {
     .catch(() => null)
 
   const imageGeneration = isRecord(config?.imageGeneration) ? config.imageGeneration : {}
-  const defaultProvider =
-    imageGeneration.defaultProvider === 'gemini-third-party' ? 'gemini-third-party' : 'gemini-official'
-  const provider = args.preferredProvider || defaultProvider
+  return readImageGenerationDefaultProvider(imageGeneration.defaultProvider)
+}
+
+async function readImageSettings(args: {
+  preferredProvider?: ImageGenerationProvider
+  req: PayloadRequest
+}): Promise<ImageProviderSettings> {
+  const config = await args.req.payload
+    .findGlobal({
+      slug: 'ai-provider-settings',
+      overrideAccess: true,
+    })
+    .catch(() => null)
+
+  const imageGeneration = isRecord(config?.imageGeneration) ? config.imageGeneration : {}
+  const defaultProvider = readImageGenerationDefaultProvider(imageGeneration.defaultProvider)
+  const provider = readPreferredProvider(args.preferredProvider) || defaultProvider
   const timeoutSeconds = Math.max(5, Number(imageGeneration.timeoutSeconds || 60))
   const official = isRecord(imageGeneration.official) ? imageGeneration.official : {}
   const thirdParty = isRecord(imageGeneration.thirdParty) ? imageGeneration.thirdParty : {}
+  const openAICompatible = isRecord(imageGeneration.openAICompatible) ? imageGeneration.openAICompatible : {}
 
   if (provider === 'gemini-third-party') {
     return {
@@ -98,6 +162,32 @@ async function readGeminiSettings(args: {
       baseURL: normalizeBaseURL(readString(process.env.GEMINI_IMAGE_THIRD_PARTY_BASE_URL) || readString(thirdParty.baseURL)),
       model: readString(process.env.GEMINI_IMAGE_THIRD_PARTY_MODEL) || readString(thirdParty.model),
       provider,
+      timeoutSeconds,
+    }
+  }
+
+  if (provider === 'openai-compatible') {
+    return {
+      apiKey:
+        readString(process.env.OPENAI_IMAGE_COMPATIBLE_API_KEY) ||
+        readString(process.env.OPENAI_API_KEY) ||
+        readString(openAICompatible.apiKey),
+      baseURL: normalizeBaseURL(
+        readString(process.env.OPENAI_IMAGE_COMPATIBLE_BASE_URL) ||
+          readString(process.env.OPENAI_BASE_URL) ||
+          readString(openAICompatible.baseURL) ||
+          DEFAULT_OPENAI_COMPATIBLE_BASE_URL,
+      ),
+      model:
+        readString(process.env.OPENAI_IMAGE_COMPATIBLE_MODEL) ||
+        readString(process.env.OPENAI_IMAGE_MODEL) ||
+        readString(openAICompatible.model) ||
+        DEFAULT_OPENAI_COMPATIBLE_MODEL,
+      provider,
+      size:
+        readString(process.env.OPENAI_IMAGE_COMPATIBLE_SIZE) ||
+        readString(openAICompatible.size) ||
+        DEFAULT_OPENAI_COMPATIBLE_SIZE,
       timeoutSeconds,
     }
   }
@@ -171,7 +261,7 @@ async function readSourceImageInlineData(args: {
   req: PayloadRequest
   sourceImage?: number
   sourceImageAsset?: Record<string, unknown>
-}) {
+}): Promise<SourceImageData> {
   const downloadURL = await resolveSourceImageDownloadURL(args)
   const response = await fetch(downloadURL)
 
@@ -188,9 +278,10 @@ async function readSourceImageInlineData(args: {
   }
 
   return {
+    buffer,
     data: buffer.toString('base64'),
     mimeType,
-  } satisfies GeminiInlineImage
+  } satisfies SourceImageData
 }
 
 function extractInlineImage(payload: Record<string, unknown>): GeminiInlineImage {
@@ -216,8 +307,120 @@ function extractInlineImage(payload: Record<string, unknown>): GeminiInlineImage
   throw new Error('Gemini did not return an image payload.')
 }
 
-export async function generateGeminiImage(args: GenerateGeminiImageArgs) {
-  const settings = await readGeminiSettings({
+async function extractOpenAICompatibleImage(payload: Record<string, unknown>) {
+  const data = Array.isArray(payload.data) ? payload.data : []
+  const image = data.find(isRecord)
+
+  if (!image) {
+    throw new Error('OpenAI-compatible provider did not return an image payload.')
+  }
+
+  const b64Json = readString(image.b64_json)
+  const mimeType = readString(image.mime_type) || readString(image.mimeType) || 'image/png'
+
+  if (b64Json) {
+    return { data: b64Json, mimeType } satisfies GeminiInlineImage
+  }
+
+  const url = readString(image.url)
+  if (!url) {
+    throw new Error('OpenAI-compatible provider response did not include b64_json or url.')
+  }
+
+  const response = await fetch(url)
+  if (!response.ok) {
+    throw new Error(`OpenAI-compatible image URL fetch failed with ${response.status}.`)
+  }
+
+  const responseMimeType = readString(response.headers.get('content-type')) || mimeType
+  const arrayBuffer = await response.arrayBuffer()
+  const buffer = Buffer.from(arrayBuffer)
+
+  if (buffer.byteLength === 0) {
+    throw new Error('OpenAI-compatible image URL returned an empty image.')
+  }
+
+  return {
+    data: buffer.toString('base64'),
+    mimeType: responseMimeType,
+  } satisfies GeminiInlineImage
+}
+
+function getSourceImageFilename(mimeType: string) {
+  const normalized = mimeType.toLowerCase()
+  if (normalized === 'image/jpeg') return 'source.jpg'
+  if (normalized === 'image/webp') return 'source.webp'
+  return 'source.png'
+}
+
+async function generateOpenAICompatibleImage(args: GenerateProviderImageArgs & {
+  settings: OpenAICompatibleImageSettings
+}) {
+  const { settings } = args
+  const prompt = args.prompt.trim()
+  const headers = {
+    Authorization: `Bearer ${settings.apiKey}`,
+  }
+
+  const path = args.inputMode === 'image' ? '/images/edits' : '/images/generations'
+  const timeoutSignal = AbortSignal.timeout(settings.timeoutSeconds * 1000)
+  let response: Response
+
+  if (args.inputMode === 'image') {
+    const sourceImage = await readSourceImageInlineData({
+      req: args.req,
+      sourceImage: args.sourceImage,
+      sourceImageAsset: args.sourceImageAsset,
+    })
+    const formData = new FormData()
+    const sourceFile = new Blob([new Uint8Array(sourceImage.buffer)], { type: sourceImage.mimeType })
+
+    formData.set('model', settings.model)
+    formData.set('prompt', prompt)
+    formData.set('image', sourceFile, getSourceImageFilename(sourceImage.mimeType))
+    if (settings.size) formData.set('size', settings.size)
+    formData.set('n', '1')
+
+    response = await fetch(`${settings.baseURL}${path}`, {
+      body: formData,
+      headers,
+      method: 'POST',
+      signal: timeoutSignal,
+    })
+  } else {
+    response = await fetch(`${settings.baseURL}${path}`, {
+      body: JSON.stringify({
+        model: settings.model,
+        n: 1,
+        prompt,
+        ...(settings.size ? { size: settings.size } : {}),
+      }),
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+      signal: timeoutSignal,
+    })
+  }
+
+  if (!response.ok) {
+    const detail = await parseOpenAICompatibleError(response)
+    throw new Error(`OpenAI-compatible image generation failed: ${detail}`)
+  }
+
+  const payload = (await response.json()) as Record<string, unknown>
+  const image = await extractOpenAICompatibleImage(payload)
+
+  return {
+    image,
+    provider: settings.provider,
+    providerModel: settings.model,
+  }
+}
+
+export async function generateProviderImage(args: GenerateProviderImageArgs) {
+  const settings = await readImageSettings({
     preferredProvider: args.provider,
     req: args.req,
   })
@@ -232,6 +435,13 @@ export async function generateGeminiImage(args: GenerateGeminiImageArgs) {
 
   if (!settings.model) {
     throw new Error(`The ${settings.provider} model is not configured.`)
+  }
+
+  if (settings.provider === 'openai-compatible') {
+    return generateOpenAICompatibleImage({
+      ...args,
+      settings,
+    })
   }
 
   const parts: Array<Record<string, unknown>> = [{ text: args.prompt.trim() }]

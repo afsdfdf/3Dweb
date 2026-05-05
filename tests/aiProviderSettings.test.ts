@@ -20,6 +20,8 @@ test('AI Provider Settings keeps dedicated Meshy and image-generation groups', (
   const imageGenerationField = AIProviderSettings.fields.find((field: any) => field.name === 'imageGeneration') as any
   const meshyNames = meshyField.fields.map((field: any) => field.name).filter(Boolean)
   const imageGenerationNames = imageGenerationField.fields.map((field: any) => field.name).filter(Boolean)
+  const defaultProviderField = imageGenerationField.fields.find((field: any) => field.name === 'defaultProvider') as any
+  const defaultProviderOptions = defaultProviderField.options.map((option: any) => option.value)
 
   assert.ok(meshyNames.includes('textTo3DAiModel'))
   assert.ok(meshyNames.includes('imageTo3DAiModel'))
@@ -30,4 +32,6 @@ test('AI Provider Settings keeps dedicated Meshy and image-generation groups', (
   assert.ok(meshyNames.includes('targetFormats'))
   assert.ok(imageGenerationNames.includes('official'))
   assert.ok(imageGenerationNames.includes('thirdParty'))
+  assert.ok(imageGenerationNames.includes('openAICompatible'))
+  assert.ok(defaultProviderOptions.includes('openai-compatible'))
 })

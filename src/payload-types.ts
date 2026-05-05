@@ -329,7 +329,7 @@ export interface GenerationTask {
   inputMode: 'image' | 'text' | 'hybrid';
   prompt?: string | null;
   sourceImage?: (number | null) | Media;
-  provider?: ('meshy' | 'tripo' | 'gemini-official' | 'gemini-third-party' | 'custom') | null;
+  provider?: ('meshy' | 'tripo' | 'gemini-official' | 'gemini-third-party' | 'openai-compatible' | 'custom') | null;
   providerTaskId?: string | null;
   status: 'queued' | 'processing' | 'succeeded' | 'failed' | 'timeout';
   progress?: number | null;
@@ -1831,7 +1831,7 @@ export interface AiProviderSetting {
       }[]
     | null;
   imageGeneration?: {
-    defaultProvider?: ('gemini-official' | 'gemini-third-party') | null;
+    defaultProvider?: ('gemini-official' | 'gemini-third-party' | 'openai-compatible') | null;
     timeoutSeconds?: number | null;
     official?: {
       baseURL?: string | null;
@@ -1848,6 +1848,21 @@ export interface AiProviderSetting {
        * Optional. If empty, runtime falls back to GEMINI_IMAGE_THIRD_PARTY_API_KEY.
        */
       apiKey?: string | null;
+    };
+    openAICompatible?: {
+      /**
+       * Use the root OpenAI-compatible API URL, for example https://api.example.com/v1.
+       */
+      baseURL?: string | null;
+      model?: string | null;
+      /**
+       * Optional. If empty, runtime falls back to OPENAI_IMAGE_COMPATIBLE_API_KEY, then OPENAI_API_KEY.
+       */
+      apiKey?: string | null;
+      /**
+       * OpenAI-compatible image size, for example 1024x1024.
+       */
+      size?: string | null;
     };
   };
   updatedAt?: string | null;
@@ -2331,6 +2346,14 @@ export interface AiProviderSettingsSelect<T extends boolean = true> {
               baseURL?: T;
               model?: T;
               apiKey?: T;
+            };
+        openAICompatible?:
+          | T
+          | {
+              baseURL?: T;
+              model?: T;
+              apiKey?: T;
+              size?: T;
             };
       };
   updatedAt?: T;
