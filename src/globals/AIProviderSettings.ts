@@ -238,10 +238,10 @@ export const AIProviderSettings: GlobalConfig = {
         {
           name: 'defaultPrompt',
           type: 'textarea',
-          label: 'Default style prompt',
+          label: 'Default prompt / style prefix',
           admin: {
             description:
-              'Optional style instructions prepended to every Workbench image-generation prompt. Leave empty to use only the user prompt.',
+              'Optional site-wide prompt text prepended to every Workbench image-generation request, such as the Thorns Tavern symbol style. Leave empty to use only the user prompt.',
           },
         },
         {

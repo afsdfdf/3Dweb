@@ -89,6 +89,7 @@ export const adminPhraseTranslations: Record<string, string> = {
   'Custom card': '自定义卡片',
   'Custom link': '自定义链接',
   'Default address': '默认地址',
+  'Default prompt / style prefix': '\u9ed8\u8ba4\u63d0\u793a\u8bcd / \u98ce\u683c\u524d\u7f00',
   'Default provider': '默认提供方',
   'Default target formats': '默认目标格式',
   'Depth (mm)': '深度（mm）',

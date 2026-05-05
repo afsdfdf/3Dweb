@@ -1836,7 +1836,7 @@ export interface AiProviderSetting {
     defaultProvider?: ('gemini-official' | 'gemini-third-party' | 'openai-compatible') | null;
     timeoutSeconds?: number | null;
     /**
-     * Optional style instructions prepended to every Workbench image-generation prompt. Leave empty to use only the user prompt.
+     * Optional site-wide prompt text prepended to every Workbench image-generation request, such as the Thorns Tavern symbol style. Leave empty to use only the user prompt.
      */
     defaultPrompt?: string | null;
     official?: {
