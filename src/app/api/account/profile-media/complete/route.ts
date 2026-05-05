@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 
 import { getCachedPayload } from '@/lib/getCachedPayload'
 import { resolvePayloadUserFromHeaders } from '@/lib/payloadAuthFallback'
+import { getAvatarDerivativePath, inspectProfileImage, processAvatarImage } from '@/lib/profileMedia/avatarImage'
 import { rejectDisallowedMutationOrigin } from '@/lib/requestSecurity'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 import { getRuntimeStorageSettings } from '@/lib/supabase/storage'
@@ -34,7 +35,10 @@ async function completeProfileMediaRecord(args: {
   payload: Awaited<ReturnType<typeof getCachedPayload>>
   publicAccess: boolean
   size: number
+  thumbnailURL?: null | string
   url: string
+  height: number
+  width: number
 }) {
   const rawClient = (args.payload.db.drizzle as { $client?: { query?: (...queryArgs: unknown[]) => Promise<{ rowCount?: number; rows: Array<{ id: number }> }> } })
     .$client
@@ -52,16 +56,69 @@ async function completeProfileMediaRecord(args: {
         mime_type = $3,
         public_access = $4,
         url = $5,
+        thumbnail_u_r_l = $6,
+        width = $7,
+        height = $8,
         updated_at = now()
-      WHERE id = $6
-        AND owner_id = $7
+      WHERE id = $9
+        AND owner_id = $10
         AND purpose IN ('avatar', 'profile-banner')
       RETURNING id
     `,
-    [args.filename, args.size, args.mimeType, args.publicAccess, args.url, args.mediaId, args.ownerId],
+    [
+      args.filename,
+      args.size,
+      args.mimeType,
+      args.publicAccess,
+      args.url,
+      args.thumbnailURL ?? null,
+      args.width,
+      args.height,
+      args.mediaId,
+      args.ownerId,
+    ],
   )
 
   return result.rows[0] || null
+}
+
+async function createAvatarDerivative(args: {
+  bucket: string
+  input: Buffer
+  objectPath: string
+  supabase: ReturnType<typeof getSupabaseAdminClient>
+}) {
+  const processed = await processAvatarImage(args.input)
+  const derivativePath = getAvatarDerivativePath(args.objectPath)
+  const upload = await args.supabase.storage.from(args.bucket).upload(derivativePath, processed.buffer, {
+    cacheControl: '31536000',
+    contentType: processed.contentType,
+    upsert: true,
+  })
+
+  if (upload.error) {
+    throw new Error(upload.error.message || 'Processed avatar could not be saved.')
+  }
+
+  return {
+    ...processed,
+    path: derivativePath,
+    publicUrl: args.supabase.storage.from(args.bucket).getPublicUrl(derivativePath).data.publicUrl,
+  }
+}
+
+async function downloadProfileMediaObject(args: {
+  bucket: string
+  objectPath: string
+  supabase: ReturnType<typeof getSupabaseAdminClient>
+}) {
+  const source = await args.supabase.storage.from(args.bucket).download(args.objectPath)
+
+  if (source.error || !source.data) {
+    throw new Error(source.error?.message || 'Uploaded profile media could not be read.')
+  }
+
+  return Buffer.from(await source.data.arrayBuffer())
 }
 
 export async function POST(request: NextRequest) {
@@ -134,15 +191,54 @@ export async function POST(request: NextRequest) {
   }
 
   const publicUrl = supabase.storage.from(storage.bucket).getPublicUrl(objectPath).data.publicUrl
+  let actualImage: Awaited<ReturnType<typeof inspectProfileImage>> | null = null
+  let thumbnailURL: null | string = null
+
+  try {
+    const input = await downloadProfileMediaObject({
+      bucket: storage.bucket,
+      objectPath,
+      supabase,
+    })
+    actualImage = await inspectProfileImage(input)
+
+    if (actualImage.size <= 0 || actualImage.size > maxBytes) {
+      return Response.json(
+        { message: `Profile media must be between 1 byte and ${Math.round(maxBytes / (1024 * 1024))}MB.` },
+        { status: 400 },
+      )
+    }
+
+    if (mediaPurpose === 'avatar') {
+      const avatar = await createAvatarDerivative({
+        bucket: storage.bucket,
+        input,
+        objectPath,
+        supabase,
+      })
+      thumbnailURL = avatar.publicUrl
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Uploaded profile media could not be processed.'
+    return Response.json({ message }, { status: 400 })
+  }
+
+  if (!actualImage) {
+    return Response.json({ message: 'Uploaded profile media could not be processed.' }, { status: 400 })
+  }
+
   const media = await completeProfileMediaRecord({
     filename,
     mediaId,
-    mimeType: contentType,
+    mimeType: actualImage.contentType,
     ownerId: Number(user.id),
     payload,
     publicAccess,
-    size,
+    size: actualImage.size,
+    thumbnailURL,
     url: publicUrl,
+    height: actualImage.height,
+    width: actualImage.width,
   })
 
   if (!media) {
@@ -151,6 +247,7 @@ export async function POST(request: NextRequest) {
 
   return Response.json({
     mediaId: media.id,
-    publicUrl,
+    publicUrl: thumbnailURL || publicUrl,
+    thumbnailURL,
   })
 }

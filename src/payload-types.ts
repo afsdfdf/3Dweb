@@ -538,7 +538,7 @@ export interface Post {
   id: number;
   title: string;
   /**
-   * 用于内容详情页的唯一标识，建议保持稳定且仅使用 URL 友好字符。
+   * Stable URL-friendly identifier used by content detail pages.
    */
   slug: string;
   category: 'article' | 'event' | 'announcement';
@@ -560,7 +560,7 @@ export interface Post {
     [k: string]: unknown;
   };
   /**
-   * 支持 YouTube 等第三方视频链接，用于内容详情页嵌入。
+   * Supports YouTube and other third-party video links for content detail embeds.
    */
   videoUrl?: string | null;
   createdBy?: (number | null) | User;
@@ -626,7 +626,7 @@ export interface ModelBundle {
       }[]
     | null;
   /**
-   * 从现有用户生成的模型中选择一个或多个模型组成专题包。
+   * Select one or more existing generated models to build a curated bundle.
    */
   models: (number | Model)[];
   createdBy?: (number | null) | User;
@@ -710,7 +710,7 @@ export interface PrintOrder {
   status: 'pending-payment' | 'paid' | 'in-production' | 'shipped' | 'completed' | 'cancelled';
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
   /**
-   * 历史字段名保留为 shopifyOrderId，当前用于存放实际支付通道返回的订单/会话参考号。
+   * The legacy shopifyOrderId field stores the active payment rail order or session reference.
    */
   shopifyOrderId?: string | null;
   amount: number;
@@ -723,7 +723,7 @@ export interface PrintOrder {
   shippingAddress?: string | null;
   trackingNumber?: string | null;
   /**
-   * 历史字段名保留为 shopifyCheckoutUrl，当前 Stripe Checkout URL 也写入此处。
+   * The legacy shopifyCheckoutUrl field also stores the current Stripe Checkout URL.
    */
   shopifyCheckoutUrl?: string | null;
   internalNotes?: string | null;
@@ -833,11 +833,11 @@ export interface ShopifyPayment {
   paymentType: 'credit-topup' | 'print-order';
   status?: ('pending' | 'paid' | 'failed' | 'refunded') | null;
   /**
-   * 历史字段名保留为 shopifyOrderId，当前可用于存储 Stripe/Shopify 订单参考号。
+   * The legacy shopifyOrderId field can store the Stripe or Shopify order reference.
    */
   shopifyOrderId?: string | null;
   /**
-   * 历史字段名保留为 shopifyCheckoutId，当前 Stripe Checkout Session ID 也写入此处。
+   * The legacy shopifyCheckoutId field also stores the current Stripe Checkout Session ID.
    */
   shopifyCheckoutId?: string | null;
   creditsGranted?: number | null;
@@ -1781,6 +1781,9 @@ export interface AiProviderSetting {
     timeoutMinutes?: number | null;
   };
   creditRules?: {
+    /**
+     * Generation submissions always reserve credits before dispatch. This field is retained for legacy task snapshots.
+     */
     reserveOnSubmit?: boolean | null;
     refundOnFailure?: boolean | null;
   };
@@ -1879,7 +1882,7 @@ export interface StorageSetting {
    */
   signedDownloads?: boolean | null;
   /**
-   * Default: environment. This is an operator note only. Real secrets still live in environment variables.
+   * Default: environment. This is a note for operators; real secrets still live in environment variables.
    */
   credentialsSource?: string | null;
   /**

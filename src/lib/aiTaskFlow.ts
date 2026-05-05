@@ -1,6 +1,12 @@
 import type { PayloadRequest } from 'payload'
 
-import { refundTaskCredits, reserveTaskCredits, settleReservedTaskCredits, spendTaskCredits } from '@/lib/creditLedger'
+import {
+  assertTaskCreditsAvailable,
+  refundTaskCredits,
+  reserveTaskCredits,
+  settleReservedTaskCredits,
+  spendTaskCredits,
+} from '@/lib/creditLedger'
 import {
   createMeshyImageTask,
   createMeshyMultiImageTask,
@@ -1588,6 +1594,56 @@ const toMeshySuccessPayload = (args: {
   }
 }
 
+const clampTaskProgress = (value: number, min: number, max: number) => {
+  if (!Number.isFinite(value)) return min
+  return Math.max(min, Math.min(max, Math.round(value)))
+}
+
+const mapProviderProgressToRange = (args: {
+  fallback: number
+  max: number
+  min: number
+  providerProgress?: number | null
+}) => {
+  const rawProgress = typeof args.providerProgress === 'number' ? args.providerProgress : args.fallback
+  const providerProgress = clampTaskProgress(rawProgress, 0, 100)
+  const scaled = args.min + (providerProgress / 100) * (args.max - args.min)
+
+  return clampTaskProgress(scaled, args.min, args.max)
+}
+
+const getMeshyStageProgress = (args: {
+  fallback: number
+  providerProgress?: number | null
+  stage: 'image' | 'multi-image' | 'preview' | 'refine'
+}) => {
+  switch (args.stage) {
+    case 'preview':
+      return mapProviderProgressToRange({
+        fallback: args.fallback,
+        max: 55,
+        min: 12,
+        providerProgress: args.providerProgress,
+      })
+    case 'refine':
+      return mapProviderProgressToRange({
+        fallback: args.fallback,
+        max: 96,
+        min: 60,
+        providerProgress: args.providerProgress,
+      })
+    case 'image':
+    case 'multi-image':
+    default:
+      return mapProviderProgressToRange({
+        fallback: args.fallback,
+        max: 96,
+        min: 12,
+        providerProgress: args.providerProgress,
+      })
+  }
+}
+
 async function syncMeshyTask(args: { req: PayloadRequest; task: any; userId: number }) {
   const { req, task, userId } = args
   const settings = await getMeshySettings(req)
@@ -1646,7 +1702,11 @@ async function syncMeshyTask(args: { req: PayloadRequest; task: any; userId: num
             stage: 'refine',
             task: refineTask,
           },
-          progress: typeof refineTask.progress === 'number' ? refineTask.progress : mapped.progress,
+          progress: getMeshyStageProgress({
+            fallback: mapped.progress,
+            providerProgress: refineTask.progress,
+            stage: 'refine',
+          }),
           status: mapped.status,
         },
         id: task.id,
@@ -1700,7 +1760,7 @@ async function syncMeshyTask(args: { req: PayloadRequest; task: any; userId: num
               stage: 'refine',
             },
           }),
-          progress: 70,
+          progress: 60,
           providerTaskId: refineTask.id,
           status: 'processing',
         },
@@ -1735,7 +1795,11 @@ async function syncMeshyTask(args: { req: PayloadRequest; task: any; userId: num
           stage: 'preview',
           task: previewTask,
         },
-        progress: typeof previewTask.progress === 'number' ? previewTask.progress : mapped.progress,
+        progress: getMeshyStageProgress({
+          fallback: mapped.progress,
+          providerProgress: previewTask.progress,
+          stage: 'preview',
+        }),
         status: mapped.status,
       },
       id: task.id,
@@ -1792,7 +1856,11 @@ async function syncMeshyTask(args: { req: PayloadRequest; task: any; userId: num
           stage: 'multi-image',
           task: multiImageTask,
         },
-        progress: typeof multiImageTask.progress === 'number' ? multiImageTask.progress : mapped.progress,
+        progress: getMeshyStageProgress({
+          fallback: mapped.progress,
+          providerProgress: multiImageTask.progress,
+          stage: 'multi-image',
+        }),
         status: mapped.status,
       },
       id: task.id,
@@ -1848,7 +1916,11 @@ async function syncMeshyTask(args: { req: PayloadRequest; task: any; userId: num
         stage: 'image',
         task: imageTask,
       },
-      progress: typeof imageTask.progress === 'number' ? imageTask.progress : mapped.progress,
+      progress: getMeshyStageProgress({
+        fallback: mapped.progress,
+        providerProgress: imageTask.progress,
+        stage: 'image',
+      }),
       status: mapped.status,
     },
     id: task.id,
@@ -1906,6 +1978,14 @@ export async function submitAITask(args: {
           inputMode,
           pricing: generationPricing,
         })
+
+  if (creditRules.reserveOnSubmit && configuredCredits > 0) {
+    await assertTaskCreditsAvailable({
+      amount: configuredCredits,
+      req,
+      userId: Number(req.user.id),
+    })
+  }
 
   const task = await req.payload.create({
     collection: 'generation-tasks',

@@ -12,14 +12,6 @@ const componentPath = path.join(
   "personal-center-test",
   "personal-center-test.tsx",
 );
-const routePath = path.join(
-  rootDir,
-  "src",
-  "app",
-  "(frontend)",
-  "personal-center-test",
-  "page.tsx",
-);
 const accountRoutePath = path.join(
   rootDir,
   "src",
@@ -27,6 +19,14 @@ const accountRoutePath = path.join(
   "(frontend)",
   "account",
   "page.tsx",
+);
+const frontendSessionPath = path.join(
+  rootDir,
+  "src",
+  "app",
+  "(frontend)",
+  "_lib",
+  "session.ts",
 );
 const uploadURLRoutePath = path.join(
   rootDir,
@@ -48,22 +48,33 @@ const completeRoutePath = path.join(
   "complete",
   "route.ts",
 );
+const componentCssPath = path.join(
+  rootDir,
+  "src",
+  "components",
+  "ui-lab",
+  "personal-center-test",
+  "personal-center-test.module.css",
+);
 
 test("personal center is promoted to the default account route", () => {
   assert.equal(existsSync(componentPath), true);
-  assert.equal(existsSync(routePath), true);
   assert.equal(existsSync(accountRoutePath), true);
 
   const source = readFileSync(componentPath, "utf8");
-  const routeSource = readFileSync(routePath, "utf8");
+  const cssSource = readFileSync(componentCssPath, "utf8");
   const accountRouteSource = readFileSync(accountRoutePath, "utf8");
+  const frontendSessionSource = readFileSync(frontendSessionPath, "utf8");
 
   assert.match(source, /BorderComboFrame2/);
   assert.match(source, /accountFrameContainer/);
   assert.match(source, /FrameButton/);
-  assert.match(source, /OrangeMediumActionButton/);
+  assert.doesNotMatch(source, /OrangeMediumActionButton/);
   assert.doesNotMatch(source, /PurpleMediumActionButton/);
-  assert.match(source, /mediumActionSlot/);
+  assert.doesNotMatch(source, /mediumActionSlot/);
+  assert.doesNotMatch(source, /sidebarMediumButton/);
+  assert.match(source, /selectedAvatarFrameUrl/);
+  assert.match(source, /avatarFrameImage/);
   assert.match(source, /TopNavigation/);
   assert.match(source, /publicNavigationItems/);
   assert.doesNotMatch(source, /realNavigationItems/);
@@ -81,17 +92,19 @@ test("personal center is promoted to the default account route", () => {
   assert.match(source, /router\.refresh\(\)/);
   assert.match(source, /router\.push\("\/workbench"\)/);
   assert.match(source, /router\.push\("\/pricing"\)/);
+  assert.match(source, /fullWidth/);
   assert.match(source, /downloadCsv/);
   assert.match(source, /AuthModalStage/);
-  assert.match(routeSource, /redirect\("\/account"\)/);
   assert.match(accountRouteSource, /PersonalCenterTest/);
   assert.match(accountRouteSource, /requireUser\("\/account"\)/);
+  assert.match(accountRouteSource, /initialSection=\{getInitialSection\(query\.section\)\}/);
   assert.match(accountRouteSource, /fullName:/);
   assert.match(accountRouteSource, /phone:/);
   assert.match(accountRouteSource, /bio:/);
   assert.match(accountRouteSource, /profileVisibility:/);
+  assert.match(accountRouteSource, /avatarFrameStyles:/);
+  assert.match(frontendSessionSource, /frameImageUrl:\s*getMediaUrl\(style\.frameImage\)/);
   assert.doesNotMatch(accountRouteSource, /AccountTestPage/);
-  assert.doesNotMatch(routeSource, /SiteShell/);
 
   for (const label of [
     "Overview",
@@ -116,11 +129,13 @@ test("personal center is promoted to the default account route", () => {
   assert.doesNotMatch(source, /section\.number/);
   assert.doesNotMatch(source, /Profile Avatar/);
   assert.doesNotMatch(source, /Change Avatar/);
+  assert.doesNotMatch(cssSource, /scaleX\(/);
+  assert.doesNotMatch(cssSource, /mediumActionSlot/);
   assert.ok(
     source.indexOf('label: "Overview"') <
       source.indexOf('label: "Account Settings"'),
   );
-  assert.match(source, /useState<SectionId>\("overview"\)/);
+  assert.match(source, /useState<SectionId>\(initialSection\)/);
 
   for (const tableHeader of [
     "ID",
@@ -146,6 +161,10 @@ test("profile media upload creates media only after Supabase upload completion",
   assert.match(uploadURLSource, /INSERT INTO media/);
   assert.match(completeSource, /exists\(objectPath\)/);
   assert.match(completeSource, /UPDATE media/);
-  assert.match(completeSource, /url = \$5/);
-  assert.match(completeSource, /owner_id = \$7/);
+  assert.match(completeSource, /url\s*=\s*\$\d+/);
+  assert.match(completeSource, /width\s*=\s*\$\d+/);
+  assert.match(completeSource, /height\s*=\s*\$\d+/);
+  assert.match(completeSource, /WHERE\s+id\s*=\s*\$\d+/);
+  assert.match(completeSource, /AND\s+owner_id\s*=\s*\$\d+/);
+  assert.match(completeSource, /AND\s+purpose IN \('avatar', 'profile-banner'\)/);
 });

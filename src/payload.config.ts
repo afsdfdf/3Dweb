@@ -59,6 +59,7 @@ import {
   verifyEmailEndpoint,
 } from './endpoints/accountAuth'
 import { aiWebhookEndpoint, meshyWebhookEndpoint, submitAITaskEndpoint, syncAITaskEndpoint } from './endpoints/aiTasks'
+import { createCreditTopupCheckoutEndpoint, syncCreditTopupCheckoutEndpoint } from './endpoints/creditTopups'
 import { recordEngagementViewEndpoint } from './endpoints/engagement'
 import { listImageGenerationAssetsEndpoint, submitImageGenerationEndpoint } from './endpoints/imageGeneration'
 import { modelDownloadEndpoint } from './endpoints/modelDownloads'
@@ -95,6 +96,7 @@ import { SiteSettings } from './globals/SiteSettings'
 import { StorageSettings } from './globals/StorageSettings'
 import { assertRuntimeSecurityGuards, getValidatedPayloadSecret } from './lib/envGuard'
 import { resolveDatabaseRuntimeConfig } from './lib/databaseRuntimeConfig'
+import { localizeCollectionAdminConfig, localizeGlobalAdminConfig } from './lib/payloadAdminI18n'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -182,7 +184,7 @@ export default buildConfig({
     Addresses,
     PrintOrders,
     ShopifyPayments,
-  ],
+  ].map(localizeCollectionAdminConfig),
   db:
     postgresAdapter({
       migrationDir: path.resolve(dirname, 'migrations'),
@@ -243,13 +245,17 @@ export default buildConfig({
     modelDownloadEndpoint,
     createPrintOrderEndpoint,
     syncPrintOrderEndpoint,
+    createCreditTopupCheckoutEndpoint,
+    syncCreditTopupCheckoutEndpoint,
     createSubscriptionCheckoutEndpoint,
     syncSubscriptionCheckoutEndpoint,
     createSubscriptionPortalEndpoint,
     sessionLogoutEndpoint,
     stripeWebhookEndpoint,
   ],
-  globals: [SiteSettings, HomepageContent, AIProviderSettings, StorageSettings, SecuritySettings, RuntimeDeploymentSettings],
+  globals: [SiteSettings, HomepageContent, AIProviderSettings, StorageSettings, SecuritySettings, RuntimeDeploymentSettings].map(
+    localizeGlobalAdminConfig,
+  ),
   i18n: {
     fallbackLanguage: 'en' as const,
     supportedLanguages: {

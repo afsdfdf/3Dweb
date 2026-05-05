@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
 import test from 'node:test'
 
 import { getModelLoadPhaseDisplay } from '../src/lib/modelLoadProgress.ts'
+
+const rootDir = process.cwd()
+const modelViewerPath = path.join(rootDir, 'src', 'app', '(frontend)', '_components', 'ModelViewer.tsx')
 
 test('model load progress keeps download below parse and ready phases', () => {
   const download = getModelLoadPhaseDisplay({ phase: 'download', progress: 76 })
@@ -28,4 +33,14 @@ test('model load progress clamps non-terminal phases below complete', () => {
 
   assert.equal(download.progress, 99)
   assert.equal(parse.progress, 99)
+})
+
+test('ModelViewer avoids mounting Canvas when WebGL is unavailable', () => {
+  const source = readFileSync(modelViewerPath, 'utf8')
+
+  assert.match(source, /type WebGLStatus = "available" \| "checking" \| "unavailable"/)
+  assert.match(source, /function canCreateWebGLContext\(\)/)
+  assert.match(source, /setWebGLStatus\(available \? "available" : "unavailable"\)/)
+  assert.match(source, /webGLStatus === "available" \? \(/)
+  assert.match(source, /webGLStatus === "unavailable"/)
 })

@@ -10,10 +10,10 @@ export default async function VerifyEmailPage({ params }: { params: Promise<{ to
     <SiteShell currentPath="/verify-email" user={user}>
       <section className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
         <div className="mx-auto max-w-2xl">
-          <Badge variant="secondary">邮箱验证</Badge>
-          <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">正在验证你的邮箱</h1>
+          <Badge variant="secondary">Email Verification</Badge>
+          <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">Verifying your email</h1>
           <p className="mt-4 text-base leading-7 text-muted-foreground sm:text-lg">
-            系统会自动验证邮箱并给出结果。验证成功后即可正常登录 Thorns Tavern。
+            The system will verify the email token automatically and show the result. After verification succeeds, you can sign in to Thorns Tavern.
           </p>
         </div>
 

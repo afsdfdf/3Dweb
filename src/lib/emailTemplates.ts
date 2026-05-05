@@ -17,22 +17,42 @@ const renderEmailShell = (args: { body: string; footerText: string; title: strin
   `
 }
 
+const fallbackEmailSettings = {
+  branding: { footerText: 'Thorns Tavern', productName: 'Thorns Tavern' },
+  sender: { fromAddress: 'no-reply@thornstavern.com', fromName: 'Thorns Tavern', replyTo: '' },
+  templates: {
+    forgotPassword: {
+      ctaLabel: 'Reset password',
+      intro: 'We received a request to reset your password. Use the button below to choose a new password.',
+      subject: 'Reset your Thorns Tavern password',
+    },
+    orderPaid: { ctaLabel: 'View order details', intro: '', subject: '' },
+    subscriptionSuccess: { ctaLabel: 'View credits and subscription', intro: '', subject: '' },
+    verify: { ctaLabel: 'Verify email', intro: '', subject: '' },
+    welcome: { ctaLabel: 'Open Studio', intro: '', subject: '' },
+  },
+}
+
+const getDisplayName = (user: any) => {
+  return typeof user?.fullName === 'string' && user.fullName.trim() ? user.fullName.trim() : user?.email || 'user'
+}
+
 export const generateVerifyEmailHTML = async ({ req, token, user }: { req: PayloadRequest; token: string; user: any }) => {
   const appURL = getAppURL()
   const settings = await getEmailSettings(req)
-  const displayName = typeof user?.fullName === 'string' && user.fullName.trim() ? user.fullName.trim() : user?.email || '用户'
+  const displayName = getDisplayName(user)
   const verifyURL = `${appURL}/verify-email/${token}`
 
   return renderEmailShell({
     body: `
-      <p>你好，${displayName}：</p>
+      <p>Hello, ${displayName}:</p>
       <p>${settings.templates.verify.intro}</p>
       <p>
         <a href="${verifyURL}" style="display:inline-block;padding:10px 16px;background:#111827;color:#fff;text-decoration:none;border-radius:8px;">
           ${settings.templates.verify.ctaLabel}
         </a>
       </p>
-      <p>如果按钮无法点击，可复制这个链接到浏览器打开：</p>
+      <p>If the button does not work, copy this link into your browser:</p>
       <p><a href="${verifyURL}">${verifyURL}</a></p>
     `,
     footerText: settings.branding.footerText,
@@ -75,38 +95,22 @@ export const generateRegistrationCodeEmailSubject = async ({ req }: { req: Paylo
 export const generateForgotPasswordEmailHTML = async (args?: { req?: PayloadRequest; token?: string; user?: any }) => {
   const { req, token, user } = args || {}
   const appURL = getAppURL()
-  const settings = req
-    ? await getEmailSettings(req)
-    : {
-        branding: { footerText: 'Thorns Tavern', productName: 'Thorns Tavern' },
-        sender: { fromAddress: 'no-reply@thornstavern.com', fromName: 'Thorns Tavern', replyTo: '' },
-        templates: {
-          forgotPassword: {
-            ctaLabel: '重置密码',
-            intro: '我们收到了你的密码重置请求。点击下面按钮即可设置新密码。',
-            subject: 'Thorns Tavern 密码重置',
-          },
-          orderPaid: { ctaLabel: '查看订单详情', intro: '', subject: '' },
-          subscriptionSuccess: { ctaLabel: '查看积分与订阅', intro: '', subject: '' },
-          verify: { ctaLabel: '验证邮箱', intro: '', subject: '' },
-          welcome: { ctaLabel: '进入 Studio', intro: '', subject: '' },
-        },
-      }
+  const settings = req ? await getEmailSettings(req) : fallbackEmailSettings
   const resetURL = `${appURL}/reset-password?token=${encodeURIComponent(String(token || ''))}`
-  const displayName = typeof user?.fullName === 'string' && user.fullName.trim() ? user.fullName.trim() : user?.email || '用户'
+  const displayName = getDisplayName(user)
 
   return renderEmailShell({
     body: `
-      <p>你好，${displayName}：</p>
+      <p>Hello, ${displayName}:</p>
       <p>${settings.templates.forgotPassword.intro}</p>
       <p>
         <a href="${resetURL}" style="display:inline-block;padding:10px 16px;background:#111827;color:#fff;text-decoration:none;border-radius:8px;">
           ${settings.templates.forgotPassword.ctaLabel}
         </a>
       </p>
-      <p>如果按钮无法点击，可复制这个链接到浏览器打开：</p>
+      <p>If the button does not work, copy this link into your browser:</p>
       <p><a href="${resetURL}">${resetURL}</a></p>
-      <p>如果不是你本人发起，请忽略此邮件。</p>
+      <p>If you did not request this, you can ignore this email.</p>
     `,
     footerText: settings.branding.footerText,
     title: settings.templates.forgotPassword.subject,
@@ -119,5 +123,5 @@ export const generateForgotPasswordEmailSubject = async (args?: { req?: PayloadR
     return settings.templates.forgotPassword.subject
   }
 
-  return 'Thorns Tavern 密码重置'
+  return 'Reset your Thorns Tavern password'
 }

@@ -36,7 +36,7 @@ export function getAllowedDevOrigins() {
     return []
   }
 
-  // L-03: 移除硬编码内网 IP，仅保留标准本地回环地址
+  // L-03: Avoid hardcoded private LAN IPs; keep only standard local loopback hosts.
   return ['127.0.0.1', 'localhost']
 }
 

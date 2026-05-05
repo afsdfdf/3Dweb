@@ -2803,11 +2803,11 @@ export const site_settings = pgTable("site_settings", {
   }).default(20),
   generationPricing_textCredits: numeric("generation_pricing_text_credits", {
     mode: "number",
-  }).default(15),
+  }).default(20),
   generationPricing_hybridCredits: numeric(
     "generation_pricing_hybrid_credits",
     { mode: "number" },
-  ).default(25),
+  ).default(20),
   generationPricing_downloadCredits: numeric(
     "generation_pricing_download_credits",
     { mode: "number" },
@@ -3019,7 +3019,7 @@ export const homepage_content = pgTable("homepage_content", {
     "An AI 3D product site built for character creation, delivery, and print fulfillment.",
   ),
   hero_subtitle: varchar("hero_subtitle").default(
-    "This is not a lonely feature entry. It is a complete product experience that moves naturally from discovery to generation, downloads, print orders, and delivery.",
+    "This is a complete product experience that moves naturally from discovery to generation, downloads, print orders, and delivery.",
   ),
   hero_primaryCTA_label: varchar("hero_primary_c_t_a_label").default(
     "Open Studio",
@@ -3189,14 +3189,14 @@ export const ai_provider_settings = pgTable("ai_provider_settings", {
   meshy_multiImageEnabled: boolean("meshy_multi_image_enabled").default(true),
   meshy_pricing_textTo3DCredits: numeric("meshy_pricing_text_to3_d_credits", {
     mode: "number",
-  }).default(30),
+  }).default(20),
   meshy_pricing_imageTo3DCredits: numeric("meshy_pricing_image_to3_d_credits", {
     mode: "number",
-  }).default(30),
+  }).default(20),
   meshy_pricing_multiImageTo3DCredits: numeric(
     "meshy_pricing_multi_image_to3_d_credits",
     { mode: "number" },
-  ).default(30),
+  ).default(20),
   meshy_modelType:
     enum_ai_provider_settings_meshy_model_type("meshy_model_type").default(
       "standard",

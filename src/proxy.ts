@@ -122,7 +122,7 @@ export async function proxy(request: NextRequest) {
     return response
   }
 
-  if ((pathname.startsWith('/api/') || pathname.startsWith('/dashboard') || pathname.startsWith('/admin')) && requestToken) {
+  if ((pathname.startsWith('/api/') || pathname.startsWith('/account') || pathname.startsWith('/admin')) && requestToken) {
     if (await isTokenRevoked(requestToken)) {
       return withSecurityHeaders(
         NextResponse.json(
@@ -135,9 +135,9 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  if (pathname.startsWith('/dashboard') && !request.cookies.get(authCookieName)?.value) {
+  if (pathname.startsWith('/account') && !request.cookies.get(authCookieName)?.value) {
     const loginURL = new URL('/login', request.url)
-    loginURL.searchParams.set('redirect', pathname)
+    loginURL.searchParams.set('redirect', `${pathname}${nextUrl.search}`)
     return withSecurityHeaders(NextResponse.redirect(loginURL))
   }
 

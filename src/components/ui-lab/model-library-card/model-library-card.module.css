@@ -65,7 +65,7 @@
   position: absolute;
   left: 0;
   top: 0;
-  width: 32px;
+  width: 88px;
   height: 18px;
   color: #ffffff;
   font-family: Arial, sans-serif;
@@ -73,6 +73,9 @@
   font-weight: 500;
   line-height: 18px;
   letter-spacing: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .cardTop em {
@@ -152,6 +155,55 @@
   height: 100%;
   object-fit: cover;
   object-position: center center;
+}
+
+.generationOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.74));
+  color: #ffffff;
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
+
+.generationStatus {
+  width: calc(100% - 28px);
+  overflow: hidden;
+  color: #ffce79;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.progressTrack {
+  position: relative;
+  width: 112px;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.progressFill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  top: 0;
+  background: #ffce79;
+}
+
+.progressText {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 10px;
+  line-height: 12px;
 }
 
 .cardMenu {

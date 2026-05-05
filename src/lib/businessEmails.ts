@@ -34,7 +34,7 @@ export async function sendSubscriptionSuccessEmail(args: {
         <p>Credits added this period: <strong>${monthlyCredits}</strong></p>
         <p>Current period ends at: ${currentPeriodEnd || '--'}</p>
         <p>
-          <a href="${appURL}/dashboard/credits" style="display:inline-block;padding:10px 16px;background:#111827;color:#fff;text-decoration:none;border-radius:8px;">
+          <a href="${appURL}/account?section=billing" style="display:inline-block;padding:10px 16px;background:#111827;color:#fff;text-decoration:none;border-radius:8px;">
             ${settings.templates.subscriptionSuccess.ctaLabel}
           </a>
         </p>
@@ -69,7 +69,7 @@ export async function sendOrderPaidEmail(args: {
         <p>Model: ${modelTitle || 'Unnamed model'}</p>
         <p>Payment amount: ${amount} ${currency || 'USD'}</p>
         <p>
-          <a href="${appURL}/dashboard/orders/${orderId}" style="display:inline-block;padding:10px 16px;background:#111827;color:#fff;text-decoration:none;border-radius:8px;">
+          <a href="${appURL}/account?section=orders" style="display:inline-block;padding:10px 16px;background:#111827;color:#fff;text-decoration:none;border-radius:8px;">
             ${settings.templates.orderPaid.ctaLabel}
           </a>
         </p>

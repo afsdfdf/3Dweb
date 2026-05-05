@@ -257,6 +257,10 @@
   padding: 0;
 }
 
+.userMenuTrigger {
+  display: contents;
+}
+
 .avatar img {
   inset: 2px;
   width: 36px;

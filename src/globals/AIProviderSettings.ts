@@ -57,7 +57,16 @@ export const AIProviderSettings: GlobalConfig = {
       type: 'group',
       label: 'Credit rules',
       fields: [
-        { name: 'reserveOnSubmit', type: 'checkbox', defaultValue: true, label: 'Reserve credits on submit' },
+        {
+          name: 'reserveOnSubmit',
+          type: 'checkbox',
+          defaultValue: true,
+          label: 'Reserve credits on submit',
+          admin: {
+            description: 'Generation submissions always reserve credits before dispatch. This field is retained for legacy task snapshots.',
+            readOnly: true,
+          },
+        },
         { name: 'refundOnFailure', type: 'checkbox', defaultValue: true, label: 'Refund on failure' },
       ],
     },
@@ -133,9 +142,9 @@ export const AIProviderSettings: GlobalConfig = {
           type: 'group',
           label: 'Meshy credit pricing',
           fields: [
-            { name: 'textTo3DCredits', type: 'number', defaultValue: 30, label: 'Text to 3D credits' },
-            { name: 'imageTo3DCredits', type: 'number', defaultValue: 30, label: 'Image to 3D credits' },
-            { name: 'multiImageTo3DCredits', type: 'number', defaultValue: 30, label: 'Multi Image to 3D credits' },
+            { name: 'textTo3DCredits', type: 'number', defaultValue: 20, label: 'Text to 3D credits' },
+            { name: 'imageTo3DCredits', type: 'number', defaultValue: 20, label: 'Image to 3D credits' },
+            { name: 'multiImageTo3DCredits', type: 'number', defaultValue: 20, label: 'Multi Image to 3D credits' },
           ],
         },
         {

@@ -55,26 +55,21 @@ Primary data sources:
 - `media`
 - credits and download endpoints
 
-### Dashboard
+### Account Center
 
 Purpose:
 
 - Authenticated user operations.
-- Tasks, library, credits, subscriptions, orders, and settings.
+- Profile, password, avatar/banner, tasks, library, credits, subscriptions, orders, and settings.
 
 Primary routes:
 
-- `/dashboard`
-- `/dashboard/tasks`
-- `/dashboard/library`
-- `/dashboard/credits`
-- `/dashboard/orders`
-- `/dashboard/orders/[id]`
-- `/dashboard/settings`
+- `/account`
 
 Primary data sources:
 
 - user-scoped Local API reads with `overrideAccess: false`
+- registered account endpoints under `/api/account/...`
 - project-owned product APIs for mutations and sync operations
 
 ### Payload Admin
@@ -169,8 +164,9 @@ Public media depends on `purpose` and `publicAccess`, not only on linked model v
 ## Current Integration Notes
 
 - The homepage content model is split between `homepage-content` for section copy and `homepage-items` for repeated curated placements.
+- `/account` is the single formal customer account surface. Do not document or route new customer workflows through old `/dashboard/*` paths.
 - The frontend still contains some fallback/hardcoded content. New frontend integration should replace those with Payload-managed data where possible.
-- Several endpoint modules exist but are not registered in `src/payload.config.ts`; treat them as inactive until registration is confirmed.
+- Account, social, engagement, model detail, model viewer, image generation, and admin repair endpoint modules are registered in `src/payload.config.ts`; treat them as active API surface.
 - Runtime database is PostgreSQL only.
 
 ## Frontend Integration Order

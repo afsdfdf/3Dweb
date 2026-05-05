@@ -10,7 +10,7 @@ type SubscriptionStatusSyncProps = {
 
 export function SubscriptionStatusSync({ enabled = false, sessionId }: SubscriptionStatusSyncProps) {
   const router = useRouter()
-  const [message, setMessage] = useState(enabled ? '正在同步订阅状态…' : '')
+  const [message, setMessage] = useState(enabled ? 'Syncing subscription status...' : '')
 
   useEffect(() => {
     if (!enabled || !sessionId) return
@@ -32,14 +32,14 @@ export function SubscriptionStatusSync({ enabled = false, sessionId }: Subscript
         if (!active) return
 
         if (!response.ok) {
-          throw new Error(json.message || '订阅状态同步失败')
+          throw new Error(json.message || 'Failed to sync subscription status.')
         }
 
-        setMessage('订阅状态已同步，正在刷新页面…')
+        setMessage('Subscription status synced. Refreshing page...')
         router.refresh()
       } catch (error) {
         if (!active) return
-        setMessage(error instanceof Error ? error.message : '订阅状态同步失败，请稍后重试。')
+        setMessage(error instanceof Error ? error.message : 'Failed to sync subscription status. Please try again later.')
       }
     }
 

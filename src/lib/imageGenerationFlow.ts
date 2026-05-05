@@ -1,6 +1,12 @@
 import type { PayloadRequest } from 'payload'
 
-import { refundTaskCredits, reserveTaskCredits, settleReservedTaskCredits, spendTaskCredits } from '@/lib/creditLedger'
+import {
+  assertTaskCreditsAvailable,
+  refundTaskCredits,
+  reserveTaskCredits,
+  settleReservedTaskCredits,
+  spendTaskCredits,
+} from '@/lib/creditLedger'
 import { generateGeminiImage } from '@/lib/geminiImageGateway'
 import { uploadToSupabaseStorage, getRuntimeStorageSettings } from '@/lib/supabase/storage'
 import { defaultTaskCreditRules, getTaskBillingSettings, resolveGenerationCredits } from '@/lib/taskBilling'
@@ -137,6 +143,14 @@ export async function submitImageGeneration(args: SubmitImageGenerationArgs) {
     pricing: generationPricing,
   })
   const selectedProvider = provider || 'gemini-official'
+
+  if ((creditRules || defaultTaskCreditRules).reserveOnSubmit && configuredCredits > 0) {
+    await assertTaskCreditsAvailable({
+      amount: configuredCredits,
+      req,
+      userId: Number(req.user.id),
+    })
+  }
 
   const task = await req.payload.create({
     collection: 'generation-tasks',

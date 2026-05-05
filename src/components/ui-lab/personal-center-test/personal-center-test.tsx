@@ -15,7 +15,6 @@ import { useRouter } from "next/navigation";
 import { AuthModalStage } from "@/components/auth/AuthModalStage";
 import { TopNavigation } from "@/components/ui-lab/top-navigation";
 import { BorderComboFrame2 } from "@/components/ui-lab/border-combo-frame-2";
-import { OrangeMediumActionButton } from "@/components/ui-lab/action-buttons";
 import { FrameButton } from "@/components/ui/frame-button";
 import { publicNavigationItems } from "@/lib/publicNavigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -49,6 +48,7 @@ type SectionConfig = {
 export type PersonalCenterData = {
   avatarFrame?: null | string;
   avatarFrameStyles?: {
+    frameImageUrl?: null | string;
     key: string;
     thumbnailUrl?: null | string;
     title: string;
@@ -76,6 +76,7 @@ export type PersonalCenterData = {
 
 type PersonalCenterTestProps = {
   accountData?: PersonalCenterData;
+  initialSection?: SectionId;
   navUser?: null | {
     avatarUrl?: null | string;
     credits?: null | number;
@@ -254,12 +255,13 @@ const escapeCsvValue = (value: string) => {
 
 export function PersonalCenterTest({
   accountData,
+  initialSection = "overview",
   navUser = null,
 }: PersonalCenterTestProps) {
   const router = useRouter();
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
-  const [activeSection, setActiveSection] = useState<SectionId>("overview");
+  const [activeSection, setActiveSection] = useState<SectionId>(initialSection);
   const [profileData, setProfileData] = useState<PersonalCenterData>(
     accountData ?? {},
   );
@@ -280,6 +282,14 @@ export function PersonalCenterTest({
     profileData.avatarUrl ||
     navUser?.avatarUrl ||
     "/ui-lab/model-detail-uicut/images/face.png";
+  const selectedAvatarFrame =
+    profileData.avatarFrame && profileData.avatarFrame !== "none"
+      ? (profileData.avatarFrameStyles ?? []).find(
+          (style) => style.key === profileData.avatarFrame,
+        )
+      : null;
+  const selectedAvatarFrameUrl =
+    selectedAvatarFrame?.frameImageUrl || selectedAvatarFrame?.thumbnailUrl || null;
   const backgroundUrl =
     profileData.backgroundUrl ||
     "/ui-lab/model-detail-uicut/images/detail-side-banner.png";
@@ -695,12 +705,17 @@ export function PersonalCenterTest({
       );
     }
 
+    const finalPublicUrl =
+      typeof completedMedia.publicUrl === "string" && completedMedia.publicUrl
+        ? completedMedia.publicUrl
+        : config.publicUrl;
+
     setProfileData((current) => ({
       ...current,
       ...(payload.profile ?? {}),
       ...(purpose === "avatar"
-        ? { avatarUrl: config.publicUrl }
-        : { backgroundUrl: config.publicUrl }),
+        ? { avatarUrl: finalPublicUrl }
+        : { backgroundUrl: finalPublicUrl }),
     }));
     setSaveMessage(
       purpose === "avatar" ? "Avatar updated." : "Profile banner updated.",
@@ -805,6 +820,15 @@ export function PersonalCenterTest({
                             decoding="async"
                             src={avatarUrl}
                           />
+                          {selectedAvatarFrameUrl ? (
+                            <img
+                              alt=""
+                              aria-hidden="true"
+                              className={styles.avatarFrameImage}
+                              decoding="async"
+                              src={selectedAvatarFrameUrl}
+                            />
+                          ) : null}
                           <button
                             aria-label="Change avatar"
                             className={styles.avatarEditButton}
@@ -886,22 +910,28 @@ export function PersonalCenterTest({
                       </nav>
 
                       <div className={styles.primaryActions}>
-                        <div className={styles.mediumActionSlot}>
-                          <OrangeMediumActionButton
-                            className={styles.sidebarMediumButton}
-                            label="Create Model"
-                            onClick={() => router.push("/workbench")}
-                            type="button"
-                          />
-                        </div>
-                        <div className={styles.mediumActionSlot}>
-                          <OrangeMediumActionButton
-                            className={styles.sidebarMediumButton}
-                            label="Recharge Credits"
-                            onClick={() => router.push("/pricing")}
-                            type="button"
-                          />
-                        </div>
+                        <FrameButton
+                          className={styles.frameButtonText}
+                          fullWidth
+                          height={42}
+                          onClick={() => router.push("/workbench")}
+                          size="compact"
+                          type="button"
+                          variant="gold"
+                        >
+                          Create Model
+                        </FrameButton>
+                        <FrameButton
+                          className={styles.frameButtonText}
+                          fullWidth
+                          height={42}
+                          onClick={() => router.push("/pricing")}
+                          size="compact"
+                          type="button"
+                          variant="gold"
+                        >
+                          Recharge Credits
+                        </FrameButton>
                       </div>
                     </div>
                   </aside>

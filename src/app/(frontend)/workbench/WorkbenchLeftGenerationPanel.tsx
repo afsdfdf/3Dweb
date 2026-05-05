@@ -29,6 +29,7 @@ type WorkbenchLeftGenerationPanelProps = {
   activeMode: WorkbenchMode;
   className?: string;
   error?: string;
+  generationCreditCost?: number;
   images: WorkbenchImageInput[];
   isSubmitting?: boolean;
   license: "Private" | "Public";
@@ -53,6 +54,7 @@ export function WorkbenchLeftGenerationPanel({
   activeMode,
   className,
   error = "",
+  generationCreditCost = 20,
   images,
   isSubmitting = false,
   license,
@@ -600,13 +602,19 @@ export function WorkbenchLeftGenerationPanel({
 
       <div className={styles.panelFooterArea}>
         <div className={styles.bottomActions}>
-        <button className={styles.priceButton} type="button">
+        <div
+          aria-label={`${generationCreditCost} credits per generation`}
+          className={styles.priceButton}
+        >
           <img
             alt=""
             src="/ui-lab/model-detail-uicut/images/detail-bottom-icon-1.png"
           />
-          <span>AI</span>
-        </button>
+          <span className={styles.priceButtonText}>
+            <strong>{generationCreditCost}</strong>
+            <small>credits</small>
+          </span>
+        </div>
         <GenerateCtaButton
           className={styles.generateCta}
           disabled={isSubmitting}

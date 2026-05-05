@@ -1,9 +1,9 @@
 'use client'
 
+import { useTranslation } from '@payloadcms/ui'
 import Link from 'next/link'
-import { useLocale } from '@payloadcms/ui'
 
-import { getAdminLocale } from '@/lib/adminText'
+import { getAdminPhraseLocale, getLocalizedAdminPhrase } from '@/lib/adminPhrase'
 
 const shellStyle = {
   display: 'grid',
@@ -45,23 +45,18 @@ const linkStyle = {
   textDecoration: 'none',
 }
 
-const activeStyle = {
-  ...linkStyle,
-  background: 'var(--theme-success-150)',
-  borderColor: 'var(--theme-success-400)',
-}
-
 export default function AdminNavQuickLinks() {
-  const locale = useLocale()
-  const language = getAdminLocale(locale)
+  const { i18n } = useTranslation()
+  const locale = getAdminPhraseLocale((i18n as { language?: string }).language)
+  const text = (value: string) => getLocalizedAdminPhrase(value, locale)
 
   return (
     <div style={shellStyle}>
       <div style={panelStyle}>
-        <p style={headingStyle}>{language === 'zh' ? '总览入口' : 'Overview'}</p>
+        <p style={headingStyle}>{text('Overview')}</p>
         <div style={rowStyle}>
           <Link href="/admin" style={linkStyle}>
-            {language === 'zh' ? '进入总览仪表板' : 'Open dashboard'}
+            {text('Open dashboard')}
           </Link>
         </div>
       </div>

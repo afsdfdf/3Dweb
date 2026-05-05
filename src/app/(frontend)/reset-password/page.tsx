@@ -13,17 +13,17 @@ export default async function ResetPasswordPage({
   const [user, query] = await Promise.all([getCurrentUser(), searchParams])
 
   if (user) {
-    redirect('/dashboard')
+    redirect('/account')
   }
 
   return (
     <SiteShell currentPath="/reset-password">
       <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14">
         <div className="mx-auto max-w-2xl">
-          <Badge variant="secondary">重置密码</Badge>
-          <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">设置新的登录密码</h1>
+          <Badge variant="secondary">Reset Password</Badge>
+          <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">Set a new sign-in password</h1>
           <p className="mt-4 text-base leading-7 text-muted-foreground sm:text-lg">
-            请输入邮件中的重置 token，并设置一个新的密码。重置成功后将自动返回登录页。
+            Enter the reset token from your email and choose a new password. After the reset succeeds, you can sign in again.
           </p>
         </div>
 

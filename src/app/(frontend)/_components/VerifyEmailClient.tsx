@@ -8,7 +8,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 
 export function VerifyEmailClient({ token }: { token: string }) {
   const [status, setStatus] = useState<'error' | 'loading' | 'success'>('loading')
-  const [message, setMessage] = useState('正在验证邮箱，请稍候…')
+  const [message, setMessage] = useState('Verifying your email. Please wait...')
 
   useEffect(() => {
     let active = true
@@ -23,15 +23,15 @@ export function VerifyEmailClient({ token }: { token: string }) {
         if (!active) return
 
         if (!response.ok) {
-          throw new Error(json.message || '邮箱验证失败')
+          throw new Error(json.message || 'Email verification failed.')
         }
 
         setStatus('success')
-        setMessage('邮箱验证成功，现在可以登录 Thorns Tavern。')
+        setMessage('Email verified. You can now sign in to Thorns Tavern.')
       } catch (error) {
         if (!active) return
         setStatus('error')
-        setMessage(error instanceof Error ? error.message : '邮箱验证失败')
+        setMessage(error instanceof Error ? error.message : 'Email verification failed.')
       }
     }
 
@@ -39,7 +39,7 @@ export function VerifyEmailClient({ token }: { token: string }) {
       void run()
     } else {
       setStatus('error')
-      setMessage('缺少验证 token。')
+      setMessage('Verification token is missing.')
     }
 
     return () => {
@@ -47,17 +47,19 @@ export function VerifyEmailClient({ token }: { token: string }) {
     }
   }, [token])
 
+  const title = status === 'success' ? 'Verification complete' : status === 'error' ? 'Verification failed' : 'Verifying'
+
   return (
     <Card className="w-full max-w-[560px] border-border/60 bg-card/85 shadow-2xl shadow-black/5 backdrop-blur">
       <CardHeader>
-        <CardTitle className="text-2xl tracking-tight">{status === 'success' ? '验证成功' : status === 'error' ? '验证失败' : '验证中'}</CardTitle>
+        <CardTitle className="text-2xl tracking-tight">{title}</CardTitle>
       </CardHeader>
       <CardContent>
         <p className={status === 'error' ? 'text-sm text-destructive' : 'text-sm text-muted-foreground'}>{message}</p>
       </CardContent>
       <CardFooter>
         <Button asChild className="w-full">
-          <Link href="/login">前往登录</Link>
+          <Link href="/login">Go to login</Link>
         </Button>
       </CardFooter>
     </Card>

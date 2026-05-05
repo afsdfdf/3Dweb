@@ -64,7 +64,8 @@ const assertModelCanBePrinted = (args: {
 }
 
 const buildOrderUrl = (orderId: number | string, query: Record<string, string> = {}) => {
-  const url = new URL(`/dashboard/orders/${orderId}`, getCanonicalAppURL())
+  const url = new URL('/account', getCanonicalAppURL())
+  url.searchParams.set('section', 'orders')
 
   Object.entries(query).forEach(([key, value]) => {
     url.searchParams.set(key, value)
@@ -149,7 +150,7 @@ async function finalizePrintOrderPayment(args: {
     return order
   }
 
-  if (checkoutSession.payment_status !== 'paid' && checkoutSession.status !== 'complete') {
+  if (checkoutSession.payment_status !== 'paid') {
     return order
   }
 

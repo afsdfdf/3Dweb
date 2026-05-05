@@ -7,6 +7,8 @@ import { Separator } from '@/components/ui/separator'
 import type { SubscriptionPlanDefinition } from '@/lib/subscriptionPlans'
 
 import { FooterBar } from './shell/FooterBar'
+import { CreditTopupButton } from './CreditTopupButton'
+import { CreditTopupStatusSync } from './CreditTopupStatusSync'
 import { ManageSubscriptionButton } from './ManageSubscriptionButton'
 import { PricingLoginButton } from './PricingLoginButton'
 import { SubscribePlanButton } from './SubscribePlanButton'
@@ -25,13 +27,27 @@ type ActiveSubscription = {
   status?: string | null
 } | null
 
+type CreditTopupProduct = {
+  credits: number
+  currency: string
+  description?: null | string
+  id: number
+  price: number
+  slug: string
+  title: string
+}
+
 type SubscriptionPageProps = {
   activeSubscription: ActiveSubscription
+  creditTopupProducts: CreditTopupProduct[]
   footerContent: FooterContent
+  isCreditTopupCancelled: boolean
   isCancelled: boolean
   paymentProviderNotice?: string | null
+  shouldSyncCreditTopup: boolean
   shouldSync: boolean
   siteDescription: string
+  stripeCreditTopupsEnabled: boolean
   stripeSubscriptionsEnabled: boolean
   subscriptionPlans: SubscriptionPlanDefinition[]
   supportEmail: string
@@ -61,6 +77,30 @@ function PlanAction({
   }
 
   return <SubscribePlanButton disabled={!stripeSubscriptionsEnabled} planKey={plan.key} />
+}
+
+function CreditTopupAction({
+  product,
+  stripeCreditTopupsEnabled,
+  user,
+}: {
+  product: CreditTopupProduct
+  stripeCreditTopupsEnabled: boolean
+  user: CurrentUser
+}) {
+  if (!user) {
+    return <PricingLoginButton />
+  }
+
+  return <CreditTopupButton disabled={!stripeCreditTopupsEnabled} productId={product.id} />
+}
+
+function formatMoney(amount: number, currency: string) {
+  return new Intl.NumberFormat('en-US', {
+    currency: currency || 'USD',
+    maximumFractionDigits: 2,
+    style: 'currency',
+  }).format(amount)
 }
 
 function BillingComparison({ plan }: { plan: SubscriptionPlanDefinition }) {
@@ -122,7 +162,7 @@ function SupportPanel({ eyebrow, title, body }: { body: string; eyebrow: string;
 }
 
 export function SubscriptionMobilePage(props: SubscriptionPageProps) {
-  const { activeSubscription, footerContent, siteDescription, subscriptionPlans, supportEmail } = props
+  const { activeSubscription, creditTopupProducts, footerContent, siteDescription, stripeCreditTopupsEnabled, subscriptionPlans, supportEmail, user } = props
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#181818_0%,#222225_44%,#181818_100%)] text-[#ededee]">
@@ -178,6 +218,28 @@ export function SubscriptionMobilePage(props: SubscriptionPageProps) {
             )
           })}
         </section>
+
+        {creditTopupProducts.length > 0 ? (
+          <section className="grid gap-4">
+            <div>
+              <p className="text-xs uppercase tracking-[0.24em] text-[#8f7a4a]">Credit packs</p>
+              <h2 className="mt-1 text-2xl font-semibold tracking-tight text-[#f1e2bc]">One-time top-ups</h2>
+            </div>
+            {creditTopupProducts.map((product) => (
+              <BorderComboFrame1 className="bg-[#1c1c20]" key={product.id} style={{ pointerEvents: 'auto' }}>
+                <div className="flex flex-col gap-4 p-1">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.18em] text-[#8f7a4a]">{product.credits} credits</p>
+                    <h3 className="mt-1 text-xl font-semibold tracking-tight text-[#f1e2bc]">{product.title}</h3>
+                  </div>
+                  {product.description ? <p className="text-sm leading-6 text-[#a7a9b0]">{product.description}</p> : null}
+                  <p className="text-2xl font-semibold tracking-tight text-[#f0d188]">{formatMoney(product.price, product.currency)}</p>
+                  <CreditTopupAction product={product} stripeCreditTopupsEnabled={stripeCreditTopupsEnabled} user={user} />
+                </div>
+              </BorderComboFrame1>
+            ))}
+          </section>
+        ) : null}
       </main>
 
       <FooterBar footerContent={footerContent} siteDescription={siteDescription} supportEmail={supportEmail} />
@@ -188,11 +250,15 @@ export function SubscriptionMobilePage(props: SubscriptionPageProps) {
 export function SubscriptionPage(props: SubscriptionPageProps) {
   const {
     activeSubscription,
+    creditTopupProducts,
     footerContent,
+    isCreditTopupCancelled,
     isCancelled,
     paymentProviderNotice,
+    shouldSyncCreditTopup,
     shouldSync,
     siteDescription,
+    stripeCreditTopupsEnabled,
     stripeSubscriptionsEnabled,
     subscriptionPlans,
     supportEmail,
@@ -243,7 +309,9 @@ export function SubscriptionPage(props: SubscriptionPageProps) {
                 <h2 className="text-3xl font-semibold tracking-tight text-[#f1e2bc]">{currentPlan}</h2>
                 <FreePlanSummary />
                 {shouldSync && syncSessionId ? <SubscriptionStatusSync enabled sessionId={syncSessionId} /> : null}
+                {shouldSyncCreditTopup && syncSessionId ? <CreditTopupStatusSync enabled sessionId={syncSessionId} /> : null}
                 {isCancelled ? <p className="text-sm leading-6 text-[#d8d0bf]">Checkout was cancelled. You can choose a plan again when ready.</p> : null}
+                {isCreditTopupCancelled ? <p className="text-sm leading-6 text-[#d8d0bf]">Credit checkout was cancelled. You can choose a pack again when ready.</p> : null}
                 {activeSubscription ? (
                   <div className="grid gap-3 text-sm leading-6 text-[#a7a9b0]">
                     <p>Status: {formatSubscriptionStatus(activeSubscription.status)}</p>
@@ -295,6 +363,43 @@ export function SubscriptionPage(props: SubscriptionPageProps) {
             </div>
           </div>
         </section>
+
+        {creditTopupProducts.length > 0 ? (
+          <section className="mx-auto max-w-[1600px] px-4 py-4 sm:px-6">
+            <BorderComboFrame1 className="bg-[#1c1c20]" style={{ pointerEvents: 'auto' }}>
+              <div className="grid gap-5 p-1">
+                <div className="flex flex-wrap items-end justify-between gap-4">
+                  <div>
+                    <Badge className="w-fit border-[#5c4a35] text-[#d8d0bf]" variant="outline">
+                      One-time credits
+                    </Badge>
+                    <h2 className="mt-2 text-3xl font-semibold tracking-tight text-[#f1e2bc]">Buy credit packs without changing subscription.</h2>
+                  </div>
+                  <p className="max-w-xl text-sm leading-6 text-[#a7a9b0]">
+                    Packs are loaded from backend credit products. Stripe checkout creates a payment record, and webhook confirmation applies the ledger purchase.
+                  </p>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {creditTopupProducts.map((product) => (
+                    <div className="grid min-h-[220px] gap-4 rounded-[8px] border border-[#403f46] bg-[#18181b] p-5" key={product.id}>
+                      <div>
+                        <p className="text-xs uppercase tracking-[0.18em] text-[#8f7a4a]">{product.credits} credits</p>
+                        <h3 className="mt-1 text-2xl font-semibold tracking-tight text-[#f1e2bc]">{product.title}</h3>
+                      </div>
+                      {product.description ? <p className="text-sm leading-6 text-[#a7a9b0]">{product.description}</p> : null}
+                      <div className="mt-auto flex items-center justify-between gap-4">
+                        <p className="text-2xl font-semibold tracking-tight text-[#f0d188]">{formatMoney(product.price, product.currency)}</p>
+                        <div className="w-[132px]">
+                          <CreditTopupAction product={product} stripeCreditTopupsEnabled={stripeCreditTopupsEnabled} user={user} />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </BorderComboFrame1>
+          </section>
+        ) : null}
 
         <section className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6">
           <div className="grid gap-4 lg:grid-cols-2">

@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 
 import { submitAITaskEndpoint } from '../src/endpoints/aiTasks.ts'
+import { createCreditTopupCheckoutEndpoint } from '../src/endpoints/creditTopups.ts'
 import { createPrintOrderEndpoint } from '../src/endpoints/printOrders.ts'
 import { createSubscriptionCheckoutEndpoint } from '../src/endpoints/subscriptions.ts'
 
@@ -41,5 +42,10 @@ test('createPrintOrderEndpoint rejects requests from disallowed origins', async 
 
 test('createSubscriptionCheckoutEndpoint rejects requests from disallowed origins', async () => {
   const response = await createSubscriptionCheckoutEndpoint.handler(createBlockedRequest())
+  assert.equal(response.status, 403)
+})
+
+test('createCreditTopupCheckoutEndpoint rejects requests from disallowed origins', async () => {
+  const response = await createCreditTopupCheckoutEndpoint.handler(createBlockedRequest())
   assert.equal(response.status, 403)
 })

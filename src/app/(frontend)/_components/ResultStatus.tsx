@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation'
 
 import { Badge } from '@/components/ui/badge'
 
-import { useLocale } from './LocaleProvider'
-
 type ResultStatusProps = {
   taskId: number | string
   taskStatus: string
@@ -15,7 +13,6 @@ type ResultStatusProps = {
 const syncIntervalMs = Math.max(1000, Number(process.env.NEXT_PUBLIC_TASK_SYNC_INTERVAL_MS || 2500))
 
 export function ResultStatus({ taskId, taskStatus }: ResultStatusProps) {
-  const locale = useLocale()
   const router = useRouter()
   const [busy, setBusy] = useState(false)
   const inFlightRef = useRef(false)
@@ -68,12 +65,12 @@ export function ResultStatus({ taskId, taskStatus }: ResultStatusProps) {
   }, [router, taskId, taskStatus])
 
   if (taskStatus === 'succeeded') {
-    return <Badge variant="secondary">{locale === 'zh' ? '已完成' : 'Completed'}</Badge>
+    return <Badge variant="secondary">Completed</Badge>
   }
 
   if (taskStatus === 'failed') {
-    return <Badge variant="destructive">{locale === 'zh' ? '失败' : 'Failed'}</Badge>
+    return <Badge variant="destructive">Failed</Badge>
   }
 
-  return <Badge variant="outline">{busy ? (locale === 'zh' ? '正在同步进度...' : 'Syncing progress...') : locale === 'zh' ? '排队 / 处理中' : 'Queued / processing'}</Badge>
+  return <Badge variant="outline">{busy ? 'Syncing progress...' : 'Queued / processing'}</Badge>
 }

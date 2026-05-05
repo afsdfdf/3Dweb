@@ -229,6 +229,8 @@ type ModelLoadState = {
   status: "error" | "idle" | "loading" | "ready";
 };
 
+type WebGLStatus = "available" | "checking" | "unavailable";
+
 type CachedModelAsset = {
   byteLength: number;
   lastUsedAt: number;
@@ -588,6 +590,24 @@ function getProxyFallbackModelSrc(src: string) {
   }
 }
 
+function canCreateWebGLContext() {
+  if (typeof document === "undefined") return false;
+
+  try {
+    const canvas = document.createElement("canvas");
+    const context = (canvas.getContext("webgl2") ||
+      canvas.getContext("webgl")) as
+      | WebGL2RenderingContext
+      | WebGLRenderingContext
+      | null;
+
+    context?.getExtension("WEBGL_lose_context")?.loseContext();
+    return Boolean(context);
+  } catch {
+    return false;
+  }
+}
+
 export function ModelViewer({
   accent = "violet",
   className,
@@ -601,6 +621,8 @@ export function ModelViewer({
 }: ModelViewerProps) {
   const pointLightColor = accent === "blue" ? "#67b4ff" : "#8b6cff";
   const [loadState, setLoadState] = useState<ModelLoadState>(idleLoadState);
+  const [webGLStatus, setWebGLStatus] =
+    useState<WebGLStatus>("checking");
   const activeSrc = loadState.objectURL;
   const frameloop = activeSrc || showPlaceholderModel ? "always" : "demand";
   const fallbackModel = showPlaceholderModel ? (
@@ -624,6 +646,39 @@ export function ModelViewer({
   }, [activeSrc, onReady]);
 
   useEffect(() => {
+    const available = canCreateWebGLContext();
+    setWebGLStatus(available ? "available" : "unavailable");
+
+    if (!available) {
+      setLoadState((previous) => ({
+        ...previous,
+        objectURL: null,
+        phase: "error",
+        progress: 0,
+        status: "error",
+      }));
+      onError?.();
+    }
+  }, [onError]);
+
+  useEffect(() => {
+    if (webGLStatus === "checking") return;
+
+    if (webGLStatus === "unavailable") {
+      if (src) {
+        setLoadState({
+          objectURL: null,
+          phase: "error",
+          progress: 0,
+          source: src,
+          status: "error",
+        });
+      } else {
+        setLoadState(idleLoadState);
+      }
+      return;
+    }
+
     if (!src) {
       setLoadState(idleLoadState);
       return;
@@ -836,7 +891,7 @@ export function ModelViewer({
       canceled = true;
       controller.abort();
     };
-  }, [src]);
+  }, [onError, src, webGLStatus]);
 
   useEffect(() => {
     THREE.Cache.enabled = true;
@@ -855,84 +910,86 @@ export function ModelViewer({
         position: "relative",
       }}
     >
-      <Canvas
-        camera={{ fov: 36, position: [0, 1.6, 5.4] }}
-        dpr={activeSrc ? [1, 1.2] : [1, 1.5]}
-        frameloop={frameloop}
-        gl={{
-          antialias: true,
-          alpha: transparentBackground,
-          powerPreference: "low-power",
-          preserveDrawingBuffer: false,
-        }}
-        onCreated={({ gl }) => {
-          if (transparentBackground) {
-            gl.setClearColor(0x000000, 0);
-            gl.setClearAlpha(0);
-          }
-        }}
-        style={
-          transparentBackground ? { background: "transparent" } : undefined
-        }
-      >
-        <RendererLifecycle />
-        {transparentBackground ? null : (
-          <color attach="background" args={["#0a101b"]} />
-        )}
-        {transparentBackground ? null : (
-          <fog attach="fog" args={["#0a101b", 8, 14]} />
-        )}
-        <ambientLight intensity={1.35} />
-        <directionalLight intensity={2.1} position={[4, 6, 5]} />
-        <pointLight
-          color={pointLightColor}
-          intensity={6.5}
-          position={[-3, 2, 2]}
-        />
-        <spotLight
-          angle={0.45}
-          color="#dfe8ff"
-          intensity={8}
-          penumbra={0.55}
-          position={[0, 6, 2]}
-        />
-
-        <ViewerErrorBoundary
-          fallback={fallbackModel}
-          onError={() => {
-            setLoadState((previous) => ({
-              ...previous,
-              objectURL: null,
-              status: "error",
-            }));
-            onError?.();
+      {webGLStatus === "available" ? (
+        <Canvas
+          camera={{ fov: 36, position: [0, 1.6, 5.4] }}
+          dpr={activeSrc ? [1, 1.2] : [1, 1.5]}
+          frameloop={frameloop}
+          gl={{
+            antialias: true,
+            alpha: transparentBackground,
+            powerPreference: "low-power",
+            preserveDrawingBuffer: false,
           }}
+          onCreated={({ gl }) => {
+            if (transparentBackground) {
+              gl.setClearColor(0x000000, 0);
+              gl.setClearAlpha(0);
+            }
+          }}
+          style={
+            transparentBackground ? { background: "transparent" } : undefined
+          }
         >
-          <Suspense fallback={fallbackModel}>
-            {activeSrc ? (
-              <LoadedModel onReady={handleModelReady} src={activeSrc} />
-            ) : (
-              fallbackModel
-            )}
-          </Suspense>
-        </ViewerErrorBoundary>
+          <RendererLifecycle />
+          {transparentBackground ? null : (
+            <color attach="background" args={["#0a101b"]} />
+          )}
+          {transparentBackground ? null : (
+            <fog attach="fog" args={["#0a101b", 8, 14]} />
+          )}
+          <ambientLight intensity={1.35} />
+          <directionalLight intensity={2.1} position={[4, 6, 5]} />
+          <pointLight
+            color={pointLightColor}
+            intensity={6.5}
+            position={[-3, 2, 2]}
+          />
+          <spotLight
+            angle={0.45}
+            color="#dfe8ff"
+            intensity={8}
+            penumbra={0.55}
+            position={[0, 6, 2]}
+          />
 
-        {hasSceneModel && showGround ? (
-          <mesh position={[0, -1.2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-            <circleGeometry args={[3.2, 64]} />
-            <meshStandardMaterial color="#0e1728" />
-          </mesh>
-        ) : null}
+          <ViewerErrorBoundary
+            fallback={fallbackModel}
+            onError={() => {
+              setLoadState((previous) => ({
+                ...previous,
+                objectURL: null,
+                status: "error",
+              }));
+              onError?.();
+            }}
+          >
+            <Suspense fallback={fallbackModel}>
+              {activeSrc ? (
+                <LoadedModel onReady={handleModelReady} src={activeSrc} />
+              ) : (
+                fallbackModel
+              )}
+            </Suspense>
+          </ViewerErrorBoundary>
 
-        <OrbitControls
-          autoRotate={false}
-          enableDamping={false}
-          enablePan={false}
-          enabled={hasSceneModel}
-          maxDistance={7}
-          minDistance={2.2}
-        />
-      </Canvas>
+          {hasSceneModel && showGround ? (
+            <mesh position={[0, -1.2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+              <circleGeometry args={[3.2, 64]} />
+              <meshStandardMaterial color="#0e1728" />
+            </mesh>
+          ) : null}
+
+          <OrbitControls
+            autoRotate={false}
+            enableDamping={false}
+            enablePan={false}
+            enabled={hasSceneModel}
+            maxDistance={7}
+            minDistance={2.2}
+          />
+        </Canvas>
+      ) : null}
 
       {label ? (
         <div className="pointer-events-none absolute bottom-4 left-4 rounded-full border border-white/10 bg-background/85 px-3 py-1 text-xs text-foreground shadow-sm">
@@ -944,7 +1001,9 @@ export function ModelViewer({
         progress={loadState.progress}
         status={loadState.status}
       />
-      <ModelErrorOverlay visible={loadState.status === "error"} />
+      <ModelErrorOverlay
+        visible={loadState.status === "error" || webGLStatus === "unavailable"}
+      />
     </div>
   );
 }

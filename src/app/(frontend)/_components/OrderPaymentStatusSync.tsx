@@ -10,7 +10,7 @@ type OrderPaymentStatusSyncProps = {
 
 export function OrderPaymentStatusSync({ enabled = false, orderId }: OrderPaymentStatusSyncProps) {
   const router = useRouter()
-  const [message, setMessage] = useState(enabled ? '正在确认 Stripe 支付结果…' : '')
+  const [message, setMessage] = useState(enabled ? 'Confirming Stripe payment result...' : '')
 
   useEffect(() => {
     if (!enabled) return
@@ -28,14 +28,14 @@ export function OrderPaymentStatusSync({ enabled = false, orderId }: OrderPaymen
         if (!active) return
 
         if (!response.ok) {
-          throw new Error(json.message || '支付状态同步失败')
+          throw new Error(json.message || 'Failed to sync payment status.')
         }
 
-        setMessage('支付状态已同步，正在刷新订单详情…')
+        setMessage('Payment status synced. Refreshing order data...')
         router.refresh()
       } catch (error) {
         if (!active) return
-        setMessage(error instanceof Error ? error.message : '支付状态同步失败，请稍后重试。')
+        setMessage(error instanceof Error ? error.message : 'Failed to sync payment status. Please try again later.')
       }
     }
 

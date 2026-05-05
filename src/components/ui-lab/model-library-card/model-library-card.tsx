@@ -8,6 +8,9 @@ import styles from "./model-library-card.module.css";
 type ModelLibraryCardProps = {
   className?: string;
   date?: string;
+  generationProgress?: number;
+  generationState?: "failed" | "generating";
+  generationStatusLabel?: string;
   license?: string;
   menuOpen?: boolean;
   name?: string;
@@ -21,6 +24,9 @@ type ModelLibraryCardProps = {
 export function ModelLibraryCard({
   className,
   date = "2025.06.27\n20:35:20",
+  generationProgress,
+  generationState,
+  generationStatusLabel,
   license = "Public",
   menuOpen = false,
   name = "Monk",
@@ -31,6 +37,9 @@ export function ModelLibraryCard({
   style,
 }: ModelLibraryCardProps) {
   const dateLines = date.split("\n");
+  const progressValue = Math.max(0, Math.min(100, Math.round(generationProgress ?? 0)));
+  const statusLabel =
+    generationStatusLabel || (generationState === "failed" ? "Generation failed" : "Generating model");
 
   return (
     <button
@@ -58,6 +67,15 @@ export function ModelLibraryCard({
       ) : null}
       <span className={styles.previewArea}>
         <img alt={previewAlt} className={styles.previewImage} decoding="async" src={previewSrc} />
+        {generationState ? (
+          <span className={styles.generationOverlay}>
+            <span className={styles.generationStatus}>{statusLabel}</span>
+            <span className={styles.progressTrack} aria-hidden="true">
+              <span className={styles.progressFill} style={{ width: `${progressValue}%` }} />
+            </span>
+            <span className={styles.progressText}>{progressValue}%</span>
+          </span>
+        ) : null}
       </span>
     </button>
   );

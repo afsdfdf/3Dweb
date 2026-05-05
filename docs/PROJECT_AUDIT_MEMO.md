@@ -51,7 +51,7 @@ Result:
 - Unit tests passed: 112 tests, 112 passed, 0 failed after the remediation test additions.
 - Production build passed.
 - Build output still logged SMTP `EAUTH` verification failures from the configured local SMTP credentials, but the build completed successfully. SMTP remains a configuration/noise issue rather than a compile blocker.
-- Build route output from the original audit included `/personal-center-legacy` and `/personal-center-test`. The 2026-05-01 remediation pass removed `/personal-center-legacy`; a later account promotion made `/account` the single formal personal center route and changed `/personal-center-test` to redirect there.
+- Build route output from the original audit included `/personal-center-legacy` and `/personal-center-test`. The 2026-05-01 remediation pass removed `/personal-center-legacy`; a later account promotion made `/account` the single formal personal center route, and the old `/personal-center-test` route was removed after promotion.
 
 Read-only database probe:
 
@@ -73,13 +73,14 @@ The highest-risk original issue was not general public model visibility. The liv
 
 The second highest-risk area was configuration drift. The 2026-05-01 remediation pass cleaned active runtime/admin/env guidance around Supabase Postgres plus Supabase Storage without reintroducing AWS/S3 runtime media behavior.
 
-The third highest-risk area was production route cleanup. `/test` and `/formal-components` correctly return `notFound()` in production, `/personal-center-test` redirects to `/account`, and the 2026-05-01 remediation pass removed the legacy personal center route page.
+The third highest-risk area was production route cleanup. `/test` and `/formal-components` correctly return `notFound()` in production, `/account` is the only formal personal center route, and the 2026-05-01 remediation pass removed the legacy personal center route page.
 
 ## Frontend Audit
 
 ### Current Good State
 
-- Formal routes are active: `/`, `/workbench`, `/model-detail`, `/account`, `/pricing`, `/dashboard/*`, `/showcase`, and marketing/legal pages.
+- Formal routes are active: `/`, `/workbench`, `/model-detail`, `/account`, `/pricing`, `/showcase`, and marketing/legal pages.
+- `/account` is the single formal customer account surface. Old `/dashboard/*`, `/personal-center-test`, and `/personal-center-legacy` routes are not current customer delivery routes.
 - `/login`, `/register`, and `/forgot-password` are compatibility entry points into the shared auth flow, not separate competing login systems.
 - Workbench matches the current product decision:
   - anonymous users may open `/workbench`;
@@ -91,7 +92,7 @@ The third highest-risk area was production route cleanup. `/test` and `/formal-c
 
 ### Risks
 
-- `/account` owns the formal personal center UI. `/personal-center-test` redirects to `/account`, and `/personal-center-legacy` has been removed from the app route tree.
+- `/account` owns the formal personal center UI. `/personal-center-test` and `/personal-center-legacy` have been removed from the app route tree.
 - `src/app/(frontend)/workbench/models/[id]/page.tsx` still contains static/demo model details and fixed download-credit sample data. It has production `notFound()` protection for unauthenticated/missing data in parts of the route, but it still needs a focused pass before treating it as final account-owned detail UI.
 - Some older helper components and test assets remain under `src/components/ui-lab/*` and `public/ui-lab/*`. They are acceptable as component assets only if no public route exposes them as production UX.
 - Clipboard copy errors should not trigger runtime overlays. Browser clipboard APIs require a user gesture and permission; any copy action should catch `NotAllowedError` and show a non-blocking UI message.
@@ -258,7 +259,7 @@ The older statement that social collections are dormant is no longer true.
 
 - Shared auth modal flow is now the primary login UX.
 - Workbench can be browsed anonymously, but generation requires login.
-- Dashboard/account data routes are expected to be user-scoped.
+- Account data routes are expected to be user-scoped.
 - Payload Admin is separate from normal user permissions.
 - Public model preview is backend-controlled through `/api/platform/models/:modelId/viewer`, not raw public field exposure.
 - Mutation endpoints use origin checks and rate limiting in important paths.
@@ -274,7 +275,7 @@ The older statement that social collections are dormant is no longer true.
 
 - P1: Keep `/account` as the single formal personal center route and keep `/personal-center-legacy` out of the app route tree.
 - P1: Add a recurring `rg` audit for `user:` Local API calls without nearby `overrideAccess: false`.
-- P2: Add smoke tests for anonymous Workbench browse, authenticated generation gate, anonymous public model preview, and dashboard protection.
+- P2: Add smoke tests for anonymous Workbench browse, authenticated generation gate, anonymous public model preview, and `/account` protection.
 
 ## Deployment And Environment Audit
 
@@ -380,7 +381,7 @@ Deprecated from active runtime direction:
 
 - `modelDownloads` no longer returns mock model-file content when no real asset exists.
 - Download charging now reads `site-settings.modelAccessPolicy.chargeDownloadCredits` and remains disabled by default for current imported public model downloads.
-- `/personal-center-legacy` was removed from the app route tree. `/account` is the single formal personal center route, and `/personal-center-test` redirects to it.
+- `/personal-center-legacy` was removed from the app route tree. `/account` is the single formal personal center route, and `/personal-center-test` was removed after promotion.
 - Active env/admin guidance was cleaned around `DATABASE_URL`, Supabase Postgres, and Supabase Storage.
 - `ModelViewer` loading telemetry now separates network download, file validation, parse/prepare, and ready phases without changing the one-current-model viewer path.
 - Homepage curated cards now consume managed `homepage-items` display metadata for ribbon/alt copy.

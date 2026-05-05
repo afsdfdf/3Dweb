@@ -10,6 +10,11 @@ import styles from "./model-library-panel.module.css";
 
 export type ModelLibraryPanelCard = {
   date?: string;
+  generationProgress?: number;
+  generationState?: "failed" | "generating";
+  generationStatusLabel?: string;
+  generationTaskCode?: null | string;
+  generationTaskId?: null | number;
   id: number;
   kind?: "image" | "model";
   license: string;
@@ -84,7 +89,7 @@ export function ModelLibraryPanel({
 
   useEffect(() => {
     setVisiblePreviewCount(libraryInitialVisibleCount);
-    setSelectedCard(cards[0]?.id ?? 1);
+    setSelectedCard((current) => (cards.some((card) => card.id === current) ? current : cards[0]?.id ?? 1));
     window.requestAnimationFrame(updateVisiblePreviews);
   }, [cards, updateVisiblePreviews]);
 
@@ -146,6 +151,9 @@ export function ModelLibraryPanel({
               <ModelLibraryCard
                 date={card.date}
                 key={card.id}
+                generationProgress={card.generationProgress}
+                generationState={card.generationState}
+                generationStatusLabel={card.generationStatusLabel}
                 license={card.license}
                 menuOpen={card.menu}
                 name={card.name}
@@ -156,7 +164,7 @@ export function ModelLibraryPanel({
                 previewAlt={card.previewAlt}
                 previewSrc={
                   index < visiblePreviewCount || index === selectedCardIndex
-                    ? card.previewSrc || undefined
+                    ? card.previewSrc || (card.generationState ? transparentImageSrc : undefined)
                     : transparentImageSrc
                 }
                 selected={selectedCard === card.id}

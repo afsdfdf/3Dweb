@@ -1,6 +1,6 @@
 import type { Locale } from './locale'
 
-const fallbackLabel = (value: string | null | undefined, locale: Locale) => value || (locale === 'zh' ? '未知' : 'Unknown')
+const fallbackLabel = (value: string | null | undefined) => value || 'Unknown'
 
 export function formatTaskStatus(status?: string | null, locale: Locale = 'en') {
   const labels = {
@@ -14,17 +14,17 @@ export function formatTaskStatus(status?: string | null, locale: Locale = 'en') 
       timeout: 'Timed out',
     },
     zh: {
-      cancelled: '已取消',
-      draft: '草稿',
-      failed: '失败',
-      processing: '处理中',
-      queued: '排队中',
-      succeeded: '已完成',
-      timeout: '超时',
+      cancelled: '\u5df2\u53d6\u6d88',
+      draft: '\u8349\u7a3f',
+      failed: '\u5931\u8d25',
+      processing: '\u5904\u7406\u4e2d',
+      queued: '\u6392\u961f\u4e2d',
+      succeeded: '\u5df2\u5b8c\u6210',
+      timeout: '\u5df2\u8d85\u65f6',
     },
   } as const
 
-  return labels[locale][status as keyof (typeof labels)[typeof locale]] || fallbackLabel(status, locale)
+  return labels[locale][status as keyof (typeof labels)[typeof locale]] || fallbackLabel(status)
 }
 
 export function formatOrderStatus(status?: string | null, locale: Locale = 'en') {
@@ -41,19 +41,19 @@ export function formatOrderStatus(status?: string | null, locale: Locale = 'en')
       shipped: 'Shipped',
     },
     zh: {
-      cancelled: '已取消',
-      completed: '已完成',
-      confirmed: '已确认',
-      'in-production': '生产中',
-      paid: '已支付',
-      pending: '待支付',
-      'pending-payment': '待支付',
-      printing: '生产中',
-      shipped: '已发货',
+      cancelled: '\u5df2\u53d6\u6d88',
+      completed: '\u5df2\u5b8c\u6210',
+      confirmed: '\u5df2\u786e\u8ba4',
+      'in-production': '\u751f\u4ea7\u4e2d',
+      paid: '\u5df2\u652f\u4ed8',
+      pending: '\u5f85\u652f\u4ed8',
+      'pending-payment': '\u5f85\u652f\u4ed8',
+      printing: '\u751f\u4ea7\u4e2d',
+      shipped: '\u5df2\u53d1\u8d27',
     },
   } as const
 
-  return labels[locale][status as keyof (typeof labels)[typeof locale]] || fallbackLabel(status, locale)
+  return labels[locale][status as keyof (typeof labels)[typeof locale]] || fallbackLabel(status)
 }
 
 export function formatModelStatus(status?: string | null, locale: Locale = 'en') {
@@ -65,14 +65,14 @@ export function formatModelStatus(status?: string | null, locale: Locale = 'en')
       ready: 'Ready',
     },
     zh: {
-      archived: '已归档',
-      draft: '草稿',
-      processing: '处理中',
-      ready: '可用',
+      archived: '\u5df2\u5f52\u6863',
+      draft: '\u8349\u7a3f',
+      processing: '\u5904\u7406\u4e2d',
+      ready: '\u53ef\u7528',
     },
   } as const
 
-  return labels[locale][status as keyof (typeof labels)[typeof locale]] || fallbackLabel(status, locale)
+  return labels[locale][status as keyof (typeof labels)[typeof locale]] || fallbackLabel(status)
 }
 
 export function formatInputMode(mode?: string | null, locale: Locale = 'en') {
@@ -83,13 +83,13 @@ export function formatInputMode(mode?: string | null, locale: Locale = 'en') {
       text: 'Text to 3D',
     },
     zh: {
-      hybrid: '图文混合',
-      image: '图生 3D',
-      text: '文生 3D',
+      hybrid: '\u56fe\u6587\u6df7\u5408',
+      image: '\u56fe\u751f 3D',
+      text: '\u6587\u751f 3D',
     },
   } as const
 
-  return labels[locale][mode as keyof (typeof labels)[typeof locale]] || fallbackLabel(mode, locale)
+  return labels[locale][mode as keyof (typeof labels)[typeof locale]] || fallbackLabel(mode)
 }
 
 export function formatCreditType(type?: string | null, locale: Locale = 'en') {
@@ -104,17 +104,17 @@ export function formatCreditType(type?: string | null, locale: Locale = 'en') {
       task_spend: 'Task charge',
     },
     zh: {
-      download_spend: '下载扣费',
-      manual_adjustment: '手工调整',
-      purchase: '购买充值',
-      refund: '退款返还',
-      subscription_grant: '订阅发放',
-      task_hold: '任务预扣',
-      task_spend: '任务扣费',
+      download_spend: '\u4e0b\u8f7d\u6263\u8d39',
+      manual_adjustment: '\u624b\u52a8\u8c03\u6574',
+      purchase: '\u79ef\u5206\u5145\u503c',
+      refund: '\u9000\u6b3e\u8fd4\u8fd8',
+      subscription_grant: '\u8ba2\u9605\u53d1\u653e',
+      task_hold: '\u4efb\u52a1\u9884\u7559',
+      task_spend: '\u4efb\u52a1\u6263\u8d39',
     },
   } as const
 
-  return labels[locale][type as keyof (typeof labels)[typeof locale]] || fallbackLabel(type, locale)
+  return labels[locale][type as keyof (typeof labels)[typeof locale]] || fallbackLabel(type)
 }
 
 export function formatSubscriptionStatus(status?: string | null, locale: Locale = 'en') {
@@ -129,17 +129,17 @@ export function formatSubscriptionStatus(status?: string | null, locale: Locale 
       unpaid: 'Unpaid',
     },
     zh: {
-      active: '已激活',
-      canceled: '已取消',
-      incomplete: '待完成',
-      incomplete_expired: '已过期',
-      past_due: '逾期',
-      trialing: '试用中',
-      unpaid: '未付款',
+      active: '\u5df2\u6fc0\u6d3b',
+      canceled: '\u5df2\u53d6\u6d88',
+      incomplete: '\u672a\u5b8c\u6210',
+      incomplete_expired: '\u5df2\u8fc7\u671f',
+      past_due: '\u5df2\u903e\u671f',
+      trialing: '\u8bd5\u7528\u4e2d',
+      unpaid: '\u672a\u4ed8\u6b3e',
     },
   } as const
 
-  return labels[locale][status as keyof (typeof labels)[typeof locale]] || fallbackLabel(status, locale)
+  return labels[locale][status as keyof (typeof labels)[typeof locale]] || fallbackLabel(status)
 }
 
 export function formatRole(role?: string | null, locale: Locale = 'en') {
@@ -150,17 +150,38 @@ export function formatRole(role?: string | null, locale: Locale = 'en') {
       operator: 'Operator',
     },
     zh: {
-      admin: '管理员',
-      customer: '用户',
-      operator: '运营',
+      admin: '\u7ba1\u7406\u5458',
+      customer: '\u7528\u6237',
+      operator: '\u8fd0\u8425',
     },
   } as const
 
-  return labels[locale][role as keyof (typeof labels)[typeof locale]] || fallbackLabel(role, locale)
+  return labels[locale][role as keyof (typeof labels)[typeof locale]] || fallbackLabel(role)
+}
+
+export function getTopNavigationUserMenuText(locale: Locale = 'en') {
+  const labels = {
+    en: {
+      account: 'Account',
+      models: 'My models',
+      plans: 'Plans',
+      signOut: 'Sign out',
+      signingOut: 'Signing out...',
+    },
+    zh: {
+      account: '\u4e2a\u4eba\u4e2d\u5fc3',
+      models: '\u6211\u7684\u6a21\u578b',
+      plans: '\u5957\u9910\u5145\u503c',
+      signOut: '\u9000\u51fa\u767b\u5f55',
+      signingOut: '\u9000\u51fa\u4e2d...',
+    },
+  } as const
+
+  return labels[locale]
 }
 
 export function formatDateTime(value?: string | null, locale: Locale = 'en') {
-  if (!value) return locale === 'zh' ? '—' : '—'
+  if (!value) return '-'
 
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return String(value)

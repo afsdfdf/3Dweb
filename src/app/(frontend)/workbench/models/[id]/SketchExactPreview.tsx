@@ -78,6 +78,7 @@ export function SketchExactPreview({
   selectedModel: WorkbenchModel
 }) {
   const ownerName = selectedModel.ownerProfile?.displayName || selectedModel.ownerName
+  const ownerAvatarUrl = selectedModel.ownerProfile?.avatarUrl || `${SKETCH_ASSET_BASE}/creator-avatar.jpg`
   const gallery = [
     `${SKETCH_ASSET_BASE}/gallery-1.png`,
     `${SKETCH_ASSET_BASE}/gallery-2.png`,
@@ -197,7 +198,7 @@ export function SketchExactPreview({
               <div className="absolute left-[23px] top-[129px] h-[104px] w-[412px] rounded-[4px] bg-[#111216]">
                 <div className="absolute left-[0] top-[8px] h-[72px] w-[72px] rounded-full border-[4px] border-[#d69d57] bg-[#2b1612] p-[6px] shadow-[0_0_0_1px_rgba(255,255,255,0.08)]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img alt={ownerName} className="h-full w-full rounded-full object-cover" src={`${SKETCH_ASSET_BASE}/creator-avatar.jpg`} />
+                  <img alt={ownerName} className="h-full w-full rounded-full object-cover" src={ownerAvatarUrl} />
                 </div>
                 <div className="absolute left-[92px] top-[13px] h-[22px] w-[74px] truncate text-[16px] leading-[22px] text-white" style={{ fontFamily: PING, fontWeight: 500 }}>
                   {ownerName}

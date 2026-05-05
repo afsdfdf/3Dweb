@@ -202,6 +202,6 @@ export async function createBillingPortalSession(args: { customerId: string; req
   return stripe.billingPortal.sessions.create({
     configuration: config.id,
     customer: customerId,
-    return_url: `${origin}/dashboard/credits`,
+    return_url: `${origin}/account?section=billing`,
   })
 }

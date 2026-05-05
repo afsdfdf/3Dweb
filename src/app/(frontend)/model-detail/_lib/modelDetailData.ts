@@ -216,13 +216,7 @@ const getOwnerName = (owner: null | OwnerLike | undefined) => {
 
 const getPublicAvatarURL = (owner: null | OwnerLike | undefined) => {
   const avatar = owner?.avatar;
-  if (!isRecord(avatar)) return null;
-
-  if (isGuestReadableMedia(avatar)) {
-    return getImageURL(avatar);
-  }
-
-  return null;
+  return isRecord(avatar) ? getImageURL(avatar) : null;
 };
 
 const getPublicProfileBannerURL = (owner: null | OwnerLike | undefined) => {

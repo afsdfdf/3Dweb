@@ -875,7 +875,7 @@ Rules:
 - Task submission uses `/api/studio/ai/tasks`.
 - Task sync uses `/api/studio/ai/tasks/:taskId/sync`.
 
-### Dashboard
+### Account Center
 
 Primary data sources:
 
@@ -890,8 +890,9 @@ Primary data sources:
 
 Rules:
 
-- Dashboard reads must be user-scoped.
-- Do not use admin overrides for ordinary customer dashboard data.
+- `/account` is the single formal customer account route.
+- Account reads must be user-scoped.
+- Do not use admin overrides for ordinary customer account data.
 
 ## Change Checklist
 

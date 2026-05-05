@@ -14,5 +14,5 @@ export function normalizeLocale(value: string | null | undefined): Locale {
 
 export const localeLabels: Record<Locale, string> = {
   en: 'English',
-  zh: '中文',
+  zh: '\u4e2d\u6587',
 }

@@ -1,6 +1,7 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
+import { useRef, useState } from "react";
 import Link from "next/link";
 
 import { useAuthModal } from "@/components/auth/AuthModalProvider";
@@ -8,6 +9,7 @@ import { publicNavigationItems } from "@/lib/publicNavigation";
 
 import styles from "./top-navigation.module.css";
 import { formatTopNavigationUserLabel, getTopNavigationUserLabel } from "./user-label";
+import { TopNavigationUserMenu } from "./user-menu";
 
 const assetBase = "/ui-lab/top-navigation";
 
@@ -103,6 +105,8 @@ export function TopNavigation({
   userName = null,
 }: TopNavigationProps) {
   const { closeAuthModal } = useAuthModal();
+  const userMenuTriggerRef = useRef<HTMLDivElement>(null);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const displayName = user ? getTopNavigationUserLabel(user, userName) : null;
   const visibleDisplayName = displayName ? formatTopNavigationUserLabel(displayName) : null;
   const displayCredits = user ? getUserCredits(user, credits) : credits;
@@ -133,12 +137,35 @@ export function TopNavigation({
           </button>
           <NotificationBellButton count={2} />
           <CartIconButton />
-          <Link aria-label="Account profile" className={styles.avatar} href="/account">
-            <img alt={displayName || "Account avatar"} decoding="async" src={avatarUrl} />
-          </Link>
-          <Link className={styles.userName} href="/account" title={displayName ?? undefined}>
-            {visibleDisplayName}
-          </Link>
+          <div className={styles.userMenuTrigger} ref={userMenuTriggerRef}>
+            <button
+              aria-expanded={isUserMenuOpen}
+              aria-haspopup="menu"
+              aria-label="Account menu"
+              className={styles.avatar}
+              onClick={() => setIsUserMenuOpen((current) => !current)}
+              type="button"
+            >
+              <img alt={displayName || "Account avatar"} decoding="async" src={avatarUrl} />
+            </button>
+            <button
+              aria-expanded={isUserMenuOpen}
+              aria-haspopup="menu"
+              className={styles.userName}
+              onClick={() => setIsUserMenuOpen((current) => !current)}
+              title={displayName ?? undefined}
+              type="button"
+            >
+              {visibleDisplayName}
+            </button>
+          </div>
+          <TopNavigationUserMenu
+            onOpenChange={setIsUserMenuOpen}
+            open={isUserMenuOpen}
+            triggerRef={userMenuTriggerRef}
+            user={user}
+            userLabel={visibleDisplayName || displayName || "Account"}
+          />
         </>
       ) : (
         <>

@@ -10,7 +10,7 @@ The project is not a CMS-only website. Payload is the backend spine for a comple
 
 - Marketing website
 - Studio / Workbench generation flow
-- User dashboard
+- Account center
 - Model library and delivery
 - Credits and subscriptions
 - Print orders and payments
@@ -88,21 +88,16 @@ Primary backend sources:
 - `/api/studio/ai/tasks`
 - `/api/studio/ai/tasks/:taskId/sync`
 
-### Dashboard
+### Account Center
 
 Primary routes:
 
-- `/dashboard`
-- `/dashboard/tasks`
-- `/dashboard/library`
-- `/dashboard/credits`
-- `/dashboard/orders`
-- `/dashboard/orders/[id]`
-- `/dashboard/settings`
+- `/account`
 
 Primary backend sources:
 
 - user-scoped Local API reads
+- registered `/api/account/...` endpoints
 - `credits`
 - `credit-transactions`
 - `billing-subscriptions`
@@ -208,8 +203,7 @@ After admin component path changes:
 
 ## Current Risks To Preserve In Planning
 
-- Some frontend routes call endpoint modules that are not registered.
-- Social service code references collections that are not active in the current Payload config.
-- Homepage still contains hardcoded localhost media fallback URLs.
+- `/account` is the single formal customer account route. Do not revive old `/dashboard/*` or personal-center routes for customer workflows.
+- Homepage should keep repeated curated content in Payload-owned `homepage-items` and `model-bundles`.
 - Some source files contain mojibake from Chinese literals; new frontend copy should come from localization or Payload content.
 - PostgreSQL schema changes need formal migrations, not ad-hoc database edits.

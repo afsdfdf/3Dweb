@@ -26,15 +26,15 @@ export type TaskBillingSnapshot = {
 
 export const defaultGenerationPricing: GenerationPricing = {
   downloadCredits: 5,
-  hybridCredits: 25,
+  hybridCredits: 20,
   imageCredits: 20,
-  textCredits: 15,
+  textCredits: 20,
 }
 
 export const defaultMeshyGenerationPricing: MeshyGenerationPricing = {
-  imageTo3DCredits: 30,
-  multiImageTo3DCredits: 30,
-  textTo3DCredits: 30,
+  imageTo3DCredits: 20,
+  multiImageTo3DCredits: 20,
+  textTo3DCredits: 20,
 }
 
 export const defaultTaskCreditRules: TaskCreditRules = {
@@ -50,15 +50,22 @@ const toNumber = (value: unknown, fallback: number) => {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback
 }
 
-export async function getTaskBillingSettings(req: PayloadRequest) {
+const toGenerationCredits = (value: unknown, fallback: number) => {
+  const numberValue = toNumber(value, fallback)
+  return numberValue > 0 ? numberValue : fallback
+}
+
+type BillingSettingsPayload = Pick<PayloadRequest['payload'], 'findGlobal'>
+
+async function resolveTaskBillingSettings(payload: BillingSettingsPayload) {
   const [siteSettings, aiProviderSettings] = await Promise.all([
-    req.payload
+    payload
       .findGlobal({
         slug: 'site-settings',
         overrideAccess: true,
       })
       .catch(() => null),
-    req.payload
+    payload
       .findGlobal({
         slug: 'ai-provider-settings',
         overrideAccess: true,
@@ -72,32 +79,37 @@ export async function getTaskBillingSettings(req: PayloadRequest) {
         aiProviderSettings?.creditRules?.refundOnFailure === undefined
           ? defaultTaskCreditRules.refundOnFailure
           : Boolean(aiProviderSettings.creditRules.refundOnFailure),
-      reserveOnSubmit:
-        aiProviderSettings?.creditRules?.reserveOnSubmit === undefined
-          ? defaultTaskCreditRules.reserveOnSubmit
-          : Boolean(aiProviderSettings.creditRules.reserveOnSubmit),
+      reserveOnSubmit: true,
     },
     generationPricing: {
       downloadCredits: toNumber(siteSettings?.generationPricing?.downloadCredits, defaultGenerationPricing.downloadCredits),
-      hybridCredits: toNumber(siteSettings?.generationPricing?.hybridCredits, defaultGenerationPricing.hybridCredits),
-      imageCredits: toNumber(siteSettings?.generationPricing?.imageCredits, defaultGenerationPricing.imageCredits),
-      textCredits: toNumber(siteSettings?.generationPricing?.textCredits, defaultGenerationPricing.textCredits),
+      hybridCredits: toGenerationCredits(siteSettings?.generationPricing?.hybridCredits, defaultGenerationPricing.hybridCredits),
+      imageCredits: toGenerationCredits(siteSettings?.generationPricing?.imageCredits, defaultGenerationPricing.imageCredits),
+      textCredits: toGenerationCredits(siteSettings?.generationPricing?.textCredits, defaultGenerationPricing.textCredits),
     } satisfies GenerationPricing,
     meshyPricing: {
-      imageTo3DCredits: toNumber(
+      imageTo3DCredits: toGenerationCredits(
         aiProviderSettings?.meshy?.pricing?.imageTo3DCredits,
         defaultMeshyGenerationPricing.imageTo3DCredits,
       ),
-      multiImageTo3DCredits: toNumber(
+      multiImageTo3DCredits: toGenerationCredits(
         aiProviderSettings?.meshy?.pricing?.multiImageTo3DCredits,
         defaultMeshyGenerationPricing.multiImageTo3DCredits,
       ),
-      textTo3DCredits: toNumber(
+      textTo3DCredits: toGenerationCredits(
         aiProviderSettings?.meshy?.pricing?.textTo3DCredits,
         defaultMeshyGenerationPricing.textTo3DCredits,
       ),
     } satisfies MeshyGenerationPricing,
   }
+}
+
+export async function getTaskBillingSettings(req: PayloadRequest) {
+  return resolveTaskBillingSettings(req.payload)
+}
+
+export async function getTaskBillingSettingsForPayload(payload: BillingSettingsPayload) {
+  return resolveTaskBillingSettings(payload)
 }
 
 export function resolveGenerationCredits(args: {

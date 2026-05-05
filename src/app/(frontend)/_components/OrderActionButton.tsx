@@ -11,10 +11,10 @@ type OrderActionButtonProps = {
 }
 
 const nextLabelMap: Record<string, string> = {
-  'pending-payment': '检查支付结果',
-  paid: '推进到生产中',
-  'in-production': '推进到已发货',
-  shipped: '完成订单',
+  'pending-payment': 'Check payment status',
+  paid: 'Move to production',
+  'in-production': 'Mark as shipped',
+  shipped: 'Complete order',
 }
 
 export function OrderActionButton({ orderId, status }: OrderActionButtonProps) {
@@ -38,12 +38,12 @@ export function OrderActionButton({ orderId, status }: OrderActionButtonProps) {
       const json = await response.json()
 
       if (!response.ok) {
-        throw new Error(json.message || '订单同步失败')
+        throw new Error(json.message || 'Order sync failed.')
       }
 
       router.refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : '订单同步失败')
+      setError(err instanceof Error ? err.message : 'Order sync failed.')
     } finally {
       setLoading(false)
     }
@@ -52,7 +52,7 @@ export function OrderActionButton({ orderId, status }: OrderActionButtonProps) {
   return (
     <div className="flex flex-col gap-2">
       <Button disabled={loading} onClick={handleClick} type="button" variant="secondary">
-        {loading ? '处理中…' : nextLabelMap[status]}
+        {loading ? 'Processing...' : nextLabelMap[status]}
       </Button>
       {error ? (
         <p aria-live="polite" className="text-sm text-destructive">

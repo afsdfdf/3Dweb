@@ -2,12 +2,14 @@ import type Stripe from 'stripe'
 import type { PayloadRequest } from 'payload'
 
 import { writeAuditLog } from '@/lib/auditLog'
+import { finalizeCreditTopupCheckoutSession } from '@/lib/creditTopupFlow'
 import { finalizePrintOrderCheckoutSession } from '@/lib/printOrderFlow'
 import { constructStripeWebhookEvent } from '@/lib/stripeGateway'
 import { finalizeSubscriptionCheckoutSession, syncStripeSubscriptionState } from '@/lib/subscriptionFlow'
 
 type StripeWebhookTestHooks = {
   constructStripeWebhookEvent?: typeof constructStripeWebhookEvent
+  finalizeCreditTopupCheckoutSession?: typeof finalizeCreditTopupCheckoutSession
   finalizePrintOrderCheckoutSession?: typeof finalizePrintOrderCheckoutSession
   finalizeSubscriptionCheckoutSession?: typeof finalizeSubscriptionCheckoutSession
   syncStripeSubscriptionState?: typeof syncStripeSubscriptionState
@@ -54,6 +56,15 @@ async function handleStripeEvent(args: { event: Stripe.Event; req: PayloadReques
       const session = event.data.object as Stripe.Checkout.Session
 
       if (session.mode === 'payment') {
+        if (session.metadata?.paymentType === 'credit-topup') {
+          await (stripeWebhookTestHooks?.finalizeCreditTopupCheckoutSession || finalizeCreditTopupCheckoutSession)({
+            req,
+            session,
+            sessionId: session.id,
+          })
+          return { ok: true, type: event.type }
+        }
+
         await (stripeWebhookTestHooks?.finalizePrintOrderCheckoutSession || finalizePrintOrderCheckoutSession)({
           req,
           session,

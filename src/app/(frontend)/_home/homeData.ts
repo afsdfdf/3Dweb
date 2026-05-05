@@ -31,7 +31,7 @@ type ModelLike = {
 }
 
 type UserLike = {
-  avatar?: null | number | (ImageLike & { publicAccess?: null | boolean; purpose?: null | string })
+  avatar?: null | number | ImageLike
   displayName?: null | string
   email?: null | string
   fullName?: null | string
@@ -51,6 +51,7 @@ type HomepageItemLike = {
     coverImage?: null | number | ImageLike
     id?: number | string
     models?: unknown[]
+    slug?: null | string
   }
   linkedModel?: null | number | ModelLike
   placement?: null | string
@@ -238,13 +239,7 @@ const getRelationId = (value: unknown) => {
 
 const getPublicAvatarURL = (owner: UserLike) => {
   const avatar = owner.avatar
-  if (!isRecord(avatar)) return null
-
-  if (avatar.publicAccess === true || avatar.purpose === 'preview') {
-    return getImageURL(avatar)
-  }
-
-  return null
+  return isRecord(avatar) ? getImageURL(avatar) : null
 }
 
 async function getPublicOwnerProfile(payload: Awaited<ReturnType<typeof getCachedPayload>>, owner: unknown) {
@@ -269,8 +264,6 @@ async function getPublicOwnerProfile(payload: Awaited<ReturnType<typeof getCache
               profileVisibility: true,
             },
           })) as UserLike)
-
-    if (resolvedOwner.profileVisibility !== 'public') return null
 
     return {
       avatarSrc: await resolveMediaAccessURL(payload, getPublicAvatarURL(resolvedOwner)),
@@ -299,6 +292,14 @@ const getHomepageItemHref = (item: HomepageItemLike) => {
 
   if (isRecord(item.linkedModel) && item.linkedModel.id) {
     return `/model-detail?id=${encodeURIComponent(String(item.linkedModel.id))}`
+  }
+
+  if (isRecord(item.linkedBundle)) {
+    const slug = typeof item.linkedBundle.slug === 'string' && item.linkedBundle.slug.trim() ? item.linkedBundle.slug.trim() : null
+
+    if (slug) {
+      return `/bundles/${encodeURIComponent(slug)}`
+    }
   }
 
   return null

@@ -180,7 +180,19 @@ export const syncAITaskEndpoint = {
     }
 
     const task = await syncAITask({ req, taskId })
-    return Response.json({ message: 'Task sync completed.', task })
+    const responseTask =
+      task.status === 'succeeded'
+        ? await req.payload.findByID({
+            collection: 'generation-tasks',
+            depth: 0,
+            id: taskId,
+            overrideAccess: false,
+            req,
+            user: req.user,
+          })
+        : task
+
+    return Response.json({ message: 'Task sync completed.', task: responseTask })
   },
 }
 

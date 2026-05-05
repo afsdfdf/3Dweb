@@ -262,7 +262,7 @@ export async function createStripePortalForUser(userId: string) {
 
   const session = await stripe.billingPortal.sessions.create({
     customer: customerId,
-    return_url: `${origin}/dashboard/credits`,
+    return_url: `${origin}/account?section=billing`,
   })
 
   return session
@@ -281,7 +281,7 @@ export async function createStripePrintOrderCheckout(args: {
 
   const session = await stripe.checkout.sessions.create({
     allow_promotion_codes: true,
-    cancel_url: `${origin}/dashboard/orders/${args.orderId}?checkout=cancelled`,
+    cancel_url: `${origin}/account?section=orders&checkout=cancelled`,
     client_reference_id: args.orderId,
     customer_email: args.userEmail || undefined,
     line_items: [
@@ -304,7 +304,7 @@ export async function createStripePrintOrderCheckout(args: {
       paymentType: 'print-order',
     },
     mode: 'payment',
-    success_url: `${origin}/dashboard/orders/${args.orderId}?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+    success_url: `${origin}/account?section=orders&checkout=success&session_id={CHECKOUT_SESSION_ID}`,
   })
 
   if (!session.url) {

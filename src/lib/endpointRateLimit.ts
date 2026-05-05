@@ -9,6 +9,8 @@ type RateLimitScope =
   | 'auth-register'
   | 'auth-reset-password'
   | "ai-image-submit"
+  | 'credit-checkout'
+  | 'credit-sync'
   | 'engagement-view-write'
   | 'social-comment-write'
   | 'social-follow-write'
@@ -60,6 +62,18 @@ const scopeConfigs: Record<RateLimitScope, ScopeConfig> = {
     limitEnv: 'AI_IMAGE_SUBMIT_RATE_LIMIT_MAX',
     windowEnv: 'AI_IMAGE_SUBMIT_RATE_LIMIT_WINDOW_MS',
   },
+  'credit-checkout': {
+    fallbackLimit: 10,
+    fallbackWindowMs: 10 * 60 * 1000,
+    limitEnv: 'CREDIT_CHECKOUT_RATE_LIMIT_MAX',
+    windowEnv: 'CREDIT_CHECKOUT_RATE_LIMIT_WINDOW_MS',
+  },
+  'credit-sync': {
+    fallbackLimit: 30,
+    fallbackWindowMs: 10 * 60 * 1000,
+    limitEnv: 'CREDIT_SYNC_RATE_LIMIT_MAX',
+    windowEnv: 'CREDIT_SYNC_RATE_LIMIT_WINDOW_MS',
+  },
   'engagement-view-write': {
     fallbackLimit: 120,
     fallbackWindowMs: 10 * 60 * 1000,
@@ -97,7 +111,7 @@ const scopeConfigs: Record<RateLimitScope, ScopeConfig> = {
     windowEnv: 'AI_SUBMIT_RATE_LIMIT_WINDOW_MS',
   },
   "ai-sync": {
-    fallbackLimit: 60,
+    fallbackLimit: 240,
     fallbackWindowMs: 10 * 60 * 1000,
     limitEnv: 'AI_SYNC_RATE_LIMIT_MAX',
     windowEnv: 'AI_SYNC_RATE_LIMIT_WINDOW_MS',
@@ -140,6 +154,8 @@ const scopeMessages: Record<RateLimitScope, string> = {
   'auth-register': 'Too many registration attempts. Please try again later.',
   'auth-reset-password': 'Too many password reset attempts. Please try again later.',
   'ai-image-submit': 'Too many image generation requests. Please try again later.',
+  'credit-checkout': 'Too many credit checkout attempts. Please try again later.',
+  'credit-sync': 'Too many credit purchase sync requests. Please wait a moment and retry.',
   'engagement-view-write': 'Too many view events. Please try again later.',
   'social-comment-write': 'Too many comment actions. Please try again later.',
   'social-follow-write': 'Too many follow actions. Please try again later.',

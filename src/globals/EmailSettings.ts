@@ -1,4 +1,4 @@
-﻿import type { GlobalConfig } from 'payload'
+import type { GlobalConfig } from 'payload'
 
 import { isAdmin, isStaff } from '@/access'
 import { adminTextKey } from '@/lib/adminText'
@@ -19,16 +19,16 @@ export const EmailSettings: GlobalConfig = {
       type: 'tabs',
       tabs: [
         {
-          label: '发件信息',
+          label: 'Sender information',
           fields: [
             {
               name: 'sender',
               type: 'group',
-              label: '发件信息',
+              label: 'Sender information',
               fields: [
-                { name: 'fromName', type: 'text', defaultValue: 'Thorns Tavern', label: '发件人名称' },
-                { name: 'fromAddress', type: 'email', defaultValue: 'no-reply@thornstavern.com', label: '发件邮箱' },
-                { name: 'replyTo', type: 'email', label: '回复地址' },
+                { name: 'fromName', type: 'text', defaultValue: 'Thorns Tavern', label: 'Sender name' },
+                { name: 'fromAddress', type: 'email', defaultValue: 'no-reply@thornstavern.com', label: 'Sender email' },
+                { name: 'replyTo', type: 'email', label: 'Reply-to address' },
                 {
                   name: 'smtpNotice',
                   type: 'ui',
@@ -43,65 +43,67 @@ export const EmailSettings: GlobalConfig = {
             {
               name: 'branding',
               type: 'group',
-              label: '品牌显示',
+              label: 'Brand display',
               fields: [
-                { name: 'productName', type: 'text', defaultValue: 'Thorns Tavern', label: '产品名称' },
-                { name: 'footerText', type: 'text', defaultValue: 'Thorns Tavern', label: '邮件页脚文本' },
+                { name: 'productName', type: 'text', defaultValue: 'Thorns Tavern', label: 'Product name' },
+                { name: 'footerText', type: 'text', defaultValue: 'Thorns Tavern', label: 'Email footer text' },
               ],
             },
           ],
         },
         {
-          label: '认证邮件',
+          label: 'Authentication emails',
           fields: [
             {
               name: 'templates',
               type: 'group',
-              label: '认证邮件文案',
+              label: 'Authentication email copy',
               fields: [
                 {
                   name: 'welcome',
                   type: 'group',
-                  label: '欢迎邮件',
+                  label: 'Welcome email',
                   fields: [
-                    { name: 'subject', type: 'text', defaultValue: '欢迎加入 Thorns Tavern', label: '主题' },
+                    { name: 'subject', type: 'text', defaultValue: 'Welcome to Thorns Tavern', label: 'Subject' },
                     {
                       name: 'intro',
                       type: 'textarea',
-                      defaultValue: '你的账号已经创建成功，现在可以开始使用 Thorns Tavern 的生成、模型、订阅与订单能力。',
-                      label: '正文说明',
+                      defaultValue:
+                        'Your account is ready. You can now use generation, models, subscriptions, and orders in Thorns Tavern.',
+                      label: 'Body copy',
                     },
-                    { name: 'ctaLabel', type: 'text', defaultValue: '进入 Studio', label: '按钮文案' },
+                    { name: 'ctaLabel', type: 'text', defaultValue: 'Open Studio', label: 'Button label' },
                   ],
                 },
                 {
                   name: 'verify',
                   type: 'group',
-                  label: '邮箱验证',
+                  label: 'Email verification',
                   fields: [
-                    { name: 'subject', type: 'text', defaultValue: '验证你的 Thorns Tavern 邮箱', label: '主题' },
+                    { name: 'subject', type: 'text', defaultValue: 'Verify your Thorns Tavern email', label: 'Subject' },
                     {
                       name: 'intro',
                       type: 'textarea',
-                      defaultValue: '请点击下面的按钮完成邮箱验证，验证成功后即可登录并继续使用 Thorns Tavern。',
-                      label: '正文说明',
+                      defaultValue: 'Use the button below to verify your email and continue using Thorns Tavern.',
+                      label: 'Body copy',
                     },
-                    { name: 'ctaLabel', type: 'text', defaultValue: '验证邮箱', label: '按钮文案' },
+                    { name: 'ctaLabel', type: 'text', defaultValue: 'Verify email', label: 'Button label' },
                   ],
                 },
                 {
                   name: 'forgotPassword',
                   type: 'group',
-                  label: '找回密码',
+                  label: 'Password reset',
                   fields: [
-                    { name: 'subject', type: 'text', defaultValue: 'Thorns Tavern 密码重置', label: '主题' },
+                    { name: 'subject', type: 'text', defaultValue: 'Reset your Thorns Tavern password', label: 'Subject' },
                     {
                       name: 'intro',
                       type: 'textarea',
-                      defaultValue: '我们收到了你的密码重置请求。点击下面按钮即可设置新密码。',
-                      label: '正文说明',
+                      defaultValue:
+                        'We received a request to reset your password. Use the button below to choose a new password.',
+                      label: 'Body copy',
                     },
-                    { name: 'ctaLabel', type: 'text', defaultValue: '重置密码', label: '按钮文案' },
+                    { name: 'ctaLabel', type: 'text', defaultValue: 'Reset password', label: 'Button label' },
                   ],
                 },
               ],
@@ -109,41 +111,41 @@ export const EmailSettings: GlobalConfig = {
           ],
         },
         {
-          label: '业务通知',
+          label: 'Business notifications',
           fields: [
             {
               name: 'businessTemplates',
               type: 'group',
-              label: '业务邮件文案',
+              label: 'Business email copy',
               fields: [
                 {
                   name: 'subscriptionSuccess',
                   type: 'group',
-                  label: '订阅成功',
+                  label: 'Subscription success',
                   fields: [
-                    { name: 'subject', type: 'text', defaultValue: 'Thorns Tavern 订阅开通成功', label: '主题' },
+                    { name: 'subject', type: 'text', defaultValue: 'Thorns Tavern subscription activated', label: 'Subject' },
                     {
                       name: 'intro',
                       type: 'textarea',
-                      defaultValue: '你的订阅已经开通成功，积分已按当前账期发放到账户。',
-                      label: '正文说明',
+                      defaultValue: 'Your subscription is active and credits have been granted for the current billing period.',
+                      label: 'Body copy',
                     },
-                    { name: 'ctaLabel', type: 'text', defaultValue: '查看积分与订阅', label: '按钮文案' },
+                    { name: 'ctaLabel', type: 'text', defaultValue: 'View credits and subscription', label: 'Button label' },
                   ],
                 },
                 {
                   name: 'orderPaid',
                   type: 'group',
-                  label: '订单支付成功',
+                  label: 'Order payment success',
                   fields: [
-                    { name: 'subject', type: 'text', defaultValue: 'Thorns Tavern 订单支付成功', label: '主题' },
+                    { name: 'subject', type: 'text', defaultValue: 'Thorns Tavern order payment received', label: 'Subject' },
                     {
                       name: 'intro',
                       type: 'textarea',
-                      defaultValue: '你的打印订单已支付成功，订单已经进入后续处理流程。',
-                      label: '正文说明',
+                      defaultValue: 'Your print order has been paid and is now ready for the next handling step.',
+                      label: 'Body copy',
                     },
-                    { name: 'ctaLabel', type: 'text', defaultValue: '查看订单详情', label: '按钮文案' },
+                    { name: 'ctaLabel', type: 'text', defaultValue: 'View order details', label: 'Button label' },
                   ],
                 },
               ],
@@ -154,4 +156,3 @@ export const EmailSettings: GlobalConfig = {
     },
   ],
 }
-

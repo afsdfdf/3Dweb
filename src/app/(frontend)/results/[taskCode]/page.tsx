@@ -189,7 +189,7 @@ export default async function ResultDetailPage({ params }: { params: Promise<{ t
                     </Button>
                     <CreatePrintOrderButton modelId={Number(model.id)} sourceTaskId={Number(task.id)} variant="secondary" />
                     <Button asChild variant="ghost">
-                      <Link href="/dashboard/library">Open model library</Link>
+                      <Link href="/account?section=models">Open model library</Link>
                     </Button>
                   </>
                 ) : (

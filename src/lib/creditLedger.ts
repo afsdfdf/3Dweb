@@ -43,6 +43,18 @@ export type LedgerMutationResult = {
   idempotencyKey?: string
 }
 
+export type CreditAvailabilityResult = {
+  account: {
+    balance: number
+    id: number
+    lifetimePurchased: number
+    lifetimeSpent: number
+    reservedBalance: number
+  }
+  available: number
+  required: number
+}
+
 type MutationOptions = {
   amount: number
   idempotencyKey?: string
@@ -133,9 +145,9 @@ async function ensureCreditAccount(args: { req: PayloadRequest; userId: number |
     return await req.payload.create({
       collection: 'credits',
       data: {
-        accountLabel: '主积分账户',
+        accountLabel: 'Primary credit account',
         balance: 0,
-        billingNotes: '系统自动创建的默认积分账户。',
+        billingNotes: 'Default credit account created by the system.',
         lifetimePurchased: 0,
         lifetimeSpent: 0,
         reservedBalance: 0,
@@ -214,7 +226,7 @@ async function getAtomicCreditAccount(args: { executor: LedgerExecutor; userId: 
       `
         INSERT INTO credits
         (account_label, user_id, balance, reserved_balance, lifetime_purchased, lifetime_spent, status, billing_notes, updated_at, created_at)
-        VALUES ('主积分账户', ?, 0, 0, 0, 0, 'active', '系统自动创建的默认积分账户。', ?, ?)
+        VALUES ('Primary credit account', ?, 0, 0, 0, 0, 'active', 'Default credit account created by the system.', ?, ?)
         ON CONFLICT (user_id) DO NOTHING
       `,
       [userId, timestamp, timestamp],
@@ -224,7 +236,7 @@ async function getAtomicCreditAccount(args: { executor: LedgerExecutor; userId: 
       `
         INSERT INTO credits
         (account_label, user_id, balance, reserved_balance, lifetime_purchased, lifetime_spent, status, billing_notes, updated_at, created_at)
-        VALUES ('主积分账户', ?, 0, 0, 0, 0, 'active', '系统自动创建的默认积分账户。', ?, ?)
+        VALUES ('Primary credit account', ?, 0, 0, 0, 0, 'active', 'Default credit account created by the system.', ?, ?)
       `,
       [userId, timestamp, timestamp],
     )
@@ -418,6 +430,34 @@ function assertReservedBalanceAvailable(current: CreditAccountRow, amount: numbe
 
 export { ensureCreditAccount }
 
+export async function assertTaskCreditsAvailable(args: {
+  amount: number
+  req: PayloadRequest
+  userId: number | string
+}): Promise<CreditAvailabilityResult> {
+  const { amount, req, userId } = args
+  const normalizedUserId = normalizeUserId(userId)
+  const normalizedAmount = Math.max(0, Number(amount || 0))
+
+  return withLedgerTransaction(req, async (executor) => {
+    const account = await getAtomicCreditAccount({ executor, userId: normalizedUserId })
+
+    if (normalizedAmount > 0 && account.balance < normalizedAmount) {
+      throw new InsufficientCreditsError({
+        available: account.balance,
+        required: normalizedAmount,
+        message: `Insufficient credits: available ${account.balance}, required ${normalizedAmount}.`,
+      })
+    }
+
+    return {
+      account,
+      available: account.balance,
+      required: normalizedAmount,
+    }
+  })
+}
+
 export async function grantCredits(args: {
   amount: number
   idempotencyKey?: string
@@ -451,6 +491,44 @@ export async function grantCredits(args: {
     referencePrefix,
     req,
     transactionType: 'subscription_grant',
+    userId: normalizedUserId,
+  })
+}
+
+export async function purchaseCredits(args: {
+  amount: number
+  idempotencyKey?: string
+  metadata?: Record<string, unknown>
+  notes: string
+  referencePrefix?: string
+  req: PayloadRequest
+  userId: number | string
+}) {
+  const { amount, idempotencyKey, metadata, notes, referencePrefix = 'PURCHASE', req, userId } = args
+  const normalizedUserId = normalizeUserId(userId)
+  const normalizedAmount = Number(amount || 0)
+
+  if (normalizedAmount <= 0) {
+    return {
+      account: await ensureCreditAccount({ req, userId: normalizedUserId }),
+      applied: false,
+      idempotencyKey,
+    } satisfies LedgerMutationResult
+  }
+
+  return runAtomicLedgerMutation({
+    amount: normalizedAmount,
+    idempotencyKey,
+    metadata,
+    mutate: (current) => ({
+      ...current,
+      balance: current.balance + normalizedAmount,
+      lifetimePurchased: current.lifetimePurchased + normalizedAmount,
+    }),
+    notes,
+    referencePrefix,
+    req,
+    transactionType: 'purchase',
     userId: normalizedUserId,
   })
 }
@@ -530,7 +608,7 @@ export async function reserveTaskCredits(args: {
         throw new InsufficientCreditsError({
           available: current.balance,
           required: normalizedAmount,
-          message: `积分不足，当前可用 ${current.balance}，本次需要 ${normalizedAmount}。`,
+          message: `Insufficient credits: available ${current.balance}, required ${normalizedAmount}.`,
         })
       }
 
@@ -621,7 +699,7 @@ export async function spendTaskCredits(args: {
         throw new InsufficientCreditsError({
           available: current.balance,
           required: normalizedAmount,
-          message: `积分不足，当前可用 ${current.balance}，本次需要 ${normalizedAmount}。`,
+          message: `Insufficient credits: available ${current.balance}, required ${normalizedAmount}.`,
         })
       }
 
@@ -683,7 +761,7 @@ export async function spendDownloadCredits(args: {
         throw new InsufficientCreditsError({
           available: current.balance,
           required: normalizedAmount,
-          message: `积分不足，当前可用 ${current.balance}，下载需要 ${normalizedAmount}。`,
+          message: `Insufficient credits: available ${current.balance}, download requires ${normalizedAmount}.`,
         })
       }
 

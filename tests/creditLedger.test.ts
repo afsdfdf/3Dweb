@@ -2,8 +2,10 @@
 import assert from 'node:assert/strict'
 
 import {
+  assertTaskCreditsAvailable,
   grantCredits,
   InsufficientCreditsError,
+  purchaseCredits,
   refundDownloadCredits,
   refundTaskCredits,
   reserveTaskCredits,
@@ -196,6 +198,32 @@ test('grantCredits applies balance updates once', async () => {
   assert.equal(state.findCalls.length, 0)
 })
 
+test('purchaseCredits records purchase transactions and updates lifetime purchased once', async () => {
+  const { req, state } = createMockRequest()
+
+  const first = await purchaseCredits({
+    amount: 25,
+    idempotencyKey: 'purchase-1',
+    notes: 'credit package purchase',
+    req,
+    userId: 1,
+  })
+  const duplicate = await purchaseCredits({
+    amount: 25,
+    idempotencyKey: 'purchase-1',
+    notes: 'credit package purchase duplicate',
+    req,
+    userId: 1,
+  })
+
+  assert.equal(first.applied, true)
+  assert.equal(duplicate.applied, false)
+  assert.equal(state.credits[0].balance, 25)
+  assert.equal(state.credits[0].lifetimePurchased, 25)
+  assert.equal(state.creditTransactions[0].type, 'purchase')
+  assert.equal(state.users[0].creditsBalance, 25)
+})
+
 test('reserveTaskCredits is idempotent per task', async () => {
   const { req, state } = createMockRequest()
 
@@ -227,6 +255,44 @@ test('reserveTaskCredits is idempotent per task', async () => {
   assert.equal(state.credits[0].balance, 6)
   assert.equal(state.credits[0].reservedBalance, 4)
   assert.equal(state.findCalls.length, 0)
+})
+
+test('assertTaskCreditsAvailable checks balance without creating a ledger transaction', async () => {
+  const { req, state } = createMockRequest()
+
+  await assert.rejects(
+    () =>
+      assertTaskCreditsAvailable({
+        amount: 4,
+        req,
+        userId: 1,
+      }),
+    (error: unknown) =>
+      error instanceof InsufficientCreditsError && error.available === 0 && error.required === 4,
+  )
+
+  assert.equal(state.credits.length, 1)
+  assert.equal(state.credits[0].balance, 0)
+  assert.equal(state.creditTransactions.length, 0)
+
+  await grantCredits({
+    amount: 10,
+    idempotencyKey: 'grant-available',
+    notes: 'initial credits',
+    req,
+    userId: 1,
+  })
+
+  const result = await assertTaskCreditsAvailable({
+    amount: 4,
+    req,
+    userId: 1,
+  })
+
+  assert.equal(result.available, 10)
+  assert.equal(result.required, 4)
+  assert.equal(state.credits[0].balance, 10)
+  assert.equal(state.creditTransactions.length, 1)
 })
 
 test('settleReservedTaskCredits and refundTaskCredits update reserved balance safely', async () => {

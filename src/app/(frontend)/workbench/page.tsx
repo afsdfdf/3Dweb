@@ -1,21 +1,43 @@
 import type { ModelLibraryPanelCard } from "@/components/ui-lab/model-library-panel";
+import { getCachedPayload } from "@/lib/getCachedPayload";
+import { getTaskBillingSettingsForPayload } from "@/lib/taskBilling";
 
 import { getCurrentNavUser, getCurrentUser } from "../_lib/session";
 import {
   formatVisibilityBadge,
   formatWorkbenchDate,
-  getWorkbenchImageAssets,
+  getWorkbenchGenerationTaskState,
   getWorkbenchModels,
 } from "./_lib/workbenchData";
 import { WorkbenchClient } from "./WorkbenchClient";
 
 export default async function WorkbenchPage() {
   const user = await getCurrentUser();
-  const [navUser, allVisibleModels, imageAssets] = await Promise.all([
+  const payload = await getCachedPayload();
+  const [navUser, allVisibleModels, generationTaskState] = await Promise.all([
     user ? getCurrentNavUser() : Promise.resolve(null),
     getWorkbenchModels(user),
-    getWorkbenchImageAssets(user),
+    getWorkbenchGenerationTaskState(user),
   ]);
+  const { imageAssets, pendingGenerationTasks } = generationTaskState;
+  const { generationPricing, meshyPricing } =
+    await getTaskBillingSettingsForPayload(payload);
+  const generationCreditCosts = {
+    image: generationPricing.imageCredits,
+    imageTo3D: Math.max(
+      generationPricing.hybridCredits,
+      meshyPricing.imageTo3DCredits,
+    ),
+    multiImageTo3D: Math.max(
+      generationPricing.hybridCredits,
+      meshyPricing.multiImageTo3DCredits,
+    ),
+    text: generationPricing.textCredits,
+    textTo3D: Math.max(
+      generationPricing.textCredits,
+      meshyPricing.textTo3DCredits,
+    ),
+  };
   const models = allVisibleModels.filter((model) => model.isOwnedByCurrentUser);
   const libraryCards: ModelLibraryPanelCard[] = models.map((model) => ({
     date: formatWorkbenchDate(model.updatedAt).replace(" ", "\n"),
@@ -44,7 +66,9 @@ export default async function WorkbenchPage() {
 
   return (
     <WorkbenchClient
+      generationCreditCosts={generationCreditCosts}
       imageAssetCards={imageAssetCards}
+      initialPendingTasks={pendingGenerationTasks}
       libraryCards={libraryCards}
       navUser={navUser}
     />

@@ -176,6 +176,20 @@ export const adminEn = {
       tabs: {
         mutationOrigins: { label: 'Mutation Origins', fields: { allowedMutationOrigins: { label: 'Allowed origins', description: 'Default: empty. Add one absolute origin per row, for example https://app.example.com. Local development still allows requests without Origin outside production.', fields: { origin: 'Origin' } } } },
         remoteAssets: { label: 'Remote Assets', fields: { allowedRemoteAssetHosts: { label: 'Allowed host patterns', description: 'Default: empty. Add hostnames such as cdn.example.com or example.com. Subdomains are matched automatically.', fields: { host: 'Host pattern' } } } },
+        authentication: {
+          label: 'Authentication',
+          fields: {
+            registrationVerificationMode: {
+              label: 'Registration verification mode',
+              description: 'Email code is the default signup flow. Email link keeps the legacy Payload verification link flow available.',
+              options: { emailCode: 'Email code', emailLink: 'Email link' },
+            },
+            registrationCodeExpiresMinutes: {
+              label: 'Registration code expiry minutes',
+              description: 'Used only when registration verification mode is Email code.',
+            },
+          },
+        },
       },
     },
     siteSettings: {
@@ -230,8 +244,8 @@ export const adminEn = {
         baseURL: { label: 'Supabase public base URL', description: 'Default: empty. Optional Supabase Storage public object base URL used for media access URLs.' },
         signedDownloads: { label: 'Use signed downloads', description: 'Default: enabled. When disabled, absolute media URLs are returned without signing.' },
         credentialsSource: { label: 'Credentials source', description: 'Default: environment. This is a note for operators; real secrets still live in environment variables.' },
-        lastValidatedAt: { description: 'Optional operator timestamp for the last successful storage validation.' },
-        lastRotatedAt: { description: 'Optional operator timestamp for the last key rotation event recorded outside Payload.' },
+        lastValidatedAt: { label: 'Last validated at', description: 'Optional operator timestamp for the last successful storage validation.' },
+        lastRotatedAt: { label: 'Last rotated at', description: 'Optional operator timestamp for the last key rotation event recorded outside Payload.' },
       },
     },
   },

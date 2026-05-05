@@ -81,6 +81,77 @@ test("rejectRateLimitedEndpoint isolates counters between scopes", async () => {
   }
 });
 
+test("AI sync default limit supports multi-minute Workbench polling", async () => {
+  const previousLimit = process.env.AI_SYNC_RATE_LIMIT_MAX;
+  const previousWindow = process.env.AI_SYNC_RATE_LIMIT_WINDOW_MS;
+
+  delete process.env.AI_SYNC_RATE_LIMIT_MAX;
+  delete process.env.AI_SYNC_RATE_LIMIT_WINDOW_MS;
+
+  try {
+    const req = createRequest({ user: { id: 77 } });
+
+    for (let index = 0; index < 120; index += 1) {
+      const result = await rejectRateLimitedEndpoint({
+        req,
+        scope: "ai-sync",
+      });
+
+      assert.equal(result, null);
+    }
+  } finally {
+    if (previousLimit === undefined) {
+      delete process.env.AI_SYNC_RATE_LIMIT_MAX;
+    } else {
+      process.env.AI_SYNC_RATE_LIMIT_MAX = previousLimit;
+    }
+
+    if (previousWindow === undefined) {
+      delete process.env.AI_SYNC_RATE_LIMIT_WINDOW_MS;
+    } else {
+      process.env.AI_SYNC_RATE_LIMIT_WINDOW_MS = previousWindow;
+    }
+  }
+});
+
+test("rejectRateLimitedEndpoint isolates credit checkout from subscription checkout", async () => {
+  const previousCreditLimit = process.env.CREDIT_CHECKOUT_RATE_LIMIT_MAX;
+  const previousCreditWindow = process.env.CREDIT_CHECKOUT_RATE_LIMIT_WINDOW_MS;
+  const previousSubscriptionLimit = process.env.SUBSCRIPTION_CHECKOUT_RATE_LIMIT_MAX;
+  const previousSubscriptionWindow = process.env.SUBSCRIPTION_CHECKOUT_RATE_LIMIT_WINDOW_MS;
+
+  process.env.CREDIT_CHECKOUT_RATE_LIMIT_MAX = "1";
+  process.env.CREDIT_CHECKOUT_RATE_LIMIT_WINDOW_MS = "60000";
+  process.env.SUBSCRIPTION_CHECKOUT_RATE_LIMIT_MAX = "1";
+  process.env.SUBSCRIPTION_CHECKOUT_RATE_LIMIT_WINDOW_MS = "60000";
+
+  try {
+    const req = createRequest();
+
+    const creditFirst = await rejectRateLimitedEndpoint({
+      req,
+      scope: "credit-checkout",
+    });
+    const creditSecond = await rejectRateLimitedEndpoint({
+      req,
+      scope: "credit-checkout",
+    });
+    const subscriptionFirst = await rejectRateLimitedEndpoint({
+      req,
+      scope: "subscription-checkout",
+    });
+
+    assert.equal(creditFirst, null);
+    assert.equal(creditSecond?.status, 429);
+    assert.equal(subscriptionFirst, null);
+  } finally {
+    process.env.CREDIT_CHECKOUT_RATE_LIMIT_MAX = previousCreditLimit;
+    process.env.CREDIT_CHECKOUT_RATE_LIMIT_WINDOW_MS = previousCreditWindow;
+    process.env.SUBSCRIPTION_CHECKOUT_RATE_LIMIT_MAX = previousSubscriptionLimit;
+    process.env.SUBSCRIPTION_CHECKOUT_RATE_LIMIT_WINDOW_MS = previousSubscriptionWindow;
+  }
+});
+
 test("rejectRateLimitedEndpoint falls back to IP when the user is anonymous", async () => {
   const previousLimit = process.env.ORDER_CREATE_RATE_LIMIT_MAX;
   const previousWindow = process.env.ORDER_CREATE_RATE_LIMIT_WINDOW_MS;

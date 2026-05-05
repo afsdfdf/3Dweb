@@ -1,10 +1,11 @@
 import { headers } from "next/headers";
 import { unstable_noStore as noStore } from "next/cache";
 import { redirect } from "next/navigation";
+import { cache } from "react";
 import { getCachedPayload } from "@/lib/getCachedPayload";
 import { resolvePayloadUserFromHeaders } from "@/lib/payloadAuthFallback";
 
-async function getPayloadWithUser() {
+const getPayloadWithUser = cache(async () => {
   noStore();
   const payload = await getCachedPayload();
   const requestHeaders = await headers();
@@ -18,7 +19,32 @@ async function getPayloadWithUser() {
     payload,
     user,
   };
-}
+});
+
+const getCurrentUserDocument = cache(async () => {
+  const { payload, user } = await getPayloadWithUser();
+  if (!user) {
+    return {
+      payload,
+      user: null,
+      userDoc: null,
+    };
+  }
+
+  const userDoc = await payload.findByID({
+    collection: "users",
+    depth: 1,
+    id: user.id,
+    overrideAccess: false,
+    user,
+  });
+
+  return {
+    payload,
+    user,
+    userDoc,
+  };
+});
 
 function getMediaUrl(value: unknown) {
   if (!value || typeof value !== "object") return null;
@@ -37,45 +63,10 @@ export async function getCurrentUser() {
 }
 
 export async function getCurrentNavUser() {
-  const { payload, user } = await getPayloadWithUser();
-  if (!user) return null;
+  const { userDoc } = await getCurrentUserDocument();
+  if (!userDoc) return null;
 
-  const [userDoc, creditAccount] = await Promise.all([
-    payload.findByID({
-      collection: "users",
-      depth: 1,
-      id: user.id,
-      overrideAccess: false,
-      user,
-    }),
-    payload.find({
-      collection: "credits",
-      depth: 0,
-      limit: 1,
-      overrideAccess: false,
-      pagination: false,
-      sort: "-updatedAt",
-      user,
-      where: {
-        and: [
-          {
-            user: {
-              equals: user.id,
-            },
-          },
-          {
-            status: {
-              equals: "active",
-            },
-          },
-        ],
-      },
-    }),
-  ]);
-
-  const actualCredits = Number(
-    creditAccount.docs?.[0]?.balance ?? userDoc.creditsBalance ?? 0,
-  );
+  const actualCredits = Number(userDoc.creditsBalance ?? 0);
   const displayName =
     (typeof userDoc.displayName === "string" && userDoc.displayName.trim()) ||
     (typeof userDoc.fullName === "string" && userDoc.fullName.trim()) ||
@@ -93,33 +84,25 @@ export async function getCurrentNavUser() {
 }
 
 export async function getCurrentAccountProfileSummary() {
-  const { payload, user } = await getPayloadWithUser();
-  if (!user) return null;
+  const { payload, user, userDoc } = await getCurrentUserDocument();
+  if (!user || !userDoc) return null;
 
-  const [userDoc, frameStyles] = await Promise.all([
-    payload.findByID({
-      collection: "users",
-      depth: 1,
-      id: user.id,
-      overrideAccess: false,
-      user,
-    }),
-    payload.find({
-      collection: "avatar-frame-styles",
-      depth: 1,
-      limit: 20,
-      overrideAccess: false,
-      pagination: false,
-      sort: ["sortOrder", "key"],
-      user,
-    }),
-  ]);
+  const frameStyles = await payload.find({
+    collection: "avatar-frame-styles",
+    depth: 1,
+    limit: 20,
+    overrideAccess: false,
+    pagination: false,
+    sort: ["sortOrder", "key"],
+    user,
+  });
 
   return {
     avatarFrame:
       typeof userDoc.avatarFrame === "string" ? userDoc.avatarFrame : "none",
     avatarFrameStyles: frameStyles.docs
       .map((style) => ({
+        frameImageUrl: getMediaUrl(style.frameImage),
         key: String(style.key || ""),
         thumbnailUrl: getMediaUrl(style.thumbnail),
         title: String(style.title || style.key || ""),
@@ -134,9 +117,9 @@ export async function getCurrentAccountProfileSummary() {
   };
 }
 
-export async function requireUser(redirectTo = "/dashboard/tasks") {
+export async function requireUser(redirectTo = "/account") {
   const user = await getCurrentUser();
-  const safeRedirect = redirectTo.startsWith("/") ? redirectTo : "/dashboard/tasks";
+  const safeRedirect = redirectTo.startsWith("/") ? redirectTo : "/account";
   if (!user) redirect(`/login?redirect=${encodeURIComponent(safeRedirect)}`);
   return user;
 }
@@ -211,6 +194,20 @@ export async function getCurrentUserCreditAccount() {
     overrideAccess: false,
     sort: "-updatedAt",
     user,
+    where: {
+      and: [
+        {
+          user: {
+            equals: user.id,
+          },
+        },
+        {
+          status: {
+            equals: "active",
+          },
+        },
+      ],
+    },
   });
 
   return json.docs?.[0] ?? null;

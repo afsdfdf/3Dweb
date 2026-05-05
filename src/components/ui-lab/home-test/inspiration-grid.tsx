@@ -25,6 +25,17 @@ const buttonIdByFilter: Record<Exclude<InspirationGridFilter, "all">, TripleFilt
   "image-tools": "button",
 };
 
+function getInitials(name?: null | string) {
+  if (!name) return "TT";
+
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() || "")
+    .join("") || "TT";
+}
+
 export type InspirationGridItem = {
   ageLabel?: string;
   alt?: string;
@@ -88,13 +99,17 @@ export function InspirationGrid({ filterMountClassName, items: backendItems = []
             <article className={styles.cardContent}>
               <header className={styles.cardHeader}>
                 <div className={styles.avatarWrap}>
-                  <img
-                    alt=""
-                    className={styles.avatar}
-                    decoding="async"
-                    loading="lazy"
-                    src={item.avatarSrc ?? undefined}
-                  />
+                  {item.avatarSrc ? (
+                    <img
+                      alt=""
+                      className={styles.avatar}
+                      decoding="async"
+                      loading="lazy"
+                      src={item.avatarSrc}
+                    />
+                  ) : (
+                    <span className={styles.avatarFallback}>{getInitials(item.authorName)}</span>
+                  )}
                   <span className={styles.avatarBadge} aria-hidden="true" />
                 </div>
                 <div className={styles.titleBlock}>

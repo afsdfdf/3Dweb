@@ -1,25 +1,13 @@
 'use client'
 
-import { useLocale } from '@payloadcms/ui'
+import { useTranslation } from '@payloadcms/ui'
 
-import { getAdminLocale } from '@/lib/adminText'
+import { getAdminPhraseLocale, getLocalizedAdminPhrase } from '@/lib/adminPhrase'
 
 export function EmailSettingsNotice() {
-  const locale = getAdminLocale(useLocale())
-  const copy =
-    locale === 'zh'
-      ? {
-          bodyOne: '这里用于管理邮件品牌、发件显示信息和模板文案。',
-          bodyTwo:
-            '真实的 SMTP 凭据仍应通过环境变量配置，例如 SMTP_HOST、SMTP_PORT、SMTP_USER、SMTP_PASS。',
-          title: 'SMTP 凭据说明',
-        }
-      : {
-          bodyOne: 'Use this page for email branding, sender display information, and template copy.',
-          bodyTwo:
-            'Real SMTP credentials should still be configured in environment variables such as SMTP_HOST, SMTP_PORT, SMTP_USER, and SMTP_PASS.',
-          title: 'SMTP credential notice',
-        }
+  const { i18n } = useTranslation()
+  const locale = getAdminPhraseLocale((i18n as { language?: string }).language)
+  const text = (value: string) => getLocalizedAdminPhrase(value, locale)
 
   return (
     <div
@@ -33,9 +21,13 @@ export function EmailSettingsNotice() {
         padding: 14,
       }}
     >
-      <strong style={{ display: 'block', marginBottom: 6 }}>{copy.title}</strong>
-      <div>{copy.bodyOne}</div>
-      <div>{copy.bodyTwo}</div>
+      <strong style={{ display: 'block', marginBottom: 6 }}>{text('SMTP credential notice')}</strong>
+      <div>{text('Use this page for email branding, sender display information, and template copy.')}</div>
+      <div>
+        {text(
+          'Real SMTP credentials should still be configured in environment variables such as SMTP_HOST, SMTP_PORT, SMTP_USER, and SMTP_PASS.',
+        )}
+      </div>
     </div>
   )
 }

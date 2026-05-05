@@ -84,7 +84,6 @@ const frontendPages: PageSpec[] = [
   { path: '/showcase', note: 'Public showcase list' },
   { path: '/showcase/[id]', note: 'Public showcase detail' },
   { path: '/solutions', note: 'Marketing route' },
-  { path: '/personal-center-test', note: 'Compatibility redirect to /account' },
   { path: '/test', href: '/test', note: 'Local-only project route and API index; blocked in production' },
   { path: '/verify-email/[token]', note: 'Email verification landing page' },
   { path: '/workbench', href: '/workbench', note: 'Formal workbench page' },

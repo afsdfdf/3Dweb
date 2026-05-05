@@ -3,8 +3,6 @@ import type { GlobalConfig } from 'payload'
 import { isAdmin } from '@/access'
 import { adminTextKey } from '@/lib/adminText'
 
-const text = (en: string, zh: string) => ({ en, zh })
-
 export const RuntimeDeploymentSettings: GlobalConfig = {
   slug: 'runtime-deployment-settings',
   label: adminTextKey('globals.runtimeDeployment.label'),
@@ -30,20 +28,24 @@ export const RuntimeDeploymentSettings: GlobalConfig = {
       type: 'tabs',
       tabs: [
         {
-          label: text('Database Runtime', '数据库运行时'),
+          label: adminTextKey('globals.runtimeDeployment.tabs.databaseRuntime.label'),
           fields: [
             {
               name: 'databaseConnectionMode',
               type: 'select',
               defaultValue: 'database-url',
-              label: text('Connection mode', '连接模式'),
+              label: adminTextKey('globals.runtimeDeployment.tabs.databaseRuntime.fields.databaseConnectionMode.label'),
               options: [
                 {
-                  label: text('Legacy composed Postgres variables', '旧版 Postgres 拼接变量'),
+                  label: adminTextKey(
+                    'globals.runtimeDeployment.tabs.databaseRuntime.fields.databaseConnectionMode.options.awsRdsFields',
+                  ),
                   value: 'aws-rds-fields',
                 },
                 {
-                  label: text('Use DATABASE_URL directly', '直接使用 DATABASE_URL'),
+                  label: adminTextKey(
+                    'globals.runtimeDeployment.tabs.databaseRuntime.fields.databaseConnectionMode.options.databaseUrl',
+                  ),
                   value: 'database-url',
                 },
               ],
@@ -54,12 +56,11 @@ export const RuntimeDeploymentSettings: GlobalConfig = {
               type: 'text',
               admin: {
                 condition: (_, siblingData) => siblingData?.databaseConnectionMode === 'database-url',
-                description: text(
-                  'Paste the deployment DATABASE_URL template without the real password if you want. Supabase Postgres is the preferred production database.',
-                  '如有需要，可填写不含真实密码的部署 DATABASE_URL 模板。',
+                description: adminTextKey(
+                  'globals.runtimeDeployment.tabs.databaseRuntime.fields.databaseUrlTemplate.description',
                 ),
               },
-              label: text('DATABASE_URL template', 'DATABASE_URL 模板'),
+              label: adminTextKey('globals.runtimeDeployment.tabs.databaseRuntime.fields.databaseUrlTemplate.label'),
             },
             {
               name: 'awsRdsHost',
@@ -123,12 +124,11 @@ export const RuntimeDeploymentSettings: GlobalConfig = {
               name: 'databaseSecurityChecklist',
               type: 'textarea',
               admin: {
-                description: text(
-                  'Optional operator notes such as current security group, public access status, or the production server IP to allow.',
-                  '可选。记录安全组、公网访问状态或需要放行的生产服务器 IP 等运维备注。',
+                description: adminTextKey(
+                  'globals.runtimeDeployment.tabs.databaseRuntime.fields.databaseSecurityChecklist.description',
                 ),
               },
-              label: text('Security checklist', '安全检查清单'),
+              label: adminTextKey('globals.runtimeDeployment.tabs.databaseRuntime.fields.databaseSecurityChecklist.label'),
             },
             {
               name: 'databaseRuntimeEnvPreview',
@@ -142,7 +142,7 @@ export const RuntimeDeploymentSettings: GlobalConfig = {
           ],
         },
         {
-          label: text('App Runtime', '应用运行时'),
+          label: adminTextKey('globals.runtimeDeployment.tabs.appRuntime.label'),
           fields: [
             {
               name: 'nextPublicAppUrl',
@@ -154,12 +154,11 @@ export const RuntimeDeploymentSettings: GlobalConfig = {
               name: 'payloadSecretRotationNote',
               type: 'textarea',
               admin: {
-                description: text(
-                  'Optional note for operators about where the current PAYLOAD_SECRET lives and when it was rotated.',
-                  '可选。记录当前 PAYLOAD_SECRET 的存放位置和最近轮换时间。',
+                description: adminTextKey(
+                  'globals.runtimeDeployment.tabs.appRuntime.fields.payloadSecretRotationNote.description',
                 ),
               },
-              label: text('Secret rotation note', '密钥轮换说明'),
+              label: adminTextKey('globals.runtimeDeployment.tabs.appRuntime.fields.payloadSecretRotationNote.label'),
             },
           ],
         },

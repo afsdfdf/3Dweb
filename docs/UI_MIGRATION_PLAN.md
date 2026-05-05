@@ -36,7 +36,7 @@ Relevant existing frontend surfaces:
 - Auth pages: `login`, `register`, `forgot-password`, `reset-password`, `verify-email/[token]`
 - Workbench: `src/app/(frontend)/workbench/`
 - Results: `src/app/(frontend)/results/[taskCode]/page.tsx`
-- Dashboard: `src/app/(frontend)/dashboard/`
+- Account center: `src/app/(frontend)/account/page.tsx`
 - Showcase: `src/app/(frontend)/showcase/`
 - Pricing: `src/app/(frontend)/pricing/page.tsx`
 
@@ -130,8 +130,8 @@ Adjusted during migration:
    - Keep current authentication service boundaries.
    - Do not rely on unregistered account endpoint modules.
 
-5. Dashboard and library
-   - Migrate card/frame treatments into `dashboard/library`, `dashboard/tasks`, and `dashboard/orders`.
+5. Account center and user library
+   - Migrate card/frame treatments into `/account` tabs and panels.
    - Keep user-scoped Local API reads with `overrideAccess: false`.
 
 ## Review Checklist

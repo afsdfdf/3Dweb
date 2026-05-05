@@ -23,6 +23,7 @@ import { ModelLibraryPanel } from "@/components/ui-lab/model-library-panel";
 import { ModuleCommonFrame } from "@/components/ui-lab/module-common-frame";
 import { SmallButtonPair, SmallButtonTriple } from "@/components/ui-lab/small-button-pair/small-button-pair";
 import { TopNavigation } from "@/components/ui-lab/top-navigation";
+import { TopNavigationUserMenu } from "@/components/ui-lab/top-navigation/user-menu";
 
 import styles from "./formal-components-registry.module.css";
 
@@ -72,6 +73,7 @@ export type ComponentId =
   | "signin-button"
   | "generate-cta-button"
   | "top-navigation"
+  | "top-navigation-user-menu"
   | "border-frame"
   | "button-box-frame-11"
   | "module-common-frame"
@@ -154,6 +156,15 @@ const components: FormalComponent[] = [
     description: "Safe navigation preview for the lab page. It avoids the lab-only encoded asset API.",
     usage: "<FormalTopNavPreview />",
     assets: ["No lab API dependency"],
+  },
+  {
+    id: "top-navigation-user-menu",
+    name: "Top Nav User Menu",
+    kind: "navigation",
+    title: "Top Navigation User Menu",
+    description: "Compact signed-in user menu bound to the shared top navigation and real logout endpoint.",
+    usage: "<TopNavigationUserMenu defaultOpen user={user} userLabel=\"Lucky\" />",
+    assets: ["src/components/ui-lab/border-combo-frame-1/assets"],
   },
   {
     id: "border-frame",
@@ -437,6 +448,21 @@ function ComponentPreview({ id }: { id: ComponentId }) {
 
   if (id === "generate-cta-button") return <GenerateCtaPreview />;
   if (id === "top-navigation") return <TopNavigation active="WORKBENCH" />;
+  if (id === "top-navigation-user-menu") {
+    return (
+      <div style={{ minHeight: 260, position: "relative", width: 260 }}>
+        <TopNavigationUserMenu
+          defaultOpen
+          user={{
+            creditsBalance: 9999,
+            displayName: "Lucky Player",
+            email: "admin@thornstavern.com",
+          }}
+          userLabel="Lucky Player"
+        />
+      </div>
+    );
+  }
 
   if (id === "border-frame") {
     return (

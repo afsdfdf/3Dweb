@@ -63,6 +63,24 @@ export type WorkbenchImageAsset = {
   previewURL: string;
 };
 
+export type WorkbenchPendingGenerationTask = {
+  cardId: number;
+  createdAt: string;
+  failureReason?: null | string;
+  license: "Private" | "Public";
+  previewSrc?: null | string;
+  progress: number;
+  status: "failed" | "finalizing" | "processing" | "queued" | "timeout" | "uploading";
+  taskCode?: null | string;
+  taskId?: null | number;
+  title: string;
+};
+
+export type WorkbenchGenerationTaskState = {
+  imageAssets: WorkbenchImageAsset[];
+  pendingGenerationTasks: WorkbenchPendingGenerationTask[];
+};
+
 const isRecord = (value: unknown): value is Record<string, unknown> => {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 };
@@ -296,16 +314,96 @@ function getImageGenerationResultMediaId(task: unknown) {
   return Number.isFinite(mediaId) && mediaId > 0 ? mediaId : 0;
 }
 
-export async function getWorkbenchImageAssets(
+function getPendingTaskTitle(task: unknown) {
+  if (!isRecord(task)) return "Generating model";
+  const snapshot = isRecord(task.parameterSnapshot) ? task.parameterSnapshot : {};
+  const workbench = isRecord(snapshot.workbench) ? snapshot.workbench : {};
+  return (
+    normalizeText(workbench.requestedTitle) ||
+    normalizeText(task.taskCode) ||
+    "Generating model"
+  );
+}
+
+function getPendingTaskLicense(task: unknown): "Private" | "Public" {
+  if (!isRecord(task)) return "Private";
+  const snapshot = isRecord(task.parameterSnapshot) ? task.parameterSnapshot : {};
+  const workbench = isRecord(snapshot.workbench) ? snapshot.workbench : {};
+  const license = normalizeText(workbench.license)?.toLowerCase();
+  return license === "public" ? "Public" : "Private";
+}
+
+function getPendingTaskPreview(task: unknown) {
+  if (!isRecord(task)) return null;
+  const callbackPayload = isRecord(task.callbackPayload) ? task.callbackPayload : {};
+  const thumbnailUrl = normalizeText(callbackPayload.thumbnailUrl);
+  if (thumbnailUrl) return thumbnailUrl;
+
+  const snapshot = isRecord(task.parameterSnapshot) ? task.parameterSnapshot : {};
+  const sourceImageAsset = isRecord(snapshot.sourceImageAsset)
+    ? snapshot.sourceImageAsset
+    : null;
+  const sourceImageAssets = Array.isArray(snapshot.sourceImageAssets)
+    ? snapshot.sourceImageAssets
+    : [];
+  const firstSourceImageAsset = sourceImageAssets.find(isRecord);
+
+  return (
+    normalizeText(sourceImageAsset?.publicUrl) ||
+    normalizeText(firstSourceImageAsset?.publicUrl)
+  );
+}
+
+function getPendingTaskStatus(task: unknown): WorkbenchPendingGenerationTask["status"] {
+  if (!isRecord(task)) return "processing";
+  if (task.status === "queued") return "queued";
+  if (task.status === "failed") return "failed";
+  if (task.status === "timeout") return "timeout";
+  return "processing";
+}
+
+function getPendingTaskProgress(task: unknown) {
+  if (!isRecord(task)) return 0;
+  const progress = Number(task.progress);
+  return Number.isFinite(progress)
+    ? Math.max(0, Math.min(100, Math.round(progress)))
+    : 0;
+}
+
+function isPendingModelGenerationTask(task: unknown) {
+  if (!isRecord(task)) return false;
+  return (
+    (task.status === "queued" || task.status === "processing") &&
+    (task.provider === "custom" ||
+      task.provider === "meshy" ||
+      task.provider === "tripo")
+  );
+}
+
+function isImageAssetGenerationTask(task: unknown) {
+  if (!isRecord(task)) return false;
+  return (
+    task.status === "succeeded" &&
+    (task.provider === "gemini-official" ||
+      task.provider === "gemini-third-party")
+  );
+}
+
+export async function getWorkbenchGenerationTaskState(
   user: Awaited<ReturnType<typeof getCurrentUser>>,
-): Promise<WorkbenchImageAsset[]> {
-  if (!user) return [];
+): Promise<WorkbenchGenerationTaskState> {
+  if (!user) {
+    return {
+      imageAssets: [],
+      pendingGenerationTasks: [],
+    };
+  }
 
   const payload = await getCachedPayload();
   const tasks = await payload.find({
     collection: "generation-tasks",
     depth: 0,
-    limit: 24,
+    limit: 48,
     overrideAccess: false,
     pagination: false,
     sort: "-updatedAt",
@@ -318,22 +416,68 @@ export async function getWorkbenchImageAssets(
           },
         },
         {
-          status: {
-            equals: "succeeded",
-          },
-        },
-        {
-          provider: {
-            in: ["gemini-official", "gemini-third-party"],
-          },
+          or: [
+            {
+              and: [
+                {
+                  status: {
+                    in: ["queued", "processing"],
+                  },
+                },
+                {
+                  provider: {
+                    in: ["custom", "meshy", "tripo"],
+                  },
+                },
+              ],
+            },
+            {
+              and: [
+                {
+                  status: {
+                    equals: "succeeded",
+                  },
+                },
+                {
+                  provider: {
+                    in: ["gemini-official", "gemini-third-party"],
+                  },
+                },
+              ],
+            },
+          ],
         },
       ],
     },
   });
 
+  const pendingGenerationTasks = tasks.docs
+    .filter(isPendingModelGenerationTask)
+    .slice(0, 8)
+    .map((task: any) => {
+      const taskId = Number(task.id);
+
+      return {
+        cardId: -Math.max(1, taskId || Date.now()),
+        createdAt:
+          typeof task.createdAt === "string"
+            ? task.createdAt
+            : new Date().toISOString(),
+        failureReason:
+          typeof task.failureReason === "string" ? task.failureReason : null,
+        license: getPendingTaskLicense(task),
+        previewSrc: getPendingTaskPreview(task),
+        progress: getPendingTaskProgress(task),
+        status: getPendingTaskStatus(task),
+        taskCode: typeof task.taskCode === "string" ? task.taskCode : null,
+        taskId: Number.isFinite(taskId) && taskId > 0 ? taskId : null,
+        title: getPendingTaskTitle(task),
+      };
+    });
+
   const seen = new Set<number>();
   const assets = await Promise.all(
-    tasks.docs.map(async (task: any) => {
+    tasks.docs.filter(isImageAssetGenerationTask).slice(0, 24).map(async (task: any) => {
       const mediaId = getImageGenerationResultMediaId(task);
       if (!mediaId || seen.has(mediaId)) return null;
       seen.add(mediaId);
@@ -364,5 +508,22 @@ export async function getWorkbenchImageAssets(
     }),
   );
 
-  return assets.filter((asset): asset is WorkbenchImageAsset => Boolean(asset));
+  return {
+    imageAssets: assets.filter((asset): asset is WorkbenchImageAsset =>
+      Boolean(asset),
+    ),
+    pendingGenerationTasks,
+  };
+}
+
+export async function getWorkbenchPendingGenerationTasks(
+  user: Awaited<ReturnType<typeof getCurrentUser>>,
+): Promise<WorkbenchPendingGenerationTask[]> {
+  return (await getWorkbenchGenerationTaskState(user)).pendingGenerationTasks;
+}
+
+export async function getWorkbenchImageAssets(
+  user: Awaited<ReturnType<typeof getCurrentUser>>,
+): Promise<WorkbenchImageAsset[]> {
+  return (await getWorkbenchGenerationTaskState(user)).imageAssets;
 }

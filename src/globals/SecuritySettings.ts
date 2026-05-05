@@ -3,8 +3,6 @@ import type { GlobalConfig } from 'payload'
 import { isAdmin } from '@/access'
 import { adminTextKey } from '@/lib/adminText'
 
-const text = (en: string, zh: string) => ({ en, zh })
-
 export const SecuritySettings: GlobalConfig = {
   slug: 'security-settings',
   label: adminTextKey('globals.securitySettings.label'),
@@ -21,16 +19,15 @@ export const SecuritySettings: GlobalConfig = {
       type: 'tabs',
       tabs: [
         {
-          label: text('Mutation Origins', '变更来源'),
+          label: adminTextKey('globals.securitySettings.tabs.mutationOrigins.label'),
           fields: [
             {
               name: 'allowedMutationOrigins',
               type: 'array',
-              label: text('Allowed origins', '允许的来源'),
+              label: adminTextKey('globals.securitySettings.tabs.mutationOrigins.fields.allowedMutationOrigins.label'),
               admin: {
-                description: text(
-                  'Default: empty. Add one absolute origin per row, for example https://app.example.com. Local development still allows requests without Origin outside production.',
-                  '默认留空。每行填写一个完整来源，例如 https://app.example.com。非生产环境下，本地开发仍允许没有 Origin 的请求。',
+                description: adminTextKey(
+                  'globals.securitySettings.tabs.mutationOrigins.fields.allowedMutationOrigins.description',
                 ),
               },
               fields: [
@@ -38,7 +35,7 @@ export const SecuritySettings: GlobalConfig = {
                   name: 'origin',
                   type: 'text',
                   required: true,
-                  label: text('Origin', '来源'),
+                  label: adminTextKey('globals.securitySettings.tabs.mutationOrigins.fields.allowedMutationOrigins.fields.origin'),
                 },
               ],
               defaultValue: [],
@@ -46,16 +43,15 @@ export const SecuritySettings: GlobalConfig = {
           ],
         },
         {
-          label: text('Remote Assets', '远程资源'),
+          label: adminTextKey('globals.securitySettings.tabs.remoteAssets.label'),
           fields: [
             {
               name: 'allowedRemoteAssetHosts',
               type: 'array',
-              label: text('Allowed host patterns', '允许的主机模式'),
+              label: adminTextKey('globals.securitySettings.tabs.remoteAssets.fields.allowedRemoteAssetHosts.label'),
               admin: {
-                description: text(
-                  'Default: empty. Add hostnames such as cdn.example.com or example.com. Subdomains are matched automatically.',
-                  '默认留空。填写 cdn.example.com 或 example.com 这样的主机名，子域名会自动匹配。',
+                description: adminTextKey(
+                  'globals.securitySettings.tabs.remoteAssets.fields.allowedRemoteAssetHosts.description',
                 ),
               },
               fields: [
@@ -63,7 +59,7 @@ export const SecuritySettings: GlobalConfig = {
                   name: 'host',
                   type: 'text',
                   required: true,
-                  label: text('Host pattern', '主机模式'),
+                  label: adminTextKey('globals.securitySettings.tabs.remoteAssets.fields.allowedRemoteAssetHosts.fields.host'),
                 },
               ],
               defaultValue: [],
@@ -71,26 +67,29 @@ export const SecuritySettings: GlobalConfig = {
           ],
         },
         {
-          label: text('Authentication', '认证'),
+          label: adminTextKey('globals.securitySettings.tabs.authentication.label'),
           fields: [
             {
               name: 'registrationVerificationMode',
               type: 'select',
               defaultValue: 'email-code',
-              label: text('Registration verification mode', '注册验证方式'),
+              label: adminTextKey('globals.securitySettings.tabs.authentication.fields.registrationVerificationMode.label'),
               admin: {
-                description: text(
-                  'Email code is the default signup flow. Email link keeps the legacy Payload verification link flow available.',
-                  '邮箱验证码是默认注册流程。邮箱链接保留旧版 Payload 验证链接流程。',
+                description: adminTextKey(
+                  'globals.securitySettings.tabs.authentication.fields.registrationVerificationMode.description',
                 ),
               },
               options: [
                 {
-                  label: text('Email code', '邮箱验证码'),
+                  label: adminTextKey(
+                    'globals.securitySettings.tabs.authentication.fields.registrationVerificationMode.options.emailCode',
+                  ),
                   value: 'email-code',
                 },
                 {
-                  label: text('Email link', '邮箱链接'),
+                  label: adminTextKey(
+                    'globals.securitySettings.tabs.authentication.fields.registrationVerificationMode.options.emailLink',
+                  ),
                   value: 'email-link',
                 },
               ],
@@ -101,11 +100,10 @@ export const SecuritySettings: GlobalConfig = {
               defaultValue: 10,
               min: 3,
               max: 60,
-              label: text('Registration code expiry minutes', '注册验证码有效分钟数'),
+              label: adminTextKey('globals.securitySettings.tabs.authentication.fields.registrationCodeExpiresMinutes.label'),
               admin: {
-                description: text(
-                  'Used only when registration verification mode is Email code.',
-                  '仅在注册验证方式为邮箱验证码时使用。',
+                description: adminTextKey(
+                  'globals.securitySettings.tabs.authentication.fields.registrationCodeExpiresMinutes.description',
                 ),
               },
             },

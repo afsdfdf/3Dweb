@@ -30,18 +30,35 @@ function getIndex(seed: string, modulo: number) {
 }
 
 export function mapModelToPublicModelThumbnailCardVM(model: {
+  authorAvatarUrl?: null | string
+  authorName?: null | string
   formats: string[]
   id: number
+  owner?: null | {
+    avatarUrl?: null | string
+    displayName?: null | string
+    email?: null | string
+    fullName?: null | string
+    name?: null | string
+  }
   previewURL: null | string
   summary: string
   title: string
 }): PublicModelThumbnailCardVM {
   const seed = `${model.id}-${model.title}`
   const index = getIndex(seed, demoAuthors.length)
+  const ownerName =
+    model.authorName ||
+    model.owner?.displayName ||
+    model.owner?.fullName ||
+    model.owner?.name ||
+    model.owner?.email?.split('@')[0] ||
+    demoAuthors[index]
+  const ownerAvatarUrl = model.authorAvatarUrl ?? model.owner?.avatarUrl ?? null
 
   return {
-    authorAvatarUrl: null,
-    authorName: demoAuthors[index],
+    authorAvatarUrl: ownerAvatarUrl,
+    authorName: ownerName,
     commentsCount: demoComments[index],
     createdLabel: demoDates[index],
     formats: model.formats,

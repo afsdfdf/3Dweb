@@ -16,6 +16,7 @@ const topNavigationPath = path.join(rootDir, 'src', 'components', 'ui-lab', 'top
 const topNavigationCssPath = path.join(rootDir, 'src', 'components', 'ui-lab', 'top-navigation', 'top-navigation.module.css')
 const topNavBarPath = path.join(rootDir, 'src', 'app', '(frontend)', '_components', 'shell', 'TopNavBar.tsx')
 const workbenchModelPagePath = path.join(rootDir, 'src', 'app', '(frontend)', 'workbench', 'models', '[id]', 'page.tsx')
+const frontendSessionPath = path.join(rootDir, 'src', 'app', '(frontend)', '_lib', 'session.ts')
 const personalCenterTestPath = path.join(
   rootDir,
   'src',
@@ -62,10 +63,11 @@ test('shared navigation components use the canonical navigation source', () => {
   assert.match(topNavigationSource, /@\/lib\/publicNavigation/)
   assert.match(topNavigationSource, /publicNavigationItems/)
   assert.match(topNavigationSource, /formatTopNavigationUserLabel/)
-  assert.match(
-    topNavigationSource,
-    /<Link[\s\S]*className=\{styles\.userName\}[\s\S]*href="\/account"[\s\S]*title=\{displayName\s*\?\?\s*undefined\}/,
-  )
+  assert.match(topNavigationSource, /TopNavigationUserMenu/)
+  assert.match(topNavigationSource, /aria-haspopup="menu"/)
+  assert.match(topNavigationSource, /aria-expanded=\{isUserMenuOpen\}/)
+  assert.match(topNavigationSource, /className=\{styles\.userName\}[\s\S]*title=\{displayName\s*\?\?\s*undefined\}/)
+  assert.doesNotMatch(topNavigationSource, /<Link[\s\S]*className=\{styles\.userName\}[\s\S]*href="\/account"/)
   assert.match(topNavigationSource, /\{visibleDisplayName\}/)
   assert.doesNotMatch(topNavigationCssSource, /\.topNav\[data-authenticated=["']true["']\]\s+\.userName\s*\{[\s\S]*?display:\s*none/)
   assert.match(userNameCssRule, /width:\s*72px/)
@@ -118,4 +120,15 @@ test('top navigation user label is normalized and display-limited', () => {
   assert.equal(formatTopNavigationUserLabel('short'), 'short')
   assert.equal(formatTopNavigationUserLabel(longCjkName), `${'\u957f'.repeat(9)}...`)
   assert.equal(formatTopNavigationUserLabel(label).length, topNavigationUserLabelMaxCharacters)
+})
+
+test('top navigation session data avoids duplicate credit account queries', () => {
+  const source = readFileSync(frontendSessionPath, 'utf8')
+  const navFunction = source.match(/export async function getCurrentNavUser\(\) \{[\s\S]*?\n\}/)?.[0] ?? ''
+
+  assert.match(source, /import \{ cache \} from ["']react["']/)
+  assert.match(source, /const getPayloadWithUser = cache/)
+  assert.match(source, /const getCurrentUserDocument = cache/)
+  assert.match(navFunction, /creditsBalance/)
+  assert.doesNotMatch(navFunction, /collection:\s*["']credits["']/)
 })

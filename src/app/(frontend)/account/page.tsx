@@ -64,8 +64,30 @@ const getRelationTitle = (value: unknown, fallback: string) => {
   return fallback;
 };
 
-export default async function AccountPage() {
+const accountSections = [
+  "overview",
+  "orders",
+  "models",
+  "tasks",
+  "billing",
+  "settings",
+] as const;
+
+type AccountSection = (typeof accountSections)[number];
+
+function getInitialSection(value?: null | string): AccountSection {
+  return accountSections.includes(value as AccountSection)
+    ? (value as AccountSection)
+    : "overview";
+}
+
+export default async function AccountPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ section?: string }>;
+}) {
   await requireUser("/account");
+  const query = await searchParams;
 
   const [
     navUser,
@@ -168,5 +190,11 @@ export default async function AccountPage() {
     },
   };
 
-  return <PersonalCenterTest accountData={accountData} navUser={navUser} />;
+  return (
+    <PersonalCenterTest
+      accountData={accountData}
+      initialSection={getInitialSection(query.section)}
+      navUser={navUser}
+    />
+  );
 }
