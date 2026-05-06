@@ -123,6 +123,7 @@ export async function registerAccount(args: {
     })
 
     return {
+      loginReady: verificationSettings.registrationVerificationMode === 'email-code',
       message:
         verificationSettings.registrationVerificationMode === 'email-code'
           ? 'Registration complete. You can sign in now.'
@@ -133,6 +134,7 @@ export async function registerAccount(args: {
     const lower = message.toLowerCase()
     if (lower.includes('exist') || lower.includes('duplicate') || lower.includes('already')) {
       return {
+        loginReady: false,
         message: registrationSuccessMessage,
       }
     }

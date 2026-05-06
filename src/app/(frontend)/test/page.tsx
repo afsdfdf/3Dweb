@@ -819,7 +819,7 @@ export default function ProjectTestPage() {
               title="Model Viewer"
             >
               <div className="relative h-[320px] overflow-hidden rounded-lg border border-border/60">
-                <ModelViewer className="h-full w-full" label="Preview Viewer" />
+                <ModelViewer className="h-full w-full" displayBase="workbench" label="Preview Viewer" />
               </div>
             </PreviewBlock>
           </div>

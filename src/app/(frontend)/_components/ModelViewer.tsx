@@ -28,6 +28,7 @@ if (typeof window !== "undefined" && "createImageBitmap" in window) {
 type ModelViewerProps = {
   accent?: "blue" | "violet";
   className?: string;
+  displayBase?: "none" | "workbench";
   label?: string;
   onError?: () => void;
   onReady?: () => void;
@@ -611,6 +612,7 @@ function canCreateWebGLContext() {
 export function ModelViewer({
   accent = "violet",
   className,
+  displayBase = "none",
   label,
   onError,
   onReady,
@@ -629,6 +631,7 @@ export function ModelViewer({
     <CharacterFigure accent={accent} />
   ) : null;
   const hasSceneModel = Boolean(activeSrc || showPlaceholderModel);
+  const showWorkbenchBase = displayBase === "workbench";
   const handleModelReady = useCallback(() => {
     setLoadState((previous) =>
       previous.objectURL === activeSrc
@@ -964,7 +967,7 @@ export function ModelViewer({
               onError?.();
             }}
           >
-            <Suspense fallback={fallbackModel}>
+          <Suspense fallback={fallbackModel}>
               {activeSrc ? (
                 <LoadedModel onReady={handleModelReady} src={activeSrc} />
               ) : (
@@ -972,6 +975,8 @@ export function ModelViewer({
               )}
             </Suspense>
           </ViewerErrorBoundary>
+
+          {showWorkbenchBase ? <WorkbenchDisplayBase /> : null}
 
           {hasSceneModel && showGround ? (
             <mesh position={[0, -1.2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -1005,5 +1010,58 @@ export function ModelViewer({
         visible={loadState.status === "error" || webGLStatus === "unavailable"}
       />
     </div>
+  );
+}
+
+function WorkbenchDisplayBase() {
+  return (
+    <group position={[0, -1.3, 0]}>
+      <mesh position={[0, -0.08, 0]}>
+        <cylinderGeometry args={[1.96, 2.18, 0.22, 128]} />
+        <meshStandardMaterial
+          color="#080808"
+          metalness={0.22}
+          roughness={0.62}
+        />
+      </mesh>
+      <mesh position={[0, 0.04, 0]}>
+        <cylinderGeometry args={[1.78, 1.92, 0.08, 128]} />
+        <meshStandardMaterial
+          color="#151918"
+          metalness={0.18}
+          roughness={0.48}
+        />
+      </mesh>
+      <mesh position={[0, 0.095, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[1.74, 128]} />
+        <meshStandardMaterial
+          color="#101414"
+          metalness={0.08}
+          roughness={0.74}
+        />
+      </mesh>
+      <mesh position={[0, 0.105, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[1.55, 1.72, 128]} />
+        <meshBasicMaterial
+          color="#d5a856"
+          opacity={0.32}
+          side={THREE.DoubleSide}
+          transparent
+        />
+      </mesh>
+      <mesh position={[0, 0.112, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[1.08, 1.1, 128]} />
+        <meshBasicMaterial
+          color="#e7c06d"
+          opacity={0.18}
+          side={THREE.DoubleSide}
+          transparent
+        />
+      </mesh>
+      <mesh position={[0, 0.118, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={[1, 0.42, 1]}>
+        <circleGeometry args={[1.02, 96]} />
+        <meshBasicMaterial color="#000000" opacity={0.38} transparent />
+      </mesh>
+    </group>
   );
 }

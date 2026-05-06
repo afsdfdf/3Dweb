@@ -174,6 +174,34 @@ export function AuthFlowCard({ initialMode = 'login', onSuccess, redirectTo }: A
     setLoading(false)
   }
 
+  const completeLogin = async () => {
+    const loginResp = await fetch('/api/account/auth/login', {
+      body: JSON.stringify({
+        email,
+        password,
+      }),
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    })
+
+    const loginJson = await loginResp.json().catch(() => ({}))
+    if (!loginResp.ok) {
+      throw new Error(loginJson?.message || 'Login failed.')
+    }
+
+    await waitForSession()
+
+    if (onSuccess) {
+      onSuccess()
+      return
+    }
+
+    if (typeof window !== 'undefined') {
+      window.location.assign(resolvedRedirect)
+    }
+  }
+
   const handleSendCode = async () => {
     if (!email.trim()) {
       setMessage('Please enter your email first.')
@@ -246,41 +274,20 @@ export function AuthFlowCard({ initialMode = 'login', onSuccess, redirectTo }: A
           throw new Error(registerJson?.message || 'Registration failed.')
         }
 
-        setMessage(
-          requiresVerificationCode
-            ? 'Registration complete. You can sign in now.'
-            : 'Registration complete. Please check your email to verify the account.',
-        )
+        if (requiresVerificationCode && registerJson?.loginReady === true) {
+          setMessage('Registration complete. Signing you in...')
+          setMessageTone('success')
+          await completeLogin()
+          return
+        }
+
+        setMessage(registerJson?.message || 'Registration complete. Please check your email to verify the account.')
         setMessageTone('success')
         return
       }
 
       if (isLogin) {
-        const loginResp = await fetch('/api/account/auth/login', {
-          body: JSON.stringify({
-            email,
-            password,
-          }),
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          method: 'POST',
-        })
-
-        const loginJson = await loginResp.json().catch(() => ({}))
-        if (!loginResp.ok) {
-          throw new Error(loginJson?.message || 'Login failed.')
-        }
-
-        await waitForSession()
-
-        if (onSuccess) {
-          onSuccess()
-          return
-        }
-
-        if (typeof window !== 'undefined') {
-          window.location.assign(resolvedRedirect)
-        }
+        await completeLogin()
         return
       }
 

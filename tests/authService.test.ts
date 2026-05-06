@@ -60,6 +60,7 @@ test('registerAccount keeps the email-link mode compatible with existing registr
   })
 
   assert.deepEqual(result, {
+    loginReady: false,
     message: 'If this email is not already registered, a verification email has been sent.',
   })
 })
@@ -83,6 +84,7 @@ test('registerAccount returns the same message for duplicate emails', async () =
   })
 
   assert.deepEqual(result, {
+    loginReady: false,
     message: 'If this email is not already registered, a verification email has been sent.',
   })
 })
@@ -134,6 +136,7 @@ test('registerAccount consumes a valid registration code and creates a verified 
   })
 
   assert.deepEqual(result, {
+    loginReady: true,
     message: 'Registration complete. You can sign in now.',
   })
   assert.deepEqual(operations.map((operation) => operation.type), ['find', 'update', 'create'])

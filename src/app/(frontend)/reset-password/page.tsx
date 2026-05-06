@@ -23,7 +23,7 @@ export default async function ResetPasswordPage({
           <Badge variant="secondary">Reset Password</Badge>
           <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">Set a new sign-in password</h1>
           <p className="mt-4 text-base leading-7 text-muted-foreground sm:text-lg">
-            Enter the reset token from your email and choose a new password. After the reset succeeds, you can sign in again.
+            Enter the reset token from your email and choose a new password. After the reset succeeds, you will be signed in.
           </p>
         </div>
 

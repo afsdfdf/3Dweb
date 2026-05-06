@@ -8,6 +8,7 @@ const authModalStagePath = path.join(rootDir, 'src', 'components', 'auth', 'Auth
 const authModalProviderPath = path.join(rootDir, 'src', 'components', 'auth', 'AuthModalProvider.tsx')
 const authFlowCardPath = path.join(rootDir, 'src', 'components', 'auth', 'AuthFlowCard.tsx')
 const authModalStageCssPath = path.join(rootDir, 'src', 'components', 'auth', 'AuthModalStage.module.css')
+const resetPasswordFormPath = path.join(rootDir, 'src', 'app', '(frontend)', '_components', 'ResetPasswordForm.tsx')
 const homePageCssPath = path.join(rootDir, 'src', 'app', '(frontend)', '_home', 'homePage.module.css')
 const modelDetailNativePath = path.join(rootDir, 'src', 'app', '(frontend)', 'model-detail', 'ModelDetailNative.tsx')
 const modelDetailCssPath = path.join(rootDir, 'src', 'app', '(frontend)', 'model-detail', 'page.module.css')
@@ -52,6 +53,34 @@ test('AuthFlowCard reads backend auth settings and requests registration codes',
   assert.match(source, /registrationVerificationMode/)
   assert.match(source, /\/api\/account\/auth\/send-register-code/)
   assert.match(source, /verificationCode: requiresVerificationCode \? verificationCode : undefined/)
+})
+
+test('AuthFlowCard auto signs in and closes the modal after verified registration', () => {
+  const source = readFileSync(authFlowCardPath, 'utf8')
+
+  assert.match(source, /const completeLogin = async \(\) =>/)
+  assert.match(source, /\/api\/account\/auth\/login/)
+  assert.match(source, /registerJson\?\.loginReady === true/)
+  assert.match(source, /Registration complete\. Signing you in\.\.\./)
+  assert.match(source, /onSuccess\(\)/)
+})
+
+test('AuthFlowCard keeps the forgot password success state in the auth modal flow', () => {
+  const source = readFileSync(authFlowCardPath, 'utf8')
+
+  assert.match(source, /\/api\/account\/auth\/forgot-password/)
+  assert.match(source, /setMode\('forgot-success'\)/)
+  assert.match(source, /Check Your Email/)
+  assert.match(source, /password reset link/)
+})
+
+test('ResetPasswordForm uses the account auth reset endpoint and returns to account state', () => {
+  const source = readFileSync(resetPasswordFormPath, 'utf8')
+
+  assert.match(source, /\/api\/account\/auth\/reset-password/)
+  assert.doesNotMatch(source, /\/api\/users\/reset-password/)
+  assert.match(source, /credentials: 'include'/)
+  assert.match(source, /router\.push\('\/account'\)/)
 })
 
 test('Auth modal overlay remains below the fixed top navigation layer', () => {

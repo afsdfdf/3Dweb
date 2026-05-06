@@ -32,13 +32,14 @@ export function ResetPasswordForm({ initialToken }: { initialToken?: string }) {
         throw new Error('Passwords do not match.')
       }
 
-      const response = await fetch('/api/users/reset-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch('/api/account/auth/reset-password', {
         body: JSON.stringify({
           password,
           token: formData.get('token'),
         }),
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
       })
 
       const json = await response.json()
@@ -46,9 +47,9 @@ export function ResetPasswordForm({ initialToken }: { initialToken?: string }) {
         throw new Error(json.message || 'Failed to reset password.')
       }
 
-      setSuccess('Password reset complete. Redirecting to login...')
+      setSuccess('Password reset complete. Signing you in...')
       setTimeout(() => {
-        router.push('/login')
+        router.push('/account')
         router.refresh()
       }, 1200)
     } catch (err) {

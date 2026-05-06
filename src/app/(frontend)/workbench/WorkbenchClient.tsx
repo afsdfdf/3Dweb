@@ -993,6 +993,7 @@ export function WorkbenchClient({
                   ) : (
                     <ModelViewer
                       className={styles.viewerCanvas}
+                      displayBase="workbench"
                       showPlaceholderModel={false}
                       showGround={false}
                       src={activeModelSrc}
