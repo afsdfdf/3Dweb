@@ -113,17 +113,6 @@ async function parseGeminiError(response: Response) {
   }
 }
 
-async function parseOpenAICompatibleError(response: Response) {
-  try {
-    const payload = (await response.json()) as Record<string, unknown>
-    const error = isRecord(payload.error) ? payload.error : null
-    const message = readString(error?.message) || readString(payload.message)
-    return message || JSON.stringify(payload)
-  } catch {
-    return await response.text()
-  }
-}
-
 function isTimeoutError(error: unknown) {
   if (!(error instanceof Error)) return false
 
@@ -378,19 +367,163 @@ function extractInlineImage(payload: Record<string, unknown>): GeminiInlineImage
   throw new Error('Gemini did not return an image payload.')
 }
 
+const getMimeTypeFromImageFormat = (value: unknown) => {
+  const format = readString(value).toLowerCase()
+  if (format === 'jpg' || format === 'jpeg') return 'image/jpeg'
+  if (format === 'webp') return 'image/webp'
+  if (format === 'png') return 'image/png'
+  return ''
+}
+
+const looksLikeBase64Image = (value: string) => {
+  return value.length > 100 && /^[A-Za-z0-9+/]+={0,2}$/.test(value)
+}
+
+const sanitizeOpenAICompatibleDetail = (value: string) => {
+  const redacted = value
+    .replace(
+      /("(?:result|b64_json|partial_image_b64)"\s*:\s*")[A-Za-z0-9+/=]{120,}(")/g,
+      '$1[redacted-base64-image]$2',
+    )
+    .replace(
+      /(\\\"(?:result|b64_json|partial_image_b64)\\\"\s*:\s*\\\")[A-Za-z0-9+/=]{120,}(\\\")/g,
+      '$1[redacted-base64-image]$2',
+    )
+    .replace(/(data:image\/[a-zA-Z0-9.+-]+;base64,)[A-Za-z0-9+/=]{120,}/g, '$1[redacted-base64-image]')
+
+  return redacted.length > 1200 ? `${redacted.slice(0, 1200)}...` : redacted
+}
+
+const tryParseOpenAICompatibleJSON = (value: string): unknown => {
+  try {
+    const parsed = JSON.parse(value)
+    if (typeof parsed === 'string' && parsed !== value) {
+      return tryParseOpenAICompatibleJSON(parsed)
+    }
+
+    return parsed
+  } catch {
+    return null
+  }
+}
+
+const pushParsedOpenAICompatiblePayload = (payloads: unknown[], value: string) => {
+  const trimmed = value.trim()
+  if (!trimmed || trimmed === '[DONE]') return
+
+  const parsed = tryParseOpenAICompatibleJSON(trimmed)
+  if (parsed) {
+    payloads.push(parsed)
+    return
+  }
+
+  const unescaped = trimmed.replace(/\\"/g, '"')
+  if (unescaped !== trimmed) {
+    const parsedUnescaped = tryParseOpenAICompatibleJSON(unescaped)
+    if (parsedUnescaped) payloads.push(parsedUnescaped)
+  }
+}
+
+const extractOpenAICompatiblePayloadsFromText = (text: string) => {
+  const payloads: unknown[] = []
+  const trimmed = text.trim()
+
+  pushParsedOpenAICompatiblePayload(payloads, trimmed)
+
+  const eventBlocks = trimmed.split(/\r?\n\r?\n/)
+  for (const block of eventBlocks) {
+    const dataLines = block
+      .split(/\r?\n/)
+      .filter((line) => line.startsWith('data:'))
+      .map((line) => line.replace(/^data:\s?/, ''))
+
+    for (const dataLine of dataLines) {
+      pushParsedOpenAICompatiblePayload(payloads, dataLine)
+    }
+
+    const data = block
+      .split(/\r?\n/)
+      .filter((line) => line.startsWith('data:'))
+      .map((line) => line.replace(/^data:\s?/, ''))
+      .join('\n')
+
+    pushParsedOpenAICompatiblePayload(payloads, data)
+  }
+
+  const firstBrace = trimmed.indexOf('{')
+  const lastBrace = trimmed.lastIndexOf('}')
+  if (firstBrace >= 0 && lastBrace > firstBrace) {
+    pushParsedOpenAICompatiblePayload(payloads, trimmed.slice(firstBrace, lastBrace + 1))
+  }
+
+  return payloads.filter(isRecord)
+}
+
+const findOpenAICompatibleImageRecord = (payload: unknown) => {
+  const stack: Array<{ depth: number; value: unknown }> = [{ depth: 0, value: payload }]
+  const visited = new Set<unknown>()
+
+  while (stack.length > 0) {
+    const { depth, value } = stack.shift() as { depth: number; value: unknown }
+    if (depth > 8 || !value || visited.has(value)) continue
+    visited.add(value)
+
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        stack.push({ depth: depth + 1, value: item })
+      }
+      continue
+    }
+
+    if (!isRecord(value)) continue
+
+    const b64Json = readString(value.b64_json)
+    const result = readString(value.result)
+    const partialImage = readString(value.partial_image_b64)
+    const url = readString(value.url)
+    const type = readString(value.type)
+
+    if (b64Json || url || (type === 'image_generation_call' && looksLikeBase64Image(result)) || partialImage) {
+      return value
+    }
+
+    for (const child of Object.values(value)) {
+      if (child && (typeof child === 'object' || Array.isArray(child))) {
+        stack.push({ depth: depth + 1, value: child })
+      }
+    }
+  }
+
+  return null
+}
+
 async function extractOpenAICompatibleImage(payload: Record<string, unknown>) {
-  const data = Array.isArray(payload.data) ? payload.data : []
-  const image = data.find(isRecord)
+  const image = findOpenAICompatibleImageRecord(payload)
 
   if (!image) {
     throw new Error('OpenAI-compatible provider did not return an image payload.')
   }
 
   const b64Json = readString(image.b64_json)
-  const mimeType = readString(image.mime_type) || readString(image.mimeType) || 'image/png'
+  const result = readString(image.result)
+  const partialImage = readString(image.partial_image_b64)
+  const mimeType =
+    readString(image.mime_type) ||
+    readString(image.mimeType) ||
+    getMimeTypeFromImageFormat(image.output_format) ||
+    getMimeTypeFromImageFormat(image.outputFormat) ||
+    'image/png'
 
   if (b64Json) {
     return { data: b64Json, mimeType } satisfies GeminiInlineImage
+  }
+
+  if (looksLikeBase64Image(result)) {
+    return { data: result, mimeType } satisfies GeminiInlineImage
+  }
+
+  if (partialImage) {
+    return { data: partialImage, mimeType } satisfies GeminiInlineImage
   }
 
   const url = readString(image.url)
@@ -415,6 +548,37 @@ async function extractOpenAICompatibleImage(payload: Record<string, unknown>) {
     data: buffer.toString('base64'),
     mimeType: responseMimeType,
   } satisfies GeminiInlineImage
+}
+
+async function extractOpenAICompatibleImageFromText(text: string) {
+  const payloads = extractOpenAICompatiblePayloadsFromText(text)
+
+  for (let index = payloads.length - 1; index >= 0; index -= 1) {
+    const payload = payloads[index]
+    try {
+      return await extractOpenAICompatibleImage(payload)
+    } catch {
+      continue
+    }
+  }
+
+  return null
+}
+
+async function readOpenAICompatibleImageResponse(response: Response) {
+  const text = await response.text()
+
+  if (!response.ok) {
+    const recoveredImage = await extractOpenAICompatibleImageFromText(text)
+    if (recoveredImage) return recoveredImage
+
+    throw new Error(`OpenAI-compatible image generation failed: ${sanitizeOpenAICompatibleDetail(text)}`)
+  }
+
+  const image = await extractOpenAICompatibleImageFromText(text)
+  if (image) return image
+
+  throw new Error('OpenAI-compatible provider did not return a readable image payload.')
 }
 
 function getSourceImageFilename(mimeType: string) {
@@ -485,13 +649,7 @@ async function generateOpenAICompatibleImage(args: GenerateProviderImageArgs & {
     })
   }
 
-  if (!response.ok) {
-    const detail = await parseOpenAICompatibleError(response)
-    throw new Error(`OpenAI-compatible image generation failed: ${detail}`)
-  }
-
-  const payload = (await response.json()) as Record<string, unknown>
-  const image = await extractOpenAICompatibleImage(payload)
+  const image = await readOpenAICompatibleImageResponse(response)
 
   return {
     image,
