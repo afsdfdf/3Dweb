@@ -78,6 +78,18 @@ export const ModelBundles: CollectionConfig = {
       type: 'upload',
       relationTo: 'media',
       label: 'Cover image',
+      admin: {
+        description: 'Thumbnail-friendly image shown on homepage and bundle listing cards.',
+      },
+    },
+    {
+      name: 'heroImage',
+      type: 'upload',
+      relationTo: 'media',
+      label: 'Hero image',
+      admin: {
+        description: 'Wide banner image shown at the top of the bundle detail page. Falls back to Cover image.',
+      },
     },
     {
       name: 'summary',

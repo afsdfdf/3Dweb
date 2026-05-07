@@ -1638,6 +1638,9 @@ export const model_bundles = pgTable(
     coverImage: integer("cover_image_id").references(() => media.id, {
       onDelete: "set null",
     }),
+    heroImage: integer("hero_image_id").references(() => media.id, {
+      onDelete: "set null",
+    }),
     bundleType:
       enum_model_bundles_bundle_type("bundle_type").default("theme-pack"),
     technicalSpecs_printReady: boolean("technical_specs_print_ready").default(
@@ -1680,6 +1683,7 @@ export const model_bundles = pgTable(
   (columns) => [
     uniqueIndex("model_bundles_slug_idx").on(columns.slug),
     index("model_bundles_cover_image_idx").on(columns.coverImage),
+    index("model_bundles_hero_image_idx").on(columns.heroImage),
     index("model_bundles_created_by_idx").on(columns.createdBy),
     index("model_bundles_updated_at_idx").on(columns.updatedAt),
     index("model_bundles_created_at_idx").on(columns.createdAt),
@@ -1807,6 +1811,12 @@ export const _model_bundles_v = pgTable(
         onDelete: "set null",
       },
     ),
+    version_heroImage: integer("version_hero_image_id").references(
+      () => media.id,
+      {
+        onDelete: "set null",
+      },
+    ),
     version_bundleType: enum__model_bundles_v_version_bundle_type(
       "version_bundle_type",
     ).default("theme-pack"),
@@ -1877,6 +1887,9 @@ export const _model_bundles_v = pgTable(
     index("_model_bundles_v_version_version_slug_idx").on(columns.version_slug),
     index("_model_bundles_v_version_version_cover_image_idx").on(
       columns.version_coverImage,
+    ),
+    index("_model_bundles_v_version_version_hero_image_idx").on(
+      columns.version_heroImage,
     ),
     index("_model_bundles_v_version_version_created_by_idx").on(
       columns.version_createdBy,
@@ -3987,6 +4000,11 @@ export const relations_model_bundles = relations(
       references: [media.id],
       relationName: "coverImage",
     }),
+    heroImage: one(media, {
+      fields: [model_bundles.heroImage],
+      references: [media.id],
+      relationName: "heroImage",
+    }),
     tags: many(model_bundles_tags, {
       relationName: "tags",
     }),
@@ -4063,6 +4081,11 @@ export const relations__model_bundles_v = relations(
       fields: [_model_bundles_v.version_coverImage],
       references: [media.id],
       relationName: "version_coverImage",
+    }),
+    version_heroImage: one(media, {
+      fields: [_model_bundles_v.version_heroImage],
+      references: [media.id],
+      relationName: "version_heroImage",
     }),
     version_tags: many(_model_bundles_v_version_tags, {
       relationName: "version_tags",

@@ -487,6 +487,7 @@ Important fields:
 - `summary`
 - `badgeLabel`
 - `bundleType`: `starter`, `theme-pack`, `character-pack`, `terrain-pack`, `event-pack`, `monthly-release`, `showcase`
+- `heroImage`: optional detail-page banner image, separate from the card/list cover image
 - `tags`
 - `includedSummary`
 - `technicalSpecs`
@@ -509,7 +510,7 @@ Frontend and service notes:
 
 - `/bundles` and `/bundles/[slug]` use `src/lib/bundleService.ts` to produce public bundle DTOs.
 - Related `models` must be filtered to `visibility = public` before public rendering.
-- Public bundle cover media and fallback model preview media must be guest-readable.
+- Public bundle cover media, hero media, and fallback model preview media must be guest-readable.
 - `cta.priceCredits` is display-only in the first merchandising phase. Do not treat it as purchase, entitlement, or billing enforcement until a dedicated commerce flow is added.
 
 ## Commerce

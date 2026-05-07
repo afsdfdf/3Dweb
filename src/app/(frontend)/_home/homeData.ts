@@ -423,7 +423,7 @@ async function getManagedHomeItems(payload: Awaited<ReturnType<typeof getCachedP
     const imageSrc = await resolveHomepageItemImage(payload, item)
     if (!imageSrc) continue
 
-    const title = typeof item.title === 'string' && item.title.trim() ? item.title.trim() : 'Homepage item'
+    const title = normalizeItemText(item.title) || 'Homepage item'
     const alt = normalizeItemText(item.altText) || title
     const id = String(item.id ?? title)
 

@@ -15,6 +15,7 @@ import * as migration_20260503_124500_registration_email_codes from './20260503_
 import * as migration_20260505_133000_openai_compatible_image_provider from './20260505_133000_openai_compatible_image_provider';
 import * as migration_20260505_160000_image_generation_async_and_task_type from './20260505_160000_image_generation_async_and_task_type';
 import * as migration_20260506_151500_model_bundle_public_fields from './20260506_151500_model_bundle_public_fields';
+import * as migration_20260507_093000_model_bundle_hero_image from './20260507_093000_model_bundle_hero_image';
 
 export const migrations = [
   {
@@ -101,5 +102,10 @@ export const migrations = [
     up: migration_20260506_151500_model_bundle_public_fields.up,
     down: migration_20260506_151500_model_bundle_public_fields.down,
     name: '20260506_151500_model_bundle_public_fields'
+  },
+  {
+    up: migration_20260507_093000_model_bundle_hero_image.up,
+    down: migration_20260507_093000_model_bundle_hero_image.down,
+    name: '20260507_093000_model_bundle_hero_image'
   },
 ];

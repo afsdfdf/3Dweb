@@ -2,9 +2,11 @@
   align-items: stretch;
   display: inline-flex;
   height: 60px;
+  max-width: 100%;
   min-width: 118px;
   pointer-events: none;
   position: relative;
+  width: max-content;
 }
 
 .left,
@@ -26,7 +28,7 @@
   align-items: center;
   background-image: url("./assets/ribbon-middle.png");
   display: flex;
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   justify-content: center;
   min-width: 64px;
   padding: 0 8px 2px 3px;

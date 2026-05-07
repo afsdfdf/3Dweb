@@ -622,7 +622,14 @@ export interface ModelBundle {
    * Short product-style line shown near the bundle title.
    */
   subtitle?: string | null;
+  /**
+   * Thumbnail-friendly image shown on homepage and bundle listing cards.
+   */
   coverImage?: (number | null) | Media;
+  /**
+   * Wide banner image shown at the top of the bundle detail page. Falls back to Cover image.
+   */
+  heroImage?: (number | null) | Media;
   summary?: string | null;
   /**
    * Optional short label such as Featured, Starter, Event, or New.
@@ -1367,6 +1374,7 @@ export interface ModelBundlesSelect<T extends boolean = true> {
   slug?: T;
   subtitle?: T;
   coverImage?: T;
+  heroImage?: T;
   summary?: T;
   badgeLabel?: T;
   bundleType?: T;

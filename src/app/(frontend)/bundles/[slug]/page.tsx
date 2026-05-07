@@ -21,7 +21,7 @@ export default async function BundleDetailPage({ params }: { params: Promise<{ s
     notFound()
   }
 
-  const heroImage = bundle.coverSrc || bundle.models.find((model) => model.imageSrc)?.imageSrc || null
+  const heroImage = bundle.heroSrc || bundle.coverSrc || bundle.models.find((model) => model.imageSrc)?.imageSrc || null
   const previewModels = bundle.models
   const ctaBadge = bundle.ctaMode === 'paid' && bundle.priceCredits > 0 ? `${bundle.priceCredits} Credits` : null
   const technicalSummary = [

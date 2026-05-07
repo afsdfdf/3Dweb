@@ -19,6 +19,9 @@ const findField = (fields: TestField[], name: string) => {
 const makeBundle = (overrides: Record<string, unknown> = {}) => ({
   _status: 'published',
   bundleType: 'starter',
+  heroImage: {
+    url: '/api/media/file/bundle-hero.png',
+  },
   cta: {
     mode: 'free',
     priceCredits: 0,
@@ -73,6 +76,7 @@ test('ModelBundles exposes operator-editable bundle merchandising fields', () =>
   assert.ok(findField(fields, 'subtitle'))
   assert.ok(findField(fields, 'badgeLabel'))
   assert.ok(findField(fields, 'bundleType'))
+  assert.ok(findField(fields, 'heroImage'))
   assert.ok(findField(fields, 'includedSummary'))
   assert.ok(findField(fields, 'releaseNotes'))
   assert.ok(findField(technicalSpecs.fields || [], 'supportedFormatsLabel'))
@@ -133,6 +137,33 @@ test('ModelBundles rejects published cover media that guests cannot read', async
         },
       } as never),
     /guest-readable/,
+  )
+})
+
+test('ModelBundles validates hero media when published and visible', async () => {
+  await assert.rejects(
+    () =>
+      validatePublicBundleCoverImage({
+        data: {
+          _status: 'published',
+          heroImage: 155,
+          isVisible: true,
+        },
+        originalDoc: {},
+        req: {
+          payload: {
+            findByID: async (args: unknown) => {
+              assert.equal((args as { id?: number }).id, 155)
+
+              return {
+                publicAccess: false,
+                purpose: 'asset',
+              }
+            },
+          },
+        },
+      } as never),
+    /Hero image/,
   )
 })
 
@@ -208,6 +239,7 @@ test('getPublicBundleBySlug excludes private models from detail payloads', async
   assert.equal(detail.models[0]?.imageSrc, '/api/media/file/public-preview.png')
   assert.equal(detail.models[0]?.authorName, 'Creator One')
   assert.equal(detail.models[0]?.avatarSrc, '/api/media/file/creator-avatar.png')
+  assert.equal(detail.heroSrc, '/api/media/file/bundle-hero.png')
   assert.equal(detail.license.summary, 'Personal previews only.')
   assert.equal(detail.technicalSpecs.formatsLabel, 'GLB')
   assert.equal(detail.relatedBundles.length, 1)

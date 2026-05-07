@@ -39,6 +39,7 @@ type BundleLike = {
     primaryLabel?: null | string
     secondaryLabel?: null | string
   }
+  heroImage?: null | number | ImageLike
   id?: number | string
   includedSummary?: null | string
   isFeatured?: null | boolean
@@ -98,6 +99,7 @@ export type PublicBundleCard = {
 }
 
 export type PublicBundleDetail = PublicBundleCard & {
+  heroSrc: null | string
   includedSummary: string
   license: {
     label: string
@@ -342,6 +344,11 @@ async function resolveBundleCoverURL(payload: Payload, bundle: BundleLike, model
   return models.find((model) => model.imageSrc)?.imageSrc ?? null
 }
 
+async function resolveBundleHeroURL(payload: Payload, bundle: BundleLike, fallbackCoverSrc: null | string) {
+  const directHero = await resolveMediaURL(payload, getImageURL(bundle.heroImage))
+  return directHero || fallbackCoverSrc
+}
+
 function getDefaultFormatLabel(models: PublicBundleModelCard[]) {
   const formats = Array.from(new Set(models.flatMap((model) => model.formats))).slice(0, 4)
   return formats.length > 0 ? formats.join(', ') : 'Public model previews'
@@ -365,6 +372,7 @@ async function mapBundleCard(payload: Payload, bundle: BundleLike): Promise<Publ
   const modelCountLabel =
     normalizeText(bundle.technicalSpecs?.modelCountLabel) ||
     `${modelCount} ${modelCount === 1 ? 'Model' : 'Models'}`
+  const title = normalizeText(bundle.title, 'Model Bundle')
 
   return {
     badgeLabel: normalizeText(bundle.badgeLabel, bundle.isFeatured ? 'Featured' : getBundleTypeLabel(bundleType)),
@@ -382,7 +390,7 @@ async function mapBundleCard(payload: Payload, bundle: BundleLike): Promise<Publ
     subtitle: normalizeText(bundle.subtitle),
     summary: normalizeText(bundle.summary, DEFAULT_BUNDLE_SUMMARY),
     tags: getTags(bundle.tags),
-    title: normalizeText(bundle.title, 'Model Bundle'),
+    title,
   }
 }
 
@@ -394,6 +402,7 @@ async function mapBundleDetail(payload: Payload, bundle: BundleLike): Promise<Om
 
   return {
     ...card,
+    heroSrc: await resolveBundleHeroURL(payload, bundle, card.coverSrc),
     includedSummary: normalizeText(bundle.includedSummary, DEFAULT_INCLUDED_SUMMARY),
     license: {
       label: getLicenseTypeLabel(licenseType),

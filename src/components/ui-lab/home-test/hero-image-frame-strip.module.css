@@ -58,8 +58,9 @@
 
 .frameRibbon {
   left: 36px;
+  max-width: calc(100% - 72px);
   position: absolute;
   top: 0;
-  width: 132px;
+  width: max-content;
   z-index: 2;
 }

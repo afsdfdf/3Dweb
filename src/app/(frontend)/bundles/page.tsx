@@ -1,15 +1,14 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from 'next/link'
 
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { AuthModalStage } from '@/components/auth/AuthModalStage'
+import { HeroProductRibbon } from '@/components/ui-lab/hero-product-ribbon'
+import { TopNavigation, migrationTestNavItems } from '@/components/ui-lab/top-navigation'
+import { getPublicBundleBySlug, getPublicBundleList, type PublicBundleCard, type PublicBundleListResult } from '@/lib/bundleService'
 import { getCachedPayload } from '@/lib/getCachedPayload'
-import { getPublicBundleList, type PublicBundleListResult } from '@/lib/bundleService'
 
-import { SiteShell } from '../_components/SiteShell'
-import { getMarketingSiteData } from '../_lib/marketing'
-import { getCurrentUser } from '../_lib/session'
+import { getCurrentNavUser } from '../_lib/session'
+import styles from './page.module.css'
 
 type BundlesPageProps = {
   searchParams?: Promise<{
@@ -17,6 +16,10 @@ type BundlesPageProps = {
     q?: string
     type?: string
   }>
+}
+
+type SpotlightBundle = PublicBundleCard & {
+  imageSrc?: null | string
 }
 
 const bundleTypeFilters = [
@@ -60,6 +63,124 @@ function getEmptyBundleList(args: { limit: number; page: number }): PublicBundle
   }
 }
 
+function getPriceLabel(bundle: PublicBundleCard) {
+  if (bundle.ctaMode === 'coming-soon') return 'Coming Soon'
+  if (bundle.priceCredits > 0) return `${bundle.priceCredits} Credits`
+  return 'Free Preview'
+}
+
+function BundleTagList({ bundle }: { bundle: PublicBundleCard }) {
+  const tags = bundle.tags.length > 0 ? bundle.tags.slice(0, 5) : [bundle.bundleTypeLabel, bundle.modelCountLabel]
+
+  return (
+    <div className={styles.tagRow}>
+      {tags.map((tag) => (
+        <span key={tag}>{tag}</span>
+      ))}
+    </div>
+  )
+}
+
+function SpotlightCard({ bundle }: { bundle: SpotlightBundle }) {
+  return (
+    <article className={styles.spotlightCard}>
+      <Link className={styles.spotlightImageLink} href={bundle.href}>
+        {bundle.imageSrc ? (
+          <img alt={bundle.title} className={styles.spotlightImage} decoding="async" fetchPriority="high" src={bundle.imageSrc} />
+        ) : (
+          <div className={styles.emptyImage}>No cover image</div>
+        )}
+      </Link>
+      <div className={styles.spotlightBody}>
+        <div className={styles.metaPills}>
+          <span className={styles.metaPillPrimary}>{bundle.badgeLabel}</span>
+          <span>{bundle.bundleTypeLabel}</span>
+          <span>{bundle.modelCountLabel}</span>
+        </div>
+        <h2>
+          <Link href={bundle.href}>{bundle.title}</Link>
+        </h2>
+        {bundle.subtitle ? <p className={styles.subtitle}>{bundle.subtitle}</p> : null}
+        <p className={styles.summary}>{bundle.summary}</p>
+        <BundleTagList bundle={bundle} />
+        <div className={styles.cardActions}>
+          <Link className={[styles.actionButton, styles.primaryAction].join(' ')} href={bundle.href}>
+            View bundle
+          </Link>
+          <Link className={styles.actionButton} href="/workbench">
+            Use in Workbench
+          </Link>
+        </div>
+      </div>
+    </article>
+  )
+}
+
+function ResultCard({ bundle }: { bundle: PublicBundleCard }) {
+  return (
+    <article className={styles.resultCard}>
+      <Link className={styles.resultImageLink} href={bundle.href}>
+        {bundle.coverSrc ? (
+          <img alt={bundle.title} className={styles.resultImage} decoding="async" loading="lazy" src={bundle.coverSrc} />
+        ) : (
+          <div className={styles.emptyImage}>No cover image</div>
+        )}
+        <HeroProductRibbon className={styles.cardRibbon} label={bundle.badgeLabel} />
+      </Link>
+      <div className={styles.resultBody}>
+        <div className={styles.resultMeta}>
+          <span>{bundle.bundleTypeLabel}</span>
+          <span>{bundle.modelCountLabel}</span>
+          <span>{getPriceLabel(bundle)}</span>
+        </div>
+        <h2>
+          <Link href={bundle.href}>{bundle.title}</Link>
+        </h2>
+        <p>{bundle.summary}</p>
+        <Link className={styles.inlineLink} href={bundle.href}>
+          Open bundle
+        </Link>
+      </div>
+    </article>
+  )
+}
+
+function Pager({
+  currentPage,
+  currentQuery,
+  currentType,
+  list,
+}: {
+  currentPage: number
+  currentQuery: string
+  currentType: string
+  list: PublicBundleListResult
+}) {
+  if (list.pagination.totalPages <= 1) return null
+
+  return (
+    <nav aria-label="Bundle pages" className={styles.pager}>
+      {list.pagination.hasPrevPage ? (
+        <Link href={buildBundlesHref({ page: Math.max(1, currentPage - 1), query: currentQuery, type: currentType })}>
+          Previous
+        </Link>
+      ) : (
+        <span aria-disabled="true">Previous</span>
+      )}
+      <strong>
+        Page {list.pagination.page} / {list.pagination.totalPages}
+      </strong>
+      {list.pagination.hasNextPage ? (
+        <Link href={buildBundlesHref({ page: Math.min(list.pagination.totalPages, currentPage + 1), query: currentQuery, type: currentType })}>
+          Next
+        </Link>
+      ) : (
+        <span aria-disabled="true">Next</span>
+      )}
+    </nav>
+  )
+}
+
 export default async function BundlesPage({ searchParams }: BundlesPageProps) {
   const query = (await searchParams) ?? {}
   const currentType = normalizeText(query.type)
@@ -67,48 +188,53 @@ export default async function BundlesPage({ searchParams }: BundlesPageProps) {
   const currentPage = Math.max(1, Number(query.page || 1) || 1)
   const bundleLimit = 12
   const payload = await getCachedPayload()
-  const [user, marketing] = await Promise.all([
-    getCurrentUser(),
-    getMarketingSiteData(),
+  const [navUser, bundleList] = await Promise.all([
+    getCurrentNavUser(),
+    getPublicBundleList(payload, {
+      bundleType: currentType,
+      limit: bundleLimit,
+      page: currentPage,
+      query: currentQuery,
+      withPagination: true,
+    }).catch(() => getEmptyBundleList({ limit: bundleLimit, page: currentPage })),
   ])
-  const bundleList = await getPublicBundleList(payload, {
-    bundleType: currentType,
-    limit: bundleLimit,
-    page: currentPage,
-    query: currentQuery,
-    withPagination: true,
-  }).catch(() => getEmptyBundleList({ limit: bundleLimit, page: currentPage }))
-  const { siteSettings } = marketing
   const featuredBundle = bundleList.bundles.find((bundle) => bundle.isFeatured) ?? bundleList.bundles[0] ?? null
-  const remainingBundles = featuredBundle
-    ? bundleList.bundles.filter((bundle) => bundle.id !== featuredBundle.id)
+  const featuredDetail = featuredBundle ? await getPublicBundleBySlug(payload, featuredBundle.slug).catch(() => null) : null
+  const spotlightBundle = featuredBundle
+    ? {
+        ...featuredBundle,
+        imageSrc: featuredDetail?.heroSrc ?? featuredBundle.coverSrc,
+      }
+    : null
+  const remainingBundles = spotlightBundle
+    ? bundleList.bundles.filter((bundle) => bundle.id !== spotlightBundle.id)
     : bundleList.bundles
 
   return (
-    <SiteShell
-      announcement={siteSettings.announcement}
-      currentPath="/bundles"
-      footer={siteSettings.footer}
-      navigation={siteSettings.headerNav}
-      user={user}
-    >
-      <main className="bg-background text-foreground">
-        <section className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:px-6 sm:py-12">
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.04fr)_minmax(320px,0.96fr)] lg:items-end">
-            <div>
-              <Badge variant="secondary">Model Bundles</Badge>
-              <h1 className="mt-4 max-w-4xl text-4xl font-semibold tracking-tight sm:text-5xl">Curated model packs for tabletop worlds</h1>
-              <p className="mt-4 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
-                Browse themed sets assembled from public models, then open the included previews or continue the theme in Workbench.
-              </p>
+    <main className={styles.page}>
+      <AuthModalStage>
+        <TopNavigation active="HOME" className={styles.topNavigation} items={migrationTestNavItems} user={navUser} />
+        <header className={styles.mobileHeader}>
+          <Link href="/" aria-label="Thorns Tavern home">
+            <img alt="Thorns Tavern" src="/ui-lab/top-navigation/logo-wordmark.png" />
+          </Link>
+          <nav aria-label="Mobile navigation">
+            <Link href="/workbench">Workbench</Link>
+            <Link href="/pricing">Plans</Link>
+          </nav>
+        </header>
+        <div className={styles.shell}>
+          <section className={styles.headerSection}>
+            <div className={styles.headerCopy}>
+              <span className={styles.eyebrow}>Model Bundles</span>
+              <h1>Curated model packs for tabletop worlds</h1>
+              <p>Browse themed sets assembled from public models, then open the included previews or continue the theme in Workbench.</p>
             </div>
-
-            <form action="/bundles" className="grid gap-3 rounded-lg border border-border/70 bg-card p-3 sm:grid-cols-[1fr_auto]">
-              <label className="sr-only" htmlFor="bundle-search">
+            <form action="/bundles" className={styles.searchForm}>
+              <label className={styles.srOnly} htmlFor="bundle-search">
                 Search bundles
               </label>
               <input
-                className="min-h-11 rounded-md border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 defaultValue={currentQuery}
                 id="bundle-search"
                 name="q"
@@ -116,135 +242,47 @@ export default async function BundlesPage({ searchParams }: BundlesPageProps) {
                 type="search"
               />
               {currentType ? <input name="type" type="hidden" value={currentType} /> : null}
-              <Button type="submit">Search</Button>
+              <button type="submit">Search</button>
             </form>
-          </div>
+          </section>
 
-          <nav aria-label="Bundle types" className="flex gap-2 overflow-x-auto pb-1">
+          <nav aria-label="Bundle types" className={styles.filterRow}>
             {bundleTypeFilters.map((filter) => {
               const active = currentType === filter.value
 
               return (
-                <Button asChild key={filter.value || 'all'} size="sm" variant={active ? 'default' : 'outline'}>
-                  <Link href={buildBundlesHref({ query: currentQuery, type: filter.value })}>{filter.label}</Link>
-                </Button>
+                <Link
+                  className={[styles.filterChip, active ? styles.filterChipActive : ''].filter(Boolean).join(' ')}
+                  href={buildBundlesHref({ query: currentQuery, type: filter.value })}
+                  key={filter.value || 'all'}
+                >
+                  {filter.label}
+                </Link>
               )
             })}
           </nav>
 
-          {featuredBundle ? (
-            <section className="grid gap-6 rounded-lg border border-border/70 bg-card p-4 md:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] md:p-5">
-              <Link className="group block overflow-hidden rounded-md bg-muted" href={featuredBundle.href}>
-                {featuredBundle.coverSrc ? (
-                  <img
-                    alt={featuredBundle.title}
-                    className="aspect-[16/10] h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.025]"
-                    src={featuredBundle.coverSrc}
-                  />
-                ) : (
-                  <div className="grid aspect-[16/10] place-items-center text-sm text-muted-foreground">No cover image</div>
-                )}
-              </Link>
-              <div className="flex flex-col justify-center">
-                <div className="flex flex-wrap gap-2">
-                  <Badge>{featuredBundle.badgeLabel}</Badge>
-                  <Badge variant="outline">{featuredBundle.bundleTypeLabel}</Badge>
-                  <Badge variant="outline">{featuredBundle.modelCountLabel}</Badge>
-                </div>
-                <h2 className="mt-4 text-3xl font-semibold tracking-tight">{featuredBundle.title}</h2>
-                {featuredBundle.subtitle ? <p className="mt-2 text-base text-muted-foreground">{featuredBundle.subtitle}</p> : null}
-                <p className="mt-4 text-sm leading-6 text-muted-foreground">{featuredBundle.summary}</p>
-                <div className="mt-5 flex flex-wrap gap-2">
-                  {featuredBundle.tags.slice(0, 5).map((tag) => (
-                    <Badge key={tag} variant="secondary">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-                <div className="mt-6 flex flex-wrap gap-3">
-                  <Button asChild>
-                    <Link href={featuredBundle.href}>View bundle</Link>
-                  </Button>
-                  <Button asChild variant="outline">
-                    <Link href="/workbench">Use in Workbench</Link>
-                  </Button>
-                </div>
-              </div>
-            </section>
-          ) : null}
+          {spotlightBundle ? <SpotlightCard bundle={spotlightBundle} /> : null}
 
-          {bundleList.bundles.length > 0 ? (
-            <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {remainingBundles.length > 0 ? (
+            <section aria-label="More bundles" className={styles.resultGrid}>
               {remainingBundles.map((bundle) => (
-                <Card className="overflow-hidden border-border/70" key={bundle.id}>
-                  <Link className="group block bg-muted" href={bundle.href}>
-                    {bundle.coverSrc ? (
-                      <img
-                        alt={bundle.title}
-                        className="aspect-[4/3] w-full object-cover transition-transform duration-300 group-hover:scale-[1.025]"
-                        src={bundle.coverSrc}
-                      />
-                    ) : (
-                      <div className="grid aspect-[4/3] place-items-center text-sm text-muted-foreground">No cover image</div>
-                    )}
-                  </Link>
-                  <CardHeader>
-                    <div className="flex flex-wrap gap-2">
-                      <Badge variant="secondary">{bundle.bundleTypeLabel}</Badge>
-                      <Badge variant="outline">{bundle.modelCountLabel}</Badge>
-                    </div>
-                    <CardTitle className="line-clamp-2 text-xl">
-                      <Link href={bundle.href}>{bundle.title}</Link>
-                    </CardTitle>
-                    <CardDescription className="line-clamp-3">{bundle.summary}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Button asChild className="w-full" variant="secondary">
-                      <Link href={bundle.href}>Open bundle</Link>
-                    </Button>
-                  </CardContent>
-                </Card>
+                <ResultCard bundle={bundle} key={bundle.id} />
               ))}
             </section>
-          ) : (
-            <section className="rounded-lg border border-border/70 bg-card p-8 text-center">
-              <h2 className="text-2xl font-semibold tracking-tight">No bundles found</h2>
-              <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-                Published bundles will appear here after they are marked visible and include public models with guest-readable previews.
-              </p>
-              <Button asChild className="mt-6" variant="outline">
-                <Link href="/bundles">Reset filters</Link>
-              </Button>
+          ) : spotlightBundle ? null : (
+            <section className={styles.emptyState}>
+              <h2>No bundles found</h2>
+              <p>Published bundles will appear here after they are marked visible and include public models.</p>
+              <Link className={styles.actionButton} href="/bundles">
+                Reset filters
+              </Link>
             </section>
           )}
 
-          {bundleList.pagination.totalPages > 1 ? (
-            <nav aria-label="Bundle pages" className="flex items-center justify-center gap-3">
-              {bundleList.pagination.hasPrevPage ? (
-                <Button asChild variant="outline">
-                  <Link href={buildBundlesHref({ page: Math.max(1, bundleList.pagination.page - 1), query: currentQuery, type: currentType })}>Previous</Link>
-                </Button>
-              ) : (
-                <Button disabled variant="outline">
-                  Previous
-                </Button>
-              )}
-              <span className="text-sm text-muted-foreground">
-                Page {bundleList.pagination.page} of {bundleList.pagination.totalPages}
-              </span>
-              {bundleList.pagination.hasNextPage ? (
-                <Button asChild variant="outline">
-                  <Link href={buildBundlesHref({ page: Math.min(bundleList.pagination.totalPages, bundleList.pagination.page + 1), query: currentQuery, type: currentType })}>Next</Link>
-                </Button>
-              ) : (
-                <Button disabled variant="outline">
-                  Next
-                </Button>
-              )}
-            </nav>
-          ) : null}
-        </section>
-      </main>
-    </SiteShell>
+          <Pager currentPage={currentPage} currentQuery={currentQuery} currentType={currentType} list={bundleList} />
+        </div>
+      </AuthModalStage>
+    </main>
   )
 }

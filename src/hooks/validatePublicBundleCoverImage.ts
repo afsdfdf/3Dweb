@@ -5,6 +5,7 @@ import { isGuestReadableMedia } from '@/lib/mediaVisibility'
 type BundleCoverData = {
   _status?: null | string
   coverImage?: null | number | string | { id?: null | number | string; publicAccess?: boolean | null; purpose?: null | string }
+  heroImage?: null | number | string | { id?: null | number | string; publicAccess?: boolean | null; purpose?: null | string }
   isVisible?: boolean | null
 }
 
@@ -33,30 +34,36 @@ export const validatePublicBundleCoverImage: CollectionBeforeChangeHook = async 
   const currentDoc = (originalDoc || {}) as BundleCoverData
   const nextStatus = nextData._status ?? currentDoc._status
   const nextIsVisible = nextData.isVisible ?? currentDoc.isVisible ?? true
-  const nextCoverImage = nextData.coverImage ?? currentDoc.coverImage
 
-  if (nextStatus !== 'published' || nextIsVisible === false || !nextCoverImage) {
+  if (nextStatus !== 'published' || nextIsVisible === false) {
     return data
   }
 
-  if (typeof nextCoverImage === 'object' && isGuestReadableMedia(nextCoverImage)) {
-    return data
-  }
+  const publicImages = [
+    { label: 'Cover image', value: nextData.coverImage ?? currentDoc.coverImage },
+    { label: 'Hero image', value: nextData.heroImage ?? currentDoc.heroImage },
+  ]
 
-  const coverImageId = getRelationId(nextCoverImage)
-  if (!coverImageId) {
-    return data
-  }
+  for (const image of publicImages) {
+    if (!image.value) continue
 
-  const media = await req.payload.findByID({
-    collection: 'media',
-    id: coverImageId,
-    overrideAccess: true,
-    req,
-  })
+    if (typeof image.value === 'object' && isGuestReadableMedia(image.value)) {
+      continue
+    }
 
-  if (!isGuestReadableMedia(media)) {
-    throw new Error('Published visible bundles must use a cover image that is guest-readable through preview purpose or explicit public access.')
+    const imageId = getRelationId(image.value)
+    if (!imageId) continue
+
+    const media = await req.payload.findByID({
+      collection: 'media',
+      id: imageId,
+      overrideAccess: true,
+      req,
+    })
+
+    if (!isGuestReadableMedia(media)) {
+      throw new Error(`${image.label} for published visible bundles must be guest-readable through preview purpose or explicit public access.`)
+    }
   }
 
   return data
