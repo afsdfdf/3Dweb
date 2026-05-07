@@ -52,8 +52,8 @@
   z-index: 80;
 }
 
-.modelsFrame,
-.detailsFrame {
+.stage .modelsFrame,
+.stage .detailsFrame {
   --upper-height: calc(112px - var(--top-height) - (var(--middle-height) / 2));
   --lower-height: calc(100% - var(--top-height) - var(--upper-height) - var(--middle-height) - var(--bottom-height));
   left: 33px;
@@ -68,13 +68,13 @@
   width: 1920px;
 }
 
-.modelsFrame {
+.stage .modelsFrame {
   height: 690px;
   top: 1030px;
   width: 1856px;
 }
 
-.detailsFrame {
+.stage .detailsFrame {
   height: 520px;
   top: 1820px;
   width: 1856px;

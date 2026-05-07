@@ -35,25 +35,25 @@
   z-index: 60;
 }
 
-.heroBottomBanner {
+.stage .heroBottomBanner {
   left: 33px;
   position: absolute;
   top: 986px;
 }
 
-.heroSecondBanner,
-.heroThirdBanner {
+.stage .heroSecondBanner,
+.stage .heroThirdBanner {
   --upper-height: calc(112px - var(--top-height) - (var(--middle-height) / 2));
   --lower-height: calc(100% - var(--top-height) - var(--upper-height) - var(--middle-height) - var(--bottom-height));
   left: 33px;
   position: absolute;
 }
 
-.heroSecondBanner {
+.stage .heroSecondBanner {
   top: 1351px;
 }
 
-.heroThirdBanner {
+.stage .heroThirdBanner {
   top: 1837px;
 }
 
