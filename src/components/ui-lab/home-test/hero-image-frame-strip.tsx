@@ -47,16 +47,15 @@ type HeroImageFrameStripProps = {
 };
 
 export function HeroImageFrameStrip({ items = [] }: HeroImageFrameStripProps) {
-  const visibleItems = items.filter((item) => Boolean(item.imageSrc));
-  const resolvedFrames = frames.slice(0, visibleItems.length).map((frame, index) => ({
+  const resolvedFrames = frames.map((frame, index) => ({
     ...frame,
-    ...visibleItems[index],
+    ...items[index],
     className: frame.className,
-    id: visibleItems[index]?.id ?? frame.id,
-    label: visibleItems[index]?.alt ?? frame.label,
-    ribbonLabel: visibleItems[index]?.ribbonLabel ?? frame.ribbonLabel,
+    id: items[index]?.id ?? frame.id,
+    label: items[index]?.alt ?? frame.label,
+    ribbonLabel: items[index]?.ribbonLabel ?? frame.ribbonLabel,
   }));
-  const [selectedId, setSelectedId] = useState(resolvedFrames[0]?.id ?? frames[0].id);
+  const [selectedId, setSelectedId] = useState(resolvedFrames[0].id);
   const handleFrameClick = (frame: (typeof resolvedFrames)[number]) => {
     setSelectedId(frame.id);
     if (frame.href) window.location.assign(frame.href);

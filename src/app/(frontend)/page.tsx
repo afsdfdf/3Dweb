@@ -61,7 +61,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             </BorderComboFrame2>
             <BorderComboFrame2
               className={styles.heroThirdBanner}
-              style={{ width: 1856, height: 3060 }}
+              style={{ width: 1856, height: 2226 }}
             >
               <div className={styles.bannerContent}>
                 <span className={styles.bannerSquareLogo} aria-hidden="true" />

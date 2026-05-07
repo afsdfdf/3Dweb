@@ -33,11 +33,10 @@ type SelectableFrameRowProps = {
 };
 
 export function SelectableFrameRow({ items = [] }: SelectableFrameRowProps) {
-  const visibleItems = items.filter((item) => Boolean(item.imageSrc));
-  const resolvedFrames = frames.slice(0, visibleItems.length).map((label, index) => ({
-    ...visibleItems[index],
-    id: visibleItems[index]?.id ?? label,
-    label: visibleItems[index]?.alt ?? visibleItems[index]?.title ?? label,
+  const resolvedFrames = frames.map((label, index) => ({
+    ...items[index],
+    id: items[index]?.id ?? label,
+    label: items[index]?.alt ?? items[index]?.title ?? label,
   }));
   const [selectedIndex, setSelectedIndex] = useState(0);
   const handleFrameClick = (frame: (typeof resolvedFrames)[number], index: number) => {
