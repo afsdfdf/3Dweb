@@ -5,3 +5,4 @@ export type { GenerateCtaButtonProps } from "./generate-cta-button";
 export { OrangeMediumActionButton } from "./orange-medium-action-button";
 export { PurpleMediumActionButton } from "./purple-medium-action-button";
 export { SourcePurpleMediumButton } from "./source-purple-medium-button";
+export { LinkedSourcePurpleMediumButton } from "./linked-source-purple-medium-button";

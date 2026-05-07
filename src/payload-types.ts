@@ -618,14 +618,67 @@ export interface ModelBundle {
   id: number;
   title: string;
   slug: string;
+  /**
+   * Short product-style line shown near the bundle title.
+   */
+  subtitle?: string | null;
   coverImage?: (number | null) | Media;
   summary?: string | null;
+  /**
+   * Optional short label such as Featured, Starter, Event, or New.
+   */
+  badgeLabel?: string | null;
+  /**
+   * Used for bundle listing filters and homepage merchandising.
+   */
+  bundleType?:
+    | ('starter' | 'theme-pack' | 'character-pack' | 'terrain-pack' | 'event-pack' | 'monthly-release' | 'showcase')
+    | null;
   tags?:
     | {
         label: string;
         id?: string | null;
       }[]
     | null;
+  /**
+   * Operator-written contents summary for the bundle detail page.
+   */
+  includedSummary?: string | null;
+  technicalSpecs?: {
+    /**
+     * Optional override such as 8 Models or Starter Set.
+     */
+    modelCountLabel?: string | null;
+    /**
+     * Example: GLB, STL, OBJ.
+     */
+    supportedFormatsLabel?: string | null;
+    /**
+     * Example: 32mm tabletop scale or Game-ready scale.
+     */
+    scaleLabel?: string | null;
+    /**
+     * Example: Preview ready, GLB ready, Print review required.
+     */
+    assetReadinessLabel?: string | null;
+    printReady?: boolean | null;
+    textured?: boolean | null;
+    technicalNotes?: string | null;
+  };
+  license?: {
+    type?: ('personal' | 'commercial' | 'editorial' | 'custom') | null;
+    summary?: string | null;
+  };
+  cta?: {
+    mode?: ('free' | 'login-required' | 'paid' | 'coming-soon') | null;
+    primaryLabel?: string | null;
+    secondaryLabel?: string | null;
+    /**
+     * Display-only in the first phase. Purchase enforcement is a later billing task.
+     */
+    priceCredits?: number | null;
+  };
+  releaseNotes?: string | null;
   /**
    * Select one or more existing generated models to build a curated bundle.
    */
@@ -1312,14 +1365,44 @@ export interface AnnouncementsSelect<T extends boolean = true> {
 export interface ModelBundlesSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
+  subtitle?: T;
   coverImage?: T;
   summary?: T;
+  badgeLabel?: T;
+  bundleType?: T;
   tags?:
     | T
     | {
         label?: T;
         id?: T;
       };
+  includedSummary?: T;
+  technicalSpecs?:
+    | T
+    | {
+        modelCountLabel?: T;
+        supportedFormatsLabel?: T;
+        scaleLabel?: T;
+        assetReadinessLabel?: T;
+        printReady?: T;
+        textured?: T;
+        technicalNotes?: T;
+      };
+  license?:
+    | T
+    | {
+        type?: T;
+        summary?: T;
+      };
+  cta?:
+    | T
+    | {
+        mode?: T;
+        primaryLabel?: T;
+        secondaryLabel?: T;
+        priceCredits?: T;
+      };
+  releaseNotes?: T;
   models?: T;
   createdBy?: T;
   publishAt?: T;

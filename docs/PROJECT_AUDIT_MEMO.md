@@ -6,9 +6,30 @@ This memo records the 2026-05-01 full-stack audit for `thornstavern` / `payload-
 
 It is an engineering control document. It does not make schema, endpoint, collection, storage, or UI changes by itself.
 
+## 2026-05-07 Addendum
+
+The 2026-05-07 full-project audit is archived at `docs/archive/2026/FULL_PROJECT_AUDIT_2026-05-07.md`.
+
+Completed during the addendum:
+
+- Rebuilt `/test` as a local-only route inventory page with links and one-line descriptions.
+- Fixed `/api/locale` open-redirect behavior by allowing only same-origin relative redirect paths.
+- Removed the global frontend layout `<main>` wrapper so pages own their own primary landmark.
+- Hardened `/results/[taskCode]` progress and download-format rendering.
+- Added soft empty-state behavior for `/pricing` and `/showcase` when read-only local database queries fail.
+- Removed confirmed stale `GenerateForm` and `personal-center-legacy` files after reference checks.
+- Added `docs/PROJECT_USER_MANUAL.md` as the current Chinese owner/operator usage manual.
+
+Open P1 discussion items from the addendum:
+
+- Direct Payload REST create ownership for owner/user-scoped collections needs a design pass before implementation.
+- User-writable identity and visibility fields need direct REST boundary tests and likely server-assignment rules.
+- `/model-detail` should stop using fake/static fallback behavior for missing or invalid IDs after product behavior is confirmed.
+
 ## Audit Date
 
 - 2026-05-01
+- Latest addendum: 2026-05-07
 
 ## Audit Mode
 

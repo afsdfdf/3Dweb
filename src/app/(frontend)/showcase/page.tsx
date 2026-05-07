@@ -41,19 +41,23 @@ function getFormats(model: any) {
 
 async function getShowcaseModels(): Promise<ShowcaseModel[]> {
   const payload = await getCachedPayload()
-  const result = await payload.find({
-    collection: 'models',
-    depth: 2,
-    limit: 60,
-    overrideAccess: false,
-    pagination: false,
-    sort: '-id',
-    where: {
-      visibility: {
-        equals: 'public',
+  const result = await payload
+    .find({
+      collection: 'models',
+      depth: 2,
+      limit: 60,
+      overrideAccess: false,
+      pagination: false,
+      sort: '-id',
+      where: {
+        visibility: {
+          equals: 'public',
+        },
       },
-    },
-  })
+    })
+    .catch(() => ({
+      docs: [],
+    }))
 
   return await Promise.all(
     result.docs.map(async (model: any) => ({

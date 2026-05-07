@@ -25,14 +25,6 @@ const personalCenterTestPath = path.join(
   'personal-center-test',
   'personal-center-test.tsx',
 )
-const personalCenterLegacyPath = path.join(
-  rootDir,
-  'src',
-  'components',
-  'ui-lab',
-  'personal-center-legacy',
-  'personal-center.tsx',
-)
 
 test('public pages share one canonical navigation contract', () => {
   assert.equal(existsSync(publicNavigationPath), true)
@@ -100,14 +92,10 @@ test('shell-rendered pages use the same top navigation template as UI-lab pages'
 
 test('account-style pages do not carry private navigation arrays', () => {
   const personalCenterTestSource = readFileSync(personalCenterTestPath, 'utf8')
-  const personalCenterLegacySource = readFileSync(personalCenterLegacyPath, 'utf8')
 
   assert.match(personalCenterTestSource, /@\/lib\/publicNavigation/)
-  assert.match(personalCenterLegacySource, /@\/lib\/publicNavigation/)
   assert.doesNotMatch(personalCenterTestSource, /realNavigationItems/)
-  assert.doesNotMatch(personalCenterLegacySource, /personalCenterNavItems/)
   assert.doesNotMatch(personalCenterTestSource, /id:\s*["']ADMIN["']/)
-  assert.doesNotMatch(personalCenterLegacySource, /id:\s*["']DETAIL["']/)
 })
 
 test('top navigation user label is normalized and display-limited', () => {

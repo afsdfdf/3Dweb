@@ -33,6 +33,18 @@ function formatModelFormatList(formats: unknown[]) {
   return labels.length > 0 ? labels.join(' / ') : 'GLB / STL'
 }
 
+function getModelDownloadFormats(formats: unknown[]) {
+  const downloadFormats = formats
+    .map((item) => {
+      if (!item || typeof item !== 'object' || Array.isArray(item)) return ''
+      const format = (item as { format?: unknown }).format
+      return typeof format === 'string' ? format.trim().toLowerCase() : ''
+    })
+    .filter(Boolean)
+
+  return Array.from(new Set(downloadFormats))
+}
+
 function getTaskBadgeVariant(status?: string | null) {
   if (status === 'succeeded') return 'secondary' as const
   if (status === 'failed' || status === 'timeout') return 'destructive' as const
@@ -79,8 +91,11 @@ export default async function ResultDetailPage({ params }: { params: Promise<{ t
   const model = getModelFromTask(task)
   const modelFormats = Array.isArray(model?.formats) ? model.formats : []
   const modelFormatLabel = formatModelFormatList(modelFormats)
+  const downloadFormats = getModelDownloadFormats(modelFormats)
   const primaryModelURL = model ? getPrimaryModelURL(task, model) : null
-  const progressWidth = Math.max(12, Number(task.progress ?? 0))
+  const rawProgress = Number(task.progress ?? 0)
+  const progressValue = Number.isFinite(rawProgress) ? Math.min(100, Math.max(0, rawProgress)) : 0
+  const progressWidth = Math.max(12, progressValue)
 
   return (
     <SiteShell user={user}>
@@ -96,7 +111,7 @@ export default async function ResultDetailPage({ params }: { params: Promise<{ t
 
           <div className="flex flex-wrap items-center gap-3">
             <ResultStatus taskId={task.id} taskStatus={task.status} />
-            <Badge variant={getTaskBadgeVariant(task.status)}>Progress {task.progress ?? 0}%</Badge>
+            <Badge variant={getTaskBadgeVariant(task.status)}>Progress {Math.round(progressValue)}%</Badge>
           </div>
         </div>
 
@@ -137,7 +152,7 @@ export default async function ResultDetailPage({ params }: { params: Promise<{ t
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Task progress</span>
-                    <span className="font-medium">{task.progress ?? 0}%</span>
+                    <span className="font-medium">{Math.round(progressValue)}%</span>
                   </div>
                   <div className="h-2 overflow-hidden rounded-full bg-muted">
                     <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${progressWidth}%` }} />
@@ -196,12 +211,13 @@ export default async function ResultDetailPage({ params }: { params: Promise<{ t
               <CardContent className="grid gap-3">
                 {model ? (
                   <>
-                    <Button asChild>
-                      <a href={`/api/platform/models/${model.id}/download?format=glb`}>Download GLB file</a>
-                    </Button>
-                    <Button asChild variant="outline">
-                      <a href={`/api/platform/models/${model.id}/download?format=stl`}>Download STL file</a>
-                    </Button>
+                    {downloadFormats.map((format, index) => (
+                      <Button asChild key={format} variant={index === 0 ? 'default' : 'outline'}>
+                        <a href={`/api/platform/models/${model.id}/download?format=${encodeURIComponent(format)}`}>
+                          Download {format.toUpperCase()} file
+                        </a>
+                      </Button>
+                    ))}
                     <CreatePrintOrderButton modelId={Number(model.id)} sourceTaskId={Number(task.id)} variant="secondary" />
                     <Button asChild variant="ghost">
                       <Link href="/account?section=models">Open model library</Link>

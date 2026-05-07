@@ -30,9 +30,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
       <body>
         <FrontendAssetCache />
         <LocaleProvider locale={locale}>
-          <AuthModalProvider>
-            <main>{children}</main>
-          </AuthModalProvider>
+          <AuthModalProvider>{children}</AuthModalProvider>
         </LocaleProvider>
       </body>
     </html>

@@ -190,10 +190,50 @@ export const enum__announcements_v_published_locale = pgEnum(
   "enum__announcements_v_published_locale",
   ["en", "zh"],
 );
+export const enum_model_bundles_bundle_type = pgEnum(
+  "enum_model_bundles_bundle_type",
+  [
+    "starter",
+    "theme-pack",
+    "character-pack",
+    "terrain-pack",
+    "event-pack",
+    "monthly-release",
+    "showcase",
+  ],
+);
+export const enum_model_bundles_license_type = pgEnum(
+  "enum_model_bundles_license_type",
+  ["personal", "commercial", "editorial", "custom"],
+);
+export const enum_model_bundles_cta_mode = pgEnum(
+  "enum_model_bundles_cta_mode",
+  ["free", "login-required", "paid", "coming-soon"],
+);
 export const enum_model_bundles_status = pgEnum("enum_model_bundles_status", [
   "draft",
   "published",
 ]);
+export const enum__model_bundles_v_version_bundle_type = pgEnum(
+  "enum__model_bundles_v_version_bundle_type",
+  [
+    "starter",
+    "theme-pack",
+    "character-pack",
+    "terrain-pack",
+    "event-pack",
+    "monthly-release",
+    "showcase",
+  ],
+);
+export const enum__model_bundles_v_version_license_type = pgEnum(
+  "enum__model_bundles_v_version_license_type",
+  ["personal", "commercial", "editorial", "custom"],
+);
+export const enum__model_bundles_v_version_cta_mode = pgEnum(
+  "enum__model_bundles_v_version_cta_mode",
+  ["free", "login-required", "paid", "coming-soon"],
+);
 export const enum__model_bundles_v_version_status = pgEnum(
   "enum__model_bundles_v_version_status",
   ["draft", "published"],
@@ -1598,6 +1638,18 @@ export const model_bundles = pgTable(
     coverImage: integer("cover_image_id").references(() => media.id, {
       onDelete: "set null",
     }),
+    bundleType:
+      enum_model_bundles_bundle_type("bundle_type").default("theme-pack"),
+    technicalSpecs_printReady: boolean("technical_specs_print_ready").default(
+      false,
+    ),
+    technicalSpecs_textured: boolean("technical_specs_textured").default(false),
+    license_type:
+      enum_model_bundles_license_type("license_type").default("personal"),
+    cta_mode: enum_model_bundles_cta_mode("cta_mode").default("free"),
+    cta_priceCredits: numeric("cta_price_credits", { mode: "number" }).default(
+      0,
+    ),
     createdBy: integer("created_by_id").references(() => users.id, {
       onDelete: "set null",
     }),
@@ -1639,7 +1691,25 @@ export const model_bundles_locales = pgTable(
   "model_bundles_locales",
   {
     title: varchar("title"),
+    subtitle: varchar("subtitle"),
     summary: varchar("summary"),
+    badgeLabel: varchar("badge_label"),
+    includedSummary: varchar("included_summary"),
+    technicalSpecs_modelCountLabel: varchar(
+      "technical_specs_model_count_label",
+    ),
+    technicalSpecs_supportedFormatsLabel: varchar(
+      "technical_specs_supported_formats_label",
+    ),
+    technicalSpecs_scaleLabel: varchar("technical_specs_scale_label"),
+    technicalSpecs_assetReadinessLabel: varchar(
+      "technical_specs_asset_readiness_label",
+    ),
+    technicalSpecs_technicalNotes: varchar("technical_specs_technical_notes"),
+    license_summary: varchar("license_summary"),
+    cta_primaryLabel: varchar("cta_primary_label"),
+    cta_secondaryLabel: varchar("cta_secondary_label"),
+    releaseNotes: varchar("release_notes"),
     id: serial("id").primaryKey(),
     _locale: enum__locales("_locale").notNull(),
     _parentID: integer("_parent_id").notNull(),
@@ -1737,6 +1807,25 @@ export const _model_bundles_v = pgTable(
         onDelete: "set null",
       },
     ),
+    version_bundleType: enum__model_bundles_v_version_bundle_type(
+      "version_bundle_type",
+    ).default("theme-pack"),
+    version_technicalSpecs_printReady: boolean(
+      "version_technical_specs_print_ready",
+    ).default(false),
+    version_technicalSpecs_textured: boolean(
+      "version_technical_specs_textured",
+    ).default(false),
+    version_license_type: enum__model_bundles_v_version_license_type(
+      "version_license_type",
+    ).default("personal"),
+    version_cta_mode:
+      enum__model_bundles_v_version_cta_mode("version_cta_mode").default(
+        "free",
+      ),
+    version_cta_priceCredits: numeric("version_cta_price_credits", {
+      mode: "number",
+    }).default(0),
     version_createdBy: integer("version_created_by_id").references(
       () => users.id,
       {
@@ -1813,7 +1902,29 @@ export const _model_bundles_v_locales = pgTable(
   "_model_bundles_v_locales",
   {
     version_title: varchar("version_title"),
+    version_subtitle: varchar("version_subtitle"),
     version_summary: varchar("version_summary"),
+    version_badgeLabel: varchar("version_badge_label"),
+    version_includedSummary: varchar("version_included_summary"),
+    version_technicalSpecs_modelCountLabel: varchar(
+      "version_technical_specs_model_count_label",
+    ),
+    version_technicalSpecs_supportedFormatsLabel: varchar(
+      "version_technical_specs_supported_formats_label",
+    ),
+    version_technicalSpecs_scaleLabel: varchar(
+      "version_technical_specs_scale_label",
+    ),
+    version_technicalSpecs_assetReadinessLabel: varchar(
+      "version_technical_specs_asset_readiness_label",
+    ),
+    version_technicalSpecs_technicalNotes: varchar(
+      "version_technical_specs_technical_notes",
+    ),
+    version_license_summary: varchar("version_license_summary"),
+    version_cta_primaryLabel: varchar("version_cta_primary_label"),
+    version_cta_secondaryLabel: varchar("version_cta_secondary_label"),
+    version_releaseNotes: varchar("version_release_notes"),
     id: serial("id").primaryKey(),
     _locale: enum__locales("_locale").notNull(),
     _parentID: integer("_parent_id").notNull(),
@@ -4480,7 +4591,13 @@ type DatabaseSchema = {
   enum_announcements_status: typeof enum_announcements_status;
   enum__announcements_v_version_status: typeof enum__announcements_v_version_status;
   enum__announcements_v_published_locale: typeof enum__announcements_v_published_locale;
+  enum_model_bundles_bundle_type: typeof enum_model_bundles_bundle_type;
+  enum_model_bundles_license_type: typeof enum_model_bundles_license_type;
+  enum_model_bundles_cta_mode: typeof enum_model_bundles_cta_mode;
   enum_model_bundles_status: typeof enum_model_bundles_status;
+  enum__model_bundles_v_version_bundle_type: typeof enum__model_bundles_v_version_bundle_type;
+  enum__model_bundles_v_version_license_type: typeof enum__model_bundles_v_version_license_type;
+  enum__model_bundles_v_version_cta_mode: typeof enum__model_bundles_v_version_cta_mode;
   enum__model_bundles_v_version_status: typeof enum__model_bundles_v_version_status;
   enum__model_bundles_v_published_locale: typeof enum__model_bundles_v_published_locale;
   enum_credits_status: typeof enum_credits_status;

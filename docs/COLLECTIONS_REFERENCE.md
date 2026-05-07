@@ -482,9 +482,17 @@ Important fields:
 
 - `title`
 - `slug`
+- `subtitle`
 - `coverImage`
 - `summary`
+- `badgeLabel`
+- `bundleType`: `starter`, `theme-pack`, `character-pack`, `terrain-pack`, `event-pack`, `monthly-release`, `showcase`
 - `tags`
+- `includedSummary`
+- `technicalSpecs`
+- `license`
+- `cta`
+- `releaseNotes`
 - `models`
 - `createdBy`
 - `publishAt`
@@ -499,8 +507,10 @@ Hooks:
 
 Frontend and service notes:
 
-- Related `models` still obey `models` read access.
-- Public bundle cover media must be guest-readable.
+- `/bundles` and `/bundles/[slug]` use `src/lib/bundleService.ts` to produce public bundle DTOs.
+- Related `models` must be filtered to `visibility = public` before public rendering.
+- Public bundle cover media and fallback model preview media must be guest-readable.
+- `cta.priceCredits` is display-only in the first merchandising phase. Do not treat it as purchase, entitlement, or billing enforcement until a dedicated commerce flow is added.
 
 ## Commerce
 

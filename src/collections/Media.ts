@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
 import { ownerOrStaff } from '@/access'
+import { uploadMediaToSupabase } from '@/hooks/uploadMediaToSupabase'
 import { adminLabelsKey, adminTextKey } from '@/lib/adminText'
 import { mediaReadAccess } from '@/lib/mediaReadAccess'
 
@@ -11,6 +12,16 @@ function normalizeOptionalMediaURL(value: unknown) {
 
   const normalized = value.trim()
   return normalized.length > 0 ? normalized : null
+}
+
+function getAdminThumbnailURL({ doc }: { doc: Record<string, unknown> }) {
+  const thumbnailURL = normalizeOptionalMediaURL(doc.thumbnailURL)
+  if (typeof thumbnailURL === 'string') {
+    return thumbnailURL
+  }
+
+  const url = normalizeOptionalMediaURL(doc.url)
+  return typeof url === 'string' ? url : null
 }
 
 export const Media: CollectionConfig = {
@@ -28,6 +39,7 @@ export const Media: CollectionConfig = {
     update: ownerOrStaff('owner'),
   },
   hooks: {
+    beforeChange: [uploadMediaToSupabase],
     afterRead: [
       ({ doc }) => {
         if (!doc || typeof doc !== 'object') {
@@ -75,6 +87,7 @@ export const Media: CollectionConfig = {
     },
   ],
   upload: {
+    adminThumbnail: getAdminThumbnailURL,
     disableLocalStorage: true,
     mimeTypes: [
       'application/octet-stream',

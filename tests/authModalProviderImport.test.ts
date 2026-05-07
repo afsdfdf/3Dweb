@@ -74,13 +74,17 @@ test('AuthFlowCard keeps the forgot password success state in the auth modal flo
   assert.match(source, /password reset link/)
 })
 
-test('ResetPasswordForm uses the account auth reset endpoint and returns to account state', () => {
-  const source = readFileSync(resetPasswordFormPath, 'utf8')
+test('ResetPasswordForm delegates to the shared account auth reset flow', () => {
+  const resetPasswordFormSource = readFileSync(resetPasswordFormPath, 'utf8')
+  const authFlowCardSource = readFileSync(authFlowCardPath, 'utf8')
 
-  assert.match(source, /\/api\/account\/auth\/reset-password/)
-  assert.doesNotMatch(source, /\/api\/users\/reset-password/)
-  assert.match(source, /credentials: 'include'/)
-  assert.match(source, /router\.push\('\/account'\)/)
+  assert.match(resetPasswordFormSource, /AuthFlowCard/)
+  assert.match(resetPasswordFormSource, /initialMode="reset"/)
+  assert.match(resetPasswordFormSource, /initialResetToken=\{initialToken \|\| ''\}/)
+  assert.match(authFlowCardSource, /\/api\/account\/auth\/reset-password/)
+  assert.doesNotMatch(authFlowCardSource, /\/api\/users\/reset-password/)
+  assert.match(authFlowCardSource, /credentials: 'include'/)
+  assert.match(authFlowCardSource, /setMode\('login'\)/)
 })
 
 test('Auth modal overlay remains below the fixed top navigation layer', () => {

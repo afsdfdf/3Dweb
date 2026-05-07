@@ -9,10 +9,11 @@ import { registrationPrivacyMessage } from '@/lib/registrationPrivacy'
 
 import styles from '@/components/ui-lab/formal-auth-collections.module.css'
 
-type AuthMode = 'forgot' | 'forgot-success' | 'login' | 'register'
+type AuthMode = 'forgot' | 'forgot-success' | 'login' | 'register' | 'reset'
 
 type AuthFlowCardProps = {
   initialMode?: AuthMode
+  initialResetToken?: string
   onSuccess?: () => void
   redirectTo?: string
 }
@@ -88,9 +89,10 @@ function AuthScaleFrame({ children, height }: { children: ReactNode; height: num
   )
 }
 
-export function AuthFlowCard({ initialMode = 'login', onSuccess, redirectTo }: AuthFlowCardProps) {
+export function AuthFlowCard({ initialMode = 'login', initialResetToken = '', onSuccess, redirectTo }: AuthFlowCardProps) {
   const [mode, setMode] = useState<AuthMode>(initialMode)
   const [email, setEmail] = useState('')
+  const [resetToken, setResetToken] = useState(initialResetToken)
   const [verificationCode, setVerificationCode] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -110,7 +112,26 @@ export function AuthFlowCard({ initialMode = 'login', onSuccess, redirectTo }: A
   const isRegister = mode === 'register'
   const isForgot = mode === 'forgot'
   const isForgotSuccess = mode === 'forgot-success'
+  const isReset = mode === 'reset'
   const requiresVerificationCode = registrationVerificationMode === 'email-code'
+
+  useEffect(() => {
+    setMode(initialMode)
+  }, [initialMode])
+
+  useEffect(() => {
+    setResetToken(initialResetToken)
+  }, [initialResetToken])
+
+  useEffect(() => {
+    if (initialMode !== 'reset' || !initialResetToken || typeof window === 'undefined') return
+
+    const url = new URL(window.location.href)
+    if (!url.searchParams.has('token')) return
+
+    url.searchParams.delete('token')
+    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`)
+  }, [initialMode, initialResetToken])
 
   useEffect(() => {
     let alive = true
@@ -286,6 +307,53 @@ export function AuthFlowCard({ initialMode = 'login', onSuccess, redirectTo }: A
         return
       }
 
+      if (isReset) {
+        if (!resetToken.trim()) {
+          throw new Error('Reset token is required.')
+        }
+
+        if (!password || password.length < 8) {
+          throw new Error('Password must be at least 8 characters.')
+        }
+
+        if (password !== confirmPassword) {
+          throw new Error('Passwords do not match.')
+        }
+
+        const resetResp = await fetch('/api/account/auth/reset-password', {
+          body: JSON.stringify({
+            password,
+            token: resetToken,
+          }),
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          method: 'POST',
+        })
+
+        const resetJson = await resetResp.json().catch(() => ({}))
+        if (!resetResp.ok) {
+          throw new Error(resetJson?.message || 'Failed to reset password.')
+        }
+
+        if (resetJson?.user?.email) {
+          setEmail(String(resetJson.user.email))
+        }
+
+        await fetch('/api/account/auth/logout', {
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          method: 'POST',
+        }).catch(() => null)
+
+        setPassword('')
+        setConfirmPassword('')
+        setResetToken('')
+        setMode('login')
+        setMessage('Password reset complete. Please sign in with your new password.')
+        setMessageTone('success')
+        return
+      }
+
       if (isLogin) {
         await completeLogin()
         return
@@ -326,7 +394,8 @@ export function AuthFlowCard({ initialMode = 'login', onSuccess, redirectTo }: A
           className={[
             styles.panel,
             isRegister ? styles.registerPanel : styles.loginPanel,
-            isForgot || isForgotSuccess ? styles.authForgotPanel : '',
+            isForgot || isForgotSuccess || isReset ? styles.authForgotPanel : '',
+            isReset ? styles.resetPanel : '',
           ].join(' ')}
           style={{ '--panel-height': `${isRegister ? 662 : 588}px` } as CSSProperties}
         >
@@ -506,6 +575,57 @@ export function AuthFlowCard({ initialMode = 'login', onSuccess, redirectTo }: A
                   type="button"
                 >
                   Sign Up
+                </button>
+              </>
+            ) : isReset ? (
+              <>
+                <p className={styles.resetIntro}>Choose a new password for your account.</p>
+
+                <AuthField
+                  className={styles.resetPassword}
+                  label="New Password"
+                  onChange={setPassword}
+                  placeholder="Please enter your new password"
+                  type={passwordVisible ? 'text' : 'password'}
+                  value={password}
+                >
+                  <EyeButton visible={passwordVisible} onClick={() => setPasswordVisible((value) => !value)} />
+                </AuthField>
+
+                <AuthField
+                  className={styles.resetConfirm}
+                  label="Confirm Password"
+                  onChange={setConfirmPassword}
+                  placeholder="Please enter your password again"
+                  type={confirmPasswordVisible ? 'text' : 'password'}
+                  value={confirmPassword}
+                >
+                  <EyeButton
+                    visible={confirmPasswordVisible}
+                    onClick={() => setConfirmPasswordVisible((value) => !value)}
+                  />
+                </AuthField>
+
+                <div className={[styles.loginSignInSlot, styles.resetSubmitSlot].join(' ')}>
+                  <div className={styles.buttonSlot}>
+                    <PurpleMediumActionButton
+                      className={[styles.authFlowButton, styles.authFlowButtonSlate].join(' ')}
+                      disabled={loading}
+                      label={loading ? 'Processing...' : 'Reset'}
+                      type="submit"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  className={styles.resetSignIn}
+                  onClick={() => {
+                    setMode('login')
+                    resetTransientState()
+                  }}
+                  type="button"
+                >
+                  Sign In
                 </button>
               </>
             ) : (

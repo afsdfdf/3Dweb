@@ -122,6 +122,14 @@
   top: 232px;
 }
 
+.resetPassword {
+  top: 214px;
+}
+
+.resetConfirm {
+  top: 288px;
+}
+
 .registerEmail {
   top: 158px;
 }
@@ -571,6 +579,10 @@
   top: 278px;
 }
 
+.resetPanel .authFlowMessage {
+  top: 350px;
+}
+
 .authFlowMessageError {
   color: #ffb5b5;
 }
@@ -582,6 +594,7 @@
 .forgotSubmitSlot,
 .loginSignInSlot,
 .loginSignUpSlot,
+.resetSubmitSlot,
 .registerSignUpSlot {
   height: 38px;
   position: absolute;
@@ -591,6 +604,11 @@
 .forgotSubmitSlot {
   left: 133px;
   top: 318px;
+}
+
+.resetSubmitSlot {
+  left: 133px;
+  top: 390px;
 }
 
 .loginSignInSlot {
@@ -618,6 +636,7 @@
 .forgot,
 .forgotSignIn,
 .forgotSignUp,
+.resetSignIn,
 .registerSignIn {
   appearance: none;
   background: transparent;
@@ -636,7 +655,8 @@
 }
 
 .forgotIntro,
-.forgotSuccess {
+.forgotSuccess,
+.resetIntro {
   color: rgba(255, 255, 255, 0.7);
   font-family: "PingFang SC", "PingFangSC", "Hiragino Sans GB", sans-serif;
   font-size: 14px;
@@ -650,6 +670,10 @@
 }
 
 .forgotIntro {
+  top: 158px;
+}
+
+.resetIntro {
   top: 158px;
 }
 
@@ -719,4 +743,11 @@
   top: 604px;
   transform: none;
   width: 40px;
+}
+
+.resetSignIn {
+  left: 166px;
+  text-align: center;
+  top: 456px;
+  width: 48px;
 }

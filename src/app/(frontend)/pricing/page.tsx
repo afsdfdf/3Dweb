@@ -18,28 +18,32 @@ type CreditTopupProduct = {
 }
 
 async function getCreditTopupProducts(payload: Awaited<ReturnType<typeof getCachedPayload>>): Promise<CreditTopupProduct[]> {
-  const result = await payload.find({
-    collection: 'credit-products',
-    depth: 0,
-    limit: 12,
-    overrideAccess: true,
-    pagination: false,
-    sort: 'sortOrder',
-    where: {
-      and: [
-        {
-          productType: {
-            equals: 'credit-topup',
+  const result = await payload
+    .find({
+      collection: 'credit-products',
+      depth: 0,
+      limit: 12,
+      overrideAccess: true,
+      pagination: false,
+      sort: 'sortOrder',
+      where: {
+        and: [
+          {
+            productType: {
+              equals: 'credit-topup',
+            },
           },
-        },
-        {
-          isActive: {
-            equals: true,
+          {
+            isActive: {
+              equals: true,
+            },
           },
-        },
-      ],
-    },
-  })
+        ],
+      },
+    })
+    .catch(() => ({
+      docs: [],
+    }))
 
   return result.docs
     .map((product) => ({

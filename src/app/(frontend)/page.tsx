@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { AuthModalStage } from "@/components/auth/AuthModalStage";
 import { BorderComboFrame2, BorderComboFrame2Variant } from "@/components/ui-lab/border-combo-frame-2";
-import { SourcePurpleMediumButton } from "@/components/ui-lab/action-buttons";
+import { LinkedSourcePurpleMediumButton } from "@/components/ui-lab/action-buttons";
 import { SmallButtonPair } from "@/components/ui-lab/small-button-pair/small-button-pair";
 import { TopNavigation, migrationTestNavItems } from "@/components/ui-lab/top-navigation";
 import Frame12877 from "@/components/ui-lab/home-test/frame12877";
@@ -48,13 +48,13 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                 <span className={styles.bannerSquareLogo} aria-hidden="true" />
                 <span className={styles.bannerDividerLine} aria-hidden="true" />
                 <span className={[styles.bannerRightImage, styles.bannerRightImageText].join(" ")}>
-                  Followed
+                  Bundles
                 </span>
                 <div className={styles.smallButtonPairMount}>
                   <SmallButtonPair purpleLabel="Hot" darkLabel="New" />
                 </div>
                 <div className={styles.sourceMediumButtonMount}>
-                  <SourcePurpleMediumButton label="More" type="button" />
+                  <LinkedSourcePurpleMediumButton href="/bundles" label="More" />
                 </div>
                 <SelectableFrameRow items={data.shelfItems} />
               </div>
@@ -100,7 +100,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                 />
               </div>
               <div className={styles.footerInfo}>
-                <h2>INFOMATION</h2>
+                <h2>Information</h2>
                 <p>Refund Policy</p>
                 <p>Shipping Policy</p>
                 <p>Privacy Policy</p>

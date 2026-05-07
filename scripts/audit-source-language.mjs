@@ -10,8 +10,6 @@ const ignoredParts = [
   `${path.sep}src${path.sep}migrations${path.sep}`,
   `${path.sep}src${path.sep}app${path.sep}(frontend)${path.sep}test${path.sep}`,
   `${path.sep}src${path.sep}app${path.sep}(frontend)${path.sep}test-bundles${path.sep}`,
-  `${path.sep}src${path.sep}app${path.sep}(frontend)${path.sep}_components${path.sep}GenerateForm.tsx`,
-  `${path.sep}src${path.sep}components${path.sep}ui-lab${path.sep}personal-center-legacy${path.sep}`,
 ]
 
 const allowedChineseParts = [

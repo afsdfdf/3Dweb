@@ -1,5 +1,6 @@
 import { getCachedPayload } from '@/lib/getCachedPayload'
 import { getMediaAccessURL } from '@/lib/mediaAccessURL'
+import { getPublicBundleList, type PublicBundleCard, type PublicBundleListResult } from '@/lib/bundleService'
 import type { Where } from 'payload'
 
 import { getMarketingSiteData } from '../_lib/marketing'
@@ -28,6 +29,7 @@ type ModelLike = {
   title?: null | string
   updatedAt?: null | string
   viewCount?: null | number
+  visibility?: null | string
 }
 
 type UserLike = {
@@ -50,8 +52,11 @@ type HomepageItemLike = {
   linkedBundle?: null | number | {
     coverImage?: null | number | ImageLike
     id?: number | string
-    models?: unknown[]
+    models?: null | ModelLike[]
     slug?: null | string
+    technicalSpecs?: null | {
+      modelCountLabel?: null | string
+    }
   }
   linkedModel?: null | number | ModelLike
   placement?: null | string
@@ -316,7 +321,17 @@ async function resolveHomepageItemImage(payload: Awaited<ReturnType<typeof getCa
   }
 
   if (isRecord(item.linkedBundle)) {
-    return resolveMediaAccessURL(payload, getImageURL(item.linkedBundle.coverImage))
+    const coverURL = await resolveMediaAccessURL(payload, getImageURL(item.linkedBundle.coverImage))
+    if (coverURL) return coverURL
+
+    const publicModels = Array.isArray(item.linkedBundle.models)
+      ? item.linkedBundle.models.filter((model) => isRecord(model) && model.visibility === 'public')
+      : []
+
+    for (const model of publicModels) {
+      const previewURL = await resolveMediaAccessURL(payload, getModelPreviewURL(model as ModelLike))
+      if (previewURL) return previewURL
+    }
   }
 
   return null
@@ -327,15 +342,63 @@ function getShelfCount(item: HomepageItemLike) {
     return item.itemCountLabel.trim()
   }
 
+  if (isRecord(item.linkedBundle) && isRecord(item.linkedBundle.technicalSpecs)) {
+    const modelCountLabel = item.linkedBundle.technicalSpecs.modelCountLabel
+    if (typeof modelCountLabel === 'string' && modelCountLabel.trim()) {
+      return modelCountLabel.trim()
+    }
+  }
+
   if (isRecord(item.linkedBundle) && Array.isArray(item.linkedBundle.models)) {
-    return `Products x${item.linkedBundle.models.length}`
+    const count = item.linkedBundle.models.filter((model) => isRecord(model) && model.visibility === 'public').length
+    return `${count} ${count === 1 ? 'Model' : 'Models'}`
   }
 
   if (isRecord(item.linkedModel)) {
-    return `Products x${Math.max(1, Array.isArray(item.linkedModel.formats) ? item.linkedModel.formats.length : 1)}`
+    return `${Math.max(1, Array.isArray(item.linkedModel.formats) ? item.linkedModel.formats.length : 1)} Formats`
   }
 
-  return 'Products x1'
+  return '1 Model'
+}
+
+const moreBundlesItem: HomeShelfItem = {
+  count: 'View all',
+  href: '/bundles',
+  id: 'all-bundles',
+  imageSrc: '/ui/frames/allfollowed.png',
+  title: 'All Bundles',
+}
+
+const withBundleMoreItem = (items: HomeShelfItem[]) => {
+  const primaryItems = items.filter((item) => item.id !== moreBundlesItem.id).slice(0, 3)
+  return [...primaryItems, moreBundlesItem]
+}
+
+const getBundleFeatureItems = (bundles: PublicBundleCard[]) => {
+  return bundles
+    .filter((bundle) => Boolean(bundle.coverSrc))
+    .slice(0, 4)
+    .map((bundle, index) => ({
+      alt: bundle.title,
+      href: bundle.href,
+      id: `bundle-feature-${bundle.id}`,
+      imageSrc: bundle.coverSrc as string,
+      ribbonLabel: bundle.badgeLabel || (index === 0 ? 'Featured Bundle' : bundle.bundleTypeLabel),
+      variant: index === 0 ? 'wide' : 'standard',
+    }) satisfies HomeFeatureItem)
+}
+
+const getBundleShelfItems = (bundles: PublicBundleCard[]) => {
+  return bundles
+    .filter((bundle) => Boolean(bundle.coverSrc))
+    .slice(0, 3)
+    .map((bundle) => ({
+      count: bundle.modelCountLabel,
+      href: bundle.href,
+      id: `bundle-shelf-${bundle.id}`,
+      imageSrc: bundle.coverSrc as string,
+      title: bundle.title,
+    }) satisfies HomeShelfItem)
 }
 
 async function getManagedHomeItems(payload: Awaited<ReturnType<typeof getCachedPayload>>) {
@@ -415,6 +478,11 @@ const emptyPagination = (limit: number) => ({
   page: 1,
   totalDocs: 0,
   totalPages: 1,
+})
+
+const emptyPublicBundleList = (limit: number): PublicBundleListResult => ({
+  bundles: [],
+  pagination: emptyPagination(limit),
 })
 
 async function getPublicModelItems(
@@ -526,10 +594,12 @@ export async function getHomeData(args: HomeDataArgs = {}): Promise<HomeData> {
 
   try {
     const payload = await getCachedPayload()
-    const [marketing, navUser, managedItems, fallbackModels, separatePaginatedModels] = await Promise.all([
+    const bundleLimit = 8
+    const [marketing, navUser, managedItems, publicBundles, fallbackModels, separatePaginatedModels] = await Promise.all([
       getMarketingSiteData(),
       getCurrentNavUser(),
       getManagedHomeItems(payload),
+      getPublicBundleList(payload, { limit: bundleLimit, withPagination: false }).catch(() => emptyPublicBundleList(bundleLimit)),
       getPublicModelItems(payload, { limit: inspirationLimit, withPagination: canReuseFallbackModels }),
       canReuseFallbackModels
         ? Promise.resolve(null)
@@ -555,15 +625,25 @@ export async function getHomeData(args: HomeDataArgs = {}): Promise<HomeData> {
       }
     const publicModels = fallbackModels.items
     const publicModelsWithImages = publicModels.filter((item) => Boolean(item.imageSrc))
+    const bundleFeatureItems = getBundleFeatureItems(publicBundles.bundles)
+    const bundleShelfItems = getBundleShelfItems(publicBundles.bundles)
     const featuredFallbackItems = publicModelsWithImages.slice(0, 4)
     const shelfFallbackItems = publicModelsWithImages.slice(4, 8)
+    const modelShelfItems = (shelfFallbackItems.length > 0 ? shelfFallbackItems : featuredFallbackItems).map((item) => ({
+      count: '1 Model',
+      href: item.href,
+      id: item.id,
+      imageSrc: item.imageSrc as string,
+      title: item.title,
+    }))
 
     return {
       featuredItems:
         managedItems.featuredItems.length > 0
           ? managedItems.featuredItems
-          : featuredFallbackItems
-              .map((item, index) => ({
+          : bundleFeatureItems.length > 0
+            ? bundleFeatureItems
+            : featuredFallbackItems.map((item, index) => ({
                 alt: item.title,
                 href: item.href,
                 id: `featured-${item.id}`,
@@ -589,15 +669,8 @@ export async function getHomeData(args: HomeDataArgs = {}): Promise<HomeData> {
         : null,
       shelfItems:
         managedItems.shelfItems.length > 0
-          ? managedItems.shelfItems
-          : (shelfFallbackItems.length > 0 ? shelfFallbackItems : featuredFallbackItems)
-              .map((item) => ({
-                count: 'Products x1',
-                href: item.href,
-                id: item.id,
-                imageSrc: item.imageSrc as string,
-                title: item.title,
-              })),
+          ? withBundleMoreItem(managedItems.shelfItems)
+          : withBundleMoreItem(bundleShelfItems.length > 0 ? bundleShelfItems : modelShelfItems),
     }
   } catch {
     return {
