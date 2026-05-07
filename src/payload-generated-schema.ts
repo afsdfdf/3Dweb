@@ -1697,6 +1697,15 @@ export const model_bundles_locales = pgTable(
     title: varchar("title"),
     subtitle: varchar("subtitle"),
     summary: varchar("summary"),
+    heroMarketing_eyebrow: varchar("hero_marketing_eyebrow"),
+    heroMarketing_title: varchar("hero_marketing_title"),
+    heroMarketing_subtitle: varchar("hero_marketing_subtitle"),
+    heroMarketing_slogan: varchar("hero_marketing_slogan"),
+    heroMarketing_sellingPointOne: varchar("hero_marketing_selling_point_one"),
+    heroMarketing_sellingPointTwo: varchar("hero_marketing_selling_point_two"),
+    heroMarketing_sellingPointThree: varchar(
+      "hero_marketing_selling_point_three",
+    ),
     badgeLabel: varchar("badge_label"),
     includedSummary: varchar("included_summary"),
     technicalSpecs_modelCountLabel: varchar(
@@ -1917,6 +1926,19 @@ export const _model_bundles_v_locales = pgTable(
     version_title: varchar("version_title"),
     version_subtitle: varchar("version_subtitle"),
     version_summary: varchar("version_summary"),
+    version_heroMarketing_eyebrow: varchar("version_hero_marketing_eyebrow"),
+    version_heroMarketing_title: varchar("version_hero_marketing_title"),
+    version_heroMarketing_subtitle: varchar("version_hero_marketing_subtitle"),
+    version_heroMarketing_slogan: varchar("version_hero_marketing_slogan"),
+    version_heroMarketing_sellingPointOne: varchar(
+      "version_hero_marketing_selling_point_one",
+    ),
+    version_heroMarketing_sellingPointTwo: varchar(
+      "version_hero_marketing_selling_point_two",
+    ),
+    version_heroMarketing_sellingPointThree: varchar(
+      "version_hero_marketing_selling_point_three",
+    ),
     version_badgeLabel: varchar("version_badge_label"),
     version_includedSummary: varchar("version_included_summary"),
     version_technicalSpecs_modelCountLabel: varchar(

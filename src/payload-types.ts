@@ -632,6 +632,30 @@ export interface ModelBundle {
   heroImage?: (number | null) | Media;
   summary?: string | null;
   /**
+   * Optional detail-page hero copy. Leave fields empty to fall back to the basic bundle content.
+   */
+  heroMarketing?: {
+    /**
+     * Short label shown above the detail-page title.
+     */
+    eyebrow?: string | null;
+    /**
+     * Optional detail-page title override.
+     */
+    title?: string | null;
+    /**
+     * Short promotional line shown below the hero title.
+     */
+    subtitle?: string | null;
+    /**
+     * One concise campaign-style sentence for the detail page.
+     */
+    slogan?: string | null;
+    sellingPointOne?: string | null;
+    sellingPointTwo?: string | null;
+    sellingPointThree?: string | null;
+  };
+  /**
    * Optional short label such as Featured, Starter, Event, or New.
    */
   badgeLabel?: string | null;
@@ -1376,6 +1400,17 @@ export interface ModelBundlesSelect<T extends boolean = true> {
   coverImage?: T;
   heroImage?: T;
   summary?: T;
+  heroMarketing?:
+    | T
+    | {
+        eyebrow?: T;
+        title?: T;
+        subtitle?: T;
+        slogan?: T;
+        sellingPointOne?: T;
+        sellingPointTwo?: T;
+        sellingPointThree?: T;
+      };
   badgeLabel?: T;
   bundleType?: T;
   tags?:

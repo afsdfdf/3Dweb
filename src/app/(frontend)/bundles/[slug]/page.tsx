@@ -3,15 +3,26 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import { AuthModalStage } from '@/components/auth/AuthModalStage'
-import { ButtonBoxFrame } from '@/components/ui-lab/button-box-frame'
-import { BorderComboFrame2 } from '@/components/ui-lab/border-combo-frame-2'
 import { TopNavigation, migrationTestNavItems } from '@/components/ui-lab/top-navigation'
 import { getPublicBundleBySlug } from '@/lib/bundleService'
 import { getCachedPayload } from '@/lib/getCachedPayload'
 
 import { getCurrentNavUser } from '../../_lib/session'
-import { BundleModelPreviewRail } from './BundleModelPreviewRail'
 import styles from './page.module.css'
+
+function getBundlePriceLabel(args: { ctaMode: string; priceCredits: number }) {
+  if (args.ctaMode === 'coming-soon') return 'Coming Soon'
+  if (args.priceCredits > 0) return `${args.priceCredits} Credits`
+  return 'Free Preview'
+}
+
+function getModelTags(model: { formats: string[]; printReady: boolean; tags: string[] }) {
+  const formatTags = model.formats.length > 0 ? model.formats.slice(0, 2) : ['Preview']
+  const readinessTag = model.printReady ? 'Print Ready' : 'Ready'
+  const contentTags = model.tags.filter(Boolean).slice(0, 1)
+
+  return Array.from(new Set([...formatTags, readinessTag, ...contentTags])).slice(0, 4)
+}
 
 export default async function BundleDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const [{ slug }, payload, navUser] = await Promise.all([params, getCachedPayload(), getCurrentNavUser()])
@@ -22,163 +33,164 @@ export default async function BundleDetailPage({ params }: { params: Promise<{ s
   }
 
   const heroImage = bundle.heroSrc || bundle.coverSrc || bundle.models.find((model) => model.imageSrc)?.imageSrc || null
+  const heroEyebrow = bundle.heroMarketing.eyebrow || 'Model Bundle'
+  const heroTitle = bundle.heroMarketing.title || bundle.title
+  const heroSubtitle = bundle.heroMarketing.subtitle || bundle.subtitle
   const previewModels = bundle.models
+  const actualModelCountLabel = `${previewModels.length} ${previewModels.length === 1 ? 'Model' : 'Models'}`
   const ctaBadge = bundle.ctaMode === 'paid' && bundle.priceCredits > 0 ? `${bundle.priceCredits} Credits` : null
-  const technicalSummary = [
-    bundle.technicalSpecs.assetReadinessLabel,
-    bundle.technicalSpecs.scaleLabel,
-    bundle.technicalSpecs.printReady ? 'Print ready' : null,
+  const heroChips = [
+    bundle.badgeLabel,
+    bundle.bundleTypeLabel,
+    actualModelCountLabel,
+    bundle.technicalSpecs.formatsLabel,
+    bundle.technicalSpecs.printReady ? 'Print Ready' : null,
     bundle.technicalSpecs.textured ? 'Textured' : null,
-    bundle.technicalSpecs.technicalNotes,
-  ]
-    .filter(Boolean)
-    .join(' / ')
-  const detailItems = [
-    {
-      body: bundle.includedSummary,
-      label: 'Included',
-      value: bundle.modelCountLabel,
-    },
-    {
-      body: technicalSummary,
-      label: 'Technical',
-      value: bundle.technicalSpecs.formatsLabel,
-    },
-    {
-      body: bundle.license.summary,
-      label: 'License',
-      value: bundle.license.label,
-    },
-  ]
+    ctaBadge,
+  ].filter((chip): chip is string => Boolean(chip))
 
   return (
     <main className={styles.page}>
-      <div className={styles.viewport}>
-        <section aria-label={bundle.title} className={styles.stage}>
-          <AuthModalStage fitViewport topOffset={60}>
-            <section className={styles.heroSection}>
-              <div className={styles.heroImageShell}>
-                {heroImage ? (
-                  <img alt={bundle.title} className={styles.heroImage} src={heroImage} />
-                ) : (
-                  <div className={styles.emptyHero}>No cover image</div>
-                )}
-                <span className={styles.heroImageShade} aria-hidden="true" />
-              </div>
+      <AuthModalStage>
+        <TopNavigation active="HOME" className={styles.topNavigation} items={migrationTestNavItems} user={navUser} />
+        <header className={styles.mobileHeader}>
+          <Link href="/" aria-label="Thorns Tavern home">
+            <img alt="Thorns Tavern" src="/ui-lab/top-navigation/logo-wordmark.png" />
+          </Link>
+          <nav aria-label="Mobile navigation">
+            <Link href="/workbench">Workbench</Link>
+            <Link href="/pricing">Plans</Link>
+          </nav>
+        </header>
 
+        <div className={styles.shell}>
+          <section aria-label={bundle.title} className={styles.heroSection}>
+            <div className={styles.heroImageShell}>
+              {heroImage ? (
+                <img alt={bundle.title} className={styles.heroImage} decoding="async" fetchPriority="high" src={heroImage} />
+              ) : (
+                <div className={styles.emptyImage}>No cover image</div>
+              )}
+            </div>
+
+            <div className={styles.heroContent}>
               <div className={styles.heroCopy}>
-                <p className={styles.eyebrow}>Model Bundle</p>
-                <h1>{bundle.title}</h1>
-                {bundle.subtitle ? <p className={styles.subtitle}>{bundle.subtitle}</p> : null}
+                <span className={styles.eyebrow}>{heroEyebrow}</span>
+                <h1>{heroTitle}</h1>
+                {heroSubtitle ? <p className={styles.subtitle}>{heroSubtitle}</p> : null}
+                {bundle.heroMarketing.slogan ? <p className={styles.slogan}>{bundle.heroMarketing.slogan}</p> : null}
                 <p className={styles.summary}>{bundle.summary}</p>
 
-                <div className={styles.badgeRow}>
-                  <span>{bundle.badgeLabel}</span>
-                  <span>{bundle.bundleTypeLabel}</span>
-                  <span>{bundle.modelCountLabel}</span>
-                  <span>{bundle.technicalSpecs.formatsLabel}</span>
-                  {ctaBadge ? <span>{ctaBadge}</span> : null}
-                  {bundle.tags.slice(0, 2).map((tag) => (
-                    <span key={tag}>{tag}</span>
+                {bundle.heroMarketing.sellingPoints.length > 0 ? (
+                  <div className={styles.sellingPoints}>
+                    {bundle.heroMarketing.sellingPoints.map((point) => (
+                      <span key={point}>{point}</span>
+                    ))}
+                  </div>
+                ) : null}
+
+                <div className={styles.metaPills}>
+                  {heroChips.map((chip) => (
+                    <span key={chip}>{chip}</span>
                   ))}
                 </div>
+              </div>
 
-                <div className={styles.ctaRow}>
-                  <a className={styles.primaryButton} href="#included-models">
-                    {bundle.primaryCtaLabel}
-                  </a>
-                  <Link className={styles.secondaryButton} href="/workbench">
-                    {bundle.secondaryCtaLabel}
+              <div className={styles.heroActions}>
+                <a className={[styles.actionButton, styles.primaryAction].join(' ')} href="#included-models">
+                  {bundle.primaryCtaLabel}
+                </a>
+                <Link className={styles.actionButton} href="/workbench">
+                  {bundle.secondaryCtaLabel}
+                </Link>
+                <Link className={styles.textLink} href="/bundles">
+                  All Bundles
+                  <span aria-hidden="true">-&gt;</span>
+                </Link>
+              </div>
+            </div>
+          </section>
+
+          <section className={styles.modelsSection} id="included-models">
+            <div className={styles.sectionHeader}>
+              <div>
+                <h2>Included Models</h2>
+                <p>{bundle.technicalSpecs.assetReadinessLabel || 'Public preview models included in this bundle.'}</p>
+              </div>
+              <span className={styles.countChip}>{actualModelCountLabel}</span>
+            </div>
+
+            <div className={styles.modelGrid}>
+              {previewModels.map((model) => (
+                <article className={styles.modelCard} key={model.id}>
+                  <Link className={styles.modelImageLink} href={model.href}>
+                    {model.imageSrc ? (
+                      <img alt={model.title} className={styles.modelImage} decoding="async" loading="lazy" src={model.imageSrc} />
+                    ) : (
+                      <div className={styles.emptyImage}>No preview image</div>
+                    )}
                   </Link>
-                  <Link className={styles.textLink} href="/bundles">
-                    All Bundles
-                  </Link>
+                  <div className={styles.modelBody}>
+                    <h2>
+                      <Link href={model.href}>{model.title}</Link>
+                    </h2>
+                    <div className={styles.modelTags}>
+                      {getModelTags(model).map((tag) => (
+                        <span key={tag}>{tag}</span>
+                      ))}
+                    </div>
+                    <Link className={styles.inlineLink} href={model.href}>
+                      View
+                      <span aria-hidden="true">-&gt;</span>
+                    </Link>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className={styles.notePanel} aria-label="Bundle quick details">
+            <span className={styles.noteTitle}>Bundle Details</span>
+            <div className={styles.noteMeta}>
+              <span>{bundle.license.label}</span>
+              <span>{getBundlePriceLabel(bundle)}</span>
+              <span>{bundle.technicalSpecs.formatsLabel}</span>
+              <span>{bundle.technicalSpecs.scaleLabel}</span>
+            </div>
+          </section>
+
+          {bundle.relatedBundles.length > 0 ? (
+            <section className={styles.relatedSection}>
+              <div className={styles.sectionHeader}>
+                <div>
+                  <h2>Related Bundles</h2>
+                  <p>Continue browsing curated model packs.</p>
                 </div>
+              </div>
+              <div className={styles.relatedGrid}>
+                {bundle.relatedBundles.slice(0, 3).map((related) => (
+                  <Link className={styles.relatedCard} href={related.href} key={related.id}>
+                    {related.coverSrc ? (
+                      <img alt="" decoding="async" loading="lazy" src={related.coverSrc} />
+                    ) : null}
+                    <span>{related.bundleTypeLabel}</span>
+                    <strong>{related.title}</strong>
+                  </Link>
+                ))}
               </div>
             </section>
+          ) : null}
 
-            <BorderComboFrame2 className={styles.modelsFrame} id="included-models">
-              <div className={styles.frameContent}>
-                <div className={styles.frameHeader}>
-                  <span className={styles.headerLogo} aria-hidden="true" />
-                  <span className={styles.headerLabel}>Models</span>
-                  <span className={styles.headerRule} aria-hidden="true" />
-                  <span className={styles.headerCount}>{bundle.modelCountLabel}</span>
-                </div>
-
-                <BundleModelPreviewRail
-                  items={previewModels.map((model) => ({
-                    ageLabel: model.formats.slice(0, 2).join(' / ') || 'Preview',
-                    authorName: model.authorName,
-                    avatarSrc: model.avatarSrc,
-                    favoritesLabel: 'Ready',
-                    filter: 'image3d',
-                    href: model.href,
-                    id: model.id,
-                    imageSrc: model.imageSrc,
-                    likesLabel: '3D',
-                    title: model.title,
-                    viewsLabel: 'View',
-                  }))}
-                />
-              </div>
-            </BorderComboFrame2>
-
-            <BorderComboFrame2 className={styles.detailsFrame}>
-              <div className={styles.frameContent}>
-                <div className={styles.frameHeader}>
-                  <span className={styles.headerLogo} aria-hidden="true" />
-                  <span className={styles.headerLabel}>Details</span>
-                  <span className={styles.headerRule} aria-hidden="true" />
-                </div>
-
-                <div className={styles.detailGrid}>
-                  {detailItems.map((item) => (
-                    <section className={styles.detailCard} key={item.label}>
-                      <ButtonBoxFrame className={styles.detailCardFrame} contentClassName={styles.detailCardFrameContent}>
-                        <span className={styles.detailLabel}>{item.label}</span>
-                        <strong>{item.value}</strong>
-                        <p>{item.body}</p>
-                      </ButtonBoxFrame>
-                    </section>
-                  ))}
-                </div>
-
-                {bundle.releaseNotes ? (
-                  <section className={styles.releaseNotes}>
-                    <span>Release Notes</span>
-                    <p>{bundle.releaseNotes}</p>
-                  </section>
-                ) : null}
-              </div>
-            </BorderComboFrame2>
-
-            <footer className={styles.footerBlock}>
-              <div className={styles.footerBrand}>
-                <img alt="Thorns Tavern" className={styles.footerLogo} src="/ui-lab/top-navigation/logo-wordmark.png" />
-              </div>
-              <div className={styles.footerInfo}>
-                <h2>Information</h2>
-                <Link href="/refund-policy">Refund Policy</Link>
-                <Link href="/shipping-policy">Shipping Policy</Link>
-                <Link href="/privacy-policy">Privacy Policy</Link>
-                <Link href="/contact">Contact Us</Link>
-              </div>
-              <div className={styles.footerHelp}>
-                <h2>Help Customers</h2>
-                <p>service@thornstavern.com</p>
-              </div>
-            </footer>
-          </AuthModalStage>
-
-          <TopNavigation
-            active="HOME"
-            className={styles.boundTopNavigation}
-            items={migrationTestNavItems}
-            user={navUser}
-          />
-        </section>
-      </div>
+          <footer className={styles.footerBlock}>
+            <span>Copyright 2024 Thorns Tavern</span>
+            <nav aria-label="Bundle footer links">
+              <Link href="/privacy-policy">Privacy Policy</Link>
+              <Link href="/refund-policy">Refund Policy</Link>
+              <Link href="/contact">Contact</Link>
+            </nav>
+          </footer>
+        </div>
+      </AuthModalStage>
     </main>
   )
 }

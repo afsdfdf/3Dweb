@@ -98,6 +98,70 @@ export const ModelBundles: CollectionConfig = {
       label: 'Summary',
     },
     {
+      name: 'heroMarketing',
+      type: 'group',
+      label: 'Hero marketing',
+      admin: {
+        description: 'Optional detail-page hero copy. Leave fields empty to fall back to the basic bundle content.',
+      },
+      fields: [
+        {
+          name: 'eyebrow',
+          type: 'text',
+          localized: true,
+          label: 'Hero eyebrow',
+          admin: {
+            description: 'Short label shown above the detail-page title.',
+          },
+        },
+        {
+          name: 'title',
+          type: 'text',
+          localized: true,
+          label: 'Hero title',
+          admin: {
+            description: 'Optional detail-page title override.',
+          },
+        },
+        {
+          name: 'subtitle',
+          type: 'text',
+          localized: true,
+          label: 'Hero subtitle',
+          admin: {
+            description: 'Short promotional line shown below the hero title.',
+          },
+        },
+        {
+          name: 'slogan',
+          type: 'text',
+          localized: true,
+          label: 'Marketing slogan',
+          admin: {
+            description: 'One concise campaign-style sentence for the detail page.',
+          },
+        },
+        {
+          name: 'sellingPointOne',
+          type: 'text',
+          localized: true,
+          label: 'Selling point 1',
+        },
+        {
+          name: 'sellingPointTwo',
+          type: 'text',
+          localized: true,
+          label: 'Selling point 2',
+        },
+        {
+          name: 'sellingPointThree',
+          type: 'text',
+          localized: true,
+          label: 'Selling point 3',
+        },
+      ],
+    },
+    {
       name: 'badgeLabel',
       type: 'text',
       localized: true,

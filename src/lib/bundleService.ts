@@ -40,6 +40,15 @@ type BundleLike = {
     secondaryLabel?: null | string
   }
   heroImage?: null | number | ImageLike
+  heroMarketing?: null | {
+    eyebrow?: null | string
+    sellingPointOne?: null | string
+    sellingPointThree?: null | string
+    sellingPointTwo?: null | string
+    slogan?: null | string
+    subtitle?: null | string
+    title?: null | string
+  }
   id?: number | string
   includedSummary?: null | string
   isFeatured?: null | boolean
@@ -99,6 +108,13 @@ export type PublicBundleCard = {
 }
 
 export type PublicBundleDetail = PublicBundleCard & {
+  heroMarketing: {
+    eyebrow: string
+    sellingPoints: string[]
+    slogan: string
+    subtitle: string
+    title: string
+  }
   heroSrc: null | string
   includedSummary: string
   license: {
@@ -362,6 +378,23 @@ function getLicenseTypeLabel(value: string) {
   return LICENSE_TYPE_LABELS[value] ?? 'Personal Use'
 }
 
+function getHeroMarketing(bundle: BundleLike) {
+  const heroMarketing = bundle.heroMarketing
+  const sellingPoints = [
+    normalizeText(heroMarketing?.sellingPointOne),
+    normalizeText(heroMarketing?.sellingPointTwo),
+    normalizeText(heroMarketing?.sellingPointThree),
+  ].filter(Boolean)
+
+  return {
+    eyebrow: normalizeText(heroMarketing?.eyebrow),
+    sellingPoints,
+    slogan: normalizeText(heroMarketing?.slogan),
+    subtitle: normalizeText(heroMarketing?.subtitle),
+    title: normalizeText(heroMarketing?.title),
+  }
+}
+
 async function mapBundleCard(payload: Payload, bundle: BundleLike): Promise<PublicBundleCard> {
   const publicModels = getPublicModels(bundle)
   const models = await Promise.all(publicModels.map((model) => mapModelCard(payload, model)))
@@ -402,6 +435,7 @@ async function mapBundleDetail(payload: Payload, bundle: BundleLike): Promise<Om
 
   return {
     ...card,
+    heroMarketing: getHeroMarketing(bundle),
     heroSrc: await resolveBundleHeroURL(payload, bundle, card.coverSrc),
     includedSummary: normalizeText(bundle.includedSummary, DEFAULT_INCLUDED_SUMMARY),
     license: {
