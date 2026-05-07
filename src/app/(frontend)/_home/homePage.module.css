@@ -9,7 +9,7 @@
   container-type: inline-size;
   width: 100%;
   max-width: 100%;
-  aspect-ratio: 1920 / 4356;
+  aspect-ratio: 1920 / 5260;
   min-height: 100vh;
   overflow: hidden;
   position: relative;
@@ -19,7 +19,7 @@
 .stage {
   position: relative;
   width: 1920px;
-  height: 4356px;
+  height: 5260px;
   overflow: hidden;
   background: #181818;
   transform: scale(calc(100vw / 1920px));
@@ -209,7 +209,7 @@
   left: 501px;
   padding: 18px 0 0;
   position: absolute;
-  top: 4122px;
+  top: 4930px;
   width: 918px;
   z-index: 45;
 }
