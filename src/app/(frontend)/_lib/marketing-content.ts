@@ -18,6 +18,19 @@ export type FooterContent = {
   directionEyebrow: string
   directionText: string
   directionTitle: string
+  linkGroups?: FooterLinkGroup[] | null
+}
+
+export type FooterLink = {
+  href: string
+  label: string
+}
+
+export type FooterLinkGroup = {
+  ariaLabel?: null | string
+  helperText?: null | string
+  links?: FooterLink[] | null
+  title: string
 }
 
 export type MarketingCard = {
@@ -146,15 +159,53 @@ export type MarketingHomepageContent = {
   }[]
 }
 
+const footerAboutText =
+  'Thorns Tavern connects character generation, model management, digital delivery, and print orders into one product workflow so teams can operate 3D assets like a real business.'
+const footerDirectionTitle = 'Evolving from an AI generation tool into an operable product website'
+
 const footerContent: FooterContent = {
   aboutEyebrow: 'About the product',
-  aboutText:
-    'Thorns Tavern connects character generation, model management, digital delivery, and print orders into one product workflow so teams can operate 3D assets like a real business.',
+  aboutText: footerAboutText,
   aboutTitle: 'A unified platform for character creation, asset delivery, and print fulfillment',
   directionEyebrow: 'Product direction',
   directionText:
     'The current release already includes accounts, tasks, models, orders, credits, and an admin structure. The next step is to keep polishing the public site, Studio, and platform APIs.',
-  directionTitle: 'Evolving from an AI generation tool into an operable product website',
+  directionTitle: footerDirectionTitle,
+  linkGroups: getDefaultFooterLinkGroups('support@example.com'),
+}
+
+export function getFooterInformationLinks(): FooterLink[] {
+  return [
+    { href: '/about', label: 'About' },
+    { href: '/blog', label: 'Blog' },
+    { href: '/privacy-policy', label: 'Privacy Policy' },
+    { href: '/refund-policy', label: 'Refund Policy' },
+  ]
+}
+
+export function getFooterCustomerLinks(supportEmail: string): FooterLink[] {
+  return [
+    { href: '/contact', label: 'Contact' },
+    { href: '/shipping-policy', label: 'Shipping Policy' },
+    { href: `mailto:${supportEmail}`, label: supportEmail },
+  ]
+}
+
+export function getDefaultFooterLinkGroups(supportEmail: string): FooterLinkGroup[] {
+  return [
+    {
+      ariaLabel: 'Footer information',
+      helperText: footerDirectionTitle,
+      links: getFooterInformationLinks(),
+      title: 'Information',
+    },
+    {
+      ariaLabel: 'Footer customer help',
+      helperText: footerAboutText,
+      links: getFooterCustomerLinks(supportEmail),
+      title: 'Help customers',
+    },
+  ]
 }
 
 const siteSettings: MarketingSiteSettings = {
@@ -175,6 +226,7 @@ const siteSettings: MarketingSiteSettings = {
     { href: '/', label: 'HOME' },
     { href: '/workbench', label: 'WORKBENCH' },
     { href: '/pricing', label: 'PLANS' },
+    { href: '/blog', label: 'BLOG' },
     { href: '/about', label: 'ABOUT' },
   ],
   siteDescription: 'An AI 3D product platform for character creation, asset management, and print fulfillment.',

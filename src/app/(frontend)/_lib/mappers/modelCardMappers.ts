@@ -62,7 +62,7 @@ export function mapModelToPublicModelThumbnailCardVM(model: {
     commentsCount: demoComments[index],
     createdLabel: demoDates[index],
     formats: model.formats,
-    href: `/showcase/${model.id}`,
+    href: `/model-detail?id=${encodeURIComponent(String(model.id))}`,
     id: model.id,
     likesCount: demoLikes[index],
     summary: model.summary,

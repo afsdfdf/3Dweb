@@ -1,468 +1,466 @@
-# Thorns Tavern 项目使用说明书
+﻿# Thorns Tavern 椤圭洰浣跨敤璇存槑涔?
 
-版本：2026-05-07  
-项目路径：`D:\web\payload-local-demo`
+鐗堟湰锛?026-05-07  
+椤圭洰璺緞锛歚D:\web\payload-local-demo`
 
-## 1. 说明书用途
+## 1. 璇存槑涔︾敤閫?
 
-本文面向项目所有者、运营人员和开发人员，用来快速理解当前项目能做什么、每个页面在哪里、后台内容从哪里管理、常见功能怎么验证。
+鏈枃闈㈠悜椤圭洰鎵€鏈夎€呫€佽繍钀ヤ汉鍛樺拰寮€鍙戜汉鍛橈紝鐢ㄦ潵蹇€熺悊瑙ｅ綋鍓嶉」鐩兘鍋氫粈涔堛€佹瘡涓〉闈㈠湪鍝噷銆佸悗鍙板唴瀹逛粠鍝噷绠＄悊銆佸父瑙佸姛鑳芥€庝箞楠岃瘉銆?
 
-当前项目是一个基于 Next.js + Payload CMS + PostgreSQL/Supabase Storage 的 3D/AI 资产平台，主要包含：
+褰撳墠椤圭洰鏄竴涓熀浜?Next.js + Payload CMS + PostgreSQL/Supabase Storage 鐨?3D/AI 璧勪骇骞冲彴锛屼富瑕佸寘鍚細
 
-- 公开官网和营销页面。
-- 公开模型展示、模型包展示、模型详情和模型预览。
-- Workbench 工作台，用于 AI 图片生成、3D 模型生成、任务轮询和模型查看。
-- 账户中心，用于资料、头像、横幅、积分、订单、模型、任务和订阅信息。
-- Payload Admin 后台，用于管理用户、媒体、模型、模型包、首页内容、AI 设置、存储设置、计费和运营数据。
+- 鍏紑瀹樼綉鍜岃惀閿€椤甸潰銆?
+- 鍏紑妯″瀷灞曠ず銆佹ā鍨嬪寘灞曠ず銆佹ā鍨嬭鎯呭拰妯″瀷棰勮銆?
+- Workbench 宸ヤ綔鍙帮紝鐢ㄤ簬 AI 鍥剧墖鐢熸垚銆?D 妯″瀷鐢熸垚銆佷换鍔¤疆璇㈠拰妯″瀷鏌ョ湅銆?
+- 璐︽埛涓績锛岀敤浜庤祫鏂欍€佸ご鍍忋€佹í骞呫€佺Н鍒嗐€佽鍗曘€佹ā鍨嬨€佷换鍔″拰璁㈤槄淇℃伅銆?
+- Payload Admin 鍚庡彴锛岀敤浜庣鐞嗙敤鎴枫€佸獟浣撱€佹ā鍨嬨€佹ā鍨嬪寘銆侀椤靛唴瀹广€丄I 璁剧疆銆佸瓨鍌ㄨ缃€佽璐瑰拰杩愯惀鏁版嵁銆?
 
-## 2. 本地启动
+## 2. 鏈湴鍚姩
 
-项目根目录：
+椤圭洰鏍圭洰褰曪細
 
 ```bash
 cd D:\web\payload-local-demo
 ```
 
-推荐启动：
+鎺ㄨ崘鍚姩锛?
 
 ```bash
 pnpm dev
 ```
 
-如果当前终端找不到 `pnpm`，可以使用项目里的本地二进制命令进行验证，例如：
+濡傛灉褰撳墠缁堢鎵句笉鍒?`pnpm`锛屽彲浠ヤ娇鐢ㄩ」鐩噷鐨勬湰鍦颁簩杩涘埗鍛戒护杩涜楠岃瘉锛屼緥濡傦細
 
 ```bash
 D:\web\payload-local-demo\node_modules\.bin\tsc.CMD --noEmit
 ```
 
-常用地址：
+甯哥敤鍦板潃锛?
 
-| 功能 | 地址 |
+| 鍔熻兘 | 鍦板潃 |
 |---|---|
-| 公开网站首页 | `http://127.0.0.1:3000/` |
-| 本地页面导航 | `http://127.0.0.1:3000/test` |
-| Workbench 工作台 | `http://127.0.0.1:3000/workbench` |
-| 账户中心 | `http://127.0.0.1:3000/account` |
-| Payload 后台 | `http://127.0.0.1:3000/admin` |
-| 模型展示列表 | `http://127.0.0.1:3000/showcase` |
-| 模型包列表 | `http://127.0.0.1:3000/bundles` |
-| 价格页 | `http://127.0.0.1:3000/pricing` |
+| 鍏紑缃戠珯棣栭〉 | `http://127.0.0.1:3000/` |
+| 鏈湴椤甸潰瀵艰埅 | `http://127.0.0.1:3000/test` |
+| Workbench 宸ヤ綔鍙?| `http://127.0.0.1:3000/workbench` |
+| 璐︽埛涓績 | `http://127.0.0.1:3000/account` |
+| Payload 鍚庡彴 | `http://127.0.0.1:3000/admin` |
+| 妯″瀷灞曠ず鍒楄〃 | `http://127.0.0.1:3000/showcase` |
+| 妯″瀷鍖呭垪琛?| `http://127.0.0.1:3000/bundles` |
+| 浠锋牸椤?| `http://127.0.0.1:3000/pricing` |
 
-## 3. 用户角色
+## 3. 鐢ㄦ埛瑙掕壊
 
-| 角色 | 主要权限 |
+| 瑙掕壊 | 涓昏鏉冮檺 |
 |---|---|
-| 游客 | 浏览公开首页、营销页、公开模型、公开模型包；可以进入 Workbench 看界面，但不能提交生成任务。 |
-| customer | 登录后使用 Workbench 生成、查看自己的任务、模型、积分和账户资料。 |
-| operator | 可进入 Payload Admin 进行运营内容和部分平台数据管理。 |
-| admin | 可进入 Payload Admin 并拥有最高后台管理权限。 |
+| 娓稿 | 娴忚鍏紑棣栭〉銆佽惀閿€椤点€佸叕寮€妯″瀷銆佸叕寮€妯″瀷鍖咃紱鍙互杩涘叆 Workbench 鐪嬬晫闈紝浣嗕笉鑳芥彁浜ょ敓鎴愪换鍔°€?|
+| customer | 鐧诲綍鍚庝娇鐢?Workbench 鐢熸垚銆佹煡鐪嬭嚜宸辩殑浠诲姟銆佹ā鍨嬨€佺Н鍒嗗拰璐︽埛璧勬枡銆?|
+| operator | 鍙繘鍏?Payload Admin 杩涜杩愯惀鍐呭鍜岄儴鍒嗗钩鍙版暟鎹鐞嗐€?|
+| admin | 鍙繘鍏?Payload Admin 骞舵嫢鏈夋渶楂樺悗鍙扮鐞嗘潈闄愩€?|
 
-重要原则：
+閲嶈鍘熷垯锛?
 
-- 公开预览不等于后台权限。
-- Workbench 是“可匿名访问界面、登录后执行动作”的工作台。
-- 账户中心是正式个人中心，不再使用旧的 `/dashboard`、`/personal-center-test` 或 `/personal-center-legacy` 页面。
+- 鍏紑棰勮涓嶇瓑浜庡悗鍙版潈闄愩€?
+- Workbench 鏄€滃彲鍖垮悕璁块棶鐣岄潰銆佺櫥褰曞悗鎵ц鍔ㄤ綔鈥濈殑宸ヤ綔鍙般€?
+- 璐︽埛涓績鏄寮忎釜浜轰腑蹇冿紝涓嶅啀浣跨敤鏃х殑 `/dashboard`銆乣/personal-center-test` 鎴?`/personal-center-legacy` 椤甸潰銆?
 
-## 4. `/test` 本地导航页
+## 4. `/test` 鏈湴瀵艰埅椤?
 
-`/test` 现在是轻量页面导航，不再承担复杂 UI 预览或 API 调试。
+`/test` 鐜板湪鏄交閲忛〉闈㈠鑸紝涓嶅啀鎵挎媴澶嶆潅 UI 棰勮鎴?API 璋冭瘯銆?
 
-用途：
+鐢ㄩ€旓細
 
-- 查看当前项目有哪些正式页面、动态页面、本地页面和 Payload 页面。
-- 每个页面有一行简介，方便判断页面是否有用。
-- 开发环境可访问。
-- 生产环境会返回 `notFound()`，不会暴露为正式用户页面。
+- 鏌ョ湅褰撳墠椤圭洰鏈夊摢浜涙寮忛〉闈€佸姩鎬侀〉闈€佹湰鍦伴〉闈㈠拰 Payload 椤甸潰銆?
+- 姣忎釜椤甸潰鏈変竴琛岀畝浠嬶紝鏂逛究鍒ゆ柇椤甸潰鏄惁鏈夌敤銆?
+- 寮€鍙戠幆澧冨彲璁块棶銆?
+- 鐢熶骇鐜浼氳繑鍥?`notFound()`锛屼笉浼氭毚闇蹭负姝ｅ紡鐢ㄦ埛椤甸潰銆?
 
-如果要快速盘点页面，请先打开：
+濡傛灉瑕佸揩閫熺洏鐐归〉闈紝璇峰厛鎵撳紑锛?
 
 ```text
 http://127.0.0.1:3000/test
 ```
 
-## 5. 公开网站页面
+## 5. 鍏紑缃戠珯椤甸潰
 
-### 首页 `/`
+### 棣栭〉 `/`
 
-用途：
+鐢ㄩ€旓細
 
-- 展示品牌、精选模型、模型包、灵感网格和公开模型入口。
+- 灞曠ず鍝佺墝銆佺簿閫夋ā鍨嬨€佹ā鍨嬪寘銆佺伒鎰熺綉鏍煎拰鍏紑妯″瀷鍏ュ彛銆?
 
-主要数据来源：
+涓昏鏁版嵁鏉ユ簮锛?
 
 - `homepage-content`
 - `homepage-items`
-- 公开 `models`
-- 公开或预览用途的 `media`
-- 公开 `model-bundles`
+- 鍏紑 `models`
+- 鍏紑鎴栭瑙堢敤閫旂殑 `media`
+- 鍏紑 `model-bundles`
 
-运营方式：
+杩愯惀鏂瑰紡锛?
 
-- 后台进入 Payload Admin。
-- 管理 `Homepage Items` 来控制首页重复卡片、徽标、按钮、关联模型或模型包。
-- 管理 `Homepage Content` 来控制首页区块文案。
+- 鍚庡彴杩涘叆 Payload Admin銆?
+- 绠＄悊 `Homepage Items` 鏉ユ帶鍒堕椤甸噸澶嶅崱鐗囥€佸窘鏍囥€佹寜閽€佸叧鑱旀ā鍨嬫垨妯″瀷鍖呫€?
+- 绠＄悊 `Homepage Content` 鏉ユ帶鍒堕椤靛尯鍧楁枃妗堛€?
 
-### 功能页 `/features`
+### 鍔熻兘椤?`/features`
 
-用途：
+鐢ㄩ€旓細
 
-- 介绍生成、资产管理、模型预览和交付能力。
+- 浠嬬粛鐢熸垚銆佽祫浜х鐞嗐€佹ā鍨嬮瑙堝拰浜や粯鑳藉姏銆?
 
-当前状态：
+褰撳墠鐘舵€侊細
 
-- 正式公开营销页。
+- 姝ｅ紡鍏紑钀ラ攢椤点€?
 
-### 方案页 `/solutions`
+### 鏂规椤?`/solutions`
 
-用途：
+鐢ㄩ€旓細
 
-- 面向创作者、工作室和品牌方展示使用场景。
+- 闈㈠悜鍒涗綔鑰呫€佸伐浣滃鍜屽搧鐗屾柟灞曠ず浣跨敤鍦烘櫙銆?
 
-当前状态：
+褰撳墠鐘舵€侊細
 
-- 正式公开营销页。
+- 姝ｅ紡鍏紑钀ラ攢椤点€?
 
-### 资源页 `/resources`
+### 璧勬簮椤?`/resources`
 
-用途：
+鐢ㄩ€旓細
 
-- 说明资源、模型交付、资产使用方式和产品教育内容。
+- 璇存槑璧勬簮銆佹ā鍨嬩氦浠樸€佽祫浜т娇鐢ㄦ柟寮忓拰浜у搧鏁欒偛鍐呭銆?
 
-当前状态：
+褰撳墠鐘舵€侊細
 
-- 正式公开营销页。
+- 姝ｅ紡鍏紑钀ラ攢椤点€?
 
-### 开发者页 `/developers`
+### 寮€鍙戣€呴〉 `/developers`
 
-用途：
+鐢ㄩ€旓細
 
-- 展示平台边界、API 方向和开发者信息。
+- 灞曠ず骞冲彴杈圭晫銆丄PI 鏂瑰悜鍜屽紑鍙戣€呬俊鎭€?
 
-当前状态：
+褰撳墠鐘舵€侊細
 
-- 正式公开营销页。
+- 姝ｅ紡鍏紑钀ラ攢椤点€?
 
-### 关于页 `/about`
+### 鍏充簬椤?`/about`
 
-用途：
+鐢ㄩ€旓細
 
-- 展示产品背景和方向。
+- 灞曠ず浜у搧鑳屾櫙鍜屾柟鍚戙€?
 
-### 联系页 `/contact`
+### 鑱旂郴椤?`/contact`
 
-用途：
+鐢ㄩ€旓細
 
-- 提供联系和支持入口。
+- 鎻愪緵鑱旂郴鍜屾敮鎸佸叆鍙ｃ€?
 
-### 政策页面
+### 鏀跨瓥椤甸潰
 
-| 页面 | 地址 |
+| 椤甸潰 | 鍦板潃 |
 |---|---|
-| 隐私政策 | `/privacy-policy` |
-| 退款政策 | `/refund-policy` |
-| 运输政策 | `/shipping-policy` |
+| 闅愮鏀跨瓥 | `/privacy-policy` |
+| 閫€娆炬斂绛?| `/refund-policy` |
+| 杩愯緭鏀跨瓥 | `/shipping-policy` |
 
-## 6. 模型展示和模型详情
+## 6. 妯″瀷灞曠ず鍜屾ā鍨嬭鎯?
 
-### 模型展示列表 `/showcase`
+### 妯″瀷灞曠ず鍒楄〃 `/showcase`
 
-用途：
+鐢ㄩ€旓細
 
-- 展示公开模型列表。
+- 灞曠ず鍏紑妯″瀷鍒楄〃銆?
 
-数据来源：
+鏁版嵁鏉ユ簮锛?
 
 - `models`
 - `models.previewImage`
 - `media`
 
-本次审计修复：
+鏈瀹¤淇锛?
 
-- 当本地数据库读取超时或失败时，页面会显示空状态，不再直接变成公开 500 页面。
+- 褰撴湰鍦版暟鎹簱璇诲彇瓒呮椂鎴栧け璐ユ椂锛岄〉闈細鏄剧ず绌虹姸鎬侊紝涓嶅啀鐩存帴鍙樻垚鍏紑 500 椤甸潰銆?
 
-### 模型详情 `/model-detail?id=<modelId>`
+### 妯″瀷璇︽儏 `/model-detail?id=<modelId>`
 
-用途：
+鐢ㄩ€旓細
 
-- 打开某个公开模型的 3D 预览、作者信息和相关模型。
+- 鎵撳紑鏌愪釜鍏紑妯″瀷鐨?3D 棰勮銆佷綔鑰呬俊鎭拰鐩稿叧妯″瀷銆?
 
-关键规则：
+鍏抽敭瑙勫垯锛?
 
-- 模型预览通过 `/api/platform/models/:modelId/viewer?format=glb`。
-- 浏览器不应该直接拿到未授权的私有模型文件。
-- 作者头像或横幅只有在媒体是可公开访问时才显示。
+- 妯″瀷棰勮閫氳繃 `/api/platform/models/:modelId/viewer?format=glb`銆?
+- 娴忚鍣ㄤ笉搴旇鐩存帴鎷垮埌鏈巿鏉冪殑绉佹湁妯″瀷鏂囦欢銆?
+- 浣滆€呭ご鍍忔垨妯箙鍙湁鍦ㄥ獟浣撴槸鍙叕寮€璁块棶鏃舵墠鏄剧ず銆?
 
-当前需要你后续决策的大问题：
+褰撳墠闇€瑕佷綘鍚庣画鍐崇瓥鐨勫ぇ闂锛?
 
-- 缺少或错误的 `id` 目前仍可能进入静态演示回退。建议后续决定改成 `notFound()` 或跳回 `/showcase`。
+- 缂哄皯鎴栭敊璇殑 `id` 鐩墠浠嶅彲鑳借繘鍏ラ潤鎬佹紨绀哄洖閫€銆傚缓璁悗缁喅瀹氭敼鎴?`notFound()` 鎴栬烦鍥?`/showcase`銆?
 
-## 7. 模型包
+## 7. 妯″瀷鍖?
 
-### 模型包列表 `/bundles`
+### 妯″瀷鍖呭垪琛?`/bundles`
 
-用途：
+鐢ㄩ€旓細
 
-- 展示已发布、可见的模型包。
+- 灞曠ず宸插彂甯冦€佸彲瑙佺殑妯″瀷鍖呫€?
 
-数据来源：
+鏁版嵁鏉ユ簮锛?
 
 - `model-bundles`
-- 公开 `models`
-- 公开或预览用途的封面 `media`
+- 鍏紑 `models`
+- 鍏紑鎴栭瑙堢敤閫旂殑灏侀潰 `media`
 
-### 模型包详情 `/bundles/[slug]`
+### 妯″瀷鍖呰鎯?`/bundles/[slug]`
 
-用途：
+鐢ㄩ€旓細
 
-- 展示模型包标题、副标题、封面、摘要、标签、技术规格、许可、CTA、发布说明和包含的公开模型。
+- 灞曠ず妯″瀷鍖呮爣棰樸€佸壇鏍囬銆佸皝闈€佹憳瑕併€佹爣绛俱€佹妧鏈鏍笺€佽鍙€丆TA銆佸彂甯冭鏄庡拰鍖呭惈鐨勫叕寮€妯″瀷銆?
 
-重要规则：
+閲嶈瑙勫垯锛?
 
-- 只显示已发布且可见的模型包。
-- 只包含 `visibility = public` 的模型。
-- 模型包封面必须是游客可读媒体。
-- 当前阶段模型包价格/CTA 是展示字段，不代表已经完成购买、授权或权益发放。
+- 鍙樉绀哄凡鍙戝竷涓斿彲瑙佺殑妯″瀷鍖呫€?
+- 鍙寘鍚?`visibility = public` 鐨勬ā鍨嬨€?
+- 妯″瀷鍖呭皝闈㈠繀椤绘槸娓稿鍙濯掍綋銆?
+- 褰撳墠闃舵妯″瀷鍖呬环鏍?CTA 鏄睍绀哄瓧娈碉紝涓嶄唬琛ㄥ凡缁忓畬鎴愯喘涔般€佹巿鏉冩垨鏉冪泭鍙戞斁銆?
 
-## 8. Workbench 工作台
+## 8. Workbench 宸ヤ綔鍙?
 
-### 入口 `/workbench`
+### 鍏ュ彛 `/workbench`
 
-用途：
+鐢ㄩ€旓細
 
-- AI 图片生成。
-- 3D 模型生成。
-- 上传参考图。
-- 查看当前用户模型库。
-- 轮询生成任务状态。
+- AI 鍥剧墖鐢熸垚銆?
+- 3D 妯″瀷鐢熸垚銆?
+- 涓婁紶鍙傝€冨浘銆?
+- 鏌ョ湅褰撳墠鐢ㄦ埛妯″瀷搴撱€?
+- 杞鐢熸垚浠诲姟鐘舵€併€?
 
-游客行为：
+娓稿琛屼负锛?
 
-- 游客可以打开 Workbench 页面。
-- 点击真正生成动作时需要登录。
+- 娓稿鍙互鎵撳紑 Workbench 椤甸潰銆?
+- 鐐瑰嚮鐪熸鐢熸垚鍔ㄤ綔鏃堕渶瑕佺櫥褰曘€?
 
-登录用户行为：
+鐧诲綍鐢ㄦ埛琛屼负锛?
 
-- 可以提交图片生成或 3D 生成任务。
-- 可以查看自己的模型和图片资产。
-- 可以继续未完成的后台任务。
+- 鍙互鎻愪氦鍥剧墖鐢熸垚鎴?3D 鐢熸垚浠诲姟銆?
+- 鍙互鏌ョ湅鑷繁鐨勬ā鍨嬪拰鍥剧墖璧勪骇銆?
+- 鍙互缁х画鏈畬鎴愮殑鍚庡彴浠诲姟銆?
 
-### 3D 生成
+### 3D 鐢熸垚
 
-典型流程：
+鍏稿瀷娴佺▼锛?
 
-1. 用户输入提示词或选择参考图片。
-2. 前端提交到 `/api/studio/ai/tasks`。
-3. 后端检查积分。
-4. 创建 `generation-tasks`。
-5. 调用 Meshy/Tripo 等后端配置的 3D provider。
-6. 前端轮询 `/api/studio/ai/tasks/:taskId/sync`。
-7. 成功后生成 `models` 和 `models_formats`，并通过 viewer endpoint 预览。
+1. 鐢ㄦ埛杈撳叆鎻愮ず璇嶆垨閫夋嫨鍙傝€冨浘鐗囥€?
+2. 鍓嶇鎻愪氦鍒?`/api/studio/ai/tasks`銆?
+3. 鍚庣妫€鏌ョН鍒嗐€?
+4. 鍒涘缓 `generation-tasks`銆?
+5. 璋冪敤 Meshy/Tripo 绛夊悗绔厤缃殑 3D provider銆?
+6. 鍓嶇杞 `/api/studio/ai/tasks/:taskId/sync`銆?
+7. 鎴愬姛鍚庣敓鎴?`models` 鍜?`models_formats`锛屽苟閫氳繃 viewer endpoint 棰勮銆?
 
-注意：
+娉ㄦ剰锛?
 
-- 默认生成价格当前按后台配置执行，历史默认值是 20 credits。
-- 积分不足应该返回 `402`，不应创建无效任务。
-- 任务失败时应显示 `failureReason`，不能让用户看到静默的 100% pending 状态。
+- 榛樿鐢熸垚浠锋牸褰撳墠鎸夊悗鍙伴厤缃墽琛岋紝鍘嗗彶榛樿鍊兼槸 20 credits銆?
+- 绉垎涓嶈冻搴旇杩斿洖 `402`锛屼笉搴斿垱寤烘棤鏁堜换鍔°€?
+- 浠诲姟澶辫触鏃跺簲鏄剧ず `failureReason`锛屼笉鑳借鐢ㄦ埛鐪嬪埌闈欓粯鐨?100% pending 鐘舵€併€?
 
-### 图片生成
+### 鍥剧墖鐢熸垚
 
-典型流程：
+鍏稿瀷娴佺▼锛?
 
-1. 用户输入提示词，可选一张参考图。
-2. 前端提交到 `/api/studio/ai/images`。
-3. 后端创建 `taskType = image-generation` 的任务。
-4. 后台 provider 执行生成。
-5. 前端轮询图片 sync endpoint。
-6. 成功后生成私有 `media` 图片资产。
+1. 鐢ㄦ埛杈撳叆鎻愮ず璇嶏紝鍙€変竴寮犲弬鑰冨浘銆?
+2. 鍓嶇鎻愪氦鍒?`/api/studio/ai/images`銆?
+3. 鍚庣鍒涘缓 `taskType = image-generation` 鐨勪换鍔°€?
+4. 鍚庡彴 provider 鎵ц鐢熸垚銆?
+5. 鍓嶇杞鍥剧墖 sync endpoint銆?
+6. 鎴愬姛鍚庣敓鎴愮鏈?`media` 鍥剧墖璧勪骇銆?
 
-注意：
+娉ㄦ剰锛?
 
-- 图片生成和 3D 模型生成是两种不同任务。
-- 图片生成结果是私有资产，不自动变成公开模型。
-- 图片生成最多使用一张参考图；多图是 3D 生成场景。
+- 鍥剧墖鐢熸垚鍜?3D 妯″瀷鐢熸垚鏄袱绉嶄笉鍚屼换鍔°€?
+- 鍥剧墖鐢熸垚缁撴灉鏄鏈夎祫浜э紝涓嶈嚜鍔ㄥ彉鎴愬叕寮€妯″瀷銆?
+- 鍥剧墖鐢熸垚鏈€澶氫娇鐢ㄤ竴寮犲弬鑰冨浘锛涘鍥炬槸 3D 鐢熸垚鍦烘櫙銆?
 
-### 历史记录 `/workbench/history`
+### 鍘嗗彶璁板綍 `/workbench/history`
 
-用途：
+鐢ㄩ€旓細
 
-- 登录用户查看自己的 Workbench 任务历史。
+- 鐧诲綍鐢ㄦ埛鏌ョ湅鑷繁鐨?Workbench 浠诲姟鍘嗗彶銆?
 
-当前状态：
+褰撳墠鐘舵€侊細
 
-- 受保护页面。
+- 鍙椾繚鎶ら〉闈€?
 
-### Workbench 模型详情 `/workbench/models/[id]`
+### Workbench model detail compatibility route `/workbench/models/[id]`
 
-用途：
+Status:
 
-- 从账户或 Workbench 模型库打开用户自己的模型详情。
+- This route now redirects to `/model-detail?id=<id>`.
+- Account and Workbench history model detail links should target `/model-detail?id=<id>` directly.
+- Do not rebuild a separate Workbench-owned detail UI unless a future product requirement clearly differs from the canonical model detail page.
 
-当前需要后续处理：
+## 9. 缁撴灉椤?`/results/[taskCode]`
 
-- 页面里仍有部分静态/演示内容，需要单独做正式化。
+鐢ㄩ€旓細
 
-## 9. 结果页 `/results/[taskCode]`
+- 鏍规嵁浠诲姟浠ｇ爜灞曠ず鐢熸垚缁撴灉銆?
 
-用途：
+鏈瀹¤淇锛?
 
-- 根据任务代码展示生成结果。
+- 杩涘害鏉￠檺鍒跺湪 0 鍒?100锛岄伩鍏嶆孩鍑恒€?
+- 涓嬭浇鎸夐挳鏍规嵁鐪熷疄瀛樺湪鐨勬ā鍨嬫牸寮忔覆鏌擄紝涓嶅啀鍥哄畾鍋囪涓€绉嶆牸寮忋€?
 
-本次审计修复：
+## 10. 鐧诲綍銆佹敞鍐屽拰瀵嗙爜鎭㈠
 
-- 进度条限制在 0 到 100，避免溢出。
-- 下载按钮根据真实存在的模型格式渲染，不再固定假设一种格式。
+### 鐧诲綍 `/login`
 
-## 10. 登录、注册和密码恢复
+鐢ㄩ€旓細
 
-### 登录 `/login`
+- 杩涘叆鍏变韩鐧诲綍鍗＄墖鎴栫櫥褰曞脊绐楁祦绋嬨€?
 
-用途：
+### 娉ㄥ唽 `/register`
 
-- 进入共享登录卡片或登录弹窗流程。
+鐢ㄩ€旓細
 
-### 注册 `/register`
+- 杩涘叆鍏变韩娉ㄥ唽娴佺▼銆?
 
-用途：
+褰撳墠娉ㄥ唽鏀寔锛?
 
-- 进入共享注册流程。
+- 閭楠岃瘉鐮佹ā寮忋€?
+- 閭閾炬帴楠岃瘉鍏煎妯″紡銆?
 
-当前注册支持：
+### 蹇樿瀵嗙爜 `/forgot-password`
 
-- 邮箱验证码模式。
-- 邮箱链接验证兼容模式。
+鐢ㄩ€旓細
 
-### 忘记密码 `/forgot-password`
+- 鍙戣捣瀵嗙爜鎭㈠閭欢娴佺▼銆?
 
-用途：
+### 閲嶇疆瀵嗙爜 `/reset-password`
 
-- 发起密码恢复邮件流程。
+鐢ㄩ€旓細
 
-### 重置密码 `/reset-password`
+- 閫氳繃鍏变韩 `AuthFlowCard` 鐨?reset 妯″紡鎻愪氦鏂板瘑鐮併€?
 
-用途：
+閲嶈瑙勫垯锛?
 
-- 通过共享 `AuthFlowCard` 的 reset 模式提交新密码。
+- 褰撳墠閲嶇疆瀵嗙爜鎻愪氦鍒?`/api/account/auth/reset-password`銆?
+- 涓嶇洿鎺ヤ娇鐢?Payload 鍘熷 `/api/users/reset-password` 浣滀负鍓嶇姝ｅ紡鍏ュ彛銆?
 
-重要规则：
+## 11. 璐︽埛涓績 `/account`
 
-- 当前重置密码提交到 `/api/account/auth/reset-password`。
-- 不直接使用 Payload 原始 `/api/users/reset-password` 作为前端正式入口。
+鐢ㄩ€旓細
 
-## 11. 账户中心 `/account`
+- 姝ｅ紡涓汉涓績銆?
+- 鐧诲綍鍚庤闂€?
 
-用途：
+鍖呭惈鍔熻兘锛?
 
-- 正式个人中心。
-- 登录后访问。
+- 鏌ョ湅鍜岀紪杈戝熀纭€璧勬枡銆?
+- 鏌ョ湅澶村儚鍜屼釜浜烘í骞呫€?
+- 涓婁紶澶村儚鍜?profile banner銆?
+- 淇敼瀵嗙爜銆?
+- 鏌ョ湅绉垎浣欓鍜屼氦鏄撹褰曘€?
+- 鏌ョ湅浠诲姟銆佹ā鍨嬨€佽鍗曘€佽闃呭拰璐﹀崟鐩稿叧淇℃伅銆?
 
-包含功能：
+鍚庣鏉ユ簮锛?
 
-- 查看和编辑基础资料。
-- 查看头像和个人横幅。
-- 上传头像和 profile banner。
-- 修改密码。
-- 查看积分余额和交易记录。
-- 查看任务、模型、订单、订阅和账单相关信息。
+- 褰撳墠鐢ㄦ埛璇诲彇璧?server-side helper銆?
+- 璧勬枡鎺ュ彛锛歚/api/account/profile`銆?
+- 瀵嗙爜鎺ュ彛锛歚/api/account/password`銆?
+- 涓婁紶鍏ュ彛锛歚/api/account/profile-media/upload-url`銆?
+- 涓婁紶瀹屾垚锛歚/api/account/profile-media/complete`銆?
 
-后端来源：
+澶村儚鍜屾í骞呬笂浼犳祦绋嬶細
 
-- 当前用户读取走 server-side helper。
-- 资料接口：`/api/account/profile`。
-- 密码接口：`/api/account/password`。
-- 上传入口：`/api/account/profile-media/upload-url`。
-- 上传完成：`/api/account/profile-media/complete`。
+1. 鍓嶇璇锋眰 signed upload URL銆?
+2. 娴忚鍣ㄦ妸鏂囦欢涓婁紶鍒?Supabase Storage銆?
+3. 鍓嶇璋冪敤 complete 鎺ュ彛銆?
+4. 鍚庣纭 owner/path 鍚庢洿鏂?`media`銆?
+5. 鍓嶇璋冪敤 profile 鎺ュ彛鎶婂ご鍍忔垨妯箙鍏宠仈鍒扮敤鎴枫€?
 
-头像和横幅上传流程：
+閲嶈瑙勫垯锛?
 
-1. 前端请求 signed upload URL。
-2. 浏览器把文件上传到 Supabase Storage。
-3. 前端调用 complete 接口。
-4. 后端确认 owner/path 后更新 `media`。
-5. 前端调用 profile 接口把头像或横幅关联到用户。
+- 涓嶈鍏堝垱寤?Payload 鏈湴涓婁紶鏂囦欢璁板綍鍐嶄笂浼犲璞★紱褰撳墠 runtime 鏄?Supabase Storage銆?
+- 鍏紑灞曠ず澶村儚/妯箙鏃讹紝蹇呴』纭濯掍綋鏄父瀹㈠彲璇荤殑銆?
 
-重要规则：
+## 12. Payload Admin 鍚庡彴
 
-- 不要先创建 Payload 本地上传文件记录再上传对象；当前 runtime 是 Supabase Storage。
-- 公开展示头像/横幅时，必须确认媒体是游客可读的。
-
-## 12. Payload Admin 后台
-
-地址：
+鍦板潃锛?
 
 ```text
 http://127.0.0.1:3000/admin
 ```
 
-需要角色：
+闇€瑕佽鑹诧細
 
 - `admin`
 - `operator`
 
-主要管理区域：
+涓昏绠＄悊鍖哄煙锛?
 
-| 后台区域 | 用途 |
+| 鍚庡彴鍖哄煙 | 鐢ㄩ€?|
 |---|---|
-| Users | 用户、角色、资料、积分镜像、社交计数。 |
-| Media | 图片、模型文件、预览图、文档和资产。 |
-| Models | 公开/私有 3D 模型记录、预览图、格式文件、标签和计数。 |
-| Model Bundles | 模型包、封面、CTA、规格、发布说明和包含模型。 |
-| Homepage Items | 首页重复卡片、徽标、按钮、关联模型/模型包。 |
-| Homepage Content | 首页区块级内容。 |
-| Generation Tasks | AI 生成任务状态、provider 状态、结果模型。 |
-| Task Events | 生成任务时间线和操作日志。 |
-| Credits / Credit Transactions | 积分账户和积分流水。 |
-| Credit Products | 可购买积分包。 |
-| Billing Subscriptions | 订阅状态。 |
-| Addresses / Print Orders | 地址和打印订单。 |
-| Site Settings | 站点设置、访问策略、邮箱配置等。 |
-| AI Provider Settings | Meshy、Gemini、OpenAI-compatible 等 provider 设置。 |
-| Storage Settings | Supabase Storage 相关运行设置。 |
-| Security Settings | 注册验证、安全策略。 |
-| Runtime Deployment Settings | 运行环境展示和部署检查。 |
+| Users | 鐢ㄦ埛銆佽鑹层€佽祫鏂欍€佺Н鍒嗛暅鍍忋€佺ぞ浜よ鏁般€?|
+| Media | 鍥剧墖銆佹ā鍨嬫枃浠躲€侀瑙堝浘銆佹枃妗ｅ拰璧勪骇銆?|
+| Models | 鍏紑/绉佹湁 3D 妯″瀷璁板綍銆侀瑙堝浘銆佹牸寮忔枃浠躲€佹爣绛惧拰璁℃暟銆?|
+| Model Bundles | 妯″瀷鍖呫€佸皝闈€丆TA銆佽鏍笺€佸彂甯冭鏄庡拰鍖呭惈妯″瀷銆?|
+| Homepage Items | 棣栭〉閲嶅鍗＄墖銆佸窘鏍囥€佹寜閽€佸叧鑱旀ā鍨?妯″瀷鍖呫€?|
+| Homepage Content | 棣栭〉鍖哄潡绾у唴瀹广€?|
+| Generation Tasks | AI 鐢熸垚浠诲姟鐘舵€併€乸rovider 鐘舵€併€佺粨鏋滄ā鍨嬨€?|
+| Task Events | 鐢熸垚浠诲姟鏃堕棿绾垮拰鎿嶄綔鏃ュ織銆?|
+| Credits / Credit Transactions | 绉垎璐︽埛鍜岀Н鍒嗘祦姘淬€?|
+| Credit Products | 鍙喘涔扮Н鍒嗗寘銆?|
+| Billing Subscriptions | 璁㈤槄鐘舵€併€?|
+| Addresses / Print Orders | 鍦板潃鍜屾墦鍗拌鍗曘€?|
+| Site Settings | 绔欑偣璁剧疆銆佽闂瓥鐣ャ€侀偖绠遍厤缃瓑銆?|
+| AI Provider Settings | Meshy銆丟emini銆丱penAI-compatible 绛?provider 璁剧疆銆?|
+| Storage Settings | Supabase Storage 鐩稿叧杩愯璁剧疆銆?|
+| Security Settings | 娉ㄥ唽楠岃瘉銆佸畨鍏ㄧ瓥鐣ャ€?|
+| Runtime Deployment Settings | 杩愯鐜灞曠ず鍜岄儴缃叉鏌ャ€?|
 
-## 13. API 边界
+## 13. API 杈圭晫
 
-项目自定义 API 应优先使用以下命名空间：
+椤圭洰鑷畾涔?API 搴斾紭鍏堜娇鐢ㄤ互涓嬪懡鍚嶇┖闂达細
 
-| 命名空间 | 用途 |
+| 鍛藉悕绌洪棿 | 鐢ㄩ€?|
 |---|---|
-| `/api/studio/...` | Workbench、AI 生成、任务同步。 |
-| `/api/platform/...` | 模型预览、下载、平台级公开能力。 |
-| `/api/account/...` | 当前用户资料、认证、账户数据。 |
-| `/api/billing/...` | 积分购买、订阅和结账。 |
-| `/api/commerce/...` | 订单和商务流程。 |
-| `/api/social/...` | 评论、点赞、收藏、关注、浏览等社交行为。 |
+| `/api/studio/...` | Workbench銆丄I 鐢熸垚銆佷换鍔″悓姝ャ€?|
+| `/api/platform/...` | 妯″瀷棰勮銆佷笅杞姐€佸钩鍙扮骇鍏紑鑳藉姏銆?|
+| `/api/account/...` | 褰撳墠鐢ㄦ埛璧勬枡銆佽璇併€佽处鎴锋暟鎹€?|
+| `/api/billing/...` | 绉垎璐拱銆佽闃呭拰缁撹处銆?|
+| `/api/commerce/...` | 璁㈠崟鍜屽晢鍔℃祦绋嬨€?|
+| `/api/social/...` | 璇勮銆佺偣璧炪€佹敹钘忋€佸叧娉ㄣ€佹祻瑙堢瓑绀句氦琛屼负銆?|
 
-不要新增自定义 Next route 到 `/api/<collection-slug>`，因为这些路径属于 Payload REST。
+涓嶈鏂板鑷畾涔?Next route 鍒?`/api/<collection-slug>`锛屽洜涓鸿繖浜涜矾寰勫睘浜?Payload REST銆?
 
-## 14. 媒体和存储规则
+## 14. 濯掍綋鍜屽瓨鍌ㄨ鍒?
 
-当前 runtime 方向：
+褰撳墠 runtime 鏂瑰悜锛?
 
-- PostgreSQL 数据库。
-- Supabase Storage 媒体和模型文件。
-- 不恢复 AWS S3 runtime media。
-- 不恢复 SQLite runtime fallback。
+- PostgreSQL 鏁版嵁搴撱€?
+- Supabase Storage 濯掍綋鍜屾ā鍨嬫枃浠躲€?
+- 涓嶆仮澶?AWS S3 runtime media銆?
+- 涓嶆仮澶?SQLite runtime fallback銆?
 
-游客可读媒体条件：
+娓稿鍙濯掍綋鏉′欢锛?
 
 - `purpose = preview`
-- 或 `publicAccess = true`
+- 鎴?`publicAccess = true`
 
-私有生成资产：
+绉佹湁鐢熸垚璧勪骇锛?
 
-- 通常为 `purpose = asset` 或 `purpose = model`。
-- 不应该直接暴露给游客。
+- 閫氬父涓?`purpose = asset` 鎴?`purpose = model`銆?
+- 涓嶅簲璇ョ洿鎺ユ毚闇茬粰娓稿銆?
 
-## 15. 积分、下载和计费
+## 15. 绉垎銆佷笅杞藉拰璁¤垂
 
-当前产品决策：
+褰撳墠浜у搧鍐崇瓥锛?
 
-- 当前导入的公开模型预览和下载不需要扣积分。
-- 未来预览积分和下载积分应该由后台设置分别控制。
-- 下载如果启用扣费，必须在后端执行，失败时要自动退款。
+- 褰撳墠瀵煎叆鐨勫叕寮€妯″瀷棰勮鍜屼笅杞戒笉闇€瑕佹墸绉垎銆?
+- 鏈潵棰勮绉垎鍜屼笅杞界Н鍒嗗簲璇ョ敱鍚庡彴璁剧疆鍒嗗埆鎺у埗銆?
+- 涓嬭浇濡傛灉鍚敤鎵ｈ垂锛屽繀椤诲湪鍚庣鎵ц锛屽け璐ユ椂瑕佽嚜鍔ㄩ€€娆俱€?
 
-主要数据：
+涓昏鏁版嵁锛?
 
 - `credits`
 - `credit-transactions`
@@ -470,115 +468,114 @@ http://127.0.0.1:3000/admin
 - `billing-subscriptions`
 - `shopify-payments`
 
-主要注意事项：
+涓昏娉ㄦ剰浜嬮」锛?
 
-- 所有积分变动要走 ledger 服务。
-- Stripe webhook 必须保持签名验证和幂等处理。
-- 不要在前端决定是否扣积分。
+- 鎵€鏈夌Н鍒嗗彉鍔ㄨ璧?ledger 鏈嶅姟銆?
+- Stripe webhook 蹇呴』淇濇寔绛惧悕楠岃瘉鍜屽箓绛夊鐞嗐€?
+- 涓嶈鍦ㄥ墠绔喅瀹氭槸鍚︽墸绉垎銆?
 
-## 16. 常用验证命令
+## 16. 甯哥敤楠岃瘉鍛戒护
 
-源码语言检查：
+婧愮爜璇█妫€鏌ワ細
 
 ```bash
 node scripts/audit-source-language.mjs
 ```
 
-TypeScript：
+TypeScript锛?
 
 ```bash
 D:\web\payload-local-demo\node_modules\.bin\tsc.CMD --noEmit
 ```
 
-单元测试：
+鍗曞厓娴嬭瘯锛?
 
 ```bash
 node scripts/run-unit-tests.mjs
 ```
 
-Smoke test：
+Smoke test锛?
 
 ```bash
 node scripts/smoke-test.mjs
 ```
 
-Payload 类型生成：
+Payload 绫诲瀷鐢熸垚锛?
 
 ```bash
 D:\web\payload-local-demo\node_modules\.bin\payload.CMD generate:types
 ```
 
-Payload 数据库 schema 快照：
+Payload 鏁版嵁搴?schema 蹇収锛?
 
 ```bash
 D:\web\payload-local-demo\node_modules\.bin\payload.CMD generate:db-schema
 ```
 
-Payload admin import map：
+Payload admin import map锛?
 
 ```bash
 D:\web\payload-local-demo\node_modules\.bin\payload.CMD generate:importmap
 ```
 
-什么时候必须运行生成命令：
+浠€涔堟椂鍊欏繀椤昏繍琛岀敓鎴愬懡浠わ細
 
-- 修改 collection/global/schema 后运行 `generate:types` 和 `generate:db-schema`。
-- 修改 Payload admin component path 后运行 `generate:importmap`。
-- 修改权限、hook、endpoint 后至少运行 TypeScript 和相关测试。
+- 淇敼 collection/global/schema 鍚庤繍琛?`generate:types` 鍜?`generate:db-schema`銆?
+- 淇敼 Payload admin component path 鍚庤繍琛?`generate:importmap`銆?
+- 淇敼鏉冮檺銆乭ook銆乪ndpoint 鍚庤嚦灏戣繍琛?TypeScript 鍜岀浉鍏虫祴璇曘€?
 
-## 17. 本次审计已修复的小问题
+## 17. 鏈瀹¤宸蹭慨澶嶇殑灏忛棶棰?
 
-2026-05-07 审计中已经完成：
+2026-05-07 瀹¤涓凡缁忓畬鎴愶細
 
-- `/test` 改成轻量页面导航。
-- `/api/locale` 限制 redirect 只能跳回站内相对路径，避免开放重定向。
-- 前端 layout 去掉外层 `<main>`，避免嵌套 main landmark。
-- `/results/[taskCode]` 的进度条限制在 0 到 100。
-- 结果页下载按钮根据真实格式渲染。
-- `/pricing` 和 `/showcase` 在本地数据库读取失败时显示空状态，避免公开 500。
-- 修正 `INFOMATION` 拼写为 `Information`。
-- 清理已确认无用的旧 `GenerateForm` 和 `personal-center-legacy` 文件。
+- `/test` 鏀规垚杞婚噺椤甸潰瀵艰埅銆?
+- `/api/locale` 闄愬埗 redirect 鍙兘璺冲洖绔欏唴鐩稿璺緞锛岄伩鍏嶅紑鏀鹃噸瀹氬悜銆?
+- 鍓嶇 layout 鍘绘帀澶栧眰 `<main>`锛岄伩鍏嶅祵濂?main landmark銆?
+- `/results/[taskCode]` 鐨勮繘搴︽潯闄愬埗鍦?0 鍒?100銆?
+- 缁撴灉椤典笅杞芥寜閽牴鎹湡瀹炴牸寮忔覆鏌撱€?
+- `/pricing` 鍜?`/showcase` 鍦ㄦ湰鍦版暟鎹簱璇诲彇澶辫触鏃舵樉绀虹┖鐘舵€侊紝閬垮厤鍏紑 500銆?
+- 淇 `INFOMATION` 鎷煎啓涓?`Information`銆?
+- 娓呯悊宸茬‘璁ゆ棤鐢ㄧ殑鏃?`GenerateForm` 鍜?`personal-center-legacy` 鏂囦欢銆?
 
-## 18. 当前不要直接删除的内容
+## 18. 褰撳墠涓嶈鐩存帴鍒犻櫎鐨勫唴瀹?
 
-以下内容暂时保留：
+浠ヤ笅鍐呭鏆傛椂淇濈暀锛?
 
-- AI 记忆文档。
-- `media/**` 本地媒体目录，需要先和数据库/media URL 交叉核对。
-- `.env*`、Vercel local env、备份环境文件，需要所有者确认。
-- `public/home-test-assets/**`、`public/ui-lab/**`、`public/ui/**`，其中仍有正式页面或 UI-lab 派生页面使用的资产。
-- 历史 migrations、生成 schema 和测试文件。
+- AI 璁板繂鏂囨。銆?
+- `media/**` 鏈湴濯掍綋鐩綍锛岄渶瑕佸厛鍜屾暟鎹簱/media URL 浜ゅ弶鏍稿銆?
+- `.env*`銆乂ercel local env銆佸浠界幆澧冩枃浠讹紝闇€瑕佹墍鏈夎€呯‘璁ゃ€?
+- `public/home-test-assets/**`銆乣public/ui-lab/**`銆乣public/ui/**`锛屽叾涓粛鏈夋寮忛〉闈㈡垨 UI-lab 娲剧敓椤甸潰浣跨敤鐨勮祫浜с€?
+- 鍘嗗彶 migrations銆佺敓鎴?schema 鍜屾祴璇曟枃浠躲€?
 
-## 19. 需要你后续讨论的大问题
+## 19. 闇€瑕佷綘鍚庣画璁ㄨ鐨勫ぇ闂
 
-以下是审计发现的 P1 级问题，不建议在没有产品/权限方案确认前直接修：
+浠ヤ笅鏄璁″彂鐜扮殑 P1 绾ч棶棰橈紝涓嶅缓璁湪娌℃湁浜у搧/鏉冮檺鏂规纭鍓嶇洿鎺ヤ慨锛?
 
-1. Payload REST 直接创建记录时，部分 owner/user 字段可能被客户端提交，需要设计“创建时强制绑定当前用户”的方案。
-2. `Media.owner/purpose/publicAccess`、评论/点赞/收藏/任务事件/地址等身份字段需要复核直接 REST 写入边界。
-3. `/model-detail` 对缺失或错误 `id` 的静态演示回退需要产品决策。
-4. `/workbench/models/[id]` 仍有静态/演示内容，需要单独正式化。
+1. Payload REST 鐩存帴鍒涘缓璁板綍鏃讹紝閮ㄥ垎 owner/user 瀛楁鍙兘琚鎴风鎻愪氦锛岄渶瑕佽璁♀€滃垱寤烘椂寮哄埗缁戝畾褰撳墠鐢ㄦ埛鈥濈殑鏂规銆?
+2. `Media.owner/purpose/publicAccess`銆佽瘎璁?鐐硅禐/鏀惰棌/浠诲姟浜嬩欢/鍦板潃绛夎韩浠藉瓧娈甸渶瑕佸鏍哥洿鎺?REST 鍐欏叆杈圭晫銆?
+3. `/model-detail` 瀵圭己澶辨垨閿欒 `id` 鐨勯潤鎬佹紨绀哄洖閫€闇€瑕佷骇鍝佸喅绛栥€?
 
-建议处理方式：
+寤鸿澶勭悊鏂瑰紡锛?
 
-- 先确认权限产品规则。
-- 再添加 create-specific access 或 beforeChange hook。
-- 再添加直接 REST 安全回归测试。
-- 最后运行完整验证。
+- 鍏堢‘璁ゆ潈闄愪骇鍝佽鍒欍€?
+- 鍐嶆坊鍔?create-specific access 鎴?beforeChange hook銆?
+- 鍐嶆坊鍔犵洿鎺?REST 瀹夊叏鍥炲綊娴嬭瘯銆?
+- 鏈€鍚庤繍琛屽畬鏁撮獙璇併€?
 
-## 20. 日常操作建议
+## 20. 鏃ュ父鎿嶄綔寤鸿
 
-运营内容：
+杩愯惀鍐呭锛?
 
-- 首页、模型包、公开模型、媒体、价格展示和部分平台设置优先在 Payload Admin 管理。
+- 棣栭〉銆佹ā鍨嬪寘銆佸叕寮€妯″瀷銆佸獟浣撱€佷环鏍煎睍绀哄拰閮ㄥ垎骞冲彴璁剧疆浼樺厛鍦?Payload Admin 绠＄悊銆?
 
-开发调试：
+寮€鍙戣皟璇曪細
 
-- 先看 `/test` 页面盘点所有路由。
-- 再用具体页面和 API 验证业务流程。
+- 鍏堢湅 `/test` 椤甸潰鐩樼偣鎵€鏈夎矾鐢便€?
+- 鍐嶇敤鍏蜂綋椤甸潰鍜?API 楠岃瘉涓氬姟娴佺▼銆?
 
-发布前：
+鍙戝竷鍓嶏細
 
-- 运行源码语言检查、TypeScript、单元测试和 smoke test。
-- 如果改过 Payload schema，生成 types 和 db schema。
-- 检查公开页面不要依赖私有媒体。
-- 检查 Workbench 生成和账户功能必须登录后才能执行。
+- 杩愯婧愮爜璇█妫€鏌ャ€乀ypeScript銆佸崟鍏冩祴璇曞拰 smoke test銆?
+- 濡傛灉鏀硅繃 Payload schema锛岀敓鎴?types 鍜?db schema銆?
+- 妫€鏌ュ叕寮€椤甸潰涓嶈渚濊禆绉佹湁濯掍綋銆?
+- 妫€鏌?Workbench 鐢熸垚鍜岃处鎴峰姛鑳藉繀椤荤櫥褰曞悗鎵嶈兘鎵ц銆?

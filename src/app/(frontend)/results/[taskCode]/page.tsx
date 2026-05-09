@@ -1,24 +1,18 @@
 import Link from 'next/link'
-
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
-import { buildModelViewerURL, getModelGLBSourceURL } from '@/lib/modelAssetURL'
+import { ArrowRight, CheckCircle2, Clock3, Download, ExternalLink, PackageCheck, TriangleAlert } from 'lucide-react'
 
 import { CreatePrintOrderButton } from '../../_components/CreatePrintOrderButton'
-import { ModelViewer } from '../../_components/ModelViewer'
 import { ResultStatus } from '../../_components/ResultStatus'
 import { SiteShell } from '../../_components/SiteShell'
 import { getTaskByCode } from '../../_lib/payload-data'
 import { getCurrentUser } from '../../_lib/session'
 import { formatDateTime, formatModelStatus, formatTaskGenerationType, formatTaskStatus } from '../../_lib/ui-text'
+import styles from './page.module.css'
 
-const viewerModes = ['Perspective', 'Lighting', 'Wireframe', 'Print preview']
 const deliveryNotes = [
-  'Completed models are added to the asset library automatically.',
-  'You can continue from here into downloads and delivery files.',
-  'If you need a physical sample, move directly into the print-order flow.',
+  'Workbench remains the primary place to inspect and continue generation results.',
+  'Completed models are added to the account model library automatically.',
+  'Downloads and print checkout stay available here as compatibility actions.',
 ]
 
 function formatModelFormatList(formats: unknown[]) {
@@ -30,7 +24,7 @@ function formatModelFormatList(formats: unknown[]) {
     })
     .filter(Boolean)
 
-  return labels.length > 0 ? labels.join(' / ') : 'GLB / STL'
+  return labels.length > 0 ? labels.join(' / ') : 'Pending'
 }
 
 function getModelDownloadFormats(formats: unknown[]) {
@@ -45,246 +39,234 @@ function getModelDownloadFormats(formats: unknown[]) {
   return Array.from(new Set(downloadFormats))
 }
 
-function getTaskBadgeVariant(status?: string | null) {
-  if (status === 'succeeded') return 'secondary' as const
-  if (status === 'failed' || status === 'timeout') return 'destructive' as const
-  return 'outline' as const
-}
-
-function getPrimaryModelURL(
-  task: Awaited<ReturnType<typeof getTaskByCode>>,
-  model: NonNullable<ReturnType<typeof getModelFromTask>>,
-) {
-  if (!getModelGLBSourceURL({ model, task })) {
-    return null
-  }
-
-  return buildModelViewerURL({ modelId: model.id })
-}
-
 function getModelFromTask(task: Awaited<ReturnType<typeof getTaskByCode>>) {
   return task && typeof task.resultModel === 'object' ? task.resultModel : null
+}
+
+function getProgressValue(value: unknown) {
+  const rawProgress = Number(value ?? 0)
+  return Number.isFinite(rawProgress) ? Math.min(100, Math.max(0, rawProgress)) : 0
+}
+
+function getStatusTone(status?: null | string) {
+  if (status === 'succeeded') return 'success'
+  if (status === 'failed' || status === 'timeout') return 'danger'
+  return 'working'
+}
+
+function getStatusIcon(status?: null | string) {
+  if (status === 'succeeded') return CheckCircle2
+  if (status === 'failed' || status === 'timeout') return TriangleAlert
+  return Clock3
+}
+
+function ResultNotFound({ taskCode }: { taskCode: string }) {
+  return (
+    <section className={styles.receiptPage}>
+      <div className={styles.shell}>
+        <article className={styles.notFoundPanel}>
+          <span className={styles.eyebrow}>Result</span>
+          <h1>Result not found</h1>
+          <p>
+            The task code <strong>{taskCode}</strong> was not found for the current account. Confirm the link or sign in with
+            the account that owns this generation task.
+          </p>
+          <div className={styles.actionRow}>
+            <Link className={`${styles.actionButton} ${styles.primaryAction}`} href="/workbench">
+              Back to Workbench
+              <ArrowRight aria-hidden="true" size={18} />
+            </Link>
+            <Link className={styles.actionButton} href="/account?section=tasks">
+              Open task history
+              <ArrowRight aria-hidden="true" size={18} />
+            </Link>
+          </div>
+        </article>
+      </div>
+    </section>
+  )
+}
+
+function ResultReceipt({ task }: { task: NonNullable<Awaited<ReturnType<typeof getTaskByCode>>> }) {
+  const model = getModelFromTask(task)
+  const modelFormats = Array.isArray(model?.formats) ? model.formats : []
+  const modelFormatLabel = formatModelFormatList(modelFormats)
+  const downloadFormats = getModelDownloadFormats(modelFormats)
+  const progressValue = getProgressValue(task.progress)
+  const progressWidth = Math.max(8, progressValue)
+  const statusTone = getStatusTone(task.status)
+  const StatusIcon = getStatusIcon(task.status)
+  const publicDetailHref = model && model.visibility === 'public' ? `/model-detail?id=${encodeURIComponent(String(model.id))}` : null
+  const workbenchHref = model ? `/workbench?model=${encodeURIComponent(String(model.id))}` : '/workbench'
+
+  return (
+    <section className={styles.receiptPage}>
+      <div className={styles.shell}>
+        <section className={styles.heroPanel}>
+          <div className={styles.heroCopy}>
+            <span className={styles.eyebrow}>Generation Receipt</span>
+            <h1>{task.status === 'succeeded' ? 'Your result is ready.' : 'Generation task status.'}</h1>
+            <p>{task.prompt || 'No prompt was recorded for this task.'}</p>
+            <div className={styles.metaPills}>
+              <span>{task.taskCode}</span>
+              <span>{formatTaskGenerationType({ inputMode: task.inputMode, taskType: task.taskType })}</span>
+              <span>{modelFormatLabel}</span>
+            </div>
+          </div>
+
+          <div className={`${styles.statusCard} ${styles[statusTone]}`}>
+            <StatusIcon aria-hidden="true" size={28} />
+            <div>
+              <span>Status</span>
+              <strong>{formatTaskStatus(task.status)}</strong>
+            </div>
+            <ResultStatus taskId={task.id} taskStatus={String(task.status || '')} />
+          </div>
+        </section>
+
+        <section className={styles.mainGrid}>
+          <article className={styles.progressPanel}>
+            <div className={styles.panelHeader}>
+              <span className={styles.sectionEyebrow}>Task Progress</span>
+              <strong>{Math.round(progressValue)}%</strong>
+            </div>
+            <div className={styles.progressTrack}>
+              <div className={styles.progressFill} style={{ width: `${progressWidth}%` }} />
+            </div>
+            <div className={styles.statusSummary}>
+              <div>
+                <span>Task code</span>
+                <strong>{task.taskCode}</strong>
+              </div>
+              <div>
+                <span>Provider</span>
+                <strong>{task.provider}</strong>
+              </div>
+              <div>
+                <span>Credits reserved</span>
+                <strong>{task.creditsReserved ?? 0}</strong>
+              </div>
+              <div>
+                <span>Updated</span>
+                <strong>{formatDateTime(task.updatedAt)}</strong>
+              </div>
+            </div>
+            {task.failureReason ? (
+              <div className={styles.failureBox}>
+                <TriangleAlert aria-hidden="true" size={18} />
+                <span>Failure reason: {task.failureReason}</span>
+              </div>
+            ) : null}
+          </article>
+
+          <aside className={styles.nextPanel}>
+            <span className={styles.sectionEyebrow}>Next Step</span>
+            <h2>{model ? model.title || 'Result model' : 'Continue in Workbench'}</h2>
+            <p>
+              {model
+                ? 'Open the result in Workbench for the full model preview, editing context, and production workflow.'
+                : 'Keep tracking this task in Workbench. The result actions will become available after the model is finalized.'}
+            </p>
+            <div className={styles.actionStack}>
+              <Link className={`${styles.actionButton} ${styles.primaryAction}`} href={workbenchHref}>
+                Open in Workbench
+                <ArrowRight aria-hidden="true" size={18} />
+              </Link>
+              <Link className={styles.actionButton} href="/account?section=tasks">
+                Open task history
+                <ExternalLink aria-hidden="true" size={18} />
+              </Link>
+              {publicDetailHref ? (
+                <Link className={styles.actionButton} href={publicDetailHref}>
+                  View public detail
+                  <ExternalLink aria-hidden="true" size={18} />
+                </Link>
+              ) : null}
+            </div>
+          </aside>
+        </section>
+
+        <section className={styles.detailGrid}>
+          <article className={styles.infoPanel}>
+            <div className={styles.panelHeader}>
+              <span className={styles.sectionEyebrow}>Result Snapshot</span>
+              <PackageCheck aria-hidden="true" size={22} />
+            </div>
+            <div className={styles.infoGrid}>
+              <div>
+                <span>Model name</span>
+                <strong>{model?.title || 'Waiting for generation'}</strong>
+              </div>
+              <div>
+                <span>Model status</span>
+                <strong>{model ? formatModelStatus(model.status) : 'Waiting for generation'}</strong>
+              </div>
+              <div>
+                <span>Available formats</span>
+                <strong>{modelFormatLabel}</strong>
+              </div>
+              <div>
+                <span>Print readiness</span>
+                <strong>{model?.printReady ? 'Ready for print' : 'Needs review'}</strong>
+              </div>
+              <div>
+                <span>Created</span>
+                <strong>{formatDateTime(task.createdAt)}</strong>
+              </div>
+              <div>
+                <span>Flow</span>
+                <strong>Workbench to Library to Delivery</strong>
+              </div>
+            </div>
+          </article>
+
+          <article className={styles.deliveryPanel}>
+            <div className={styles.panelHeader}>
+              <span className={styles.sectionEyebrow}>Delivery Actions</span>
+              <Download aria-hidden="true" size={22} />
+            </div>
+            {model ? (
+              <div className={styles.downloadList}>
+                {downloadFormats.length > 0 ? (
+                  downloadFormats.map((format) => (
+                    <a
+                      className={styles.downloadButton}
+                      href={`/api/platform/models/${model.id}/download?format=${encodeURIComponent(format)}`}
+                      key={format}
+                    >
+                      Download {format.toUpperCase()}
+                    </a>
+                  ))
+                ) : (
+                  <p>No downloadable format is available yet.</p>
+                )}
+                <div className={styles.printAction}>
+                  <CreatePrintOrderButton modelId={Number(model.id)} sourceTaskId={Number(task.id)} variant="secondary" />
+                </div>
+              </div>
+            ) : (
+              <ul className={styles.noteList}>
+                {deliveryNotes.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            )}
+          </article>
+        </section>
+      </div>
+    </section>
+  )
 }
 
 export default async function ResultDetailPage({ params }: { params: Promise<{ taskCode: string }> }) {
   const { taskCode } = await params
   const user = await getCurrentUser()
   const task = await getTaskByCode(taskCode)
-
-  if (!task) {
-    return (
-      <SiteShell user={user}>
-        <section className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
-          <Card className="border-border/60 bg-card/80 shadow-sm">
-            <CardHeader>
-              <CardTitle>Result not found</CardTitle>
-              <CardDescription>
-                Confirm the task code or sign in with the account that owns this task.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        </section>
-      </SiteShell>
-    )
-  }
-
-  const model = getModelFromTask(task)
-  const modelFormats = Array.isArray(model?.formats) ? model.formats : []
-  const modelFormatLabel = formatModelFormatList(modelFormats)
-  const downloadFormats = getModelDownloadFormats(modelFormats)
-  const primaryModelURL = model ? getPrimaryModelURL(task, model) : null
-  const rawProgress = Number(task.progress ?? 0)
-  const progressValue = Number.isFinite(rawProgress) ? Math.min(100, Math.max(0, rawProgress)) : 0
-  const progressWidth = Math.max(12, progressValue)
+  const content = task ? <ResultReceipt task={task} /> : <ResultNotFound taskCode={taskCode} />
 
   return (
-    <SiteShell user={user}>
-      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-3xl">
-            <Badge variant="secondary">Result</Badge>
-            <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">{task.taskCode}</h1>
-            <p className="mt-4 text-base leading-7 text-muted-foreground sm:text-lg">
-              {task.prompt || 'No prompt was recorded for this task.'}
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <ResultStatus taskId={task.id} taskStatus={task.status} />
-            <Badge variant={getTaskBadgeVariant(task.status)}>Progress {Math.round(progressValue)}%</Badge>
-          </div>
-        </div>
-
-        <Separator className="my-8" />
-
-        <section className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
-          <div className="grid gap-6">
-            <Card className="overflow-hidden border-border/60 bg-card/80 shadow-sm">
-              <CardHeader className="gap-4">
-                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Result preview</p>
-                    <CardTitle className="mt-2 text-2xl tracking-tight">{model?.title || 'Result model'}</CardTitle>
-                  </div>
-                  <Badge variant="outline">
-                    {modelFormatLabel}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-4">
-                <div className="relative min-h-[460px] overflow-hidden rounded-2xl border border-border/60 bg-black">
-                  <ModelViewer accent="violet" className="h-full w-full" label={model?.title || 'Result model'} src={primaryModelURL} />
-                  <div className="pointer-events-none absolute left-4 top-4 rounded-full bg-background/85 px-3 py-1 text-xs text-foreground shadow-sm">
-                    Result preview
-                  </div>
-                  <div className="pointer-events-none absolute right-4 top-4 rounded-full bg-background/85 px-3 py-1 text-xs text-foreground shadow-sm">
-                    {modelFormatLabel}
-                  </div>
-                  <div className="pointer-events-none absolute inset-x-4 bottom-4 flex flex-wrap gap-2">
-                    {viewerModes.map((mode) => (
-                      <Badge key={mode} variant="outline">
-                        {mode}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Task progress</span>
-                    <span className="font-medium">{Math.round(progressValue)}%</span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-muted">
-                    <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${progressWidth}%` }} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border/60 bg-card/80 shadow-sm">
-              <CardHeader>
-                <Badge variant="outline">Task details</Badge>
-                <CardTitle className="mt-3 text-2xl tracking-tight">
-                  {task.status === 'succeeded' ? model?.title || 'Result model' : 'Generation in progress'}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Input mode</p>
-                  <p className="mt-2 text-sm font-medium">
-                    {formatTaskGenerationType({ inputMode: task.inputMode, taskType: task.taskType })}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Provider</p>
-                  <p className="mt-2 text-sm font-medium">{task.provider}</p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Credits reserved</p>
-                  <p className="mt-2 text-sm font-medium">{task.creditsReserved ?? 0}</p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Task status</p>
-                  <p className="mt-2 text-sm font-medium">{formatTaskStatus(task.status)}</p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Created</p>
-                  <p className="mt-2 text-sm font-medium">{formatDateTime(task.createdAt)}</p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Updated</p>
-                  <p className="mt-2 text-sm font-medium">{formatDateTime(task.updatedAt)}</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid gap-6">
-            <Card className="border-border/60 bg-card/80 shadow-sm">
-              <CardHeader>
-                <Badge variant="secondary">Next step</Badge>
-                <CardTitle className="mt-3 text-2xl tracking-tight">Continue with this result</CardTitle>
-                <CardDescription>
-                  Use this page to review status now, then continue the asset into the library and print-order workflow.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-3">
-                {model ? (
-                  <>
-                    {downloadFormats.map((format, index) => (
-                      <Button asChild key={format} variant={index === 0 ? 'default' : 'outline'}>
-                        <a href={`/api/platform/models/${model.id}/download?format=${encodeURIComponent(format)}`}>
-                          Download {format.toUpperCase()} file
-                        </a>
-                      </Button>
-                    ))}
-                    <CreatePrintOrderButton modelId={Number(model.id)} sourceTaskId={Number(task.id)} variant="secondary" />
-                    <Button asChild variant="ghost">
-                      <Link href="/account?section=models">Open model library</Link>
-                    </Button>
-                  </>
-                ) : (
-                  <ul className="grid gap-3 text-sm leading-6 text-muted-foreground">
-                    <li>The task is still running, so keep this page open while processing continues.</li>
-                    <li>The system will poll and refresh status automatically.</li>
-                    <li>Once generation completes, download and ordering actions will appear here.</li>
-                  </ul>
-                )}
-                {task.failureReason ? <p className="text-sm text-destructive">Failure reason: {task.failureReason}</p> : null}
-              </CardContent>
-            </Card>
-
-            <Card className="border-border/60 bg-card/80 shadow-sm">
-              <CardHeader>
-                <Badge variant="outline">Delivery summary</Badge>
-                <CardTitle className="mt-3 text-2xl tracking-tight">Result snapshot</CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Available formats</p>
-                  <p className="mt-2 text-sm font-medium">
-                    {modelFormatLabel}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Print readiness</p>
-                  <p className="mt-2 text-sm font-medium">{model?.printReady ? 'Ready for print' : 'Needs review'}</p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Task code</p>
-                  <p className="mt-2 text-sm font-medium">{task.taskCode}</p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Model name</p>
-                  <p className="mt-2 text-sm font-medium">{model?.title || 'Waiting for generation'}</p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Model status</p>
-                  <p className="mt-2 text-sm font-medium">{model ? formatModelStatus(model.status) : 'Waiting for generation'}</p>
-                </div>
-                <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Flow</p>
-                  <p className="mt-2 text-sm font-medium">{'Result -> Model library -> Order'}</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border/60 bg-card/80 shadow-sm">
-              <CardHeader>
-                <Badge variant="secondary">Delivery notes</Badge>
-                <CardTitle className="mt-3 text-2xl tracking-tight">Suggested next actions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="grid gap-3 text-sm leading-6 text-muted-foreground">
-                  {deliveryNotes.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
-      </section>
+    <SiteShell currentPath="/workbench" mobileChildren={content} showFooter={false} user={user}>
+      {content}
     </SiteShell>
   )
 }

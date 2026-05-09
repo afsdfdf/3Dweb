@@ -1,6 +1,6 @@
 import { getCachedPayload } from '@/lib/getCachedPayload'
 import type { FooterContent } from './marketing-content'
-import { getDefaultHomepageContent, getDefaultSiteSettings } from './marketing-content'
+import { getDefaultFooterLinkGroups, getDefaultHomepageContent, getDefaultSiteSettings } from './marketing-content'
 import { getCurrentLocale } from './locale-server'
 
 const pickArray = <T,>(value: null | T[] | undefined, fallback: T[]) => {
@@ -46,6 +46,10 @@ export async function getMarketingSiteData() {
         fallbackLocale: 'en' as never,
       }),
     ])
+
+    const supportEmail = siteSettings?.supportEmail || defaultSiteSettings.supportEmail
+    const footer = mergeNullableObject<FooterContent>(defaultSiteSettings.footer, siteSettings?.footer)
+    const footerLinkGroups = pickArray(footer.linkGroups, getDefaultFooterLinkGroups(supportEmail))
 
     return {
       homepageContent: {
@@ -101,7 +105,10 @@ export async function getMarketingSiteData() {
         ...defaultSiteSettings,
         ...siteSettings,
         creditPackages: pickArray(siteSettings?.creditPackages, defaultSiteSettings.creditPackages),
-        footer: mergeNullableObject<FooterContent>(defaultSiteSettings.footer, siteSettings?.footer),
+        footer: {
+          ...footer,
+          linkGroups: footerLinkGroups,
+        },
         generationPricing: {
           ...defaultSiteSettings.generationPricing,
           ...siteSettings?.generationPricing,

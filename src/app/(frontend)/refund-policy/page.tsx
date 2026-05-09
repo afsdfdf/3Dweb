@@ -1,6 +1,6 @@
 import { FormalInfoPage } from '../_components/FormalInfoPage'
-import { formalPages } from '../_lib/formal-pages'
+import { getFormalPageContent } from '../_lib/formal-page-content'
 
-export default function RefundPolicyPage() {
-  return <FormalInfoPage page={formalPages.refundPolicy} />
+export default async function RefundPolicyPage() {
+  return <FormalInfoPage page={await getFormalPageContent('refundPolicy')} />
 }

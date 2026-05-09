@@ -756,3 +756,61 @@ test('model download does not spend credits when download charging is disabled b
     __setModelDownloadEndpointTestHooks(null)
   }
 })
+
+test('model download allows anonymous public downloads when charging is disabled by policy', async () => {
+  let findByIDCalls = 0
+  let spendCalls = 0
+
+  __setModelDownloadEndpointTestHooks({
+    getMediaAccessURL: async ({ url }) => url,
+    isAllowedRemoteAssetURL: async () => true,
+    resolvePublicModelFormatAsset: async (modelId, format) => {
+      assert.equal(modelId, 45)
+      assert.equal(format, 'glb')
+
+      return {
+        filename: 'monk.glb',
+        mimeType: 'model/gltf-binary',
+        url: 'https://cdn.example.com/public/monk.glb',
+      }
+    },
+    spendDownloadCredits: async () => {
+      spendCalls += 1
+      return {
+        account: {},
+        applied: true,
+      }
+    },
+  })
+
+  try {
+    const response = await modelDownloadEndpoint.handler({
+      payload: {
+        findByID: async () => {
+          findByIDCalls += 1
+          throw new Error('anonymous public fast path should not use access-controlled model reads')
+        },
+        findGlobal: async () => ({
+          modelAccessPolicy: {
+            chargeDownloadCredits: false,
+            downloadCredits: 8,
+          },
+        }),
+        logger: createLogger(),
+      },
+      query: {
+        format: 'glb',
+      },
+      routeParams: {
+        modelId: '45',
+      },
+    } as never)
+
+    assert.equal(response.status, 307)
+    assert.equal(response.headers.get('location'), 'https://cdn.example.com/public/monk.glb')
+    assert.equal(findByIDCalls, 0)
+    assert.equal(spendCalls, 0)
+  } finally {
+    __setModelDownloadEndpointTestHooks(null)
+  }
+})

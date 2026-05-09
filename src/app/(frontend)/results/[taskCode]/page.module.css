@@ -1,0 +1,415 @@
+.receiptPage {
+  background:
+    radial-gradient(circle at 18% 10%, rgba(244, 189, 96, 0.12), transparent 28%),
+    radial-gradient(circle at 84% 18%, rgba(93, 93, 98, 0.18), transparent 30%),
+    linear-gradient(180deg, #181818 0%, #0b0b0b 58%, #050505 100%);
+  color: #ededee;
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
+.shell {
+  box-sizing: border-box;
+  margin: 0 auto;
+  max-width: 1480px;
+  padding: 32px 28px 48px;
+  width: 100%;
+}
+
+.heroPanel,
+.progressPanel,
+.nextPanel,
+.infoPanel,
+.deliveryPanel,
+.notFoundPanel {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.014)),
+    rgba(10, 10, 10, 0.92);
+  border: 1px solid rgba(244, 189, 96, 0.2);
+  box-shadow:
+    0 28px 58px rgba(0, 0, 0, 0.34),
+    0 0 0 1px rgba(255, 244, 219, 0.035),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.heroPanel {
+  align-items: stretch;
+  display: grid;
+  gap: 22px;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  min-height: 250px;
+  padding: 28px;
+}
+
+.heroCopy {
+  align-self: center;
+  min-width: 0;
+}
+
+.eyebrow,
+.sectionEyebrow {
+  color: #f4bd60;
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.eyebrow {
+  align-items: center;
+  background: rgba(244, 189, 96, 0.12);
+  border: 1px solid rgba(244, 189, 96, 0.25);
+  color: #f7dba7;
+  display: inline-flex;
+  height: 28px;
+  line-height: 1;
+  padding: 0 13px;
+}
+
+.heroCopy h1,
+.notFoundPanel h1 {
+  color: #fff4db;
+  font-size: 46px;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1.05;
+  margin: 18px 0 0;
+  max-width: 860px;
+}
+
+.heroCopy p,
+.notFoundPanel p,
+.nextPanel p,
+.downloadList p,
+.noteList {
+  color: rgba(237, 237, 238, 0.68);
+  font-size: 15px;
+  line-height: 1.62;
+}
+
+.heroCopy p {
+  margin: 14px 0 0;
+  max-width: 820px;
+}
+
+.metaPills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.metaPills span {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: rgba(237, 237, 238, 0.82);
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 700;
+  height: 26px;
+  line-height: 1;
+  padding: 0 10px;
+}
+
+.statusCard {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: grid;
+  gap: 14px;
+  grid-template-columns: auto 1fr;
+  padding: 22px;
+}
+
+.statusCard svg {
+  color: #f4bd60;
+}
+
+.statusCard span {
+  color: rgba(237, 237, 238, 0.56);
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.statusCard strong {
+  color: #fff4db;
+  display: block;
+  font-size: 24px;
+  line-height: 1.15;
+  margin-top: 5px;
+}
+
+.statusCard > :last-child {
+  grid-column: 1 / -1;
+  width: fit-content;
+}
+
+.success {
+  border-color: rgba(79, 209, 132, 0.34);
+}
+
+.danger {
+  border-color: rgba(255, 106, 106, 0.38);
+}
+
+.working {
+  border-color: rgba(244, 189, 96, 0.28);
+}
+
+.mainGrid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) 400px;
+  margin-top: 22px;
+}
+
+.progressPanel,
+.nextPanel,
+.infoPanel,
+.deliveryPanel,
+.notFoundPanel {
+  padding: 24px;
+}
+
+.panelHeader {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.panelHeader strong {
+  color: #fff4db;
+  font-size: 28px;
+  line-height: 1;
+}
+
+.panelHeader svg {
+  color: #f4bd60;
+}
+
+.progressTrack {
+  background: rgba(255, 255, 255, 0.07);
+  height: 12px;
+  margin-top: 22px;
+  overflow: hidden;
+}
+
+.progressFill {
+  background: linear-gradient(90deg, #f4bd60, #fff4db);
+  height: 100%;
+  transition: width 180ms ease;
+}
+
+.statusSummary,
+.infoGrid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 22px;
+}
+
+.infoGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.statusSummary div,
+.infoGrid div {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  min-width: 0;
+  padding: 14px;
+}
+
+.statusSummary span,
+.infoGrid span {
+  color: rgba(237, 237, 238, 0.52);
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.statusSummary strong,
+.infoGrid strong {
+  color: #fff4db;
+  display: block;
+  font-size: 14px;
+  line-height: 1.35;
+  margin-top: 7px;
+  overflow-wrap: anywhere;
+}
+
+.failureBox {
+  align-items: flex-start;
+  background: rgba(255, 106, 106, 0.08);
+  border: 1px solid rgba(255, 106, 106, 0.28);
+  color: #ffd0d0;
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 14px;
+}
+
+.failureBox svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.nextPanel h2 {
+  color: #fff4db;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1.12;
+  margin: 12px 0 0;
+}
+
+.nextPanel p {
+  margin: 12px 0 0;
+}
+
+.actionRow,
+.actionStack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.actionStack {
+  flex-direction: column;
+}
+
+.actionButton,
+.downloadButton {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.54);
+  border: 1px solid rgba(244, 189, 96, 0.46);
+  color: #f6dfb5;
+  display: inline-flex;
+  font-size: 14px;
+  font-weight: 800;
+  gap: 10px;
+  min-height: 52px;
+  justify-content: center;
+  line-height: 1.2;
+  padding: 0 18px;
+  text-align: center;
+  text-decoration: none;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease,
+    transform 140ms ease;
+}
+
+.primaryAction {
+  background: #f4bd60;
+  border-color: #f4bd60;
+  color: #050505;
+}
+
+.actionButton:hover,
+.downloadButton:hover {
+  background: #fff4db;
+  border-color: #fff4db;
+  color: #050505;
+  transform: translateY(-1px);
+}
+
+.detailGrid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) 400px;
+  margin-top: 20px;
+}
+
+.downloadList {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.downloadButton {
+  width: 100%;
+}
+
+.printAction {
+  margin-top: 4px;
+}
+
+.noteList {
+  display: grid;
+  gap: 10px;
+  margin: 18px 0 0;
+  padding-left: 20px;
+}
+
+.notFoundPanel {
+  margin: 80px auto 0;
+  max-width: 760px;
+}
+
+.notFoundPanel p {
+  margin: 14px 0 0;
+}
+
+.notFoundPanel strong {
+  color: #f7dba7;
+}
+
+@media (max-width: 1180px) {
+  .heroPanel,
+  .mainGrid,
+  .detailGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .statusSummary,
+  .infoGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .shell {
+    padding: 22px 18px 36px;
+  }
+
+  .heroPanel,
+  .progressPanel,
+  .nextPanel,
+  .infoPanel,
+  .deliveryPanel,
+  .notFoundPanel {
+    padding: 18px;
+  }
+
+  .heroCopy h1,
+  .notFoundPanel h1 {
+    font-size: 34px;
+  }
+
+  .statusSummary,
+  .infoGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .actionRow,
+  .actionStack {
+    align-items: stretch;
+  }
+
+  .actionButton {
+    width: 100%;
+  }
+}

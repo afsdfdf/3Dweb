@@ -13,7 +13,7 @@ import { ManageSubscriptionButton } from './ManageSubscriptionButton'
 import { PricingLoginButton } from './PricingLoginButton'
 import { SubscribePlanButton } from './SubscribePlanButton'
 import { SubscriptionStatusSync } from './SubscriptionStatusSync'
-import type { FooterContent } from '../_lib/marketing-content'
+import type { FooterContent, MarketingPageContent, MarketingSection } from '../_lib/marketing-content'
 import { formatDateTime, formatSubscriptionStatus } from '../_lib/ui-text'
 
 type CurrentUser = {
@@ -43,6 +43,7 @@ type SubscriptionPageProps = {
   footerContent: FooterContent
   isCreditTopupCancelled: boolean
   isCancelled: boolean
+  pageContent: MarketingPageContent
   paymentProviderNotice?: string | null
   shouldSyncCreditTopup: boolean
   shouldSync: boolean
@@ -151,18 +152,60 @@ function FreePlanSummary() {
   )
 }
 
-function SupportPanel({ eyebrow, title, body }: { body: string; eyebrow: string; title: string }) {
+function SupportPanel({
+  body,
+  eyebrow,
+  section,
+  title,
+}: {
+  body: string
+  eyebrow: string
+  section?: MarketingSection
+  title: string
+}) {
   return (
     <div className="min-h-[180px] border-y border-[#403f46] bg-[#1c1c20]/72 px-6 py-7 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
       <p className="text-xs uppercase tracking-[0.24em] text-[#8f7a4a]">{eyebrow}</p>
       <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[#f1e2bc]">{title}</h2>
       <p className="mt-3 text-sm leading-6 text-[#a7a9b0]">{body}</p>
+      {section?.cards?.length ? (
+        <div className="mt-5 grid gap-3">
+          {section.cards.map((card) => (
+            <div className="rounded-[8px] border border-[#403f46] bg-[#18181b] p-4" key={card.title}>
+              <div className="flex flex-wrap items-center gap-2">
+                <strong className="text-sm font-semibold text-[#f1e2bc]">{card.title}</strong>
+                {card.note ? <span className="text-xs font-semibold uppercase tracking-[0.12em] text-[#d6ad61]">{card.note}</span> : null}
+              </div>
+              <p className="mt-2 text-sm leading-6 text-[#9b9da5]">{card.text}</p>
+            </div>
+          ))}
+        </div>
+      ) : null}
+      {section?.bullets?.length ? (
+        <ul className="mt-5 grid gap-2 text-sm leading-6 text-[#9b9da5]">
+          {section.bullets.map((bullet) => (
+            <li className="border-l border-[#8d5c25] pl-3" key={bullet}>
+              {bullet}
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   )
 }
 
 export function SubscriptionMobilePage(props: SubscriptionPageProps) {
-  const { activeSubscription, creditTopupProducts, footerContent, siteDescription, stripeCreditTopupsEnabled, subscriptionPlans, supportEmail, user } = props
+  const {
+    activeSubscription,
+    creditTopupProducts,
+    footerContent,
+    pageContent,
+    siteDescription,
+    stripeCreditTopupsEnabled,
+    subscriptionPlans,
+    supportEmail,
+    user,
+  } = props
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#181818_0%,#222225_44%,#181818_100%)] text-[#ededee]">
@@ -177,12 +220,10 @@ export function SubscriptionMobilePage(props: SubscriptionPageProps) {
         <BorderComboFrame1 className="bg-[linear-gradient(135deg,#101011,#252327)]" style={{ pointerEvents: 'auto' }}>
           <div className="flex flex-col gap-4 p-1">
             <Badge className="w-fit border-[#8d5c25] bg-[#24211c] text-[#f1d99c]" variant="outline">
-              Subscription
+              {pageContent.heroEyebrow}
             </Badge>
-            <h1 className="text-3xl font-semibold leading-tight tracking-tight text-[#f5ead0]">Compare monthly and yearly credits for creation workflows.</h1>
-            <p className="text-sm leading-6 text-[#b9bac0]">
-              Plans are loaded from backend site settings, while checkout and portal actions keep the existing billing endpoints.
-            </p>
+            <h1 className="text-3xl font-semibold leading-tight tracking-tight text-[#f5ead0]">{pageContent.heroTitle}</h1>
+            <p className="text-sm leading-6 text-[#b9bac0]">{pageContent.heroText}</p>
           </div>
         </BorderComboFrame1>
 
@@ -240,6 +281,14 @@ export function SubscriptionMobilePage(props: SubscriptionPageProps) {
             ))}
           </section>
         ) : null}
+
+        {pageContent.sections.length > 0 ? (
+          <section className="grid gap-4">
+            {pageContent.sections.slice(0, 2).map((section) => (
+              <SupportPanel body={section.text} eyebrow={section.eyebrow} key={section.id} section={section} title={section.title} />
+            ))}
+          </section>
+        ) : null}
       </main>
 
       <FooterBar footerContent={footerContent} siteDescription={siteDescription} supportEmail={supportEmail} />
@@ -261,12 +310,14 @@ export function SubscriptionPage(props: SubscriptionPageProps) {
     stripeCreditTopupsEnabled,
     stripeSubscriptionsEnabled,
     subscriptionPlans,
+    pageContent,
     supportEmail,
     syncSessionId,
     user,
   } = props
 
   const currentPlan = activeSubscription?.planKey || 'No active plan'
+  const supportSections = pageContent.sections.slice(0, 2)
 
   return (
     <>
@@ -280,14 +331,12 @@ export function SubscriptionPage(props: SubscriptionPageProps) {
               <div className="grid min-h-[152px] items-center gap-6 p-1 lg:grid-cols-[minmax(0,1fr)_420px]">
                 <div className="flex flex-col justify-center gap-4">
                   <Badge className="w-fit border-[#8d5c25] bg-[#24211c] text-[#f1d99c]" variant="outline">
-                    Subscription
+                    {pageContent.heroEyebrow}
                   </Badge>
                   <h1 className="max-w-5xl text-4xl font-semibold leading-tight tracking-tight text-[#f5ead0]">
-                    Monthly and yearly plan comparison for AI 3D creation credits.
+                    {pageContent.heroTitle}
                   </h1>
-                  <p className="max-w-4xl text-base leading-7 text-[#b9bac0]">
-                    Choose a backend-managed plan, compare payment cadence, and keep checkout, success sync, and billing portal behavior on the existing subscription endpoints.
-                  </p>
+                  <p className="max-w-4xl text-base leading-7 text-[#b9bac0]">{pageContent.heroText}</p>
                 </div>
                 <div className="grid gap-3 border-l border-[#403f46] pl-6">
                   <Badge className="w-fit border-[#5c4a35] text-[#d8d0bf]" variant="outline">
@@ -403,17 +452,11 @@ export function SubscriptionPage(props: SubscriptionPageProps) {
 
         <section className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6">
           <div className="grid gap-4 lg:grid-cols-2">
-            <SupportPanel
-              body="Subscriptions provide predictable monthly capacity. Credits can still support flexible usage, and physical print fulfillment remains an order-based workflow."
-              eyebrow="Beyond subscriptions"
-              title="Credits and print orders stay modular."
-            />
-
-            <SupportPanel
-              body="Subscribe actions still call the existing checkout endpoint, success returns still sync subscription status, and active users can open the existing billing portal."
-              eyebrow="Billing flow"
-              title="Existing checkout and portal endpoints are preserved."
-            />
+            {supportSections.length > 0
+              ? supportSections.map((section) => (
+                  <SupportPanel body={section.text} eyebrow={section.eyebrow} key={section.id} section={section} title={section.title} />
+                ))
+              : null}
           </div>
         </section>
 

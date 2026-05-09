@@ -906,6 +906,165 @@ export function WorkbenchClient({
 
   return (
     <main className={styles.page}>
+      <div className={styles.mobileWorkbench}>
+        <header className={styles.mobileHeader}>
+          <a href="/" aria-label="Thorns Tavern home">
+            <img alt="Thorns Tavern" src="/ui-lab/top-navigation/logo-wordmark.png" />
+          </a>
+          <a href="/account">Account</a>
+        </header>
+
+        <section className={styles.mobileHero}>
+          <span className={styles.mobileEyebrow}>Workbench</span>
+          <h1>Create and continue your AI 3D models.</h1>
+          <p>Use the mobile workbench for quick generation, task tracking, and opening saved models.</p>
+          <div className={styles.mobilePills}>
+            <span>{activeGenerationCreditCost} Credits</span>
+            <span>{rightPanelModelCards.length} Models</span>
+            <span>{pendingTasks.length} Active</span>
+          </div>
+        </section>
+
+        <section className={styles.mobilePanel} aria-label="Generation controls">
+          <div className={styles.mobileModeTabs}>
+            <button
+              className={activeMode === "text3d" ? styles.mobileModeActive : ""}
+              onClick={() => setActiveMode("text3d")}
+              type="button"
+            >
+              Text 3D
+            </button>
+            <button
+              className={activeMode === "image3d" ? styles.mobileModeActive : ""}
+              onClick={() => setActiveMode("image3d")}
+              type="button"
+            >
+              Image 3D
+            </button>
+            <button
+              className={activeMode === "imageTools" ? styles.mobileModeActive : ""}
+              onClick={() => setActiveMode("imageTools")}
+              type="button"
+            >
+              Image
+            </button>
+          </div>
+
+          <label className={styles.mobileField}>
+            <span>Model name</span>
+            <input onChange={(event) => setModelTitle(event.target.value)} value={modelTitle} />
+          </label>
+
+          <label className={styles.mobileField}>
+            <span>Prompt</span>
+            <textarea onChange={(event) => setPrompt(event.target.value)} rows={5} value={prompt} />
+          </label>
+
+          <div className={styles.mobileOptionRow}>
+            <button
+              className={license === "Public" ? styles.mobileOptionActive : ""}
+              onClick={() => setLicense("Public")}
+              type="button"
+            >
+              Public
+            </button>
+            <button
+              className={license === "Private" ? styles.mobileOptionActive : ""}
+              onClick={() => setLicense("Private")}
+              type="button"
+            >
+              Private
+            </button>
+          </div>
+
+          {error ? <p className={styles.mobileError}>{error}</p> : null}
+
+          <button className={styles.mobileGenerateButton} disabled={isSubmitting} onClick={handleGenerate} type="button">
+            {isSubmitting ? "Submitting..." : `Generate for ${activeGenerationCreditCost} credits`}
+          </button>
+        </section>
+
+        <section className={styles.mobilePreviewPanel} aria-label="Active preview">
+          <div className={styles.mobileSectionHeader}>
+            <span>{activeDisplayLicense}</span>
+            <strong>{activeDisplayName}</strong>
+          </div>
+          <div className={styles.mobilePreviewBox}>
+            {showImagePreview ? (
+              activeImagePreview?.previewSrc ? (
+                <img alt={activeImagePreview.previewAlt || "Image preview"} src={activeImagePreview.previewSrc} />
+              ) : (
+                <div className={styles.mobilePreviewEmpty}>Image preview</div>
+              )
+            ) : (
+              <ModelViewer
+                className={styles.mobileViewer}
+                displayBase="workbench"
+                showGround={false}
+                showPlaceholderModel={false}
+                src={activeModelSrc}
+                transparentBackground
+              />
+            )}
+            {activePendingTask ? (
+              <div className={styles.mobileTaskOverlay}>
+                <span>{getPendingGenerationStatusLabel(activePendingTask)}</span>
+                <strong>{activePendingTask.progress}%</strong>
+              </div>
+            ) : null}
+          </div>
+          {canUseSelectedImageFor3D ? (
+            <button className={styles.mobileSecondaryButton} onClick={handleUseSelectedImageFor3D} type="button">
+              Use image for 3D
+            </button>
+          ) : null}
+        </section>
+
+        <section className={styles.mobileLibrary} aria-label="Mobile library">
+          <div className={styles.mobileSectionHeader}>
+            <span>{rightPanelTitle}</span>
+            <strong>{rightPanelCards.length}</strong>
+          </div>
+          <div className={styles.mobileLibraryList}>
+            {rightPanelCards.slice(0, 8).map((card) => (
+              <button
+                key={`${card.kind || "model"}-${card.id}`}
+                onClick={() => {
+                  if (card.generationState) {
+                    setActivePendingCardId(card.id);
+                    setSelectedModelSrc(null);
+                    if (card.kind === "image") {
+                      setActiveMode("imageTools");
+                      setSelectedImageCard(null);
+                    }
+                    return;
+                  }
+
+                  const sourceAsset = card.sourceAsset;
+                  if (card.kind === "image" && sourceAsset) {
+                    setGeneratedImageAsReference(card);
+                    setActiveMode("imageTools");
+                    setMultiView(false);
+                    setSelectedImageCard(card);
+                    setSelectedModelSrc(null);
+                    setActivePendingCardId(null);
+                    return;
+                  }
+
+                  setActivePendingCardId(null);
+                  setSelectedImageCard(null);
+                  setSelectedModelSrc(card.modelSrc ?? null);
+                }}
+                type="button"
+              >
+                {card.previewSrc ? <img alt={card.previewAlt || card.name} src={card.previewSrc} /> : <span />}
+                <strong>{card.name}</strong>
+                <em>{card.license}</em>
+              </button>
+            ))}
+          </div>
+        </section>
+      </div>
       <div className={styles.stageViewport}>
         <section className={styles.stage} aria-label="Workbench model generation page">
           <TopNavigation

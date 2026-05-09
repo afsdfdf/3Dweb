@@ -12,6 +12,8 @@ const resetPasswordFormPath = path.join(rootDir, 'src', 'app', '(frontend)', '_c
 const homePageCssPath = path.join(rootDir, 'src', 'app', '(frontend)', '_home', 'homePage.module.css')
 const modelDetailNativePath = path.join(rootDir, 'src', 'app', '(frontend)', 'model-detail', 'ModelDetailNative.tsx')
 const modelDetailCssPath = path.join(rootDir, 'src', 'app', '(frontend)', 'model-detail', 'page.module.css')
+const modelDetailDataPath = path.join(rootDir, 'src', 'app', '(frontend)', 'model-detail', '_lib', 'modelDetailData.ts')
+const modelDetailPagePath = path.join(rootDir, 'src', 'app', '(frontend)', 'model-detail', 'page.tsx')
 const topNavigationPath = path.join(rootDir, 'src', 'components', 'ui-lab', 'top-navigation', 'top-navigation.tsx')
 const workbenchCssPath = path.join(rootDir, 'src', 'app', '(frontend)', 'workbench', 'page.module.css')
 
@@ -106,6 +108,18 @@ test('Model Detail mounts the shared auth modal stage for top navigation login',
 
   assert.match(source, /@\/components\/auth\/AuthModalStage/)
   assert.match(source, /<AuthModalStage fitViewport topOffset=\{60\}>/)
+})
+
+test('Model Detail reads owner-private models through access-controlled Local API', () => {
+  const pageSource = readFileSync(modelDetailPagePath, 'utf8')
+  const dataSource = readFileSync(modelDetailDataPath, 'utf8')
+  const nativeSource = readFileSync(modelDetailNativePath, 'utf8')
+
+  assert.match(pageSource, /currentUser:\s*user/)
+  assert.match(dataSource, /overrideAccess:\s*false/)
+  assert.match(dataSource, /\.\.\.\(currentUser \? \{ user: currentUser \} : \{\}\)/)
+  assert.match(dataSource, /commentsEnabled = model\.visibility === "public"/)
+  assert.match(nativeSource, /Comments are available after this model is public\./)
 })
 
 test('Page-level top navigation positioning wins over shared TopNavigation base styles', () => {

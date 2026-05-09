@@ -8,6 +8,7 @@ import { getMediaAccessURL } from '@/lib/mediaAccessURL'
 type ModelDownloadEndpointTestHooks = {
   getMediaAccessURL?: typeof getMediaAccessURL
   isAllowedRemoteAssetURL?: typeof isAllowedRemoteAssetURL
+  resolvePublicModelFormatAsset?: typeof resolvePublicModelFormatAsset
   refundDownloadCredits?: typeof refundDownloadCredits
   resolveModelFormatAsset?: typeof resolveModelFormatAsset
   spendDownloadCredits?: typeof spendDownloadCredits
@@ -86,6 +87,28 @@ async function resolveModelFormatAsset(modelId: number, format: string): Promise
   return result.rows[0] ?? null
 }
 
+async function resolvePublicModelFormatAsset(modelId: number, format: string): Promise<ResolvedModelFormatAsset | null> {
+  const result = await queryPostgres<ResolvedModelFormatAsset>(
+    `
+      select
+        media.filename as "filename",
+        media.mime_type as "mimeType",
+        media.url
+      from models
+      inner join models_formats mf on mf._parent_id = models.id
+      left join media on media.id = mf.file_id
+      where models.id = $1
+        and models.visibility = 'public'
+        and lower(mf.format::text) = $2
+      order by mf._order asc
+      limit 1
+    `,
+    [modelId, format],
+  )
+
+  return result.rows[0] ?? null
+}
+
 async function chargeDownloadIfNeeded(args: {
   downloadCredits: number
   format: string
@@ -112,10 +135,66 @@ async function chargeDownloadIfNeeded(args: {
 export const modelDownloadEndpoint = {
   handler: async (req: PayloadRequest) => {
     const modelId = String(req.routeParams?.modelId ?? '')
+    const modelIdNumber = Number(modelId)
     const format = String(req.query?.format ?? 'glb').toLowerCase()
     const inline = String(req.query?.inline ?? '') === '1'
+    const downloadPolicy = await getDownloadAccessPolicy(req)
 
-    if (!req.user) return unauthorized()
+    if (!Number.isFinite(modelIdNumber) || modelIdNumber <= 0) {
+      return Response.json({ message: 'Invalid model ID.' }, { status: 400 })
+    }
+
+    if (!req.user) {
+      if (!inline && !downloadPolicy.chargeDownloadCredits) {
+        const publicFormatAsset = await (
+          modelDownloadEndpointTestHooks?.resolvePublicModelFormatAsset || resolvePublicModelFormatAsset
+        )(modelIdNumber, format)
+        const publicURL = publicFormatAsset?.url
+
+        if (!publicFormatAsset) return unauthorized()
+
+        if (!publicURL) {
+          return Response.json({ message: 'No downloadable model asset is available for this format.' }, { status: 404 })
+        }
+
+        const allowedSource = await (modelDownloadEndpointTestHooks?.isAllowedRemoteAssetURL || isAllowedRemoteAssetURL)({
+          payload: req.payload,
+          url: publicURL,
+        })
+
+        if (!allowedSource) {
+          req.payload.logger.warn({
+            modelId: modelIdNumber,
+            msg: 'Blocked public model asset download because host is not on the allowlist.',
+            remoteURL: publicURL,
+          })
+
+          return Response.json({ message: 'The model asset source is not allowed for download.' }, { status: 403 })
+        }
+
+        const accessURL = await (modelDownloadEndpointTestHooks?.getMediaAccessURL || getMediaAccessURL)({
+          payload: req.payload,
+          ttlSeconds: 600,
+          url: publicURL,
+        })
+        if (!accessURL) {
+          return Response.json({ message: 'The model asset URL is invalid or incomplete.' }, { status: 502 })
+        }
+
+        const allowedFetchTarget = await (modelDownloadEndpointTestHooks?.isAllowedRemoteAssetURL || isAllowedRemoteAssetURL)({
+          payload: req.payload,
+          url: accessURL,
+        })
+
+        if (!allowedFetchTarget) {
+          return Response.json({ message: 'The model asset source is not allowed for download.' }, { status: 403 })
+        }
+
+        return Response.redirect(accessURL, 307)
+      }
+
+      return unauthorized()
+    }
 
     let model: any = null
     try {
@@ -138,7 +217,6 @@ export const modelDownloadEndpoint = {
       return Response.json({ message: 'The selected format is not available for this model.' }, { status: 400 })
     }
 
-    const downloadPolicy = await getDownloadAccessPolicy(req)
     const selectedFormatDownloadCredits = readPositiveNumber(selectedFormat.downloadCredits)
     const downloadCredits = downloadPolicy.chargeDownloadCredits
       ? selectedFormatDownloadCredits || downloadPolicy.downloadCredits

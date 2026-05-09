@@ -80,7 +80,9 @@ export function MediumActionButton({
       }}
     >
       <span className={styles.center}>
-        <span className={styles.label}>{label}</span>
+        <span className={styles.label} data-medium-action-label>
+          {label}
+        </span>
       </span>
     </button>
   );

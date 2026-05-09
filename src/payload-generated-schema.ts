@@ -39,6 +39,23 @@ export const enum_users_profile_visibility = pgEnum(
   "enum_users_profile_visibility",
   ["private", "public"],
 );
+export const enum_user_notifications_type = pgEnum(
+  "enum_user_notifications_type",
+  [
+    "generation_completed",
+    "generation_failed",
+    "order_paid",
+    "order_status",
+    "credits_purchased",
+    "credits_adjusted",
+    "subscription_credits",
+    "system_notice",
+  ],
+);
+export const enum_user_notifications_severity = pgEnum(
+  "enum_user_notifications_severity",
+  ["info", "success", "warning", "critical"],
+);
 export const enum_avatar_frame_styles_unlock_rule = pgEnum(
   "enum_avatar_frame_styles_unlock_rule",
   ["free", "subscription", "event", "achievement"],
@@ -312,6 +329,14 @@ export const enum_homepage_content_featured_works_tone = pgEnum(
   "enum_homepage_content_featured_works_tone",
   ["violet", "blue", "pink"],
 );
+export const enum_formal_pages_info_pages_page_key = pgEnum(
+  "enum_formal_pages_info_pages_page_key",
+  ["about", "contact", "privacyPolicy", "refundPolicy", "shippingPolicy"],
+);
+export const enum_formal_pages_marketing_pages_page_key = pgEnum(
+  "enum_formal_pages_marketing_pages_page_key",
+  ["features", "solutions", "resources", "developers", "pricing", "showcase"],
+);
 export const enum_ai_provider_settings_meshy_target_formats = pgEnum(
   "enum_ai_provider_settings_meshy_target_formats",
   ["glb", "obj", "fbx", "stl", "usdz", "3mf"],
@@ -508,6 +533,64 @@ export const user_follows = pgTable(
     index("user_follows_followee_idx").on(columns.followee),
     index("user_follows_updated_at_idx").on(columns.updatedAt),
     index("user_follows_created_at_idx").on(columns.createdAt),
+  ],
+);
+
+export const user_notifications = pgTable(
+  "user_notifications",
+  {
+    id: serial("id").primaryKey(),
+    user: integer("user_id")
+      .notNull()
+      .references(() => users.id, {
+        onDelete: "set null",
+      }),
+    type: enum_user_notifications_type("type").notNull(),
+    title: varchar("title").notNull(),
+    body: varchar("body").notNull(),
+    href: varchar("href"),
+    severity: enum_user_notifications_severity("severity")
+      .notNull()
+      .default("info"),
+    readAt: timestamp("read_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    sourceKey: varchar("source_key"),
+    sourceTask: integer("source_task_id").references(
+      () => generation_tasks.id,
+      {
+        onDelete: "set null",
+      },
+    ),
+    sourceOrder: integer("source_order_id").references(() => print_orders.id, {
+      onDelete: "set null",
+    }),
+    metadata: jsonb("metadata"),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+  },
+  (columns) => [
+    index("user_notifications_user_idx").on(columns.user),
+    index("user_notifications_read_at_idx").on(columns.readAt),
+    uniqueIndex("user_notifications_source_key_idx").on(columns.sourceKey),
+    index("user_notifications_source_task_idx").on(columns.sourceTask),
+    index("user_notifications_source_order_idx").on(columns.sourceOrder),
+    index("user_notifications_updated_at_idx").on(columns.updatedAt),
+    index("user_notifications_created_at_idx").on(columns.createdAt),
   ],
 );
 
@@ -2459,6 +2542,7 @@ export const payload_locked_documents_rels = pgTable(
     path: varchar("path").notNull(),
     usersID: integer("users_id"),
     "user-followsID": integer("user_follows_id"),
+    "user-notificationsID": integer("user_notifications_id"),
     "avatar-frame-stylesID": integer("avatar_frame_styles_id"),
     "email-verification-codesID": integer("email_verification_codes_id"),
     mediaID: integer("media_id"),
@@ -2488,6 +2572,9 @@ export const payload_locked_documents_rels = pgTable(
     index("payload_locked_documents_rels_users_id_idx").on(columns.usersID),
     index("payload_locked_documents_rels_user_follows_id_idx").on(
       columns["user-followsID"],
+    ),
+    index("payload_locked_documents_rels_user_notifications_id_idx").on(
+      columns["user-notificationsID"],
     ),
     index("payload_locked_documents_rels_avatar_frame_styles_id_idx").on(
       columns["avatar-frame-stylesID"],
@@ -2558,6 +2645,11 @@ export const payload_locked_documents_rels = pgTable(
       columns: [columns["user-followsID"]],
       foreignColumns: [user_follows.id],
       name: "payload_locked_documents_rels_user_follows_fk",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["user-notificationsID"]],
+      foreignColumns: [user_notifications.id],
+      name: "payload_locked_documents_rels_user_notifications_fk",
     }).onDelete("cascade"),
     foreignKey({
       columns: [columns["avatar-frame-stylesID"]],
@@ -2765,6 +2857,53 @@ export const site_settings_header_nav = pgTable(
       columns: [columns["_parentID"]],
       foreignColumns: [site_settings.id],
       name: "site_settings_header_nav_parent_id_fk",
+    }).onDelete("cascade"),
+  ],
+);
+
+export const site_settings_footer_link_groups_links = pgTable(
+  "site_settings_footer_link_groups_links",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: varchar("_parent_id").notNull(),
+    id: varchar("id").primaryKey(),
+    label: varchar("label").notNull(),
+    href: varchar("href").notNull(),
+  },
+  (columns) => [
+    index("site_settings_footer_link_groups_links_order_idx").on(
+      columns._order,
+    ),
+    index("site_settings_footer_link_groups_links_parent_id_idx").on(
+      columns._parentID,
+    ),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [site_settings_footer_link_groups.id],
+      name: "site_settings_footer_link_groups_links_parent_id_fk",
+    }).onDelete("cascade"),
+  ],
+);
+
+export const site_settings_footer_link_groups = pgTable(
+  "site_settings_footer_link_groups",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: integer("_parent_id").notNull(),
+    id: varchar("id").primaryKey(),
+    title: varchar("title").notNull(),
+    ariaLabel: varchar("aria_label"),
+    helperText: varchar("helper_text"),
+  },
+  (columns) => [
+    index("site_settings_footer_link_groups_order_idx").on(columns._order),
+    index("site_settings_footer_link_groups_parent_id_idx").on(
+      columns._parentID,
+    ),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [site_settings.id],
+      name: "site_settings_footer_link_groups_parent_id_fk",
     }).onDelete("cascade"),
   ],
 );
@@ -3258,6 +3397,309 @@ export const homepage_content = pgTable("homepage_content", {
   }),
 });
 
+export const formal_pages_info_pages_summary_cards = pgTable(
+  "formal_pages_info_pages_summary_cards",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: varchar("_parent_id").notNull(),
+    id: varchar("id").primaryKey(),
+    title: varchar("title").notNull(),
+    body: varchar("body").notNull(),
+  },
+  (columns) => [
+    index("formal_pages_info_pages_summary_cards_order_idx").on(columns._order),
+    index("formal_pages_info_pages_summary_cards_parent_id_idx").on(
+      columns._parentID,
+    ),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [formal_pages_info_pages.id],
+      name: "formal_pages_info_pages_summary_cards_parent_id_fk",
+    }).onDelete("cascade"),
+  ],
+);
+
+export const formal_pages_info_pages_sections_items = pgTable(
+  "formal_pages_info_pages_sections_items",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: varchar("_parent_id").notNull(),
+    id: varchar("id").primaryKey(),
+    title: varchar("title").notNull(),
+    body: varchar("body").notNull(),
+  },
+  (columns) => [
+    index("formal_pages_info_pages_sections_items_order_idx").on(
+      columns._order,
+    ),
+    index("formal_pages_info_pages_sections_items_parent_id_idx").on(
+      columns._parentID,
+    ),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [formal_pages_info_pages_sections.id],
+      name: "formal_pages_info_pages_sections_items_parent_id_fk",
+    }).onDelete("cascade"),
+  ],
+);
+
+export const formal_pages_info_pages_sections = pgTable(
+  "formal_pages_info_pages_sections",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: varchar("_parent_id").notNull(),
+    id: varchar("id").primaryKey(),
+    title: varchar("title").notNull(),
+    body: varchar("body").notNull(),
+  },
+  (columns) => [
+    index("formal_pages_info_pages_sections_order_idx").on(columns._order),
+    index("formal_pages_info_pages_sections_parent_id_idx").on(
+      columns._parentID,
+    ),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [formal_pages_info_pages.id],
+      name: "formal_pages_info_pages_sections_parent_id_fk",
+    }).onDelete("cascade"),
+  ],
+);
+
+export const formal_pages_info_pages_contact_cards = pgTable(
+  "formal_pages_info_pages_contact_cards",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: varchar("_parent_id").notNull(),
+    id: varchar("id").primaryKey(),
+    title: varchar("title").notNull(),
+    body: varchar("body").notNull(),
+    label: varchar("label").notNull(),
+    href: varchar("href"),
+  },
+  (columns) => [
+    index("formal_pages_info_pages_contact_cards_order_idx").on(columns._order),
+    index("formal_pages_info_pages_contact_cards_parent_id_idx").on(
+      columns._parentID,
+    ),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [formal_pages_info_pages.id],
+      name: "formal_pages_info_pages_contact_cards_parent_id_fk",
+    }).onDelete("cascade"),
+  ],
+);
+
+export const formal_pages_info_pages = pgTable(
+  "formal_pages_info_pages",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: integer("_parent_id").notNull(),
+    id: varchar("id").primaryKey(),
+    pageKey: enum_formal_pages_info_pages_page_key("page_key").notNull(),
+    currentPath: varchar("current_path").notNull(),
+    heroEyebrow: varchar("hero_eyebrow").notNull(),
+    heroTitle: varchar("hero_title").notNull(),
+    heroText: varchar("hero_text").notNull(),
+    lastUpdated: varchar("last_updated").notNull(),
+    heroPrimaryCTA_label: varchar("hero_primary_c_t_a_label").notNull(),
+    heroPrimaryCTA_href: varchar("hero_primary_c_t_a_href").notNull(),
+    heroSecondaryCTA_label: varchar("hero_secondary_c_t_a_label").notNull(),
+    heroSecondaryCTA_href: varchar("hero_secondary_c_t_a_href").notNull(),
+  },
+  (columns) => [
+    index("formal_pages_info_pages_order_idx").on(columns._order),
+    index("formal_pages_info_pages_parent_id_idx").on(columns._parentID),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [formal_pages.id],
+      name: "formal_pages_info_pages_parent_id_fk",
+    }).onDelete("cascade"),
+  ],
+);
+
+export const formal_pages_marketing_pages_sections_cards = pgTable(
+  "formal_pages_marketing_pages_sections_cards",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: varchar("_parent_id").notNull(),
+    id: varchar("id").primaryKey(),
+    title: varchar("title").notNull(),
+    text: varchar("text").notNull(),
+    note: varchar("note"),
+  },
+  (columns) => [
+    index("formal_pages_marketing_pages_sections_cards_order_idx").on(
+      columns._order,
+    ),
+    index("formal_pages_marketing_pages_sections_cards_parent_id_idx").on(
+      columns._parentID,
+    ),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [formal_pages_marketing_pages_sections.id],
+      name: "formal_pages_marketing_pages_sections_cards_parent_id_fk",
+    }).onDelete("cascade"),
+  ],
+);
+
+export const formal_pages_marketing_pages_sections_bullets = pgTable(
+  "formal_pages_marketing_pages_sections_bullets",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: varchar("_parent_id").notNull(),
+    id: varchar("id").primaryKey(),
+    label: varchar("label").notNull(),
+  },
+  (columns) => [
+    index("formal_pages_marketing_pages_sections_bullets_order_idx").on(
+      columns._order,
+    ),
+    index("formal_pages_marketing_pages_sections_bullets_parent_id_idx").on(
+      columns._parentID,
+    ),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [formal_pages_marketing_pages_sections.id],
+      name: "formal_pages_marketing_pages_sections_bullets_parent_id_fk",
+    }).onDelete("cascade"),
+  ],
+);
+
+export const formal_pages_marketing_pages_sections = pgTable(
+  "formal_pages_marketing_pages_sections",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: varchar("_parent_id").notNull(),
+    id: varchar("id").primaryKey(),
+    anchorId: varchar("anchor_id").notNull(),
+    eyebrow: varchar("eyebrow").notNull(),
+    title: varchar("title").notNull(),
+    text: varchar("text").notNull(),
+  },
+  (columns) => [
+    index("formal_pages_marketing_pages_sections_order_idx").on(columns._order),
+    index("formal_pages_marketing_pages_sections_parent_id_idx").on(
+      columns._parentID,
+    ),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [formal_pages_marketing_pages.id],
+      name: "formal_pages_marketing_pages_sections_parent_id_fk",
+    }).onDelete("cascade"),
+  ],
+);
+
+export const formal_pages_marketing_pages = pgTable(
+  "formal_pages_marketing_pages",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: integer("_parent_id").notNull(),
+    id: varchar("id").primaryKey(),
+    pageKey: enum_formal_pages_marketing_pages_page_key("page_key").notNull(),
+    currentPath: varchar("current_path").notNull(),
+    heroEyebrow: varchar("hero_eyebrow").notNull(),
+    heroTitle: varchar("hero_title").notNull(),
+    heroText: varchar("hero_text").notNull(),
+    heroPrimaryCTA_label: varchar("hero_primary_c_t_a_label").notNull(),
+    heroPrimaryCTA_href: varchar("hero_primary_c_t_a_href").notNull(),
+    heroSecondaryCTA_label: varchar("hero_secondary_c_t_a_label").notNull(),
+    heroSecondaryCTA_href: varchar("hero_secondary_c_t_a_href").notNull(),
+  },
+  (columns) => [
+    index("formal_pages_marketing_pages_order_idx").on(columns._order),
+    index("formal_pages_marketing_pages_parent_id_idx").on(columns._parentID),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [formal_pages.id],
+      name: "formal_pages_marketing_pages_parent_id_fk",
+    }).onDelete("cascade"),
+  ],
+);
+
+export const formal_pages = pgTable(
+  "formal_pages",
+  {
+    id: serial("id").primaryKey(),
+    blogPage_heroEyebrow: varchar("blog_page_hero_eyebrow")
+      .notNull()
+      .default("Tavern Journal"),
+    blogPage_heroTitle: varchar("blog_page_hero_title")
+      .notNull()
+      .default("Notes from the forge, field, and tavern"),
+    blogPage_heroText: varchar("blog_page_hero_text")
+      .notNull()
+      .default(
+        "Tutorials, creator stories, platform updates, and production notes for turning ideas into collectible 3D worlds.",
+      ),
+    blogPage_heroImage: integer("blog_page_hero_image_id").references(
+      () => media.id,
+      {
+        onDelete: "set null",
+      },
+    ),
+    blogPage_heroImageAlt: varchar("blog_page_hero_image_alt")
+      .notNull()
+      .default(
+        "A dark fantasy workshop table with printed miniatures and tools",
+      ),
+    blogPage_heroPrimaryCTA_label: varchar("blog_page_hero_primary_c_t_a_label")
+      .notNull()
+      .default("Open Studio"),
+    blogPage_heroPrimaryCTA_href: varchar("blog_page_hero_primary_c_t_a_href")
+      .notNull()
+      .default("/workbench"),
+    blogPage_heroSecondaryCTA_label: varchar(
+      "blog_page_hero_secondary_c_t_a_label",
+    )
+      .notNull()
+      .default("Explore Models"),
+    blogPage_heroSecondaryCTA_href: varchar(
+      "blog_page_hero_secondary_c_t_a_href",
+    )
+      .notNull()
+      .default("/showcase"),
+    blogPage_dispatchesLabel: varchar("blog_page_dispatches_label")
+      .notNull()
+      .default("Dispatches"),
+    blogPage_categoryLabels_articles: varchar(
+      "blog_page_category_labels_articles",
+    )
+      .notNull()
+      .default("Articles"),
+    blogPage_categoryLabels_events: varchar("blog_page_category_labels_events")
+      .notNull()
+      .default("Events"),
+    blogPage_categoryLabels_announcements: varchar(
+      "blog_page_category_labels_announcements",
+    )
+      .notNull()
+      .default("Announcements"),
+    blogPage_seoTitle: varchar("blog_page_seo_title")
+      .notNull()
+      .default("Tavern Journal | Thorns Tavern"),
+    blogPage_seoDescription: varchar("blog_page_seo_description")
+      .notNull()
+      .default(
+        "Tutorials, platform updates, creator stories, and 3D production notes from Thorns Tavern.",
+      ),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+  },
+  (columns) => [
+    index("formal_pages_blog_page_blog_page_hero_image_idx").on(
+      columns.blogPage_heroImage,
+    ),
+  ],
+);
+
 export const ai_provider_settings_meshy_target_formats = pgTable(
   "ai_provider_settings_meshy_target_formats",
   {
@@ -3604,6 +4046,26 @@ export const relations_user_follows = relations(user_follows, ({ one }) => ({
     relationName: "followee",
   }),
 }));
+export const relations_user_notifications = relations(
+  user_notifications,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [user_notifications.user],
+      references: [users.id],
+      relationName: "user",
+    }),
+    sourceTask: one(generation_tasks, {
+      fields: [user_notifications.sourceTask],
+      references: [generation_tasks.id],
+      relationName: "sourceTask",
+    }),
+    sourceOrder: one(print_orders, {
+      fields: [user_notifications.sourceOrder],
+      references: [print_orders.id],
+      relationName: "sourceOrder",
+    }),
+  }),
+);
 export const relations_avatar_frame_styles_locales = relations(
   avatar_frame_styles_locales,
   ({ one }) => ({
@@ -4246,6 +4708,11 @@ export const relations_payload_locked_documents_rels = relations(
       references: [user_follows.id],
       relationName: "user-follows",
     }),
+    "user-notificationsID": one(user_notifications, {
+      fields: [payload_locked_documents_rels["user-notificationsID"]],
+      references: [user_notifications.id],
+      relationName: "user-notifications",
+    }),
     "avatar-frame-stylesID": one(avatar_frame_styles, {
       fields: [payload_locked_documents_rels["avatar-frame-stylesID"]],
       references: [avatar_frame_styles.id],
@@ -4398,6 +4865,29 @@ export const relations_site_settings_header_nav = relations(
     }),
   }),
 );
+export const relations_site_settings_footer_link_groups_links = relations(
+  site_settings_footer_link_groups_links,
+  ({ one }) => ({
+    _parentID: one(site_settings_footer_link_groups, {
+      fields: [site_settings_footer_link_groups_links._parentID],
+      references: [site_settings_footer_link_groups.id],
+      relationName: "links",
+    }),
+  }),
+);
+export const relations_site_settings_footer_link_groups = relations(
+  site_settings_footer_link_groups,
+  ({ one, many }) => ({
+    _parentID: one(site_settings, {
+      fields: [site_settings_footer_link_groups._parentID],
+      references: [site_settings.id],
+      relationName: "footer_linkGroups",
+    }),
+    links: many(site_settings_footer_link_groups_links, {
+      relationName: "links",
+    }),
+  }),
+);
 export const relations_site_settings_subscription_plans_starter_features =
   relations(site_settings_subscription_plans_starter_features, ({ one }) => ({
     _parentID: one(site_settings, {
@@ -4435,6 +4925,9 @@ export const relations_site_settings_credit_packages = relations(
 export const relations_site_settings = relations(site_settings, ({ many }) => ({
   headerNav: many(site_settings_header_nav, {
     relationName: "headerNav",
+  }),
+  footer_linkGroups: many(site_settings_footer_link_groups, {
+    relationName: "footer_linkGroups",
   }),
   subscriptionPlans_starter_features: many(
     site_settings_subscription_plans_starter_features,
@@ -4528,6 +5021,131 @@ export const relations_homepage_content = relations(
     }),
   }),
 );
+export const relations_formal_pages_info_pages_summary_cards = relations(
+  formal_pages_info_pages_summary_cards,
+  ({ one }) => ({
+    _parentID: one(formal_pages_info_pages, {
+      fields: [formal_pages_info_pages_summary_cards._parentID],
+      references: [formal_pages_info_pages.id],
+      relationName: "summaryCards",
+    }),
+  }),
+);
+export const relations_formal_pages_info_pages_sections_items = relations(
+  formal_pages_info_pages_sections_items,
+  ({ one }) => ({
+    _parentID: one(formal_pages_info_pages_sections, {
+      fields: [formal_pages_info_pages_sections_items._parentID],
+      references: [formal_pages_info_pages_sections.id],
+      relationName: "items",
+    }),
+  }),
+);
+export const relations_formal_pages_info_pages_sections = relations(
+  formal_pages_info_pages_sections,
+  ({ one, many }) => ({
+    _parentID: one(formal_pages_info_pages, {
+      fields: [formal_pages_info_pages_sections._parentID],
+      references: [formal_pages_info_pages.id],
+      relationName: "sections",
+    }),
+    items: many(formal_pages_info_pages_sections_items, {
+      relationName: "items",
+    }),
+  }),
+);
+export const relations_formal_pages_info_pages_contact_cards = relations(
+  formal_pages_info_pages_contact_cards,
+  ({ one }) => ({
+    _parentID: one(formal_pages_info_pages, {
+      fields: [formal_pages_info_pages_contact_cards._parentID],
+      references: [formal_pages_info_pages.id],
+      relationName: "contactCards",
+    }),
+  }),
+);
+export const relations_formal_pages_info_pages = relations(
+  formal_pages_info_pages,
+  ({ one, many }) => ({
+    _parentID: one(formal_pages, {
+      fields: [formal_pages_info_pages._parentID],
+      references: [formal_pages.id],
+      relationName: "infoPages",
+    }),
+    summaryCards: many(formal_pages_info_pages_summary_cards, {
+      relationName: "summaryCards",
+    }),
+    sections: many(formal_pages_info_pages_sections, {
+      relationName: "sections",
+    }),
+    contactCards: many(formal_pages_info_pages_contact_cards, {
+      relationName: "contactCards",
+    }),
+  }),
+);
+export const relations_formal_pages_marketing_pages_sections_cards = relations(
+  formal_pages_marketing_pages_sections_cards,
+  ({ one }) => ({
+    _parentID: one(formal_pages_marketing_pages_sections, {
+      fields: [formal_pages_marketing_pages_sections_cards._parentID],
+      references: [formal_pages_marketing_pages_sections.id],
+      relationName: "cards",
+    }),
+  }),
+);
+export const relations_formal_pages_marketing_pages_sections_bullets =
+  relations(formal_pages_marketing_pages_sections_bullets, ({ one }) => ({
+    _parentID: one(formal_pages_marketing_pages_sections, {
+      fields: [formal_pages_marketing_pages_sections_bullets._parentID],
+      references: [formal_pages_marketing_pages_sections.id],
+      relationName: "bullets",
+    }),
+  }));
+export const relations_formal_pages_marketing_pages_sections = relations(
+  formal_pages_marketing_pages_sections,
+  ({ one, many }) => ({
+    _parentID: one(formal_pages_marketing_pages, {
+      fields: [formal_pages_marketing_pages_sections._parentID],
+      references: [formal_pages_marketing_pages.id],
+      relationName: "sections",
+    }),
+    cards: many(formal_pages_marketing_pages_sections_cards, {
+      relationName: "cards",
+    }),
+    bullets: many(formal_pages_marketing_pages_sections_bullets, {
+      relationName: "bullets",
+    }),
+  }),
+);
+export const relations_formal_pages_marketing_pages = relations(
+  formal_pages_marketing_pages,
+  ({ one, many }) => ({
+    _parentID: one(formal_pages, {
+      fields: [formal_pages_marketing_pages._parentID],
+      references: [formal_pages.id],
+      relationName: "marketingPages",
+    }),
+    sections: many(formal_pages_marketing_pages_sections, {
+      relationName: "sections",
+    }),
+  }),
+);
+export const relations_formal_pages = relations(
+  formal_pages,
+  ({ one, many }) => ({
+    infoPages: many(formal_pages_info_pages, {
+      relationName: "infoPages",
+    }),
+    marketingPages: many(formal_pages_marketing_pages, {
+      relationName: "marketingPages",
+    }),
+    blogPage_heroImage: one(media, {
+      fields: [formal_pages.blogPage_heroImage],
+      references: [media.id],
+      relationName: "blogPage_heroImage",
+    }),
+  }),
+);
 export const relations_ai_provider_settings_meshy_target_formats = relations(
   ai_provider_settings_meshy_target_formats,
   ({ one }) => ({
@@ -4607,6 +5225,8 @@ type DatabaseSchema = {
   enum_users_role: typeof enum_users_role;
   enum_users_avatar_frame: typeof enum_users_avatar_frame;
   enum_users_profile_visibility: typeof enum_users_profile_visibility;
+  enum_user_notifications_type: typeof enum_user_notifications_type;
+  enum_user_notifications_severity: typeof enum_user_notifications_severity;
   enum_avatar_frame_styles_unlock_rule: typeof enum_avatar_frame_styles_unlock_rule;
   enum_email_verification_codes_purpose: typeof enum_email_verification_codes_purpose;
   enum_media_purpose: typeof enum_media_purpose;
@@ -4657,6 +5277,8 @@ type DatabaseSchema = {
   enum_site_settings_payment_providers_subscription_provider: typeof enum_site_settings_payment_providers_subscription_provider;
   enum_site_settings_payment_providers_order_provider: typeof enum_site_settings_payment_providers_order_provider;
   enum_homepage_content_featured_works_tone: typeof enum_homepage_content_featured_works_tone;
+  enum_formal_pages_info_pages_page_key: typeof enum_formal_pages_info_pages_page_key;
+  enum_formal_pages_marketing_pages_page_key: typeof enum_formal_pages_marketing_pages_page_key;
   enum_ai_provider_settings_meshy_target_formats: typeof enum_ai_provider_settings_meshy_target_formats;
   enum_ai_provider_settings_providers_provider: typeof enum_ai_provider_settings_providers_provider;
   enum_ai_provider_settings_default_provider: typeof enum_ai_provider_settings_default_provider;
@@ -4672,6 +5294,7 @@ type DatabaseSchema = {
   users_sessions: typeof users_sessions;
   users: typeof users;
   user_follows: typeof user_follows;
+  user_notifications: typeof user_notifications;
   avatar_frame_styles: typeof avatar_frame_styles;
   avatar_frame_styles_locales: typeof avatar_frame_styles_locales;
   email_verification_codes: typeof email_verification_codes;
@@ -4721,6 +5344,8 @@ type DatabaseSchema = {
   payload_preferences_rels: typeof payload_preferences_rels;
   payload_migrations: typeof payload_migrations;
   site_settings_header_nav: typeof site_settings_header_nav;
+  site_settings_footer_link_groups_links: typeof site_settings_footer_link_groups_links;
+  site_settings_footer_link_groups: typeof site_settings_footer_link_groups;
   site_settings_subscription_plans_starter_features: typeof site_settings_subscription_plans_starter_features;
   site_settings_subscription_plans_pro_features: typeof site_settings_subscription_plans_pro_features;
   site_settings_subscription_plans_studio_features: typeof site_settings_subscription_plans_studio_features;
@@ -4732,6 +5357,16 @@ type DatabaseSchema = {
   homepage_content_process_steps: typeof homepage_content_process_steps;
   homepage_content_faq: typeof homepage_content_faq;
   homepage_content: typeof homepage_content;
+  formal_pages_info_pages_summary_cards: typeof formal_pages_info_pages_summary_cards;
+  formal_pages_info_pages_sections_items: typeof formal_pages_info_pages_sections_items;
+  formal_pages_info_pages_sections: typeof formal_pages_info_pages_sections;
+  formal_pages_info_pages_contact_cards: typeof formal_pages_info_pages_contact_cards;
+  formal_pages_info_pages: typeof formal_pages_info_pages;
+  formal_pages_marketing_pages_sections_cards: typeof formal_pages_marketing_pages_sections_cards;
+  formal_pages_marketing_pages_sections_bullets: typeof formal_pages_marketing_pages_sections_bullets;
+  formal_pages_marketing_pages_sections: typeof formal_pages_marketing_pages_sections;
+  formal_pages_marketing_pages: typeof formal_pages_marketing_pages;
+  formal_pages: typeof formal_pages;
   ai_provider_settings_meshy_target_formats: typeof ai_provider_settings_meshy_target_formats;
   ai_provider_settings_providers: typeof ai_provider_settings_providers;
   ai_provider_settings: typeof ai_provider_settings;
@@ -4743,6 +5378,7 @@ type DatabaseSchema = {
   relations_users_sessions: typeof relations_users_sessions;
   relations_users: typeof relations_users;
   relations_user_follows: typeof relations_user_follows;
+  relations_user_notifications: typeof relations_user_notifications;
   relations_avatar_frame_styles_locales: typeof relations_avatar_frame_styles_locales;
   relations_avatar_frame_styles: typeof relations_avatar_frame_styles;
   relations_email_verification_codes: typeof relations_email_verification_codes;
@@ -4792,6 +5428,8 @@ type DatabaseSchema = {
   relations_payload_preferences: typeof relations_payload_preferences;
   relations_payload_migrations: typeof relations_payload_migrations;
   relations_site_settings_header_nav: typeof relations_site_settings_header_nav;
+  relations_site_settings_footer_link_groups_links: typeof relations_site_settings_footer_link_groups_links;
+  relations_site_settings_footer_link_groups: typeof relations_site_settings_footer_link_groups;
   relations_site_settings_subscription_plans_starter_features: typeof relations_site_settings_subscription_plans_starter_features;
   relations_site_settings_subscription_plans_pro_features: typeof relations_site_settings_subscription_plans_pro_features;
   relations_site_settings_subscription_plans_studio_features: typeof relations_site_settings_subscription_plans_studio_features;
@@ -4803,6 +5441,16 @@ type DatabaseSchema = {
   relations_homepage_content_process_steps: typeof relations_homepage_content_process_steps;
   relations_homepage_content_faq: typeof relations_homepage_content_faq;
   relations_homepage_content: typeof relations_homepage_content;
+  relations_formal_pages_info_pages_summary_cards: typeof relations_formal_pages_info_pages_summary_cards;
+  relations_formal_pages_info_pages_sections_items: typeof relations_formal_pages_info_pages_sections_items;
+  relations_formal_pages_info_pages_sections: typeof relations_formal_pages_info_pages_sections;
+  relations_formal_pages_info_pages_contact_cards: typeof relations_formal_pages_info_pages_contact_cards;
+  relations_formal_pages_info_pages: typeof relations_formal_pages_info_pages;
+  relations_formal_pages_marketing_pages_sections_cards: typeof relations_formal_pages_marketing_pages_sections_cards;
+  relations_formal_pages_marketing_pages_sections_bullets: typeof relations_formal_pages_marketing_pages_sections_bullets;
+  relations_formal_pages_marketing_pages_sections: typeof relations_formal_pages_marketing_pages_sections;
+  relations_formal_pages_marketing_pages: typeof relations_formal_pages_marketing_pages;
+  relations_formal_pages: typeof relations_formal_pages;
   relations_ai_provider_settings_meshy_target_formats: typeof relations_ai_provider_settings_meshy_target_formats;
   relations_ai_provider_settings_providers: typeof relations_ai_provider_settings_providers;
   relations_ai_provider_settings: typeof relations_ai_provider_settings;

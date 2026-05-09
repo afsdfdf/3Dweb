@@ -31,6 +31,7 @@ import { ShopifyPayments } from './collections/ShopifyPayments'
 import { TaskEvents } from './collections/TaskEvents'
 import { Users } from './collections/Users'
 import { UserFollows } from './collections/UserFollows'
+import { UserNotifications } from './collections/UserNotifications'
 import {
   adminAdjustCreditsEndpoint,
   adminRepairTaskEndpoint,
@@ -83,6 +84,12 @@ import {
   unlikeModelEndpoint,
 } from './endpoints/modelReactions'
 import { modelViewerEndpoint } from './endpoints/modelViewer'
+import {
+  getUnreadNotificationCountEndpoint,
+  listAccountNotificationsEndpoint,
+  markAllNotificationsReadEndpoint,
+  markNotificationReadEndpoint,
+} from './endpoints/notifications'
 import { opsDashboardEndpoint } from './endpoints/opsDashboard'
 import { createPrintOrderEndpoint, syncPrintOrderEndpoint } from './endpoints/printOrders'
 import { sessionLogoutEndpoint } from './endpoints/sessionLogout'
@@ -93,6 +100,7 @@ import {
   syncSubscriptionCheckoutEndpoint,
 } from './endpoints/subscriptions'
 import { AIProviderSettings } from './globals/AIProviderSettings'
+import { FormalPages } from './globals/FormalPages'
 import { HomepageContent } from './globals/HomepageContent'
 import { RuntimeDeploymentSettings } from './globals/RuntimeDeploymentSettings'
 import { SecuritySettings } from './globals/SecuritySettings'
@@ -167,6 +175,7 @@ export default buildConfig({
   collections: [
     Users,
     UserFollows,
+    UserNotifications,
     AvatarFrameStyles,
     EmailVerificationCodes,
     Media,
@@ -220,6 +229,10 @@ export default buildConfig({
     updateAccountProfileEndpoint,
     changeAccountPasswordEndpoint,
     getAccountDashboardEndpoint,
+    listAccountNotificationsEndpoint,
+    getUnreadNotificationCountEndpoint,
+    markNotificationReadEndpoint,
+    markAllNotificationsReadEndpoint,
     listCurrentUserFollowsEndpoint,
     listCurrentUserFavoritesEndpoint,
     getCreatorProfileEndpoint,
@@ -258,7 +271,7 @@ export default buildConfig({
     sessionLogoutEndpoint,
     stripeWebhookEndpoint,
   ],
-  globals: [SiteSettings, HomepageContent, AIProviderSettings, StorageSettings, SecuritySettings, RuntimeDeploymentSettings].map(
+  globals: [SiteSettings, HomepageContent, FormalPages, AIProviderSettings, StorageSettings, SecuritySettings, RuntimeDeploymentSettings].map(
     localizeGlobalAdminConfig,
   ),
   i18n: {

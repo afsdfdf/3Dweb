@@ -1,6 +1,6 @@
 import { FormalInfoPage } from '../_components/FormalInfoPage'
-import { formalPages } from '../_lib/formal-pages'
+import { getFormalPageContent } from '../_lib/formal-page-content'
 
-export default function ContactPage() {
-  return <FormalInfoPage page={formalPages.contact} />
+export default async function ContactPage() {
+  return <FormalInfoPage page={await getFormalPageContent('contact')} />
 }

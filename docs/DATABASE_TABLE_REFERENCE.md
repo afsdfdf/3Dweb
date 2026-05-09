@@ -68,6 +68,7 @@ These global slugs are registered in `src/payload.config.ts`:
 
 - `site-settings`
 - `homepage-content`
+- `formal-pages`
 - `ai-provider-settings`
 - `storage-settings`
 - `security-settings`
@@ -133,9 +134,21 @@ These global slugs are registered in `src/payload.config.ts`:
 
 - `site_settings`
 - `site_settings_header_nav`
+- `site_settings_footer_link_groups`
+- `site_settings_footer_link_groups_links`
 - `site_settings_credit_packages`
 - `homepage_content`
 - `homepage_content_faq`
+- `formal_pages`
+- `formal_pages_info_pages`
+- `formal_pages_info_pages_summary_cards`
+- `formal_pages_info_pages_sections`
+- `formal_pages_info_pages_sections_items`
+- `formal_pages_info_pages_contact_cards`
+- `formal_pages_marketing_pages`
+- `formal_pages_marketing_pages_sections`
+- `formal_pages_marketing_pages_sections_cards`
+- `formal_pages_marketing_pages_sections_bullets`
 - `storage_settings`
 - `security_settings`
 - `security_settings_allowed_mutation_origins`

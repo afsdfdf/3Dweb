@@ -16,6 +16,10 @@ import * as migration_20260505_133000_openai_compatible_image_provider from './2
 import * as migration_20260505_160000_image_generation_async_and_task_type from './20260505_160000_image_generation_async_and_task_type';
 import * as migration_20260506_151500_model_bundle_public_fields from './20260506_151500_model_bundle_public_fields';
 import * as migration_20260507_093000_model_bundle_hero_image from './20260507_093000_model_bundle_hero_image';
+import * as migration_20260509_042000_site_settings_footer_link_groups from './20260509_042000_site_settings_footer_link_groups';
+import * as migration_20260509_051000_formal_pages_content from './20260509_051000_formal_pages_content';
+import * as migration_20260509_074100_formal_pages_blog_header from './20260509_074100_formal_pages_blog_header';
+import * as migration_20260509_090000_user_notifications from './20260509_090000_user_notifications';
 
 export const migrations = [
   {
@@ -107,5 +111,25 @@ export const migrations = [
     up: migration_20260507_093000_model_bundle_hero_image.up,
     down: migration_20260507_093000_model_bundle_hero_image.down,
     name: '20260507_093000_model_bundle_hero_image'
+  },
+  {
+    up: migration_20260509_042000_site_settings_footer_link_groups.up,
+    down: migration_20260509_042000_site_settings_footer_link_groups.down,
+    name: '20260509_042000_site_settings_footer_link_groups'
+  },
+  {
+    up: migration_20260509_051000_formal_pages_content.up,
+    down: migration_20260509_051000_formal_pages_content.down,
+    name: '20260509_051000_formal_pages_content'
+  },
+  {
+    up: migration_20260509_074100_formal_pages_blog_header.up,
+    down: migration_20260509_074100_formal_pages_blog_header.down,
+    name: '20260509_074100_formal_pages_blog_header'
+  },
+  {
+    up: migration_20260509_090000_user_notifications.up,
+    down: migration_20260509_090000_user_notifications.down,
+    name: '20260509_090000_user_notifications'
   },
 ];

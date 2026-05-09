@@ -51,6 +51,10 @@
   z-index: 60;
 }
 
+.mobileWorkbench {
+  display: none;
+}
+
 .leftPanel,
 .rightPanel {
   position: absolute;
@@ -1815,4 +1819,316 @@
   left: auto;
   right: var(--panel-edge);
   transform-origin: top right;
+}
+
+@media (max-width: 767px) {
+  .page {
+    width: 100%;
+    min-width: 0;
+    min-height: 100dvh;
+    height: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background:
+      radial-gradient(circle at 30% 0%, rgba(233, 175, 85, 0.16), transparent 28%),
+      linear-gradient(180deg, #181818 0%, #222225 48%, #181818 100%);
+  }
+
+  .stageViewport {
+    display: none;
+  }
+
+  .mobileWorkbench {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-height: 100dvh;
+    padding: 0 16px 28px;
+    color: #ededee;
+  }
+
+  .mobileHeader {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin: 0 -16px;
+    padding: 12px 16px;
+    border-bottom: 1px solid #403f46;
+    background: rgba(24, 24, 24, 0.94);
+    backdrop-filter: blur(16px);
+  }
+
+  .mobileHeader img {
+    display: block;
+    width: 161px;
+    height: 32px;
+    object-fit: contain;
+  }
+
+  .mobileHeader a:last-child {
+    color: #f0d188;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  .mobileHero {
+    padding: 28px 0 18px;
+  }
+
+  .mobileEyebrow,
+  .mobileSectionHeader span {
+    color: #d6ad61;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .mobileHero h1 {
+    margin: 10px 0 0;
+    color: #f5ead0;
+    font-size: 32px;
+    line-height: 1.06;
+    letter-spacing: 0;
+  }
+
+  .mobileHero p {
+    margin: 12px 0 0;
+    color: #b9bac0;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .mobilePills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  .mobilePills span {
+    border: 1px solid #403f46;
+    border-radius: 999px;
+    background: rgba(28, 28, 32, 0.78);
+    padding: 6px 10px;
+    color: #d8d0bf;
+    font-size: 12px;
+  }
+
+  .mobilePanel,
+  .mobilePreviewPanel,
+  .mobileLibrary {
+    margin-top: 14px;
+    border: 1px solid #403f46;
+    border-radius: 8px;
+    background: rgba(28, 28, 32, 0.78);
+    padding: 14px;
+  }
+
+  .mobileModeTabs,
+  .mobileOptionRow {
+    display: grid;
+    gap: 8px;
+  }
+
+  .mobileModeTabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .mobileOptionRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 12px;
+  }
+
+  .mobileModeTabs button,
+  .mobileOptionRow button,
+  .mobileSecondaryButton {
+    min-height: 38px;
+    border: 1px solid #5c4a35;
+    border-radius: 6px;
+    background: #17181b;
+    color: #d8d0bf;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .mobileModeTabs .mobileModeActive,
+  .mobileOptionRow .mobileOptionActive {
+    border-color: #c78a3a;
+    background: rgba(198, 134, 54, 0.2);
+    color: #f5ead0;
+  }
+
+  .mobileField {
+    display: grid;
+    gap: 7px;
+    margin-top: 12px;
+  }
+
+  .mobileField span {
+    color: #8e9097;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .mobileField input,
+  .mobileField textarea {
+    width: 100%;
+    min-width: 0;
+    border: 1px solid #403f46;
+    border-radius: 6px;
+    background: #101011;
+    color: #ededee;
+    font: inherit;
+    line-height: 1.5;
+    outline: none;
+    padding: 10px 12px;
+  }
+
+  .mobileField textarea {
+    resize: vertical;
+  }
+
+  .mobileError {
+    margin: 12px 0 0;
+    color: #ffb4a8;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .mobileGenerateButton,
+  .mobileSecondaryButton {
+    width: 100%;
+    margin-top: 12px;
+  }
+
+  .mobileGenerateButton {
+    min-height: 46px;
+    border: 1px solid #c78a3a;
+    border-radius: 6px;
+    background: linear-gradient(180deg, #c68636 0%, #7e4a1e 100%);
+    color: #fff7dd;
+    font-size: 14px;
+    font-weight: 800;
+  }
+
+  .mobileGenerateButton:disabled {
+    opacity: 0.64;
+  }
+
+  .mobileSectionHeader {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .mobileSectionHeader strong {
+    min-width: 0;
+    color: #f1e2bc;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+    text-align: right;
+  }
+
+  .mobilePreviewBox {
+    position: relative;
+    display: grid;
+    min-height: 300px;
+    overflow: hidden;
+    place-items: center;
+    border: 1px solid #403f46;
+    border-radius: 8px;
+    background:
+      radial-gradient(circle at 50% 36%, rgba(240, 209, 136, 0.12), transparent 32%),
+      #101011;
+  }
+
+  .mobilePreviewBox img,
+  .mobileViewer {
+    width: 100%;
+    height: 300px;
+    object-fit: contain;
+  }
+
+  .mobilePreviewEmpty {
+    color: #9b9da5;
+    font-size: 13px;
+  }
+
+  .mobileTaskOverlay {
+    position: absolute;
+    inset: auto 12px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border: 1px solid #5c4a35;
+    border-radius: 6px;
+    background: rgba(16, 16, 17, 0.88);
+    padding: 10px 12px;
+  }
+
+  .mobileTaskOverlay span {
+    color: #d8d0bf;
+    font-size: 12px;
+  }
+
+  .mobileTaskOverlay strong {
+    color: #f5ead0;
+  }
+
+  .mobileLibraryList {
+    display: grid;
+    gap: 10px;
+  }
+
+  .mobileLibraryList button {
+    display: grid;
+    grid-template-columns: 58px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-width: 0;
+    border: 1px solid #403f46;
+    border-radius: 8px;
+    background: #101011;
+    padding: 8px;
+    text-align: left;
+  }
+
+  .mobileLibraryList img,
+  .mobileLibraryList button > span {
+    width: 58px;
+    height: 58px;
+    border-radius: 6px;
+    background: #18181b;
+    object-fit: cover;
+  }
+
+  .mobileLibraryList strong {
+    min-width: 0;
+    color: #ededee;
+    font-size: 13px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobileLibraryList em {
+    color: #8e9097;
+    font-size: 11px;
+    font-style: normal;
+    white-space: nowrap;
+  }
 }

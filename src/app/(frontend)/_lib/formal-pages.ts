@@ -16,6 +16,14 @@ export type FormalPageContent = {
   }[]
   currentPath: string
   heroEyebrow: string
+  heroPrimaryCTA: {
+    href: string
+    label: string
+  }
+  heroSecondaryCTA?: {
+    href: string
+    label: string
+  }
   heroText: string
   heroTitle: string
   lastUpdated: string
@@ -31,8 +39,8 @@ export const formalPages = {
     contactCards: [
       {
         body: 'Start a new generation task from image, text, or hybrid references.',
-        href: '/generate',
-        label: 'Open Studio',
+        href: '/workbench',
+        label: 'Open Workbench',
         title: 'Create with Thorns Tavern',
       },
       {
@@ -44,6 +52,14 @@ export const formalPages = {
     ],
     currentPath: '/about',
     heroEyebrow: 'About',
+    heroPrimaryCTA: {
+      href: '/workbench',
+      label: 'Open Workbench',
+    },
+    heroSecondaryCTA: {
+      href: '/bundles',
+      label: 'View Bundles',
+    },
     heroText:
       'Thorns Tavern is an AI 3D product platform for character creation, asset delivery, and print fulfillment. The experience is designed to move from inspiration to generated model, then onward into downloads and physical production.',
     heroTitle: 'A product workflow for AI character models, digital delivery, and print-ready output.',
@@ -103,6 +119,14 @@ export const formalPages = {
     ],
     currentPath: '/contact',
     heroEyebrow: 'Contact',
+    heroPrimaryCTA: {
+      href: 'mailto:support@example.com',
+      label: 'Email support',
+    },
+    heroSecondaryCTA: {
+      href: '/workbench',
+      label: 'Open Workbench',
+    },
     heroText:
       'Use the contact paths below for account help, order questions, billing support, or product inquiries. Include your account email and any relevant task, model, order, or payment identifiers when available.',
     heroTitle: 'Get help with generation, delivery, orders, and account questions.',
@@ -132,6 +156,14 @@ export const formalPages = {
   privacyPolicy: {
     currentPath: '/privacy-policy',
     heroEyebrow: 'Privacy Policy',
+    heroPrimaryCTA: {
+      href: '/contact',
+      label: 'Contact support',
+    },
+    heroSecondaryCTA: {
+      href: '/account',
+      label: 'Open account',
+    },
     heroText:
       'This policy explains the categories of information Thorns Tavern may collect, how that information is used to operate the product, and the choices users have around account and support workflows.',
     heroTitle: 'Privacy practices for accounts, generated assets, orders, and platform operations.',
@@ -172,6 +204,14 @@ export const formalPages = {
   refundPolicy: {
     currentPath: '/refund-policy',
     heroEyebrow: 'Refund Policy',
+    heroPrimaryCTA: {
+      href: '/contact',
+      label: 'Request review',
+    },
+    heroSecondaryCTA: {
+      href: '/pricing',
+      label: 'View pricing',
+    },
     heroText:
       'This policy describes how refund requests are reviewed for credits, subscriptions, digital deliveries, and print-related orders. Eligibility depends on product state, usage, and fulfillment progress.',
     heroTitle: 'Refund review for generation credits, subscriptions, downloads, and print orders.',
@@ -216,6 +256,14 @@ export const formalPages = {
   shippingPolicy: {
     currentPath: '/shipping-policy',
     heroEyebrow: 'Shipping Policy',
+    heroPrimaryCTA: {
+      href: '/contact',
+      label: 'Contact support',
+    },
+    heroSecondaryCTA: {
+      href: '/account?section=orders',
+      label: 'View orders',
+    },
     heroText:
       'This policy covers physical fulfillment for print orders and related shipped items. Digital model downloads are delivered through the platform and are not shipped physically.',
     heroTitle: 'Shipping expectations for physical print fulfillment and order delivery.',

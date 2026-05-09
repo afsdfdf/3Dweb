@@ -4,6 +4,7 @@ import type Stripe from 'stripe'
 import { writeAuditLog } from '@/lib/auditLog'
 import { sendOrderPaidEmail } from '@/lib/businessEmails'
 import { getCanonicalAppURL } from '@/lib/getCanonicalAppURL'
+import { createUserNotification } from '@/lib/notificationService'
 import {
   getPaymentProviderKey,
   getPaymentSessionId,
@@ -77,6 +78,12 @@ const buildOrderUrl = (orderId: number | string, query: Record<string, string> =
 const getUserEmail = (req: PayloadRequest) => {
   const email = req.user && typeof req.user === 'object' && 'email' in req.user ? req.user.email : undefined
   return typeof email === 'string' ? email : undefined
+}
+
+const getRelationId = (value: unknown) => {
+  if (typeof value === 'number' || typeof value === 'string') return Number(value)
+  if (value && typeof value === 'object' && 'id' in value) return Number((value as { id?: unknown }).id)
+  return 0
 }
 
 async function finalizePrintOrderPayment(args: {
@@ -195,6 +202,30 @@ async function finalizePrintOrderPayment(args: {
       req.payload.logger.error({
         err: error,
         msg: `Failed to send order paid email to ${email}`,
+      })
+    })
+  }
+
+  const paidOrderUserId = getRelationId(paidOrder.user) || getRelationId(order.user)
+  if (paidOrderUserId) {
+    await createUserNotification({
+      body: `${paidOrder.orderNumber || `Order ${paidOrder.id}`} has been paid and moved to the next processing stage.`,
+      href: '/account?section=orders',
+      metadata: {
+        orderNumber: paidOrder.orderNumber || null,
+        status: paidOrder.status,
+      },
+      req,
+      severity: 'success',
+      sourceKey: `print-order:${paidOrder.id}:paid`,
+      sourceOrderId: paidOrder.id,
+      title: 'Order payment received',
+      type: 'order_paid',
+      userId: paidOrderUserId,
+    }).catch((error) => {
+      req.payload.logger?.error?.({
+        err: error,
+        msg: `Failed to create notification for paid order ${paidOrder.id}.`,
       })
     })
   }

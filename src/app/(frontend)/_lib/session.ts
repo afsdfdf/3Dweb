@@ -21,6 +21,12 @@ const getPayloadWithUser = cache(async () => {
   };
 });
 
+type CurrentUserListOptions = {
+  limit?: number;
+};
+
+const defaultCurrentUserListLimit = 20;
+
 const getCurrentUserDocument = cache(async () => {
   const { payload, user } = await getPayloadWithUser();
   if (!user) {
@@ -46,6 +52,37 @@ const getCurrentUserDocument = cache(async () => {
   };
 });
 
+const getCurrentCreditAccountDocument = cache(async () => {
+  const { payload, user } = await getPayloadWithUser();
+  if (!user) return null;
+
+  const json = await payload.find({
+    collection: "credits",
+    depth: 0,
+    limit: 1,
+    overrideAccess: false,
+    pagination: false,
+    sort: "-updatedAt",
+    user,
+    where: {
+      and: [
+        {
+          user: {
+            equals: user.id,
+          },
+        },
+        {
+          status: {
+            equals: "active",
+          },
+        },
+      ],
+    },
+  });
+
+  return json.docs?.[0] ?? null;
+});
+
 function getMediaUrl(value: unknown) {
   if (!value || typeof value !== "object") return null;
   const record = value as Record<string, unknown>;
@@ -66,7 +103,8 @@ export async function getCurrentNavUser() {
   const { userDoc } = await getCurrentUserDocument();
   if (!userDoc) return null;
 
-  const actualCredits = Number(userDoc.creditsBalance ?? 0);
+  const creditAccount = await getCurrentCreditAccountDocument();
+  const actualCredits = Number(creditAccount?.balance ?? userDoc.creditsBalance ?? 0);
   const displayName =
     (typeof userDoc.displayName === "string" && userDoc.displayName.trim()) ||
     (typeof userDoc.fullName === "string" && userDoc.fullName.trim()) ||
@@ -124,45 +162,66 @@ export async function requireUser(redirectTo = "/account") {
   return user;
 }
 
-export async function getCurrentUserTasks() {
+export async function getCurrentUserTasks(options: CurrentUserListOptions = {}) {
   const { payload, user } = await getPayloadWithUser();
   if (!user) return { docs: [] };
+
+  const limit = options.limit ?? defaultCurrentUserListLimit;
 
   return payload.find({
     collection: "generation-tasks",
     depth: 1,
-    limit: 20,
+    limit,
     overrideAccess: false,
     sort: "-updatedAt",
     user,
+    where: {
+      user: {
+        equals: user.id,
+      },
+    },
   });
 }
 
-export async function getCurrentUserModels() {
+export async function getCurrentUserModels(options: CurrentUserListOptions = {}) {
   const { payload, user } = await getPayloadWithUser();
   if (!user) return { docs: [] };
+
+  const limit = options.limit ?? defaultCurrentUserListLimit;
 
   return payload.find({
     collection: "models",
     depth: 1,
-    limit: 20,
+    limit,
     overrideAccess: false,
     sort: "-updatedAt",
     user,
+    where: {
+      owner: {
+        equals: user.id,
+      },
+    },
   });
 }
 
-export async function getCurrentUserOrders() {
+export async function getCurrentUserOrders(options: CurrentUserListOptions = {}) {
   const { payload, user } = await getPayloadWithUser();
   if (!user) return { docs: [] };
+
+  const limit = options.limit ?? defaultCurrentUserListLimit;
 
   return payload.find({
     collection: "print-orders",
     depth: 1,
-    limit: 20,
+    limit,
     overrideAccess: false,
     sort: "-updatedAt",
     user,
+    where: {
+      user: {
+        equals: user.id,
+      },
+    },
   });
 }
 
@@ -184,46 +243,29 @@ export async function getCurrentUserOrderById(id: string | number) {
 }
 
 export async function getCurrentUserCreditAccount() {
-  const { payload, user } = await getPayloadWithUser();
-  if (!user) return null;
-
-  const json = await payload.find({
-    collection: "credits",
-    depth: 0,
-    limit: 1,
-    overrideAccess: false,
-    sort: "-updatedAt",
-    user,
-    where: {
-      and: [
-        {
-          user: {
-            equals: user.id,
-          },
-        },
-        {
-          status: {
-            equals: "active",
-          },
-        },
-      ],
-    },
-  });
-
-  return json.docs?.[0] ?? null;
+  return getCurrentCreditAccountDocument();
 }
 
-export async function getCurrentUserCreditTransactions() {
+export async function getCurrentUserCreditTransactions(
+  options: CurrentUserListOptions = {},
+) {
   const { payload, user } = await getPayloadWithUser();
   if (!user) return { docs: [] };
+
+  const limit = options.limit ?? defaultCurrentUserListLimit;
 
   return payload.find({
     collection: "credit-transactions",
     depth: 1,
-    limit: 20,
+    limit,
     overrideAccess: false,
     sort: "-createdAt",
     user,
+    where: {
+      user: {
+        equals: user.id,
+      },
+    },
   });
 }
 

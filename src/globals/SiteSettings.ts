@@ -57,6 +57,34 @@ export const SiteSettings: GlobalConfig = {
                 { name: 'directionEyebrow', type: 'text', defaultValue: defaultSiteSettings.footer.directionEyebrow, label: 'Direction eyebrow' },
                 { name: 'directionTitle', type: 'text', defaultValue: defaultSiteSettings.footer.directionTitle, label: 'Direction title' },
                 { name: 'directionText', type: 'textarea', defaultValue: defaultSiteSettings.footer.directionText, label: 'Direction text' },
+                {
+                  name: 'linkGroups',
+                  type: 'array',
+                  defaultValue: defaultSiteSettings.footer.linkGroups || [],
+                  label: 'Footer link groups',
+                  labels: {
+                    plural: 'Footer link groups',
+                    singular: 'Footer link group',
+                  },
+                  fields: [
+                    { name: 'title', type: 'text', required: true, label: 'Group title' },
+                    { name: 'ariaLabel', type: 'text', label: 'Accessibility label' },
+                    { name: 'helperText', type: 'textarea', label: 'Helper text' },
+                    {
+                      name: 'links',
+                      type: 'array',
+                      label: 'Links',
+                      labels: {
+                        plural: 'Links',
+                        singular: 'Link',
+                      },
+                      fields: [
+                        { name: 'label', type: 'text', required: true, label: 'Label' },
+                        { name: 'href', type: 'text', required: true, label: 'Link' },
+                      ],
+                    },
+                  ],
+                },
               ],
             },
           ],

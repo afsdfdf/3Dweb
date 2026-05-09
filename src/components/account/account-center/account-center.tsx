@@ -2,7 +2,6 @@
 
 /* eslint-disable @next/next/no-img-element */
 import {
-  type CSSProperties,
   type ChangeEvent,
   type FormEvent,
   useEffect,
@@ -11,15 +10,22 @@ import {
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
+import {
+  Download,
+  Edit3,
+  ExternalLink,
+  Plus,
+  RefreshCw,
+  SlidersHorizontal,
+  WalletCards,
+} from "lucide-react";
 
 import { AuthModalStage } from "@/components/auth/AuthModalStage";
 import { TopNavigation } from "@/components/ui-lab/top-navigation";
-import { BorderComboFrame2 } from "@/components/ui-lab/border-combo-frame-2";
-import { FrameButton } from "@/components/ui/frame-button";
 import { publicNavigationItems } from "@/lib/publicNavigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
-import styles from "./personal-center-test.module.css";
+import styles from "./account-center.module.css";
 
 type SectionId =
   | "overview"
@@ -30,7 +36,9 @@ type SectionId =
   | "settings";
 
 type RecordRow = {
+  actionLabel?: string;
   amount: string;
+  href?: string;
   id: string;
   item: string;
   status: string;
@@ -45,7 +53,7 @@ type SectionConfig = {
   value: string;
 };
 
-export type PersonalCenterData = {
+export type AccountCenterData = {
   avatarFrame?: null | string;
   avatarFrameStyles?: {
     frameImageUrl?: null | string;
@@ -63,6 +71,7 @@ export type PersonalCenterData = {
   metrics?: {
     activeOrders: number;
     activeTasks: number;
+    billingCount: number;
     modelCount: number;
     orderCount: number;
     taskCount: number;
@@ -74,8 +83,8 @@ export type PersonalCenterData = {
   >;
 };
 
-type PersonalCenterTestProps = {
-  accountData?: PersonalCenterData;
+type AccountCenterProps = {
+  accountData?: AccountCenterData;
   initialSection?: SectionId;
   navUser?: null | {
     avatarUrl?: null | string;
@@ -206,30 +215,14 @@ const titleBySection: Record<SectionId, string> = {
   tasks: "Generation Tasks",
 };
 
-type StageStyle = CSSProperties & {
-  "--page-scale": number;
-  "--stage-height": string;
-  "--surface-left": string;
-  "--surface-width": string;
-  "--stage-width": string;
-  "--viewport-surface-bottom": string;
-  "--viewport-surface-top": string;
+const detailTitleBySection: Record<SectionId, string> = {
+  billing: "Credit ledger and payment activity",
+  models: "Model library records",
+  orders: "Order history and fulfillment status",
+  overview: "Credits, tasks, orders, and model activity",
+  settings: "Profile, visibility, and security",
+  tasks: "Generation task history",
 };
-
-function getStageStyle(width: number, height: number): StageStyle {
-  const scale = Math.min(1, width / 1920, height / 1080);
-  const visibleStageWidth = width / scale;
-
-  return {
-    "--page-scale": scale,
-    "--stage-height": "1080px",
-    "--surface-left": "32px",
-    "--surface-width": `${visibleStageWidth - 64}px`,
-    "--stage-width": "1920px",
-    "--viewport-surface-bottom": "58px",
-    "--viewport-surface-top": "98px",
-  };
-}
 
 const formatNumber = (value: unknown) => {
   const number = Number(value ?? 0);
@@ -253,23 +246,22 @@ const escapeCsvValue = (value: string) => {
     : normalized;
 };
 
-export function PersonalCenterTest({
+export function AccountCenter({
   accountData,
   initialSection = "overview",
   navUser = null,
-}: PersonalCenterTestProps) {
+}: AccountCenterProps) {
   const router = useRouter();
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const [activeSection, setActiveSection] = useState<SectionId>(initialSection);
-  const [profileData, setProfileData] = useState<PersonalCenterData>(
+  const [profileData, setProfileData] = useState<AccountCenterData>(
     accountData ?? {},
   );
   const [recordPage, setRecordPage] = useState(1);
-  const [recordRange, setRecordRange] = useState("30d");
+  const [recordRange, setRecordRange] = useState("all");
   const [recordSearch, setRecordSearch] = useState("");
   const [saveMessage, setSaveMessage] = useState("");
-  const [viewport, setViewport] = useState({ height: 1080, width: 1920 });
   const displayName =
     profileData.displayName ||
     navUser?.displayName ||
@@ -302,6 +294,7 @@ export function PersonalCenterTest({
   const accountMetrics = accountData?.metrics ?? {
     activeOrders: 3,
     activeTasks: 4,
+    billingCount: fallbackRowsBySection.billing.length,
     modelCount: 12,
     orderCount: 8,
     taskCount: 4,
@@ -335,9 +328,7 @@ export function PersonalCenterTest({
         id: "orders",
         label: "Orders",
         meta: "Print and digital",
-        value: String(
-          accountMetrics.activeOrders || accountMetrics.orderCount || 0,
-        ),
+        value: String(accountMetrics.orderCount ?? 0),
       },
       {
         id: "models",
@@ -349,9 +340,7 @@ export function PersonalCenterTest({
         id: "tasks",
         label: "Generation Tasks",
         meta: "AI workflow",
-        value: String(
-          accountMetrics.activeTasks || accountMetrics.taskCount || 0,
-        ),
+        value: String(accountMetrics.taskCount ?? 0),
       },
       {
         id: "billing",
@@ -377,10 +366,10 @@ export function PersonalCenterTest({
   );
   const activeConfig =
     sections.find((section) => section.id === activeSection) ?? sections[0];
+  const isPanelRefreshAction =
+    activeSection === "overview" || activeSection === "settings";
   const activeRecordSection =
-    activeSection === "overview" || activeSection === "settings"
-      ? null
-      : activeSection;
+    isPanelRefreshAction ? null : activeSection;
   const activeRows = activeRecordSection
     ? rowsBySection[activeRecordSection]
     : [];
@@ -448,7 +437,12 @@ export function PersonalCenterTest({
         },
       ],
       billing: [
-        { label: "Transactions", value: String(rowsBySection.billing.length) },
+        {
+          label: "Transactions",
+          value: String(
+            accountMetrics.billingCount ?? rowsBySection.billing.length,
+          ),
+        },
         { label: "Available", value: formattedCredits },
         { label: "Status", value: "Active" },
       ],
@@ -522,11 +516,6 @@ export function PersonalCenterTest({
       .slice(0, 1)
       .map((row) => ({ label: row.item, meta: "Billing", status: row.status })),
   ];
-  const stageStyle = useMemo(
-    () => getStageStyle(viewport.width, viewport.height),
-    [viewport.height, viewport.width],
-  );
-
   useEffect(() => {
     setProfileData(accountData ?? {});
   }, [accountData]);
@@ -535,11 +524,20 @@ export function PersonalCenterTest({
     setRecordPage(1);
   }, [activeSection, recordRange, recordSearch]);
 
-  function updateProfileField<Key extends keyof PersonalCenterData>(
+  function updateProfileField<Key extends keyof AccountCenterData>(
     key: Key,
-    value: PersonalCenterData[Key],
+    value: AccountCenterData[Key],
   ) {
     setProfileData((current) => ({ ...current, [key]: value }));
+  }
+
+  function changeSection(section: SectionId) {
+    setActiveSection(section);
+    const target =
+      section === "overview"
+        ? "/account"
+        : `/account?section=${encodeURIComponent(section)}`;
+    router.replace(target, { scroll: false });
   }
 
   async function saveProfile(event: FormEvent<HTMLFormElement>) {
@@ -761,23 +759,9 @@ export function PersonalCenterTest({
     URL.revokeObjectURL(url);
   }
 
-  useEffect(() => {
-    function syncViewport() {
-      setViewport({
-        height: window.innerHeight,
-        width: window.innerWidth,
-      });
-    }
-
-    syncViewport();
-    window.addEventListener("resize", syncViewport);
-
-    return () => window.removeEventListener("resize", syncViewport);
-  }, []);
-
   return (
     <main className={styles.pageShell}>
-      <div className={styles.stageViewport}>
+      <AuthModalStage>
         <TopNavigation
           active="ACCOUNT"
           className={styles.boundTopNavigation}
@@ -802,15 +786,34 @@ export function PersonalCenterTest({
           type="file"
         />
 
-        <AuthModalStage fitViewport topOffset={60}>
-          <section
-            aria-label="Account center test page"
-            className={styles.stage}
-            style={stageStyle}
-          >
-            <div className={styles.accountSurface}>
-              <BorderComboFrame2 className={styles.accountFrameContainer}>
-                <div className={styles.accountFrameGrid}>
+        <section aria-label="Account center" className={styles.accountShell}>
+          <header className={styles.accountHero}>
+            <img
+              alt=""
+              aria-hidden="true"
+              className={styles.accountHeroImage}
+              decoding="async"
+              src={backgroundUrl}
+            />
+            <div className={styles.accountHeroCopy}>
+              <span className={styles.accountEyebrow}>Account Center</span>
+              <h1>Manage your Tavern workspace</h1>
+              <p>
+                Review generated models, active tasks, print orders, billing,
+                and profile settings from one focused control surface.
+              </p>
+            </div>
+            <div className={styles.accountHeroStats}>
+              {overviewHighlights.slice(0, 3).map((item) => (
+                <div key={item.label}>
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              ))}
+            </div>
+          </header>
+
+          <div className={styles.accountFrameGrid}>
                   <aside className={styles.profilePanel}>
                     <div className={styles.panelFrameContent}>
                       <section className={styles.identityBlock}>
@@ -835,8 +838,8 @@ export function PersonalCenterTest({
                             onClick={() => avatarInputRef.current?.click()}
                             type="button"
                           >
-                            <span aria-hidden="true">/</span>
-                            EDIT
+                            <Edit3 aria-hidden="true" size={13} />
+                            Edit
                           </button>
                         </div>
                         <div>
@@ -874,12 +877,13 @@ export function PersonalCenterTest({
                           src={backgroundUrl}
                         />
                         <button
+                          aria-label="Change profile background"
                           className={styles.backgroundEditButton}
                           onClick={() => bannerInputRef.current?.click()}
                           type="button"
                         >
-                          <span aria-hidden="true">/</span>
-                          EDIT
+                          <Edit3 aria-hidden="true" size={13} />
+                          Edit
                         </button>
                       </section>
 
@@ -900,7 +904,7 @@ export function PersonalCenterTest({
                               .filter(Boolean)
                               .join(" ")}
                             key={section.id}
-                            onClick={() => setActiveSection(section.id)}
+                            onClick={() => changeSection(section.id)}
                             type="button"
                           >
                             <strong>{section.label}</strong>
@@ -910,28 +914,22 @@ export function PersonalCenterTest({
                       </nav>
 
                       <div className={styles.primaryActions}>
-                        <FrameButton
-                          className={styles.frameButtonText}
-                          fullWidth
-                          height={42}
+                        <button
+                          className={`${styles.accountButton} ${styles.accountButtonPrimary} ${styles.accountButtonFull}`}
                           onClick={() => router.push("/workbench")}
-                          size="compact"
                           type="button"
-                          variant="gold"
                         >
+                          <Plus aria-hidden="true" size={16} />
                           Create Model
-                        </FrameButton>
-                        <FrameButton
-                          className={styles.frameButtonText}
-                          fullWidth
-                          height={42}
+                        </button>
+                        <button
+                          className={`${styles.accountButton} ${styles.accountButtonSecondary} ${styles.accountButtonFull}`}
                           onClick={() => router.push("/pricing")}
-                          size="compact"
                           type="button"
-                          variant="gold"
                         >
+                          <WalletCards aria-hidden="true" size={16} />
                           Recharge Credits
-                        </FrameButton>
+                        </button>
                       </div>
                     </div>
                   </aside>
@@ -966,39 +964,41 @@ export function PersonalCenterTest({
                         <header className={styles.contentHeader}>
                           <div>
                             <p>{activeConfig.label}</p>
-                            <h3>
-                              {activeSection === "overview"
-                                ? "Credits, tasks, orders, and model activity"
-                                : activeSection === "settings"
-                                  ? "Profile, visibility, and security"
-                                  : `${activeConfig.label} Details`}
-                            </h3>
+                            <h3>{detailTitleBySection[activeSection]}</h3>
                           </div>
-                          <FrameButton
-                            className={styles.frameButtonText}
-                            height={40}
+                          <button
+                            className={`${styles.accountButton} ${styles.accountButtonSecondary} ${styles.accountButtonCompact}`}
                             onClick={() => {
                               if (activeSection === "overview") {
                                 router.refresh();
                               } else if (activeSection === "settings") {
-                                setSaveMessage(
-                                  "Edit profile fields, then save changes.",
-                                );
+                                router.refresh();
                               } else {
                                 setRecordSearch((value) => value.trim());
                               }
                             }}
-                            size="compact"
                             type="button"
-                            variant="slate"
-                            width={146}
                           >
-                            {activeSection === "settings"
-                              ? "Edit Profile"
-                              : activeSection === "overview"
-                                ? "Refresh"
-                                : "Filter"}
-                          </FrameButton>
+                            <span
+                              className={`${styles.panelActionIcon} ${
+                                isPanelRefreshAction
+                                  ? ""
+                                  : styles.panelActionIconHidden
+                              }`}
+                            >
+                              <RefreshCw aria-hidden="true" size={15} />
+                            </span>
+                            <span
+                              className={`${styles.panelActionIcon} ${
+                                isPanelRefreshAction
+                                  ? styles.panelActionIconHidden
+                                  : ""
+                              }`}
+                            >
+                              <SlidersHorizontal aria-hidden="true" size={15} />
+                            </span>
+                            <span>{isPanelRefreshAction ? "Refresh" : "Apply"}</span>
+                          </button>
                         </header>
 
                         {activeSection === "overview" ||
@@ -1030,17 +1030,14 @@ export function PersonalCenterTest({
                                   detailed account section.
                                 </p>
                               </div>
-                              <FrameButton
-                                className={styles.frameButtonText}
-                                height={42}
+                              <button
+                                className={`${styles.accountButton} ${styles.accountButtonSecondary} ${styles.accountButtonCompact}`}
                                 onClick={() => router.push("/workbench")}
-                                size="compact"
                                 type="button"
-                                variant="gold"
-                                width={150}
                               >
+                                <Plus aria-hidden="true" size={16} />
                                 Create Model
-                              </FrameButton>
+                              </button>
                             </section>
 
                             <section
@@ -1181,16 +1178,12 @@ export function PersonalCenterTest({
                                   )}
                                 </select>
                               </label>
-                              <FrameButton
-                                className={styles.frameButtonText}
-                                height={42}
-                                size="compact"
+                              <button
+                                className={`${styles.accountButton} ${styles.accountButtonPrimary} ${styles.accountButtonWide}`}
                                 type="submit"
-                                variant="gold"
-                                width={174}
                               >
                                 Save Profile
-                              </FrameButton>
+                              </button>
                             </form>
 
                             <form
@@ -1222,16 +1215,12 @@ export function PersonalCenterTest({
                                   type="password"
                                 />
                               </div>
-                              <FrameButton
-                                className={styles.frameButtonText}
-                                height={42}
-                                size="compact"
+                              <button
+                                className={`${styles.accountButton} ${styles.accountButtonPrimary} ${styles.accountButtonWide}`}
                                 type="submit"
-                                variant="gold"
-                                width={174}
                               >
                                 Save Password
-                              </FrameButton>
+                              </button>
                               {saveMessage ? (
                                 <p className={styles.saveMessage}>
                                   {saveMessage}
@@ -1260,22 +1249,19 @@ export function PersonalCenterTest({
                                   }
                                   value={recordRange}
                                 >
-                                  <option value="7d">Last 7 days</option>
-                                  <option value="30d">Last 30 days</option>
                                   <option value="all">All records</option>
+                                  <option value="30d">Last 30 days</option>
+                                  <option value="7d">Last 7 days</option>
                                 </select>
                               </label>
-                              <FrameButton
-                                className={styles.frameButtonText}
-                                height={40}
+                              <button
+                                className={`${styles.accountButton} ${styles.accountButtonPrimary} ${styles.accountButtonCompact}`}
                                 onClick={downloadCsv}
-                                size="compact"
                                 type="button"
-                                variant="gold"
-                                width={146}
                               >
+                                <Download aria-hidden="true" size={15} />
                                 Export CSV
-                              </FrameButton>
+                              </button>
                             </div>
 
                             <table className={styles.recordsTable}>
@@ -1287,6 +1273,7 @@ export function PersonalCenterTest({
                                   <th>Status</th>
                                   <th>Amount</th>
                                   <th>Time</th>
+                                  <th>Open</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -1300,11 +1287,28 @@ export function PersonalCenterTest({
                                       {row.amount}
                                     </td>
                                     <td>{row.time}</td>
+                                    <td className={styles.recordActionCell}>
+                                      {row.href ? (
+                                        <button
+                                          className={styles.tableActionButton}
+                                          onClick={() => router.push(row.href!)}
+                                          type="button"
+                                        >
+                                          {row.actionLabel ?? "Open"}
+                                          <ExternalLink
+                                            aria-hidden="true"
+                                            size={13}
+                                          />
+                                        </button>
+                                      ) : (
+                                        <span aria-hidden="true">-</span>
+                                      )}
+                                    </td>
                                   </tr>
                                 ))}
                                 {pagedRows.length === 0 ? (
                                   <tr>
-                                    <td colSpan={6}>No matching records.</td>
+                                    <td colSpan={7}>No matching records.</td>
                                   </tr>
                                 ) : null}
                               </tbody>
@@ -1374,12 +1378,9 @@ export function PersonalCenterTest({
                       </section>
                     </div>
                   </section>
-                </div>
-              </BorderComboFrame2>
-            </div>
-          </section>
-        </AuthModalStage>
-      </div>
+          </div>
+        </section>
+      </AuthModalStage>
     </main>
   );
 }

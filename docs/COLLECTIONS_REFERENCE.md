@@ -27,6 +27,7 @@ The currently registered collections are:
 
 - `users`
 - `user-follows`
+- `user-notifications`
 - `avatar-frame-styles`
 - `media`
 - `generation-tasks`
@@ -112,6 +113,68 @@ Frontend and service notes:
 - Account/auth endpoint modules are registered in `src/payload.config.ts`; sensitive auth mutations use origin checks and endpoint-level rate limits.
 - Current-user server reads should go through `src/app/(frontend)/_lib/session.ts`.
 - Do not let customer profile updates write staff-only fields.
+
+### `user-notifications`
+
+File: `src/collections/UserNotifications.ts`
+
+Owns private account notifications displayed by the shared top navigation bell.
+
+Access:
+
+- Read: `ownerOrStaff('user')`.
+- Create/update/delete: staff-only at collection level.
+- Customer read-state mutations go through `/api/account/notifications*` endpoints, which authenticate the current user and then perform service-owned updates.
+
+Important fields:
+
+- `user`
+- `type`: generation, order, credits, subscription, or system notification category
+- `title`
+- `body`
+- `href`
+- `severity`
+- `readAt`
+- `sourceKey`: idempotency key for event-driven notifications
+- `sourceTask`
+- `sourceOrder`
+- `metadata`
+
+Service notes:
+
+- Use `src/lib/notificationService.ts` for all business-created notifications.
+- Do not render raw `task-events` directly in the bell UI.
+- Do not use public `announcements` as user notifications.
+
+### `credits`
+
+File: `src/collections/Credits.ts`
+
+Owns the canonical user credit account balance.
+
+Access:
+
+- Create/update/delete: `admin`.
+- Read: `ownerOrStaff('user')`.
+
+Important fields:
+
+- `user`
+- `balance`
+- `reservedBalance`
+- `lifetimePurchased`
+- `lifetimeSpent`
+- `status`
+
+Hooks:
+
+- `afterChange`: `syncCreditBalanceMirror` updates `users.creditsBalance` after direct Payload Admin edits.
+
+Frontend and service notes:
+
+- `credits.balance` is the source of truth for account and top navigation display.
+- `users.creditsBalance` is a mirror only; it exists for lightweight display and admin scanning.
+- Ledger services update both the credit account and the user mirror. Direct admin edits to `credits` rely on the `syncCreditBalanceMirror` hook.
 
 ### `avatar-frame-styles`
 
@@ -413,7 +476,7 @@ Owns articles, event-style pages, and long-form content.
 Access:
 
 - Create/update/delete: `isStaff`.
-- Read: staff can read all; non-staff can read `_status = published`.
+- Read: staff can read all; guests can read only `_status = published`, `isVisible = true`, and posts whose `publishedAt` is empty or not in the future.
 
 Important fields:
 
@@ -434,10 +497,16 @@ Hooks:
 
 - `assignCurrentUser('createdBy')`.
 - `fillPublishAtOnPublish('publishedAt')`.
+- `validatePostCoverImage`.
 
 Frontend and service notes:
 
-- Current read access does not include `isVisible`; add a frontend `where` clause if hidden published posts should be excluded.
+- `/blog` and `/blog/[slug]` are the formal public Tavern Journal routes and reuse this collection.
+- Do not create a duplicate `blog-posts` collection, and do not add custom `/api/posts` or `/api/blog` routes that shadow Payload REST namespaces.
+- `/blog` page header copy, CTAs, category labels, SEO title/description, and optional hero image are owned by `formal-pages.blogPage`; `posts` owns article data only.
+- Public blog Local API reads must use `overrideAccess: false` and rely on collection access to hide drafts, hidden posts, and future posts.
+- Published visible post cover media must be guest-readable through `purpose = preview` or explicit `publicAccess = true`; the validation hook rejects private cover media instead of making it public automatically.
+- Homepage `homepage-items` can promote posts through `contentType = post` and `linkedPost`, including the `articles` placement.
 
 ### `announcements`
 
@@ -746,14 +815,22 @@ Frontend and service notes:
 
 Registered globals:
 
-- `site-settings`: site branding, contact, integrations, and email settings.
+- `site-settings`: site branding, contact, shared header navigation, shared footer link groups, integrations, and email settings.
 - `homepage-content`: homepage singleton copy and section settings.
+- `formal-pages`: formal info/marketing page body copy, CTAs, summaries, detail sections, and the public `/blog` page header.
 - `ai-provider-settings`: provider credentials/configuration.
 - `storage-settings`: non-sensitive Supabase Storage runtime configuration.
 - `security-settings`: security and rate-limit controls.
 - `runtime-deployment-settings`: runtime environment visibility and deployment settings.
 
 `src/globals/EmailSettings.ts` exists but is not registered. Email settings currently live under `site-settings.emailSettings`.
+
+Frontend and service notes:
+
+- Formal public page footers should render through `src/app/(frontend)/_components/shell/FooterBar.tsx`.
+- Footer link groups are operator-editable under `site-settings.footer.linkGroups`; avoid adding route-local footer link arrays.
+- Formal info/marketing page body copy should resolve through `src/app/(frontend)/_lib/formal-page-content.ts`; `formal-pages.ts` and `marketing-content.ts` are fallback/default seed content, not the long-term editing surface.
+- `/blog` header content should resolve through `src/app/(frontend)/blog/_lib/blogPageContent.ts`; `blogPageDefaults.ts` is fallback/default seed content only.
 
 ## Registered Payload Endpoints
 
@@ -861,6 +938,7 @@ Rules:
 
 Primary data sources:
 
+- `formal-pages`
 - `models`
 - `media`
 - optionally `model-bundles`
@@ -868,6 +946,7 @@ Primary data sources:
 Rules:
 
 - Public listing should use `visibility = public` and access-controlled reads.
+- Hero, CTA, and list-intro copy should come from the `showcase` marketing page entry in `formal-pages`.
 - Do not expose `formats.file` or `viewerUrl` directly.
 - Confirm viewer endpoint registration before relying on `/api/platform/models/:modelId/viewer`.
 

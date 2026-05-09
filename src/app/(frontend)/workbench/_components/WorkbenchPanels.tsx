@@ -300,7 +300,7 @@ export function WorkbenchActions({
                 </Button>
               ) : (
                 <Button asChild className="border-[#57492d] bg-[#141416] text-[#efe7da] hover:bg-[#1d1d21]" variant="outline">
-                  <Link href={`/workbench/models/${selectedModel.id}`}>View Detail</Link>
+                  <Link href={`/model-detail?id=${encodeURIComponent(String(selectedModel.id))}`}>View Detail</Link>
                 </Button>
               )}
             </>

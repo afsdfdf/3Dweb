@@ -135,7 +135,7 @@ export function WorkbenchLeftPanel() {
 
             {showTitleMenu ? (
               <div className={styles.dropdownMenu}>
-                {["Monk", "Unnamed", "Fox Sorcerer"].map((item) => (
+                {["Monk", "Unnamed", "Forest Guardian"].map((item) => (
                   <button
                     className={styles.dropdownItem}
                     key={item}

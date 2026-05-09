@@ -27,6 +27,7 @@ const collectionLabelDefaults: Record<string, { plural: string; singular: string
   'shopify-payments': { plural: 'Payments', singular: 'Payment' },
   'task-events': { plural: 'Task Events', singular: 'Task Event' },
   'user-follows': { plural: 'User Follows', singular: 'User Follow' },
+  'user-notifications': { plural: 'User Notifications', singular: 'User Notification' },
   'users': { plural: 'Users', singular: 'User' },
 }
 

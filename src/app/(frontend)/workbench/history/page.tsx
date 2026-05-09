@@ -75,7 +75,7 @@ export default async function WorkbenchHistoryPage() {
                           size="sm"
                           variant="outline"
                         >
-                          <Link href={`/workbench/models/${model.id}`}>
+                          <Link href={`/model-detail?id=${encodeURIComponent(String(model.id))}`}>
                             Detail
                           </Link>
                         </Button>

@@ -4,6 +4,7 @@ import { getPublicBundleList, type PublicBundleCard, type PublicBundleListResult
 import type { Where } from 'payload'
 
 import { getMarketingSiteData } from '../_lib/marketing'
+import { defaultSiteSettings, type FooterContent } from '../_lib/marketing-content'
 import { getCurrentNavUser } from '../_lib/session'
 
 type ImageLike = {
@@ -102,6 +103,8 @@ export type HomeInspirationItem = {
 export type HomeData = {
   featuredItems: HomeFeatureItem[]
   footer: {
+    content: FooterContent
+    siteDescription: string
     supportEmail: string
   }
   inspirationFilter: HomeInspirationFilter | 'all'
@@ -652,6 +655,8 @@ export async function getHomeData(args: HomeDataArgs = {}): Promise<HomeData> {
                 variant: index === 0 ? 'wide' : 'standard',
               })),
       footer: {
+        content: marketing.siteSettings.footer,
+        siteDescription: marketing.siteSettings.siteDescription || 'An AI 3D product platform for character creation, asset management, and print fulfillment.',
         supportEmail: marketing.siteSettings.supportEmail || 'service@thornstavern.com',
       },
       inspirationFilter: 'all',
@@ -676,7 +681,9 @@ export async function getHomeData(args: HomeDataArgs = {}): Promise<HomeData> {
     return {
       featuredItems: [],
       footer: {
-        supportEmail: 'service@thornstavern.com',
+        content: defaultSiteSettings.footer,
+        siteDescription: defaultSiteSettings.siteDescription,
+        supportEmail: defaultSiteSettings.supportEmail,
       },
       inspirationFilter: 'all',
       inspirationItems: [],

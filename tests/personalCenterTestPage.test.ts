@@ -8,9 +8,9 @@ const componentPath = path.join(
   rootDir,
   "src",
   "components",
-  "ui-lab",
-  "personal-center-test",
-  "personal-center-test.tsx",
+  "account",
+  "account-center",
+  "account-center.tsx",
 );
 const accountRoutePath = path.join(
   rootDir,
@@ -52,12 +52,12 @@ const componentCssPath = path.join(
   rootDir,
   "src",
   "components",
-  "ui-lab",
-  "personal-center-test",
-  "personal-center-test.module.css",
+  "account",
+  "account-center",
+  "account-center.module.css",
 );
 
-test("personal center is promoted to the default account route", () => {
+test("account center is promoted to the default account route", () => {
   assert.equal(existsSync(componentPath), true);
   assert.equal(existsSync(accountRoutePath), true);
 
@@ -66,9 +66,9 @@ test("personal center is promoted to the default account route", () => {
   const accountRouteSource = readFileSync(accountRoutePath, "utf8");
   const frontendSessionSource = readFileSync(frontendSessionPath, "utf8");
 
-  assert.match(source, /BorderComboFrame2/);
-  assert.match(source, /accountFrameContainer/);
-  assert.match(source, /FrameButton/);
+  assert.match(source, /export function AccountCenter/);
+  assert.match(source, /AccountCenterData/);
+  assert.match(source, /accountData/);
   assert.doesNotMatch(source, /OrangeMediumActionButton/);
   assert.doesNotMatch(source, /PurpleMediumActionButton/);
   assert.doesNotMatch(source, /mediumActionSlot/);
@@ -92,18 +92,25 @@ test("personal center is promoted to the default account route", () => {
   assert.match(source, /router\.refresh\(\)/);
   assert.match(source, /router\.push\("\/workbench"\)/);
   assert.match(source, /router\.push\("\/pricing"\)/);
-  assert.match(source, /fullWidth/);
   assert.match(source, /downloadCsv/);
   assert.match(source, /AuthModalStage/);
-  assert.match(accountRouteSource, /PersonalCenterTest/);
+  assert.match(accountRouteSource, /@\/components\/account\/account-center/);
+  assert.match(accountRouteSource, /AccountCenter/);
+  assert.doesNotMatch(accountRouteSource, /PersonalCenterTest/);
   assert.match(accountRouteSource, /requireUser\("\/account"\)/);
   assert.match(accountRouteSource, /initialSection=\{getInitialSection\(query\.section\)\}/);
+  assert.match(accountRouteSource, /accountRecordLimit\s*=\s*200/);
+  assert.doesNotMatch(accountRouteSource, /\.slice\(0,\s*10\)/);
+  assert.match(accountRouteSource, /href:\s*`\/model-detail\?id=/);
+  assert.match(accountRouteSource, /href:\s*task\.taskCode/);
   assert.match(accountRouteSource, /fullName:/);
   assert.match(accountRouteSource, /phone:/);
   assert.match(accountRouteSource, /bio:/);
   assert.match(accountRouteSource, /profileVisibility:/);
   assert.match(accountRouteSource, /avatarFrameStyles:/);
   assert.match(frontendSessionSource, /frameImageUrl:\s*getMediaUrl\(style\.frameImage\)/);
+  assert.match(frontendSessionSource, /owner:\s*\{\s*equals:\s*user\.id/);
+  assert.match(frontendSessionSource, /collection:\s*"credit-transactions"[\s\S]*where:\s*\{\s*user:\s*\{\s*equals:\s*user\.id/);
   assert.doesNotMatch(accountRouteSource, /AccountTestPage/);
 
   for (const label of [
@@ -129,8 +136,15 @@ test("personal center is promoted to the default account route", () => {
   assert.doesNotMatch(source, /section\.number/);
   assert.doesNotMatch(source, /Profile Avatar/);
   assert.doesNotMatch(source, /Change Avatar/);
+  assert.doesNotMatch(source, /\$\{activeConfig\.label\} Details/);
+  assert.doesNotMatch(source, /Orders Details/);
+  assert.match(source, /Order history and fulfillment status/);
+  assert.match(source, /useState\("all"\)/);
+  assert.match(source, /\? "Refresh" : "Apply"/);
   assert.doesNotMatch(cssSource, /scaleX\(/);
   assert.doesNotMatch(cssSource, /mediumActionSlot/);
+  assert.match(cssSource, /\.accountShell/);
+  assert.match(cssSource, /\.boundTopNavigation/);
   assert.ok(
     source.indexOf('label: "Overview"') <
       source.indexOf('label: "Account Settings"'),

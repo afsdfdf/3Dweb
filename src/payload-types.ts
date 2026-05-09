@@ -69,6 +69,7 @@ export interface Config {
   collections: {
     users: User;
     'user-follows': UserFollow;
+    'user-notifications': UserNotification;
     'avatar-frame-styles': AvatarFrameStyle;
     'email-verification-codes': EmailVerificationCode;
     media: Media;
@@ -99,6 +100,7 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     'user-follows': UserFollowsSelect<false> | UserFollowsSelect<true>;
+    'user-notifications': UserNotificationsSelect<false> | UserNotificationsSelect<true>;
     'avatar-frame-styles': AvatarFrameStylesSelect<false> | AvatarFrameStylesSelect<true>;
     'email-verification-codes': EmailVerificationCodesSelect<false> | EmailVerificationCodesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
@@ -132,6 +134,7 @@ export interface Config {
   globals: {
     'site-settings': SiteSetting;
     'homepage-content': HomepageContent;
+    'formal-pages': FormalPage;
     'ai-provider-settings': AiProviderSetting;
     'storage-settings': StorageSetting;
     'security-settings': SecuritySetting;
@@ -140,6 +143,7 @@ export interface Config {
   globalsSelect: {
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
     'homepage-content': HomepageContentSelect<false> | HomepageContentSelect<true>;
+    'formal-pages': FormalPagesSelect<false> | FormalPagesSelect<true>;
     'ai-provider-settings': AiProviderSettingsSelect<false> | AiProviderSettingsSelect<true>;
     'storage-settings': StorageSettingsSelect<false> | StorageSettingsSelect<true>;
     'security-settings': SecuritySettingsSelect<false> | SecuritySettingsSelect<true>;
@@ -277,42 +281,38 @@ export interface UserFollow {
   createdAt: string;
 }
 /**
- * Manage user-selectable avatar frame metadata, thumbnails, unlock rules, and ordering.
- *
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "avatar-frame-styles".
+ * via the `definition` "user-notifications".
  */
-export interface AvatarFrameStyle {
+export interface UserNotification {
   id: number;
-  /**
-   * Stable frontend key. Keep it lowercase and do not reuse retired keys.
-   */
-  key: string;
+  user: number | User;
+  type:
+    | 'generation_completed'
+    | 'generation_failed'
+    | 'order_paid'
+    | 'order_status'
+    | 'credits_purchased'
+    | 'credits_adjusted'
+    | 'subscription_credits'
+    | 'system_notice';
   title: string;
-  description?: string | null;
-  thumbnail?: (number | null) | Media;
-  frameImage?: (number | null) | Media;
-  unlockRule?: ('free' | 'subscription' | 'event' | 'achievement') | null;
-  isActive?: boolean | null;
-  isUserSelectable?: boolean | null;
-  sortOrder?: number | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * Short-lived hashed verification codes for registration and account security flows.
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "email-verification-codes".
- */
-export interface EmailVerificationCode {
-  id: number;
-  email: string;
-  purpose: 'register';
-  codeHash: string;
-  expiresAt: string;
-  consumedAt?: string | null;
-  attempts: number;
+  body: string;
+  href?: string | null;
+  severity: 'info' | 'success' | 'warning' | 'critical';
+  readAt?: string | null;
+  sourceKey?: string | null;
+  sourceTask?: (number | null) | GenerationTask;
+  sourceOrder?: (number | null) | PrintOrder;
+  metadata?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -406,6 +406,81 @@ export interface Model {
       }[]
     | null;
   description?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Manage model print orders, shipping information, and production status.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "print-orders".
+ */
+export interface PrintOrder {
+  id: number;
+  orderNumber: string;
+  user: number | User;
+  model: number | Model;
+  sourceTask?: (number | null) | GenerationTask;
+  status: 'pending-payment' | 'paid' | 'in-production' | 'shipped' | 'completed' | 'cancelled';
+  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
+  /**
+   * The legacy shopifyOrderId field stores the active payment rail order or session reference.
+   */
+  shopifyOrderId?: string | null;
+  amount: number;
+  currency?: string | null;
+  creditsUsed?: number | null;
+  sizeOption?: string | null;
+  materialOption?: string | null;
+  shippingName?: string | null;
+  shippingPhone?: string | null;
+  shippingAddress?: string | null;
+  trackingNumber?: string | null;
+  /**
+   * The legacy shopifyCheckoutUrl field also stores the current Stripe Checkout URL.
+   */
+  shopifyCheckoutUrl?: string | null;
+  internalNotes?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Manage user-selectable avatar frame metadata, thumbnails, unlock rules, and ordering.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "avatar-frame-styles".
+ */
+export interface AvatarFrameStyle {
+  id: number;
+  /**
+   * Stable frontend key. Keep it lowercase and do not reuse retired keys.
+   */
+  key: string;
+  title: string;
+  description?: string | null;
+  thumbnail?: (number | null) | Media;
+  frameImage?: (number | null) | Media;
+  unlockRule?: ('free' | 'subscription' | 'event' | 'achievement') | null;
+  isActive?: boolean | null;
+  isUserSelectable?: boolean | null;
+  sortOrder?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Short-lived hashed verification codes for registration and account security flows.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "email-verification-codes".
+ */
+export interface EmailVerificationCode {
+  id: number;
+  email: string;
+  purpose: 'register';
+  codeHash: string;
+  expiresAt: string;
+  consumedAt?: string | null;
+  attempts: number;
   updatedAt: string;
   createdAt: string;
 }
@@ -781,41 +856,6 @@ export interface CreditTransaction {
   createdAt: string;
 }
 /**
- * Manage model print orders, shipping information, and production status.
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "print-orders".
- */
-export interface PrintOrder {
-  id: number;
-  orderNumber: string;
-  user: number | User;
-  model: number | Model;
-  sourceTask?: (number | null) | GenerationTask;
-  status: 'pending-payment' | 'paid' | 'in-production' | 'shipped' | 'completed' | 'cancelled';
-  paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
-  /**
-   * The legacy shopifyOrderId field stores the active payment rail order or session reference.
-   */
-  shopifyOrderId?: string | null;
-  amount: number;
-  currency?: string | null;
-  creditsUsed?: number | null;
-  sizeOption?: string | null;
-  materialOption?: string | null;
-  shippingName?: string | null;
-  shippingPhone?: string | null;
-  shippingAddress?: string | null;
-  trackingNumber?: string | null;
-  /**
-   * The legacy shopifyCheckoutUrl field also stores the current Stripe Checkout URL.
-   */
-  shopifyCheckoutUrl?: string | null;
-  internalNotes?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "credit-products".
  */
@@ -972,6 +1012,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'user-follows';
         value: number | UserFollow;
+      } | null)
+    | ({
+        relationTo: 'user-notifications';
+        value: number | UserNotification;
       } | null)
     | ({
         relationTo: 'avatar-frame-styles';
@@ -1148,6 +1192,25 @@ export interface UsersSelect<T extends boolean = true> {
 export interface UserFollowsSelect<T extends boolean = true> {
   follower?: T;
   followee?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "user-notifications_select".
+ */
+export interface UserNotificationsSelect<T extends boolean = true> {
+  user?: T;
+  type?: T;
+  title?: T;
+  body?: T;
+  href?: T;
+  severity?: T;
+  readAt?: T;
+  sourceKey?: T;
+  sourceTask?: T;
+  sourceOrder?: T;
+  metadata?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -1679,6 +1742,21 @@ export interface SiteSetting {
     directionEyebrow?: string | null;
     directionTitle?: string | null;
     directionText?: string | null;
+    linkGroups?:
+      | {
+          title: string;
+          ariaLabel?: string | null;
+          helperText?: string | null;
+          links?:
+            | {
+                label: string;
+                href: string;
+                id?: string | null;
+              }[]
+            | null;
+          id?: string | null;
+        }[]
+      | null;
   };
   paymentProviders?: {
     subscriptionProvider?: ('stripe' | 'shopify') | null;
@@ -1889,6 +1967,127 @@ export interface HomepageContent {
         id?: string | null;
       }[]
     | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * Edit public formal page copy, CTAs, summaries, and detail sections.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "formal-pages".
+ */
+export interface FormalPage {
+  id: number;
+  infoPages?:
+    | {
+        pageKey: 'about' | 'contact' | 'privacyPolicy' | 'refundPolicy' | 'shippingPolicy';
+        currentPath: string;
+        heroEyebrow: string;
+        heroTitle: string;
+        heroText: string;
+        lastUpdated: string;
+        heroPrimaryCTA: {
+          label: string;
+          href: string;
+        };
+        heroSecondaryCTA: {
+          label: string;
+          href: string;
+        };
+        summaryCards: {
+          title: string;
+          body: string;
+          id?: string | null;
+        }[];
+        sections: {
+          title: string;
+          body: string;
+          items?:
+            | {
+                title: string;
+                body: string;
+                id?: string | null;
+              }[]
+            | null;
+          id?: string | null;
+        }[];
+        contactCards?:
+          | {
+              title: string;
+              body: string;
+              label: string;
+              href?: string | null;
+              id?: string | null;
+            }[]
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  marketingPages?:
+    | {
+        pageKey: 'features' | 'solutions' | 'resources' | 'developers' | 'pricing' | 'showcase';
+        currentPath: string;
+        heroEyebrow: string;
+        heroTitle: string;
+        heroText: string;
+        heroPrimaryCTA: {
+          label: string;
+          href: string;
+        };
+        heroSecondaryCTA: {
+          label: string;
+          href: string;
+        };
+        sections: {
+          anchorId: string;
+          eyebrow: string;
+          title: string;
+          text: string;
+          cards?:
+            | {
+                title: string;
+                text: string;
+                note?: string | null;
+                id?: string | null;
+              }[]
+            | null;
+          bullets?:
+            | {
+                label: string;
+                id?: string | null;
+              }[]
+            | null;
+          id?: string | null;
+        }[];
+        id?: string | null;
+      }[]
+    | null;
+  blogPage: {
+    heroEyebrow: string;
+    heroTitle: string;
+    heroText: string;
+    /**
+     * Public rendering requires media with publicAccess enabled or purpose set to preview.
+     */
+    heroImage?: (number | null) | Media;
+    heroImageAlt: string;
+    heroPrimaryCTA: {
+      label: string;
+      href: string;
+    };
+    heroSecondaryCTA: {
+      label: string;
+      href: string;
+    };
+    dispatchesLabel: string;
+    categoryLabels: {
+      articles: string;
+      events: string;
+      announcements: string;
+    };
+    seoTitle: string;
+    seoDescription: string;
+  };
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -2136,6 +2335,21 @@ export interface SiteSettingsSelect<T extends boolean = true> {
         directionEyebrow?: T;
         directionTitle?: T;
         directionText?: T;
+        linkGroups?:
+          | T
+          | {
+              title?: T;
+              ariaLabel?: T;
+              helperText?: T;
+              links?:
+                | T
+                | {
+                    label?: T;
+                    href?: T;
+                    id?: T;
+                  };
+              id?: T;
+            };
       };
   paymentProviders?:
     | T
@@ -2393,6 +2607,144 @@ export interface HomepageContentSelect<T extends boolean = true> {
         question?: T;
         answer?: T;
         id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "formal-pages_select".
+ */
+export interface FormalPagesSelect<T extends boolean = true> {
+  infoPages?:
+    | T
+    | {
+        pageKey?: T;
+        currentPath?: T;
+        heroEyebrow?: T;
+        heroTitle?: T;
+        heroText?: T;
+        lastUpdated?: T;
+        heroPrimaryCTA?:
+          | T
+          | {
+              label?: T;
+              href?: T;
+            };
+        heroSecondaryCTA?:
+          | T
+          | {
+              label?: T;
+              href?: T;
+            };
+        summaryCards?:
+          | T
+          | {
+              title?: T;
+              body?: T;
+              id?: T;
+            };
+        sections?:
+          | T
+          | {
+              title?: T;
+              body?: T;
+              items?:
+                | T
+                | {
+                    title?: T;
+                    body?: T;
+                    id?: T;
+                  };
+              id?: T;
+            };
+        contactCards?:
+          | T
+          | {
+              title?: T;
+              body?: T;
+              label?: T;
+              href?: T;
+              id?: T;
+            };
+        id?: T;
+      };
+  marketingPages?:
+    | T
+    | {
+        pageKey?: T;
+        currentPath?: T;
+        heroEyebrow?: T;
+        heroTitle?: T;
+        heroText?: T;
+        heroPrimaryCTA?:
+          | T
+          | {
+              label?: T;
+              href?: T;
+            };
+        heroSecondaryCTA?:
+          | T
+          | {
+              label?: T;
+              href?: T;
+            };
+        sections?:
+          | T
+          | {
+              anchorId?: T;
+              eyebrow?: T;
+              title?: T;
+              text?: T;
+              cards?:
+                | T
+                | {
+                    title?: T;
+                    text?: T;
+                    note?: T;
+                    id?: T;
+                  };
+              bullets?:
+                | T
+                | {
+                    label?: T;
+                    id?: T;
+                  };
+              id?: T;
+            };
+        id?: T;
+      };
+  blogPage?:
+    | T
+    | {
+        heroEyebrow?: T;
+        heroTitle?: T;
+        heroText?: T;
+        heroImage?: T;
+        heroImageAlt?: T;
+        heroPrimaryCTA?:
+          | T
+          | {
+              label?: T;
+              href?: T;
+            };
+        heroSecondaryCTA?:
+          | T
+          | {
+              label?: T;
+              href?: T;
+            };
+        dispatchesLabel?: T;
+        categoryLabels?:
+          | T
+          | {
+              articles?: T;
+              events?: T;
+              announcements?: T;
+            };
+        seoTitle?: T;
+        seoDescription?: T;
       };
   updatedAt?: T;
   createdAt?: T;

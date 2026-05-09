@@ -1,0 +1,53 @@
+.resetPage {
+  align-items: center;
+  background:
+    radial-gradient(circle at 18% 10%, rgba(244, 189, 96, 0.1), transparent 28%),
+    linear-gradient(180deg, #181818 0%, #0b0b0b 58%, #050505 100%);
+  box-sizing: border-box;
+  color: #ededee;
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  overflow: hidden;
+  padding: 40px 16px;
+  width: 100%;
+}
+
+.authSlot {
+  --reset-auth-scale: 1;
+
+  flex: 0 0 auto;
+  height: calc(588px * var(--reset-auth-scale));
+  width: calc(380px * var(--reset-auth-scale));
+}
+
+.authSlot > * {
+  transform: scale(var(--reset-auth-scale));
+  transform-origin: top left;
+  width: 380px;
+}
+
+@media (min-width: 768px) {
+  .authSlot {
+    --reset-auth-scale: 1;
+  }
+}
+
+@media (max-width: 380px) {
+  .authSlot {
+    --reset-auth-scale: 0.9;
+  }
+}
+
+@media (max-width: 340px) {
+  .authSlot {
+    --reset-auth-scale: 0.84;
+  }
+}
+
+@media (min-width: 768px) and (max-height: 760px) {
+  .resetPage {
+    align-items: flex-start;
+    padding-top: 56px;
+  }
+}

@@ -12,6 +12,7 @@ import {
   resolveImageGenerationProvider,
   type ImageGenerationProvider,
 } from '@/lib/geminiImageGateway'
+import { createGenerationTaskNotification } from '@/lib/notificationService'
 import { uploadToSupabaseStorage, getRuntimeStorageSettings } from '@/lib/supabase/storage'
 import {
   defaultTaskCreditRules,
@@ -147,6 +148,21 @@ async function createTaskEvent(args: {
     req: args.req,
     ...accessOptions(args.req),
   })
+
+  if (args.eventType === 'completed' || args.eventType === 'failed') {
+    await createGenerationTaskNotification({
+      eventType: args.eventType,
+      message: args.message,
+      req: args.req,
+      taskId: args.taskId,
+      userId: args.userId,
+    }).catch((error) => {
+      args.req.payload.logger?.error?.({
+        err: error,
+        msg: `Failed to create notification for image task ${args.taskId}.`,
+      })
+    })
+  }
 }
 
 async function readImageGenerationDefaultPrompt(req: PayloadRequest) {

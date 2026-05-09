@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
 import { isAdmin, ownerOrStaff } from '@/access'
+import { syncCreditBalanceMirror } from '@/hooks/syncCreditBalanceMirror'
 import { adminLabelsKey, adminTextKey } from '@/lib/adminText'
 
 export const Credits: CollectionConfig = {
@@ -17,6 +18,9 @@ export const Credits: CollectionConfig = {
     delete: isAdmin,
     read: ownerOrStaff('user'),
     update: isAdmin,
+  },
+  hooks: {
+    afterChange: [syncCreditBalanceMirror],
   },
   timestamps: true,
   fields: [

@@ -6,6 +6,7 @@ import {
   SourcePurpleMediumButton,
 } from "@/components/ui-lab/action-buttons";
 import { AuthModalStage } from "@/components/auth/AuthModalStage";
+import { useAuthModal } from "@/components/auth/AuthModalProvider";
 import { ButtonBoxFrame } from "@/components/ui-lab/button-box-frame";
 import { ModelAuthorCard } from "@/components/ui-lab/model-author-card";
 import { ModelDetailAdBanner } from "@/components/ui-lab/model-detail-ad-banner";
@@ -35,43 +36,18 @@ const transparentImageSrc =
 const relatedModelColumns = 3;
 const relatedModelCardHeight = 222;
 const relatedModelInitialVisibleCount = 6;
-
-const fallbackData: ModelDetailData = {
-  ageLabel: "6 Days ago",
-  authorAvatarSrc: "/ui-lab/model-detail-uicut/images/face.png",
-  authorDescription:
-    "Public creator model available for preview and reference.",
-  authorName: "Xing Mu",
-  authorProfileBannerFocalX: 50,
-  authorProfileBannerFocalY: 50,
-  authorProfileBannerSrc: null,
-  commentsLabel: "0",
-  downloadCreditsLabel: "15.00",
-  favoritesLabel: "267",
-  formatsLabel: "GLB",
-  id: 0,
-  inputPreviewSrc: "/ui-lab/model-detail-uicut/images/detail-side-img.png",
-  isOwnedByCurrentUser: false,
-  likesLabel: "56",
-  previewImages: ["/ui-lab/model-detail-uicut/images/detail.png"],
-  printReadyLabel: "Preview Only",
-  sideModels: [],
-  tags: ["game", "Monk"],
-  title: "Monk",
-  topologyLabel: "Triangle",
-  updatedLabel: "2026.02.25 10:25",
-  vertexLabel: "--",
-  viewLabel: "2.3k",
-  viewerURL: null,
-  visibilityLabel: "public",
-};
+const commentLimit = 3;
 
 type ModelDetailNativeProps = {
-  data?: ModelDetailData | null;
+  data: ModelDetailData;
   navUser?: null | TopNavigationUser;
 };
 
 type ActiveModel = {
+  commentsCount: number;
+  commentsEnabled: boolean;
+  downloadCredits: number;
+  downloadCreditsLabel: string;
   id: number;
   imageSrc: null | string;
   tags: string[];
@@ -80,7 +56,18 @@ type ActiveModel = {
   viewerURL: null | string;
 };
 
+type ModelComment = {
+  authorName: string;
+  content: string;
+  createdLabel: string;
+  id: string;
+};
+
 const getInitialActiveModel = (detail: ModelDetailData): ActiveModel => ({
+  commentsCount: detail.commentsCount,
+  commentsEnabled: detail.commentsEnabled,
+  downloadCredits: detail.downloadCredits,
+  downloadCreditsLabel: detail.downloadCreditsLabel,
   id: detail.id,
   imageSrc: detail.inputPreviewSrc,
   tags: detail.tags,
@@ -92,6 +79,10 @@ const getInitialActiveModel = (detail: ModelDetailData): ActiveModel => ({
 const getActiveModelFromSideModel = (
   item: ModelDetailSideModel,
 ): ActiveModel => ({
+  commentsCount: item.commentsCount,
+  commentsEnabled: item.commentsEnabled,
+  downloadCredits: item.downloadCredits,
+  downloadCreditsLabel: item.downloadCreditsLabel,
   id: Number(item.id),
   imageSrc: item.imageSrc,
   tags: item.tags,
@@ -100,19 +91,73 @@ const getActiveModelFromSideModel = (
   viewerURL: item.viewerURL,
 });
 
+const compactCountLabel = (value: number) => {
+  if (!Number.isFinite(value) || value <= 0) return "0";
+  if (value >= 1000) return `${(value / 1000).toFixed(value >= 10000 ? 0 : 1)}k`;
+  return String(value);
+};
+
+const formatCommentDate = (value: unknown) => {
+  if (typeof value !== "string" || !value) return "Recently";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Recently";
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}.${month}.${day}`;
+};
+
+const normalizeComment = (value: unknown): null | ModelComment => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const record = value as Record<string, unknown>;
+  const content = typeof record.content === "string" ? record.content.trim() : "";
+  if (!content) return null;
+
+  return {
+    authorName:
+      typeof record.authorName === "string" && record.authorName.trim()
+        ? record.authorName.trim()
+        : "Member",
+    content,
+    createdLabel: formatCommentDate(record.createdAt),
+    id: String(record.id ?? `${content}-${record.createdAt || ""}`),
+  };
+};
+
+const getResponseMessage = async (response: Response, fallback: string) => {
+  try {
+    const body = (await response.json()) as { message?: unknown };
+    return typeof body.message === "string" && body.message.trim()
+      ? body.message.trim()
+      : fallback;
+  } catch {
+    return fallback;
+  }
+};
+
+const getDownloadFilename = (header: null | string, modelId: number) => {
+  if (!header) return `model-${modelId}.glb`;
+  const encoded = header.match(/filename\*=UTF-8''([^;]+)/i);
+  if (encoded?.[1]) return decodeURIComponent(encoded[1].replace(/"/g, ""));
+  const quoted = header.match(/filename="([^"]+)"/i);
+  if (quoted?.[1]) return quoted[1];
+  const plain = header.match(/filename=([^;]+)/i);
+  return plain?.[1]?.trim() || `model-${modelId}.glb`;
+};
+
 export default function ModelDetailNative({
-  data = null,
+  data,
   navUser = null,
 }: ModelDetailNativeProps) {
-  const detail = data ?? fallbackData;
+  const detail = data;
+  const { openAuthModal } = useAuthModal();
   const [activeModel, setActiveModel] = useState<ActiveModel>(() =>
     getInitialActiveModel(detail),
   );
   const modelImages = activeModel.imageSrc
     ? [activeModel.imageSrc]
-    : detail.previewImages.length > 0
-      ? detail.previewImages
-      : fallbackData.previewImages;
+    : detail.previewImages;
   const relatedModels = detail.sideModels.length > 0 ? detail.sideModels : null;
   const relatedScrollRef = useRef<HTMLDivElement | null>(null);
   const [slide, setSlide] = useState(0);
@@ -120,7 +165,70 @@ export default function ModelDetailNative({
     relatedModelInitialVisibleCount,
   );
   const [showDownloadConfirm, setShowDownloadConfirm] = useState(false);
+  const [downloadStatus, setDownloadStatus] = useState<null | string>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [commentInput, setCommentInput] = useState("");
+  const [commentFeedback, setCommentFeedback] = useState<null | string>(null);
+  const [comments, setComments] = useState<ModelComment[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [commentSubmitting, setCommentSubmitting] = useState(false);
+  const [commentTotal, setCommentTotal] = useState(activeModel.commentsCount);
   const activeModelId = String(activeModel.id);
+  const downloadIsCharged =
+    detail.chargeDownloadCredits && activeModel.downloadCredits > 0;
+  const downloadURL = `/api/platform/models/${activeModel.id}/download?format=glb`;
+  const downloadMessage = downloadIsCharged
+    ? `Downloading this GLB file will cost ${activeModel.downloadCreditsLabel} points.`
+    : "Download this GLB file for free.";
+  const commentCountLabel = compactCountLabel(commentTotal);
+
+  const getCurrentRedirect = useCallback(() => {
+    if (typeof window === "undefined") return `/model-detail?id=${activeModel.id}`;
+    return `${window.location.pathname}${window.location.search}`;
+  }, [activeModel.id]);
+
+  const loadComments = useCallback(async () => {
+    if (!activeModel.commentsEnabled) {
+      setComments([]);
+      setCommentTotal(0);
+      setCommentFeedback(null);
+      setCommentsLoading(false);
+      return;
+    }
+
+    setCommentsLoading(true);
+    setCommentFeedback(null);
+
+    try {
+      const response = await fetch(
+        `/api/social/models/${activeModel.id}/comments?limit=${commentLimit}`,
+        { credentials: "same-origin" },
+      );
+      if (!response.ok) {
+        throw new Error(
+          await getResponseMessage(response, "Failed to load comments."),
+        );
+      }
+
+      const payload = (await response.json()) as {
+        docs?: unknown[];
+        totalDocs?: unknown;
+      };
+      const nextComments = Array.isArray(payload.docs)
+        ? payload.docs.map(normalizeComment).filter((item): item is ModelComment => Boolean(item))
+        : [];
+      const nextTotal = Number(payload.totalDocs ?? nextComments.length);
+
+      setComments(nextComments);
+      setCommentTotal(Number.isFinite(nextTotal) ? nextTotal : nextComments.length);
+    } catch (error) {
+      setComments([]);
+      setCommentTotal(activeModel.commentsCount);
+      setCommentFeedback(error instanceof Error ? error.message : "Failed to load comments.");
+    } finally {
+      setCommentsLoading(false);
+    }
+  }, [activeModel.commentsCount, activeModel.commentsEnabled, activeModel.id]);
 
   const updateVisibleRelatedImages = useCallback(() => {
     const node = relatedScrollRef.current;
@@ -144,10 +252,18 @@ export default function ModelDetailNative({
     window.requestAnimationFrame(updateVisibleRelatedImages);
   }, [activeModelId, updateVisibleRelatedImages]);
 
+  useEffect(() => {
+    setCommentInput("");
+    setCommentTotal(activeModel.commentsCount);
+    void loadComments();
+  }, [activeModel.commentsCount, activeModelId, loadComments]);
+
   const selectSideModel = (item: ModelDetailSideModel) => {
     const nextModel = getActiveModelFromSideModel(item);
     setActiveModel(nextModel);
     setSlide(0);
+    setShowDownloadConfirm(false);
+    setDownloadStatus(null);
 
     if (typeof window !== "undefined") {
       window.history.pushState(null, "", item.href);
@@ -164,6 +280,115 @@ export default function ModelDetailNative({
     setSlide((current) => (current + 1) % modelImages.length);
   };
 
+  const handleCommentSubmit = async () => {
+    const content = commentInput.trim();
+    setCommentFeedback(null);
+
+    if (!activeModel.commentsEnabled) {
+      setCommentFeedback("Comments are available after this model is public.");
+      return;
+    }
+
+    if (!navUser) {
+      openAuthModal("login", { redirectTo: getCurrentRedirect() });
+      return;
+    }
+
+    if (!content) {
+      setCommentFeedback("Enter a comment before posting.");
+      return;
+    }
+
+    if (content.length > 500) {
+      setCommentFeedback("Comment content must be 500 characters or fewer.");
+      return;
+    }
+
+    setCommentSubmitting(true);
+    try {
+      const response = await fetch(`/api/social/models/${activeModel.id}/comments`, {
+        body: JSON.stringify({ content }),
+        credentials: "same-origin",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      });
+
+      if (response.status === 401) {
+        openAuthModal("login", { redirectTo: getCurrentRedirect() });
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          await getResponseMessage(response, "Failed to post comment."),
+        );
+      }
+
+      setCommentInput("");
+      await loadComments();
+      setCommentFeedback("Comment posted.");
+    } catch (error) {
+      setCommentFeedback(error instanceof Error ? error.message : "Failed to post comment.");
+    } finally {
+      setCommentSubmitting(false);
+    }
+  };
+
+  const handleDownloadConfirm = async () => {
+    setDownloadStatus(null);
+
+    if (!downloadIsCharged) {
+      window.location.href = downloadURL;
+      return;
+    }
+
+    if (!navUser) {
+      setShowDownloadConfirm(false);
+      openAuthModal("login", { redirectTo: getCurrentRedirect() });
+      return;
+    }
+
+    setIsDownloading(true);
+    try {
+      const response = await fetch(`${downloadURL}&inline=1`, {
+        credentials: "same-origin",
+      });
+
+      if (response.status === 401) {
+        setShowDownloadConfirm(false);
+        openAuthModal("login", { redirectTo: getCurrentRedirect() });
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          await getResponseMessage(response, "Model download failed."),
+        );
+      }
+
+      const blob = await response.blob();
+      const objectURL = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = objectURL;
+      link.download = getDownloadFilename(
+        response.headers.get("Content-Disposition"),
+        activeModel.id,
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(objectURL), 1000);
+      setShowDownloadConfirm(false);
+      setDownloadStatus("Download started.");
+    } catch (error) {
+      setDownloadStatus(error instanceof Error ? error.message : "Model download failed.");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   return (
     <main className={styles.pageRoot}>
       {activeModel.viewerURL ? (
@@ -174,6 +399,161 @@ export default function ModelDetailNative({
           crossOrigin="anonymous"
         />
       ) : null}
+      <div className={styles.mobileDetail}>
+        <header className={styles.mobileHeader}>
+          <a href="/" aria-label="Thorns Tavern home">
+            <img alt="Thorns Tavern" src="/ui-lab/top-navigation/logo-wordmark.png" />
+          </a>
+          <a href="/workbench">Workbench</a>
+        </header>
+
+        <section className={styles.mobileHero}>
+          <span className={styles.mobileEyebrow}>Model Detail</span>
+          <h1>{activeModel.title}</h1>
+          <div className={styles.mobileTags}>
+            {activeModel.tags.slice(0, 4).map((tag) => (
+              <span key={tag}># {tag}</span>
+            ))}
+          </div>
+        </section>
+
+        <section className={styles.mobilePreview} aria-label="Model preview">
+          {activeModel.viewerURL ? (
+            <ModelViewer
+              className={styles.mobileViewer}
+              showGround={false}
+              showPlaceholderModel={false}
+              src={activeModel.viewerURL}
+              transparentBackground
+            />
+          ) : modelImages[slide] ? (
+            <img alt={activeModel.title} src={modelImages[slide]} />
+          ) : (
+            <div className={styles.mobilePreviewEmpty}>Preview unavailable</div>
+          )}
+        </section>
+
+        {modelImages.length > 1 ? (
+          <div className={styles.mobileImageControls}>
+            <button onClick={goPrev} type="button">Previous</button>
+            <span>{slide + 1} / {modelImages.length}</span>
+            <button onClick={goNext} type="button">Next</button>
+          </div>
+        ) : null}
+
+        <section className={styles.mobileStats} aria-label="Model facts">
+          <div>
+            <span>Topology</span>
+            <strong>{detail.topologyLabel}</strong>
+          </div>
+          <div>
+            <span>Formats</span>
+            <strong>{detail.formatsLabel}</strong>
+          </div>
+          <div>
+            <span>Print</span>
+            <strong>{detail.printReadyLabel}</strong>
+          </div>
+        </section>
+
+        <section className={styles.mobileActions} aria-label="Model actions">
+          <button className={styles.mobilePrimaryAction} onClick={handleDownloadConfirm} type="button">
+            Download GLB
+          </button>
+          <a href={activeModel.id ? `/workbench?reference=${activeModel.id}` : "/workbench"}>
+            Use in Workbench
+          </a>
+        </section>
+        {downloadStatus ? <div className={styles.mobileStatus}>{downloadStatus}</div> : null}
+
+        <section className={styles.mobileCard}>
+          <div className={styles.mobileAuthor}>
+            {detail.authorAvatarSrc ? <img alt={detail.authorName} src={detail.authorAvatarSrc} /> : null}
+            <div>
+              <span>Creator</span>
+              <strong>{detail.authorName}</strong>
+            </div>
+          </div>
+          <p>{detail.authorDescription}</p>
+        </section>
+
+        <section className={styles.mobileCard}>
+          <div className={styles.mobileSectionHeader}>
+            <span>Comments</span>
+            <strong>{commentCountLabel}</strong>
+          </div>
+          {activeModel.commentsEnabled ? (
+            <form
+              className={styles.mobileCommentForm}
+              onSubmit={(event) => {
+                event.preventDefault();
+                void handleCommentSubmit();
+              }}
+            >
+              <textarea
+                maxLength={500}
+                onChange={(event) => setCommentInput(event.target.value.slice(0, 500))}
+                placeholder="Please enter your comment."
+                value={commentInput}
+              />
+              <div>
+                <span>{commentInput.length}/500</span>
+                <button
+                  disabled={commentSubmitting}
+                  onClick={() => {
+                    void handleCommentSubmit();
+                  }}
+                  type="button"
+                >
+                  {commentSubmitting ? "Posting" : "Comment"}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <p className={styles.mobileStatus}>Comments are available after this model is public.</p>
+          )}
+          {commentFeedback ? <p className={styles.mobileStatus}>{commentFeedback}</p> : null}
+          {activeModel.commentsEnabled && comments.length > 0 ? (
+            <ul className={styles.mobileCommentList}>
+              {comments.map((comment) => (
+                <li key={comment.id}>
+                  <strong>{comment.authorName}</strong>
+                  <span>{comment.createdLabel}</span>
+                  <p>{comment.content}</p>
+                </li>
+              ))}
+            </ul>
+          ) : activeModel.commentsEnabled ? (
+            <p className={styles.mobileStatus}>{commentsLoading ? "Loading comments..." : "No comments yet."}</p>
+          ) : null}
+        </section>
+
+        {relatedModels ? (
+          <section className={styles.mobileRelated} aria-label="Related models">
+            <div className={styles.mobileSectionHeader}>
+              <span>{detail.isOwnedByCurrentUser ? "My models" : "Creator models"}</span>
+              <strong>{relatedModels.length}</strong>
+            </div>
+            <div className={styles.mobileRelatedGrid}>
+              {relatedModels.slice(0, 6).map((item) => (
+                <a
+                  href={item.href}
+                  key={item.id}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    if (item.id !== activeModelId) {
+                      selectSideModel(item);
+                    }
+                  }}
+                >
+                  {item.imageSrc ? <img alt={item.title} src={item.imageSrc} /> : null}
+                  <span>{item.title}</span>
+                </a>
+              ))}
+            </div>
+          </section>
+        ) : null}
+      </div>
       <div className={styles.scaleViewport}>
         <div className={styles.scaleStage}>
           <ModelDetailHeader navUser={navUser} />
@@ -270,14 +650,15 @@ export default function ModelDetailNative({
                 <ModelDownloadConfirmation
                   className="alert-box"
                   onCancel={() => setShowDownloadConfirm(false)}
+                  confirmLabel={isDownloading ? "WAIT" : "OK"}
+                  message={downloadMessage}
                   onConfirm={() => {
-                    if (detail.id) {
-                      window.location.href = `/api/platform/models/${activeModel.id}/download?format=glb`;
-                    }
+                    if (!isDownloading) void handleDownloadConfirm();
                   }}
                   style={{ left: "50%", marginLeft: 170, top: "45%" }}
                 />
               ) : null}
+              {downloadStatus ? <div className="download-status">{downloadStatus}</div> : null}
             </section>
 
             <section className="detail-right">
@@ -356,20 +737,61 @@ export default function ModelDetailNative({
                       </div>
                     </li>
                   </ul>
-                  <div className="form-box">
-                    <textarea
-                      className="uc-textarea"
-                      placeholder="Please enter your comment."
-                      rows={10}
-                    />
-                    <div className="right">
-                      <a href="#" className="uc-btn">
-                        COMMENT
-                      </a>
-                      <div className="number">0/500</div>
+                  {activeModel.commentsEnabled ? (
+                    <form
+                      className="form-box"
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        void handleCommentSubmit();
+                      }}
+                    >
+                      <textarea
+                        className="uc-textarea"
+                        disabled={commentSubmitting}
+                        maxLength={500}
+                        onChange={(event) => setCommentInput(event.target.value.slice(0, 500))}
+                        placeholder="Please enter your comment."
+                        rows={10}
+                        value={commentInput}
+                      />
+                      <div className="right">
+                        <button
+                          className="uc-btn"
+                          disabled={commentSubmitting}
+                          onClick={() => {
+                            void handleCommentSubmit();
+                          }}
+                          type="button"
+                        >
+                          {commentSubmitting ? "POSTING" : "COMMENT"}
+                        </button>
+                        <div className="number">{commentInput.length}/500</div>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="comment-state">
+                      Comments are available after this model is public.
                     </div>
-                  </div>
-                  <div className="total">{detail.commentsLabel} Comments</div>
+                  )}
+                  {commentFeedback ? <div className="comment-feedback">{commentFeedback}</div> : null}
+                  <div className="total">{commentCountLabel} Comments</div>
+                  {activeModel.commentsEnabled && commentsLoading ? (
+                    <div className="comment-state">Loading comments...</div>
+                  ) : activeModel.commentsEnabled && comments.length > 0 ? (
+                    <ul className="comment-list">
+                      {comments.map((comment) => (
+                        <li key={comment.id}>
+                          <div className="comment-meta">
+                            <strong>{comment.authorName}</strong>
+                            <time>{comment.createdLabel}</time>
+                          </div>
+                          <p>{comment.content}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : activeModel.commentsEnabled ? (
+                    <div className="comment-state">No comments yet.</div>
+                  ) : null}
                   <div
                     className="model-scroll"
                     onScroll={updateVisibleRelatedImages}
@@ -469,10 +891,10 @@ export default function ModelDetailNative({
                     decoding="async"
                   />
                   <div className="hd">
-                    <div className="money">{detail.downloadCreditsLabel}</div>
-                    <div className="uc-del">27.00</div>
+                    <div className="money">{activeModel.downloadCreditsLabel}</div>
+                    <div className="uc-del">{detail.chargeDownloadCredits ? "POINTS" : "FREE"}</div>
                   </div>
-                  <div className="txt">POINTS</div>
+                  <div className="txt">{detail.chargeDownloadCredits ? "POINTS" : "NO CHARGE"}</div>
                 </div>
                 <a href="#" className="btn">
                   <img
@@ -554,10 +976,10 @@ export default function ModelDetailNative({
                     Favorite Model
                   </a>
                   <a
-                    href={activeModel.id ? `/showcase/${activeModel.id}` : "#"}
+                    href={activeModel.id ? `/model-detail?id=${activeModel.id}` : "#"}
                     className="item"
                   >
-                    Open Showcase
+                    Open Detail
                   </a>
                 </div>
               </div>

@@ -43,20 +43,20 @@
   position: absolute;
   left: 50%;
   top: 18px;
-  display: grid;
-  grid-template-columns: 49px 107px 79px 52px;
-  column-gap: 60px;
+  display: flex;
+  gap: clamp(34px, 3.1vw, 58px);
   align-items: start;
   color: rgba(244, 188, 96, 0.54);
   font-size: 16px;
   line-height: 22px;
-  transform: translateX(-232px);
+  transform: translateX(-50%);
 }
 
 .navLink {
   position: relative;
   color: inherit;
   cursor: pointer;
+  min-width: 52px;
   text-align: center;
   text-decoration: none;
   transition:
@@ -157,6 +157,18 @@
   height: 44px;
 }
 
+.notificationBellWrap {
+  position: absolute;
+  top: 18px;
+  width: 24px;
+  height: 24px;
+}
+
+.notificationBellWrap {
+  right: 251px;
+  z-index: 30;
+}
+
 .notificationBellButton,
 .cartIconButton {
   position: absolute;
@@ -171,14 +183,14 @@
 }
 
 .notificationBellButton {
-  right: 251px;
+  inset: 0;
 }
 
 .cartIconButton {
   right: 203px;
 }
 
-.topNav[data-authenticated="false"] .notificationBellButton {
+.topNav[data-authenticated="false"] .notificationBellWrap {
   right: 251px;
 }
 
@@ -229,18 +241,249 @@
 
 .notificationBadge {
   position: absolute;
-  right: -5px;
-  top: -1px;
-  min-width: 17px;
-  height: 14px;
+  right: -9px;
+  top: -5px;
+  min-width: 18px;
+  height: 16px;
+  border: 1px solid rgba(255, 243, 201, 0.82);
   border-radius: 8px;
-  color: #1d1d1d;
-  background: #f2c371;
-  font-size: 10px;
+  box-shadow: 0 0 12px rgba(226, 66, 54, 0.42);
+  color: #190f08;
+  background: linear-gradient(180deg, #ffe1a1 0%, #f1bc5f 46%, #e7774f 100%);
+  font-size: 9px;
   font-weight: 700;
   line-height: 14px;
   pointer-events: none;
   text-align: center;
+}
+
+.notificationPopover {
+  position: absolute;
+  right: -24px;
+  top: 36px;
+  width: min(344px, calc(100vw - 32px));
+  overflow: hidden;
+  border: 1px solid rgba(222, 175, 93, 0.38);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 18% 0%, rgba(222, 175, 93, 0.18), transparent 34%),
+    linear-gradient(180deg, rgba(31, 25, 19, 0.98), rgba(8, 8, 8, 0.98));
+  box-shadow:
+    0 24px 50px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 236, 196, 0.12);
+  color: #f5ead6;
+}
+
+.notificationPopover::before {
+  position: absolute;
+  right: 26px;
+  top: -6px;
+  width: 12px;
+  height: 12px;
+  content: "";
+  border-left: 1px solid rgba(222, 175, 93, 0.38);
+  border-top: 1px solid rgba(222, 175, 93, 0.38);
+  background: #1f1913;
+  transform: rotate(45deg);
+}
+
+.notificationHeader {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 68px;
+  padding: 16px 16px 13px;
+  border-bottom: 1px solid rgba(222, 175, 93, 0.18);
+}
+
+.notificationHeader span {
+  display: block;
+  color: #ffe4aa;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 20px;
+}
+
+.notificationHeader strong {
+  display: block;
+  margin-top: 2px;
+  color: rgba(245, 234, 214, 0.62);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  text-transform: uppercase;
+}
+
+.notificationMarkAll {
+  height: 28px;
+  appearance: none;
+  border: 1px solid rgba(222, 175, 93, 0.32);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #f1c979;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 26px;
+  padding: 0 10px;
+  white-space: nowrap;
+}
+
+.notificationMarkAll:hover,
+.notificationMarkAll:focus-visible {
+  border-color: rgba(245, 205, 122, 0.72);
+  background: rgba(245, 189, 96, 0.1);
+  outline: none;
+}
+
+.notificationList {
+  position: relative;
+  max-height: 360px;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.notificationItem {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr);
+  gap: 10px;
+  width: 100%;
+  appearance: none;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 10px;
+  text-align: left;
+  text-decoration: none;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    transform 140ms ease;
+}
+
+.notificationItem:hover,
+.notificationItem:focus-visible {
+  border-color: rgba(222, 175, 93, 0.34);
+  background: rgba(255, 255, 255, 0.05);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.notificationItemUnread {
+  background: rgba(245, 189, 96, 0.065);
+}
+
+.notificationItemRead {
+  opacity: 0.72;
+}
+
+.notificationStatusDot {
+  width: 8px;
+  height: 8px;
+  margin-top: 6px;
+  border-radius: 999px;
+  box-shadow: 0 0 12px currentColor;
+}
+
+.notificationSeverityInfo {
+  color: #d6b06c;
+  background: #d6b06c;
+}
+
+.notificationSeveritySuccess {
+  color: #77d39a;
+  background: #77d39a;
+}
+
+.notificationSeverityWarning {
+  color: #f4be5f;
+  background: #f4be5f;
+}
+
+.notificationSeverityCritical {
+  color: #ef765e;
+  background: #ef765e;
+}
+
+.notificationText {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.notificationText strong {
+  color: #fff6e6;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 18px;
+}
+
+.notificationText span {
+  display: -webkit-box;
+  overflow: hidden;
+  color: rgba(245, 234, 214, 0.72);
+  font-size: 12px;
+  line-height: 17px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.notificationText em {
+  color: rgba(245, 202, 122, 0.72);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 14px;
+  text-transform: uppercase;
+}
+
+.notificationState,
+.notificationEmpty {
+  min-height: 104px;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  color: rgba(245, 234, 214, 0.68);
+  font-size: 12px;
+  line-height: 18px;
+  text-align: center;
+}
+
+.notificationEmpty {
+  gap: 5px;
+}
+
+.notificationEmpty span {
+  color: #ffe3a4;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.notificationEmpty p {
+  max-width: 238px;
+  margin: 0;
+}
+
+.notificationFooter {
+  display: block;
+  height: 38px;
+  border-top: 1px solid rgba(222, 175, 93, 0.18);
+  color: #f1c979;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 38px;
+  text-align: center;
+  text-decoration: none;
+}
+
+.notificationFooter:hover,
+.notificationFooter:focus-visible {
+  background: rgba(245, 189, 96, 0.09);
+  outline: none;
 }
 
 .avatar {

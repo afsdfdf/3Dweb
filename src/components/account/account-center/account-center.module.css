@@ -1,0 +1,1251 @@
+.pageShell {
+  min-height: 100vh;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(244, 189, 96, 0.11), transparent 26%),
+    radial-gradient(circle at 82% 20%, rgba(117, 119, 121, 0.18), transparent 28%),
+    linear-gradient(180deg, #181818 0%, #0b0b0b 54%, #050505 100%);
+  color: #ededee;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.boundTopNavigation {
+  position: sticky;
+  inset: 0 0 auto;
+  width: auto;
+  z-index: 80;
+}
+
+.boundTopNavigation :global(a) {
+  color: rgba(244, 202, 132, 0.82);
+}
+
+.hiddenFileInput {
+  display: none;
+}
+
+.accountShell {
+  --account-panel: rgba(10, 10, 10, 0.92);
+  --account-panel-soft: rgba(18, 17, 16, 0.8);
+  --account-panel-deep: rgba(6, 6, 6, 0.74);
+  --account-line: rgba(244, 189, 96, 0.18);
+  --account-line-strong: rgba(244, 189, 96, 0.32);
+  --account-line-muted: rgba(255, 255, 255, 0.1);
+  --account-gold: #f4bd60;
+  --account-gold-soft: #f7dba7;
+  --account-ink: #fff4db;
+  --account-muted: rgba(237, 237, 238, 0.68);
+  --account-faint: rgba(237, 237, 238, 0.5);
+  --account-wine: #5f1f27;
+  box-sizing: border-box;
+  margin: 0 auto;
+  max-width: 1460px;
+  padding: 34px 28px 80px;
+  width: 100%;
+}
+
+.accountHero {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 452px);
+  align-items: end;
+  gap: 30px;
+  min-height: 178px;
+  overflow: hidden;
+  border: 1px solid var(--account-line);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.012)),
+    var(--account-panel);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.035),
+    0 24px 64px rgba(0, 0, 0, 0.26);
+  padding: 24px;
+}
+
+.accountHero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(5, 5, 5, 0.94), rgba(5, 5, 5, 0.74) 55%, rgba(5, 5, 5, 0.36)),
+    linear-gradient(180deg, transparent, rgba(5, 5, 5, 0.38));
+  pointer-events: none;
+}
+
+.accountHeroImage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.38;
+}
+
+.accountHeroCopy,
+.accountHeroStats {
+  position: relative;
+  z-index: 1;
+}
+
+.accountEyebrow {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  border: 1px solid rgba(244, 189, 96, 0.25);
+  border-radius: 999px;
+  background: rgba(244, 189, 96, 0.12);
+  color: var(--account-gold-soft);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0 13px;
+}
+
+.accountHeroCopy h1 {
+  max-width: 720px;
+  margin: 18px 0 0;
+  color: var(--account-ink);
+  font-size: 42px;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1.08;
+}
+
+.accountHeroCopy p {
+  max-width: 760px;
+  margin: 14px 0 0;
+  color: var(--account-muted);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+.accountHeroStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.accountHeroStats div {
+  min-height: 76px;
+  border: 1px solid rgba(244, 189, 96, 0.16);
+  background: rgba(0, 0, 0, 0.48);
+  box-sizing: border-box;
+  padding: 13px 14px;
+}
+
+.accountHeroStats span {
+  display: block;
+  color: rgba(247, 219, 167, 0.72);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.accountHeroStats strong {
+  display: block;
+  margin-top: 10px;
+  overflow: hidden;
+  color: var(--account-ink);
+  font-size: 24px;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.accountFrameGrid {
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
+  align-items: stretch;
+  gap: 24px;
+  margin-top: 24px;
+  width: 100%;
+}
+
+.profilePanel,
+.accountPanel {
+  min-width: 0;
+}
+
+.profilePanel {
+  display: flex;
+}
+
+.panelFrameContent,
+.contentPanel,
+.assetStrip div,
+.overviewHero,
+.overviewGrid div,
+.overviewActivity,
+.profileBackgroundCard,
+.creditPlate,
+.passwordPanel,
+.insightStrip div {
+  border: 1px solid var(--account-line);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.012)),
+    var(--account-panel);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.035),
+    0 20px 54px rgba(0, 0, 0, 0.22);
+}
+
+.panelFrameContent {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 18px;
+  box-sizing: border-box;
+  min-height: 682px;
+  padding: 22px;
+}
+
+.accountFrameContent {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.identityBlock {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid rgba(244, 189, 96, 0.14);
+}
+
+.avatarRing {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+  border: 3px solid rgba(244, 189, 96, 0.92);
+  border-radius: 50%;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent),
+    var(--account-wine);
+  box-shadow:
+    inset 0 0 0 4px rgba(61, 18, 24, 0.92),
+    0 0 0 1px rgba(0, 0, 0, 0.72),
+    0 12px 24px rgba(0, 0, 0, 0.28);
+}
+
+.avatarRing img {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.avatarFrameImage {
+  position: absolute;
+  inset: -9px;
+  z-index: 2;
+  width: calc(100% + 18px) !important;
+  height: calc(100% + 18px) !important;
+  border-radius: 0 !important;
+  object-fit: contain !important;
+  pointer-events: none;
+}
+
+.avatarEditButton,
+.backgroundEditButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 26px;
+  min-width: 58px;
+  border: 1px solid rgba(244, 189, 96, 0.42);
+  border-radius: 2px;
+  background: rgba(8, 8, 9, 0.86);
+  color: var(--account-ink);
+  cursor: pointer;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0 9px;
+  text-transform: uppercase;
+}
+
+.avatarEditButton {
+  position: absolute;
+  right: -22px;
+  bottom: -6px;
+  z-index: 3;
+}
+
+.backgroundEditButton {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 2;
+}
+
+.avatarEditButton svg,
+.backgroundEditButton svg {
+  color: var(--account-gold);
+  flex: 0 0 auto;
+}
+
+.avatarEditButton:hover,
+.avatarEditButton:focus-visible,
+.backgroundEditButton:hover,
+.backgroundEditButton:focus-visible {
+  border-color: rgba(255, 227, 170, 0.74);
+  background: rgba(24, 20, 15, 0.94);
+  outline: none;
+}
+
+.identityBlock p,
+.panelHeader p,
+.contentHeader p {
+  margin: 0 0 5px;
+  color: var(--account-gold-soft);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-transform: uppercase;
+}
+
+.identityBlock h1 {
+  margin: 0;
+  color: var(--account-ink);
+  font-size: 22px;
+  line-height: 27px;
+}
+
+.identityBlock span {
+  display: block;
+  max-width: 216px;
+  overflow: hidden;
+  color: var(--account-muted);
+  font-size: 13px;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.creditPlate {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  align-items: center;
+  min-height: 78px;
+  padding: 0 16px;
+}
+
+.creditPlate img {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+}
+
+.creditPlate strong {
+  display: block;
+  overflow: hidden;
+  color: var(--account-gold);
+  font-size: 28px;
+  line-height: 31px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.creditPlate span {
+  display: block;
+  color: var(--account-gold-soft);
+  font-size: 13px;
+}
+
+.profileBackgroundCard {
+  position: relative;
+  min-height: 90px;
+  overflow: hidden;
+  padding: 14px;
+}
+
+.profileBackgroundCard img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.36;
+}
+
+.profileBackgroundCard::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.82), rgba(0, 0, 0, 0.2) 62%, rgba(0, 0, 0, 0.54));
+}
+
+.profileBackgroundCard div {
+  position: relative;
+  z-index: 2;
+}
+
+.profileBackgroundCard span {
+  display: block;
+  color: var(--account-gold-soft);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
+  text-transform: uppercase;
+}
+
+.profileBackgroundCard strong {
+  display: block;
+  margin-top: 5px;
+  color: var(--account-ink);
+  font-size: 15px;
+  line-height: 20px;
+}
+
+.sideMenu {
+  display: grid;
+  gap: 8px;
+}
+
+.sideMenu button {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  min-height: 50px;
+  border: 1px solid var(--account-line-muted);
+  border-radius: 0;
+  background: rgba(0, 0, 0, 0.38);
+  color: #ffffff;
+  cursor: pointer;
+  column-gap: 12px;
+  padding: 0 12px 0 16px;
+  text-align: left;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    transform 140ms ease;
+}
+
+.sideMenu button:hover,
+.sideMenu button:focus-visible,
+.sideMenuActive {
+  border-color: var(--account-gold) !important;
+  background: rgba(244, 189, 96, 0.1) !important;
+  box-shadow: inset 3px 0 0 var(--account-gold);
+  outline: none;
+}
+
+.sideMenu button:hover,
+.sideMenu button:focus-visible {
+  transform: translateX(2px);
+}
+
+.sideMenu strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--account-ink);
+  font-size: 14px;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sideMenu em {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  max-width: 74px;
+  height: 22px;
+  overflow: hidden;
+  border: 1px solid rgba(244, 189, 96, 0.14);
+  border-radius: 999px;
+  background: rgba(244, 189, 96, 0.1);
+  color: var(--account-gold);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 700;
+  padding: 0 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sideMenuSettings {
+  margin-top: 0;
+}
+
+.primaryActions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-top: auto;
+}
+
+.accountButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-sizing: border-box;
+  height: 42px;
+  min-width: 144px;
+  border: 1px solid rgba(244, 189, 96, 0.4);
+  border-radius: 2px;
+  background: rgba(16, 16, 17, 0.72);
+  color: var(--account-ink);
+  cursor: pointer;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0 18px;
+  text-align: center;
+  text-decoration: none;
+  text-shadow: none;
+  white-space: nowrap;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease,
+    transform 140ms ease;
+}
+
+.accountButton svg {
+  flex: 0 0 auto;
+}
+
+.panelActionIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  flex: 0 0 15px;
+}
+
+.panelActionIconHidden {
+  display: none;
+}
+
+.accountButton:hover,
+.accountButton:focus-visible {
+  border-color: rgba(255, 227, 170, 0.74);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.accountButtonPrimary {
+  border-color: var(--account-gold);
+  background: var(--account-gold);
+  color: #050505;
+}
+
+.accountButtonPrimary:hover,
+.accountButtonPrimary:focus-visible {
+  background: #ffd782;
+  color: #050505;
+}
+
+.accountButtonSecondary {
+  border-color: rgba(244, 189, 96, 0.28);
+  background: rgba(0, 0, 0, 0.54);
+  color: #f6dfb5;
+}
+
+.accountButtonSecondary:hover,
+.accountButtonSecondary:focus-visible {
+  background: rgba(244, 189, 96, 0.1);
+  color: var(--account-ink);
+}
+
+.accountButtonFull {
+  width: 100%;
+}
+
+.accountButtonCompact {
+  width: 156px;
+}
+
+.accountButtonWide {
+  width: 190px;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.panelHeader h2 {
+  margin: 0;
+  color: var(--account-ink);
+  font-size: 30px;
+  line-height: 35px;
+}
+
+.assetStrip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.assetStrip div {
+  min-height: 72px;
+  box-sizing: border-box;
+  padding: 11px 16px;
+}
+
+.assetStrip span,
+.overviewGrid span,
+.overviewActivity div span {
+  display: block;
+  color: var(--account-gold-soft);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
+  text-transform: uppercase;
+}
+
+.assetStrip strong {
+  display: block;
+  margin-top: 6px;
+  overflow: hidden;
+  color: var(--account-gold);
+  font-size: 24px;
+  line-height: 27px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.assetStrip em {
+  display: block;
+  margin-top: 3px;
+  overflow: hidden;
+  color: var(--account-muted);
+  font-size: 12px;
+  font-style: normal;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contentPanel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 620px;
+  overflow: hidden;
+  padding: 20px 24px 58px;
+}
+
+.contentPanelWithSummary,
+.contentPanelFull {
+  height: auto;
+}
+
+.contentHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.contentHeader h3 {
+  margin: 0;
+  color: var(--account-ink);
+  font-size: 24px;
+  line-height: 29px;
+}
+
+.insightStrip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.insightStrip div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 38px;
+  box-sizing: border-box;
+  padding: 0 14px;
+}
+
+.insightStrip span {
+  color: var(--account-muted);
+  font-size: 12px;
+}
+
+.insightStrip strong {
+  color: var(--account-gold);
+  font-size: 15px;
+}
+
+.overviewFrame {
+  display: grid;
+  gap: 12px;
+}
+
+.overviewHero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 96px;
+  gap: 18px;
+  box-sizing: border-box;
+  padding: 16px 20px;
+}
+
+.overviewHero span,
+.overviewActivity header span {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--account-gold-soft);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
+  text-transform: uppercase;
+}
+
+.overviewHero strong,
+.overviewActivity header strong {
+  display: block;
+  color: var(--account-ink);
+  font-size: 20px;
+  line-height: 25px;
+}
+
+.overviewHero p {
+  max-width: 640px;
+  margin: 7px 0 0;
+  color: var(--account-muted);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.overviewGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.overviewGrid div {
+  min-height: 84px;
+  box-sizing: border-box;
+  padding: 13px 16px;
+}
+
+.overviewGrid strong {
+  display: block;
+  margin-top: 8px;
+  overflow: hidden;
+  color: var(--account-gold);
+  font-size: 28px;
+  line-height: 31px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.overviewGrid em,
+.overviewActivity div em {
+  display: block;
+  margin-top: 5px;
+  color: var(--account-muted);
+  font-size: 13px;
+  font-style: normal;
+  line-height: 18px;
+}
+
+.overviewActivity {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+}
+
+.overviewActivity header {
+  margin-bottom: 2px;
+}
+
+.overviewActivity div {
+  display: grid;
+  grid-template-columns: 156px minmax(0, 1fr) 132px;
+  align-items: center;
+  min-height: 42px;
+  border-top: 1px solid rgba(244, 189, 96, 0.12);
+}
+
+.overviewActivity div strong {
+  overflow: hidden;
+  color: var(--account-ink);
+  font-size: 15px;
+  line-height: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.overviewActivity div em {
+  justify-self: end;
+  margin-top: 0;
+  color: var(--account-gold);
+}
+
+.accountSettingsFrame {
+  display: grid;
+  gap: 24px;
+}
+
+.profileFormGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px 24px;
+}
+
+.profileFormGrid > button {
+  align-self: end;
+  justify-self: end;
+}
+
+.profileFormGrid label {
+  display: grid;
+  gap: 8px;
+}
+
+.profileFormGrid span,
+.passwordPanel span,
+.recordsToolbar span {
+  display: block;
+  color: var(--account-gold-soft);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 17px;
+  text-transform: uppercase;
+}
+
+.profileFormGrid input,
+.profileFormGrid select,
+.profileFormGrid textarea,
+.passwordFields input,
+.recordsToolbar input,
+.recordsToolbar select {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 44px;
+  border: 1px solid var(--account-line-muted);
+  border-radius: 0;
+  background: rgba(0, 0, 0, 0.36);
+  color: rgba(255, 248, 232, 0.9);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  outline: none;
+  padding: 0 12px;
+}
+
+.profileFormGrid input:focus,
+.profileFormGrid select:focus,
+.profileFormGrid textarea:focus,
+.passwordFields input:focus,
+.recordsToolbar input:focus,
+.recordsToolbar select:focus {
+  border-color: rgba(244, 189, 96, 0.58);
+  box-shadow: 0 0 0 2px rgba(244, 189, 96, 0.07);
+}
+
+.profileFormGrid textarea {
+  height: 92px;
+  padding-top: 12px;
+  resize: vertical;
+}
+
+.bioField {
+  grid-column: 1 / -1;
+}
+
+.passwordPanel {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr) 166px;
+  align-items: center;
+  gap: 22px;
+  min-height: 122px;
+  box-sizing: border-box;
+  padding: 22px;
+}
+
+.passwordPanel strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--account-ink);
+  font-size: 16px;
+  line-height: 22px;
+}
+
+.passwordPanel p {
+  margin: 5px 0 0;
+  color: var(--account-muted);
+  font-size: 12.5px;
+  line-height: 18px;
+}
+
+.passwordFields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.saveMessage {
+  grid-column: 2 / -1;
+  margin: -8px 0 0;
+  color: var(--account-gold-soft);
+  font-size: 12px;
+  line-height: 16px;
+  text-align: right;
+}
+
+.recordsToolbar {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) 190px 156px;
+  align-items: end;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.recordsToolbar label {
+  display: grid;
+  gap: 6px;
+}
+
+.recordsToolbar input,
+.recordsToolbar select {
+  height: 38px;
+}
+
+.recordsTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  color: rgba(232, 226, 215, 0.78);
+  table-layout: fixed;
+}
+
+.recordsTable th,
+.recordsTable td {
+  height: 46px;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 400;
+  padding: 0 14px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recordsTable th {
+  height: 38px;
+  border-top: 1px solid var(--account-line-muted);
+  background:
+    linear-gradient(180deg, rgba(244, 189, 96, 0.12), rgba(244, 189, 96, 0.035)),
+    rgba(20, 18, 15, 0.74);
+  color: rgba(255, 248, 232, 0.96);
+  font-weight: 700;
+}
+
+.recordsTable th:first-child,
+.recordsTable td:first-child {
+  border-left: 1px solid var(--account-line-muted);
+}
+
+.recordsTable th:last-child,
+.recordsTable td:last-child {
+  border-right: 1px solid var(--account-line-muted);
+}
+
+.recordsTable tbody tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.018);
+}
+
+.recordsTable tbody tr:hover {
+  background: rgba(244, 189, 96, 0.035);
+}
+
+.recordsTable th:nth-child(1),
+.recordsTable td:nth-child(1) {
+  width: 112px;
+}
+
+.recordsTable th:nth-child(2),
+.recordsTable td:nth-child(2) {
+  width: 122px;
+}
+
+.recordsTable th:nth-child(4),
+.recordsTable td:nth-child(4) {
+  width: 112px;
+}
+
+.recordsTable th:nth-child(5),
+.recordsTable td:nth-child(5) {
+  width: 112px;
+  text-align: right;
+}
+
+.recordsTable td:nth-child(4),
+.amountCell {
+  color: var(--account-gold);
+  font-weight: 700;
+}
+
+.recordsTable th:nth-child(6),
+.recordsTable td:nth-child(6) {
+  width: 166px;
+}
+
+.recordsTable th:nth-child(7),
+.recordsTable td:nth-child(7) {
+  width: 96px;
+  text-align: right;
+}
+
+.recordActionCell {
+  color: rgba(224, 216, 202, 0.38);
+}
+
+.tableActionButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 28px;
+  min-width: 74px;
+  border: 1px solid rgba(244, 189, 96, 0.42);
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.54);
+  color: var(--account-ink);
+  cursor: pointer;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0 9px;
+  white-space: nowrap;
+}
+
+.tableActionButton:hover,
+.tableActionButton:focus-visible {
+  border-color: rgba(255, 227, 170, 0.76);
+  background: rgba(244, 189, 96, 0.1);
+  outline: none;
+}
+
+.pagination {
+  position: absolute;
+  right: 24px;
+  bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+  height: 32px;
+}
+
+.pagination button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: 32px;
+  min-width: 28px;
+  border: 1px solid var(--account-line-muted);
+  border-radius: 2px;
+  background: #111113;
+  color: var(--account-ink);
+  cursor: pointer;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+}
+
+.pagination button:hover,
+.pagination button:focus-visible {
+  border-color: rgba(244, 189, 96, 0.58);
+  background: rgba(244, 189, 96, 0.1);
+  outline: none;
+}
+
+.pagination button:disabled {
+  cursor: not-allowed;
+  opacity: 0.38;
+}
+
+.pagination .currentPage {
+  border-color: var(--account-gold);
+  background: rgba(244, 189, 96, 0.14);
+  color: var(--account-gold);
+  font-weight: 700;
+}
+
+.pagination .pageSizeButton {
+  justify-content: center;
+  gap: 8px;
+  width: 132px;
+  margin-left: 9px;
+  overflow: hidden;
+  font-size: 13px;
+}
+
+.pageSizeButton span:first-child {
+  display: block;
+  max-width: 102px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pageSizeChevron {
+  display: block;
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--account-ink);
+  border-bottom: 2px solid var(--account-ink);
+  transform: rotate(45deg) translateY(-2px);
+}
+
+@media (max-width: 1180px) {
+  .accountFrameGrid {
+    grid-template-columns: 300px minmax(0, 1fr);
+  }
+
+  .assetStrip,
+  .overviewGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .passwordPanel {
+    grid-template-columns: 1fr;
+  }
+
+  .passwordFields {
+    grid-template-columns: 1fr;
+  }
+
+  .saveMessage {
+    grid-column: 1;
+    text-align: left;
+  }
+}
+
+@media (max-width: 980px) {
+  .accountShell {
+    padding: 18px 14px 56px;
+  }
+
+  .accountHero,
+  .accountFrameGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .accountHero {
+    min-height: 0;
+    padding: 20px;
+  }
+
+  .accountHeroStats {
+    grid-template-columns: 1fr;
+  }
+
+  .accountHeroCopy h1 {
+    font-size: 34px;
+  }
+
+  .profilePanel {
+    display: block;
+  }
+
+  .sideMenu {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .recordsToolbar,
+  .profileFormGrid,
+  .overviewGrid,
+  .assetStrip {
+    grid-template-columns: 1fr;
+  }
+
+  .overviewHero,
+  .contentHeader {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .contentPanel {
+    min-height: 0;
+    overflow-x: auto;
+    padding: 18px 18px 22px;
+  }
+
+  .accountButtonCompact,
+  .accountButtonWide {
+    width: 100%;
+  }
+
+  .recordsTable {
+    min-width: 900px;
+  }
+
+  .pagination {
+    position: static;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    height: auto;
+    margin-top: 14px;
+  }
+}
+
+@media (max-width: 560px) {
+  .accountHeroCopy h1 {
+    font-size: 30px;
+  }
+
+  .panelFrameContent,
+  .contentPanel {
+    padding: 16px;
+  }
+
+  .identityBlock {
+    grid-template-columns: 1fr;
+  }
+
+  .avatarEditButton {
+    right: -8px;
+  }
+
+  .sideMenu,
+  .primaryActions {
+    grid-template-columns: 1fr;
+  }
+
+  .panelFrameContent {
+    min-height: 0;
+  }
+
+  .overviewActivity div {
+    grid-template-columns: 1fr;
+    gap: 4px;
+    padding: 10px 0;
+  }
+
+  .overviewActivity div em {
+    justify-self: start;
+  }
+}

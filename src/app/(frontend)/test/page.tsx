@@ -166,11 +166,11 @@ const frontendPages: PageLink[] = [
     status: 'Formal',
   },
   {
-    description: 'Public showcase detail opened by model id.',
+    description: 'Compatibility redirect to the formal public model detail route.',
     href: '/showcase',
     path: '/showcase/[id]',
     source: 'src/app/(frontend)/showcase/[id]/page.tsx',
-    status: 'Dynamic',
+    status: 'Redirect',
   },
   {
     description: 'Solutions marketing page for creator, studio, and brand workflows.',
@@ -214,10 +214,10 @@ const frontendPages: PageLink[] = [
     status: 'Protected',
   },
   {
-    description: 'Workbench-owned model detail route opened from account/workbench model records.',
+    description: 'Compatibility redirect to the canonical model detail route.',
     path: '/workbench/models/[id]',
     source: 'src/app/(frontend)/workbench/models/[id]/page.tsx',
-    status: 'Dynamic',
+    status: 'Redirect',
   },
 ]
 

@@ -17,10 +17,12 @@ type SiteShellProps = {
   footer?: FooterContent | null
   mobileChildren?: ReactNode
   navigation?: NavigationItem[] | null
+  siteDescription?: null | string
   showAuthEntry?: boolean
   showFooter?: boolean
   showLocaleSwitcher?: boolean
   showUtilityNav?: boolean
+  supportEmail?: null | string
   user?: null | {
     email?: string | null
     role?: string | null
@@ -36,6 +38,8 @@ export async function SiteShell({
   showAuthEntry = true,
   showFooter = true,
   showLocaleSwitcher = true,
+  siteDescription,
+  supportEmail,
   user,
 }: SiteShellProps) {
   const locale = await getCurrentLocale()
@@ -62,7 +66,7 @@ export async function SiteShell({
   return (
     <>
       {mobileChildren ? <div className="h-screen w-screen overflow-y-auto bg-[#181818] text-[#ededee] md:hidden">{mobileChildren}</div> : null}
-      <div className={`${mobileChildren ? 'hidden md:block' : ''} h-screen w-screen overflow-hidden bg-[#181818] text-[#ededee]`} style={fixedStageStyle}>
+      <div className={`${mobileChildren ? 'hidden md:block' : ''} relative h-screen w-screen overflow-hidden bg-[#181818] text-[#ededee]`} style={fixedStageStyle}>
         <TopNavigation
           active={getPublicNavigationActiveID(currentPath)}
           className="absolute left-0 right-0 top-0 z-[60]"
@@ -83,8 +87,8 @@ export async function SiteShell({
         {showFooter ? (
           <FooterBar
             footerContent={footerContent}
-            siteDescription={defaultSiteSettings.siteDescription}
-            supportEmail={defaultSiteSettings.supportEmail}
+            siteDescription={siteDescription || defaultSiteSettings.siteDescription}
+            supportEmail={supportEmail || defaultSiteSettings.supportEmail}
           />
         ) : null}
       </div>

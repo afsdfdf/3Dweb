@@ -109,12 +109,12 @@ The third highest-risk area was production route cleanup. `/test` and `/formal-c
   - the right model library is scoped to the current user's own models;
   - image-generation assets are shown as private Workbench image assets and can be selected as 3D reference images.
 - `ModelViewer` uses a shared `DRACOLoader`, a controlled viewer endpoint, blob URLs, and a single active canvas pattern on the formal Workbench/Model Detail flows.
+- `/workbench/models/[id]` is no longer a separate detail UI. It is a compatibility redirect to `/model-detail?id=<modelId>`, and account/history detail links now target the canonical route directly.
 - `/test` and `/formal-components` are blocked in production through `notFound()`.
 
 ### Risks
 
 - `/account` owns the formal personal center UI. `/personal-center-test` and `/personal-center-legacy` have been removed from the app route tree.
-- `src/app/(frontend)/workbench/models/[id]/page.tsx` still contains static/demo model details and fixed download-credit sample data. It has production `notFound()` protection for unauthenticated/missing data in parts of the route, but it still needs a focused pass before treating it as final account-owned detail UI.
 - Some older helper components and test assets remain under `src/components/ui-lab/*` and `public/ui-lab/*`. They are acceptable as component assets only if no public route exposes them as production UX.
 - Clipboard copy errors should not trigger runtime overlays. Browser clipboard APIs require a user gesture and permission; any copy action should catch `NotAllowedError` and show a non-blocking UI message.
 - The progress bar jumping from a low percentage to complete is expected when the browser gets no reliable `Content-Length` or when download is fast but GLB/Draco parsing is slow. The UX should distinguish network download, blob validation, and model parse/prepare phases.
@@ -123,7 +123,7 @@ The third highest-risk area was production route cleanup. `/test` and `/formal-c
 
 - P1: Keep UI-lab account variants out of production; local-only design review routes must use `notFound()` in production.
 - P1: Keep Model Detail and Workbench current-model-first: one visible `ModelViewer`, one selected GLB request, visible-range thumbnails only.
-- P2: Replace remaining demo/static account and Workbench detail copy with data adapters or remove the route from production navigation.
+- P2: Replace remaining demo/static account copy with data adapters or remove it from production navigation.
 - P2: Add copy-action error handling where `navigator.clipboard.writeText` is used.
 
 ## Payload Backend Audit

@@ -38,8 +38,8 @@ export function ModelAuthorCard({
   avatarAlt = "",
   avatarSrc = "/ui-lab/model-detail-uicut/images/face.png",
   className,
-  description = "Is an outstanding anime-style model creator...",
-  name = "Xing Mu",
+  description = "A Thorns Tavern creator profile.",
+  name = "Creator",
   style,
 }: ModelAuthorCardProps) {
   return (

@@ -1,6 +1,6 @@
 import { FormalInfoPage } from '../_components/FormalInfoPage'
-import { formalPages } from '../_lib/formal-pages'
+import { getFormalPageContent } from '../_lib/formal-page-content'
 
-export default function PrivacyPolicyPage() {
-  return <FormalInfoPage page={formalPages.privacyPolicy} />
+export default async function PrivacyPolicyPage() {
+  return <FormalInfoPage page={await getFormalPageContent('privacyPolicy')} />
 }

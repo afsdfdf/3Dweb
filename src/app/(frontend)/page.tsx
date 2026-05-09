@@ -1,4 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
+import Link from "next/link";
 import { AuthModalStage } from "@/components/auth/AuthModalStage";
 import { BorderComboFrame2, BorderComboFrame2Variant } from "@/components/ui-lab/border-combo-frame-2";
 import { LinkedSourcePurpleMediumButton } from "@/components/ui-lab/action-buttons";
@@ -9,6 +10,7 @@ import { HeroImageFrameStrip } from "@/components/ui-lab/home-test/hero-image-fr
 import { InspirationSearchBox, InspirationPager } from "@/components/ui-lab/home-test/inspiration-search-box";
 import { InspirationGrid } from "@/components/ui-lab/home-test/inspiration-grid";
 import { SelectableFrameRow } from "@/components/ui-lab/home-test/selectable-frame-row";
+import { FooterBar } from "./_components/shell/FooterBar";
 import { getHomeData } from "./_home/homeData";
 import styles from "./_home/homePage.module.css";
 
@@ -25,9 +27,125 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     inspirationPage: query.page ? Number(query.page) : 1,
     inspirationQuery: query.q,
   });
+  const mobileFeatureItems = data.featuredItems.slice(0, 4);
+  const mobileShelfItems = data.shelfItems.slice(0, 4);
+  const mobileInspirationItems = data.inspirationItems.slice(0, 6);
 
   return (
     <main className={styles.page}>
+      <div className={styles.mobileHome}>
+        <header className={styles.mobileHeader}>
+          <Link href="/" aria-label="Thorns Tavern home">
+            <img alt="Thorns Tavern" src="/ui-lab/top-navigation/logo-wordmark.png" />
+          </Link>
+          <nav aria-label="Mobile navigation">
+            <Link href="/workbench">Workbench</Link>
+            <Link href="/pricing">Plans</Link>
+          </nav>
+        </header>
+
+        <section className={styles.mobileHero}>
+          <span className={styles.mobileHeroPieceLeft} aria-hidden="true" />
+          <span className={styles.mobileHeroPieceRight} aria-hidden="true" />
+          <div className={styles.mobileHeroCopy}>
+            <span className={styles.mobileEyebrow}>Thorns Tavern</span>
+            <h1>Ideas to Miniatures</h1>
+            <p>Generate tabletop characters, collect model packs, and deliver print-ready 3D assets from one tavern workspace.</p>
+          </div>
+
+          <div className={styles.mobileGeneratorPanel}>
+            <div className={styles.mobileModeSwitch} aria-label="Generation modes">
+              <span>Image to 3D</span>
+              <span>Text to 3D</span>
+            </div>
+            <Link className={styles.mobileUploadPanel} href="/workbench">
+              <span className={styles.mobileUploadIcon} aria-hidden="true" />
+              <strong>Start in Workbench</strong>
+              <em>Upload a reference or write a prompt</em>
+            </Link>
+            <div className={styles.mobileActions}>
+              <Link className={styles.mobilePrimaryAction} href="/workbench">Generate</Link>
+              <Link href="/showcase">Browse Models</Link>
+            </div>
+            <div className={styles.mobileHeroStats}>
+              <span>
+                <strong>{data.inspirationPagination.totalDocs}</strong>
+                Public models
+              </span>
+              <span>
+                <strong>{mobileShelfItems.length}</strong>
+                Curated sets
+              </span>
+              <span>
+                <strong>3D</strong>
+                Delivery
+              </span>
+            </div>
+          </div>
+        </section>
+
+        {mobileFeatureItems.length > 0 ? (
+          <section className={styles.mobileSection} aria-label="Featured models">
+            <div className={styles.mobileSectionHeader}>
+              <span>Featured</span>
+              <Link href="/showcase">All Models</Link>
+            </div>
+            <div className={styles.mobileFeatureGrid}>
+              {mobileFeatureItems.map((item) => (
+                <Link href={item.href || "/showcase"} key={item.id}>
+                  <img alt={item.alt} src={item.imageSrc} />
+                  <span>{item.ribbonLabel || "Featured"}</span>
+                  <strong>{item.alt}</strong>
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {mobileShelfItems.length > 0 ? (
+          <section className={styles.mobileSection} aria-label="Model bundles">
+            <div className={styles.mobileSectionHeader}>
+              <span>Bundles</span>
+              <Link href="/bundles">More</Link>
+            </div>
+            <div className={styles.mobileShelfList}>
+              {mobileShelfItems.map((item) => (
+                <Link href={item.href || "/bundles"} key={item.id}>
+                  <img alt={item.title} src={item.imageSrc} />
+                  <span>
+                    <strong>{item.title}</strong>
+                    <em>{item.count}</em>
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {mobileInspirationItems.length > 0 ? (
+          <section className={styles.mobileSection} aria-label="Inspiration models">
+            <div className={styles.mobileSectionHeader}>
+              <span>Inspiration</span>
+              <Link href="/showcase">Explore</Link>
+            </div>
+            <div className={styles.mobileInspirationGrid}>
+              {mobileInspirationItems.map((item) => (
+                <Link href={item.href || "/showcase"} key={item.id}>
+                  {item.imageSrc ? <img alt={item.alt} src={item.imageSrc} /> : <span className={styles.mobileImagePlaceholder} />}
+                  <strong>{item.title}</strong>
+                  <em>{item.filter}</em>
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        <FooterBar
+          footerContent={data.footer.content}
+          siteDescription={data.footer.siteDescription}
+          supportEmail={data.footer.supportEmail}
+        />
+      </div>
       <div className={styles.viewport}>
         <section className={styles.stage} aria-label="Home page">
           <AuthModalStage fitViewport topOffset={60}>
@@ -91,26 +209,13 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                 </div>
               </div>
             </BorderComboFrame2>
-            <footer className={styles.footerBlock}>
-              <div className={styles.footerBrand}>
-                <img
-                  alt="Thorns Tavern"
-                  className={styles.footerLogo}
-                  src="/ui-lab/top-navigation/logo-wordmark.png"
-                />
-              </div>
-              <div className={styles.footerInfo}>
-                <h2>Information</h2>
-                <p>Refund Policy</p>
-                <p>Shipping Policy</p>
-                <p>Privacy Policy</p>
-                <p>Contact Us</p>
-              </div>
-              <div className={styles.footerHelp}>
-                <h2>Help Customers</h2>
-                <p>{data.footer.supportEmail}</p>
-              </div>
-            </footer>
+            <div className={styles.footerMount}>
+              <FooterBar
+                footerContent={data.footer.content}
+                siteDescription={data.footer.siteDescription}
+                supportEmail={data.footer.supportEmail}
+              />
+            </div>
           </AuthModalStage>
           <TopNavigation
             active="HOME"

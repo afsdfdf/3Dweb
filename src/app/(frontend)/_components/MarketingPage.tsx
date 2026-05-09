@@ -1,91 +1,166 @@
+/* eslint-disable @next/next/no-img-element */
 import Link from 'next/link'
+import { ArrowRight, Boxes, Code2, Compass, FileText, Layers, Sparkles } from 'lucide-react'
 
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
+import { AuthModalStage } from '@/components/auth/AuthModalStage'
+import { TopNavigation, migrationTestNavItems } from '@/components/ui-lab/top-navigation'
 
-import type { MarketingPageContent } from '../_lib/marketing-content'
+import type { MarketingPageContent, MarketingSection } from '../_lib/marketing-content'
 import { getMarketingSiteData } from '../_lib/marketing'
-import { getCurrentUser } from '../_lib/session'
-import { SiteShell } from './SiteShell'
+import { getCurrentNavUser } from '../_lib/session'
+import { FooterBar } from './shell/FooterBar'
+import styles from './MarketingPage.module.css'
 
 type MarketingPageProps = {
   page: MarketingPageContent
 }
 
+const sectionIcons = [Sparkles, Layers, Boxes, Compass, Code2, FileText]
+
+function countSectionItems(sections: MarketingSection[]) {
+  return sections.reduce((total, section) => total + (section.cards?.length ?? 0) + (section.bullets?.length ?? 0), 0)
+}
+
+function getPageMode(path: string) {
+  if (path.includes('developers')) return 'API Surface'
+  if (path.includes('resources')) return 'Guides'
+  if (path.includes('solutions')) return 'Use Cases'
+  return 'Product Features'
+}
+
 export async function MarketingPage({ page }: MarketingPageProps) {
-  const [user, marketing] = await Promise.all([getCurrentUser(), getMarketingSiteData()])
-  const { siteSettings } = marketing
+  const [navUser, marketing] = await Promise.all([getCurrentNavUser(), getMarketingSiteData()])
+  const supportEmail = marketing.siteSettings.supportEmail || 'support@example.com'
+  const siteDescription = marketing.siteSettings.siteDescription || 'An AI 3D product platform for character creation, asset management, and print fulfillment.'
+  const sectionItemCount = countSectionItems(page.sections)
 
   return (
-    <SiteShell
-      announcement={siteSettings.announcement}
-      currentPath={page.currentPath}
-      footer={siteSettings.footer}
-      navigation={siteSettings.headerNav}
-      user={user}
-    >
-      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-3xl">
-            <Badge variant="secondary">{page.heroEyebrow}</Badge>
-            <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl">{page.heroTitle}</h1>
-            <p className="mt-4 text-base leading-7 text-muted-foreground sm:text-lg">{page.heroText}</p>
-          </div>
+    <main className={styles.page}>
+      <AuthModalStage>
+        <TopNavigation active="HOME" className={styles.topNavigation} items={migrationTestNavItems} user={navUser} />
+        <header className={styles.mobileHeader}>
+          <Link href="/" aria-label="Thorns Tavern home">
+            <img alt="Thorns Tavern" src="/ui-lab/top-navigation/logo-wordmark.png" />
+          </Link>
+          <nav aria-label="Mobile navigation">
+            <Link href="/workbench">Workbench</Link>
+            <Link href="/pricing">Plans</Link>
+          </nav>
+        </header>
 
-          <div className="flex flex-wrap gap-3">
-            <Button asChild>
-              <Link href={page.heroPrimaryCTA.href}>{page.heroPrimaryCTA.label}</Link>
-            </Button>
-            {page.heroSecondaryCTA ? (
-              <Button asChild variant="outline">
-                <Link href={page.heroSecondaryCTA.href}>{page.heroSecondaryCTA.label}</Link>
-              </Button>
-            ) : null}
-          </div>
-        </div>
+        <div className={styles.shell}>
+          <section aria-label={page.heroEyebrow} className={styles.heroSection}>
+            <div className={styles.heroImageShell}>
+              <img
+                alt="Thorns Tavern product creation scene"
+                className={styles.heroImage}
+                decoding="async"
+                fetchPriority="high"
+                src="/ui/workbench/model-detail/sketch-assets/rail-banner-bg.png"
+              />
+            </div>
 
-        <Separator className="my-8" />
+            <div className={styles.heroContent}>
+              <div className={styles.heroCopy}>
+                <span className={styles.eyebrow}>{page.heroEyebrow}</span>
+                <h1>{page.heroTitle}</h1>
+                <p className={styles.summary}>{page.heroText}</p>
+                <div className={styles.metaPills}>
+                  <span>{getPageMode(page.currentPath)}</span>
+                  <span>{page.sections.length} Sections</span>
+                  <span>{sectionItemCount} Notes</span>
+                  <span>AI 3D Workflow</span>
+                </div>
+              </div>
 
-        <section className="grid gap-4 xl:grid-cols-3">
-          {page.sections.map((section) => (
-            <Card className="border-border/60 bg-card/80 shadow-sm" id={section.id} key={section.id}>
-              <CardHeader className="gap-3">
-                <Badge variant="outline">{section.eyebrow}</Badge>
-                <CardTitle className="text-2xl tracking-tight">{section.title}</CardTitle>
-                <CardDescription className="text-sm leading-6">{section.text}</CardDescription>
-              </CardHeader>
+              <div className={styles.heroActions}>
+                <Link className={[styles.actionButton, styles.primaryAction].join(' ')} href={page.heroPrimaryCTA.href}>
+                  {page.heroPrimaryCTA.label}
+                  <ArrowRight aria-hidden="true" size={18} />
+                </Link>
+                {page.heroSecondaryCTA ? (
+                  <Link className={styles.actionButton} href={page.heroSecondaryCTA.href}>
+                    {page.heroSecondaryCTA.label}
+                    <ArrowRight aria-hidden="true" size={18} />
+                  </Link>
+                ) : null}
+              </div>
+            </div>
+          </section>
 
-              <CardContent className="flex flex-col gap-4">
-                {section.cards?.length ? (
-                  <div className="grid gap-3">
-                    {section.cards.map((card) => (
-                      <div className="rounded-2xl border border-border/60 bg-muted/30 p-4" key={card.title}>
-                        <div className="flex items-start justify-between gap-3">
-                          <h3 className="text-base font-medium tracking-tight">{card.title}</h3>
-                          {card.note ? <Badge variant="secondary">{card.note}</Badge> : null}
-                        </div>
-                        <p className="mt-2 text-sm leading-6 text-muted-foreground">{card.text}</p>
+          <section aria-label={`${page.heroEyebrow} summary`} className={styles.summaryGrid}>
+            {page.sections.slice(0, 3).map((section, index) => {
+              const Icon = sectionIcons[index] ?? Sparkles
+              const count = (section.cards?.length ?? 0) + (section.bullets?.length ?? 0)
+
+              return (
+                <article className={styles.summaryCard} key={section.id}>
+                  <span className={styles.cardIcon}>
+                    <Icon aria-hidden="true" size={20} />
+                  </span>
+                  <h2>{section.title}</h2>
+                  <p>{section.text}</p>
+                  <span className={styles.cardMeta}>{count > 0 ? `${count} focus points` : section.eyebrow}</span>
+                </article>
+              )
+            })}
+          </section>
+
+          <section className={styles.detailsSection}>
+            <div className={styles.sectionHeader}>
+              <div>
+                <span className={styles.sectionEyebrow}>{page.heroEyebrow}</span>
+                <h2>Explore the product workflow</h2>
+                <p>Each block keeps the page tied to the same generation, asset, delivery, and operations language used across Thorns Tavern.</p>
+              </div>
+              <span className={styles.countChip}>{page.sections.length} Sections</span>
+            </div>
+
+            <div className={styles.detailGrid}>
+              {page.sections.map((section, index) => {
+                const Icon = sectionIcons[index % sectionIcons.length] ?? Sparkles
+
+                return (
+                  <article className={styles.detailCard} id={section.id} key={section.id}>
+                    <div className={styles.detailHeading}>
+                      <span className={styles.cardIcon}>
+                        <Icon aria-hidden="true" size={20} />
+                      </span>
+                      <div>
+                        <span className={styles.detailEyebrow}>{section.eyebrow}</span>
+                        <h3>{section.title}</h3>
                       </div>
-                    ))}
-                  </div>
-                ) : null}
+                    </div>
+                    <p>{section.text}</p>
 
-                {section.bullets?.length ? (
-                  <ul className="grid gap-3">
-                    {section.bullets.map((bullet) => (
-                      <li className="rounded-2xl border border-border/60 bg-muted/20 px-4 py-3 text-sm leading-6 text-muted-foreground" key={bullet}>
-                        {bullet}
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-              </CardContent>
-            </Card>
-          ))}
-        </section>
-      </section>
-    </SiteShell>
+                    {section.cards?.length ? (
+                      <div className={styles.itemList}>
+                        {section.cards.map((card) => (
+                          <div className={styles.itemRow} key={card.title}>
+                            <strong>{card.title}</strong>
+                            {card.note ? <span className={styles.notePill}>{card.note}</span> : null}
+                            <p>{card.text}</p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+
+                    {section.bullets?.length ? (
+                      <ul className={styles.bulletList}>
+                        {section.bullets.map((bullet) => (
+                          <li key={bullet}>{bullet}</li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </article>
+                )
+              })}
+            </div>
+          </section>
+
+          <FooterBar footerContent={marketing.siteSettings.footer} siteDescription={siteDescription} supportEmail={supportEmail} />
+        </div>
+      </AuthModalStage>
+    </main>
   )
 }

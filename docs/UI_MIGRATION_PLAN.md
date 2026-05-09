@@ -117,7 +117,7 @@ Adjusted during migration:
 
 2. Model detail
    - Compare `component-lab/src/app/model-detail-rebuild` and generated `model-detail` components with `src/app/(frontend)/workbench/models/[id]` and `showcase/[id]`.
-   - Decide whether the migrated detail UI is for private model detail, public showcase detail, or both.
+   - Decision: `/model-detail?id=<modelId>` is the single model detail UI for public models and for models owned by the signed-in user. `/workbench/models/[id]` is only a compatibility redirect.
    - Do not expose raw `viewerUrl` or `formats.file`.
 
 3. Homepage
@@ -147,8 +147,37 @@ For every migrated page or component:
 7. Run `pnpm exec tsc --noEmit`.
 8. Run visual comparison on desktop and mobile before replacing a formal page.
 
+## Formal Page Redesign Matrix
+
+This matrix tracks formal page ownership after the homepage, Workbench, and public model detail routes were promoted. It should stay focused on active product routes, not temporary dated worklogs.
+
+| Route | Priority | Current Owner | Redesign Status | Next Action |
+| --- | --- | --- | --- | --- |
+| `/pricing` | High | `SubscriptionPage` plus backend plans, credit products, and `formal-pages` copy | Formal dark billing layout active; hero/support body copy is CMS-managed | Browser-check desktop/mobile after adjacent shell changes; keep checkout endpoints unchanged |
+| `/account` | High | `AccountCenter` formal account component | In progress, protected account route active | Keep as the single account surface and avoid recreating dashboard-era pages |
+| `/generate` | High | Redirect wrapper | Stable compatibility route | Keep redirecting to `/workbench` while preserving supported mode query params |
+| `/results/[taskCode]` | High | Result detail page | Formal dark result receipt active and browser-checked for `/results/not-exist` | Keep as compatibility/status route; Workbench and `/model-detail` remain the primary model preview surfaces |
+| `/solutions` | High | Shared `MarketingPage` plus `formal-pages` copy | Updated through shared dark marketing layout | Verify desktop/mobile |
+| `/features` | High | Shared `MarketingPage` plus `formal-pages` copy | Updated through shared dark marketing layout | Verify desktop/mobile |
+| `/resources` | Formal content | Shared `MarketingPage` plus `formal-pages` copy | Updated through shared dark marketing layout | Verify as part of the shared marketing-page pass |
+| `/developers` | Formal content | Shared `MarketingPage` plus `formal-pages` copy | Updated through shared dark marketing layout | Verify as part of the shared marketing-page pass |
+| `/contact` | Formal content | `FormalInfoPage` plus `formal-pages` copy | Formal dark info page active | Keep support links sourced from content/settings where possible |
+| `/privacy-policy` | Formal content | `FormalInfoPage` plus `formal-pages` copy | Formal dark info page active | Policy copy is CMS-managed |
+| `/refund-policy` | Formal content | `FormalInfoPage` plus `formal-pages` copy | Formal dark info page active | Policy copy is CMS-managed |
+| `/shipping-policy` | Formal content | `FormalInfoPage` plus `formal-pages` copy | Formal dark info page active | Policy copy is CMS-managed |
+| `/login` | Account flow | Redirect wrapper to shared auth flow | Compatibility route active | Do not create a separate login system |
+| `/register` | Account flow | Redirect wrapper to shared auth flow | Compatibility route active | Do not create a separate register system |
+| `/forgot-password` | Account flow | Redirect wrapper to shared auth flow | Compatibility route active | Reuse shared auth modal state |
+| `/reset-password` | Account flow | `ResetPasswordForm` | Formal route active and browser-checked on desktop/mobile | Keep posting to `/api/account/auth/reset-password` |
+| `/verify-email/[token]` | Account flow | `VerifyEmailClient` | Formal route active with mobile-safe footer shell | Keep posting through account auth verification endpoint |
+| `/showcase/[id]` | Cleanup | Compatibility redirect | Redirects to `/model-detail?id=<id>` | Keep `/model-detail` as canonical public detail route |
+| `/workbench/models/[id]` | Cleanup | Compatibility redirect | Redirects to `/model-detail?id=<id>` | Do not restore a separate Workbench-owned detail UI |
+| `/formal-components` | Local only | Component registry | Hidden in production | Keep local-only; do not invest as a formal page |
+| `/test` | Local only | Route inventory | Hidden in production | Keep local-only and update when route ownership changes |
+| `/test-bundles` | Local only | Bundle visual validation | Hidden in production | Keep local-only; formal bundle delivery lives at `/bundles` and `/bundles/[slug]` |
+
 ## Current Status
 
-Status: first low-risk component and asset batch migrated.
+Status: shared formal marketing pages are now part of the dark gold Thorns Tavern page family. Formal info/marketing page body copy is centralized in the `formal-pages` Payload global; source content helpers remain fallback/default seed content. The mobile/browser verification pass has accepted `/workbench`, `/model-detail`, and the homepage `/`; the homepage mobile branch uses the desktop-style "Ideas to Miniatures" generator hero and was checked at 360/390/430 mobile widths plus 1440 desktop width with zero horizontal overflow. The public/formal route pass also verified `/about`, `/showcase`, `/bundles`, `/bundles/starter-guide-first-tavern-kit`, `/pricing`, `/features`, `/solutions`, `/resources`, `/developers`, `/contact`, `/privacy-policy`, `/refund-policy`, `/shipping-policy`, and `/verify-email/not-a-real-token` at 1366x768 and 390x844 with zero horizontal overflow.
 
-Next step: integrate selected `ui-lab` primitives into one formal page at a time, starting with workbench or model detail.
+Next step: only `/account` remains marked `未验证` in the UI matrix. `/workbench/models/[id]` has been resolved as a compatibility redirect to `/model-detail?id=<id>` so the old demo-detail bundle is no longer a product UI surface.

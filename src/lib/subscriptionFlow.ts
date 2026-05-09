@@ -4,6 +4,7 @@ import type { BillingSubscription } from '@/payload-types'
 import { writeAuditLog } from '@/lib/auditLog'
 import { sendSubscriptionSuccessEmail } from '@/lib/businessEmails'
 import { grantCredits } from '@/lib/creditLedger'
+import { createUserNotification } from '@/lib/notificationService'
 import { getPaymentProviderSettings } from '@/lib/paymentProviders'
 import {
   createBillingPortalSession,
@@ -278,6 +279,29 @@ async function grantSubscriptionCreditsIfNeeded(args: {
       req.payload.logger.error({
         err: error,
         msg: `Failed to send subscription success email to ${user.email}`,
+      })
+    })
+  }
+
+  if (grantResult.applied) {
+    await createUserNotification({
+      body: `${planCredits} ${planLabel} subscription credits have been added for the current billing period.`,
+      href: '/account?section=billing',
+      metadata: {
+        periodKey,
+        planKey,
+        stripeSubscriptionId: stripeSubscription.id,
+      },
+      req,
+      severity: 'success',
+      sourceKey: `subscription:${stripeSubscription.id}:${periodKey}:credits`,
+      title: 'Subscription credits added',
+      type: 'subscription_credits',
+      userId: user.id,
+    }).catch((error) => {
+      req.payload.logger?.error?.({
+        err: error,
+        msg: `Failed to create notification for subscription ${stripeSubscription.id}.`,
       })
     })
   }

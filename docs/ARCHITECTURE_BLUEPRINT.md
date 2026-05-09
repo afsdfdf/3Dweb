@@ -19,7 +19,8 @@ Primary routes:
 - `/features`
 - `/solutions`
 - `/showcase`
-- `/showcase/[id]`
+- `/model-detail`
+- `/blog`
 - `/pricing`
 - `/resources`
 - `/developers`
@@ -28,8 +29,10 @@ Primary data sources:
 
 - `homepage-content`
 - `homepage-items`
+- `formal-pages`
 - `site-settings`
 - public `models`
+- public `posts`
 - guest-readable `media`
 
 ### Studio / Workbench
@@ -44,7 +47,6 @@ Primary routes:
 - `/generate` redirects to `/workbench`
 - `/workbench`
 - `/workbench/history`
-- `/workbench/models/[id]`
 - `/results/[taskCode]`
 
 Primary data sources:
@@ -71,6 +73,7 @@ Primary data sources:
 - user-scoped Local API reads with `overrideAccess: false`
 - registered account endpoints under `/api/account/...`
 - project-owned product APIs for mutations and sync operations
+- `user-notifications` for the shared top navigation bell
 
 ### Payload Admin
 
@@ -116,6 +119,7 @@ Do not create custom routes under `/api/<collection-slug>` because those paths b
 ### Identity And Access
 
 - `users`
+- `user-notifications`
 - roles: `admin`, `operator`, `customer`
 - admin UI access: `admin` and `operator`
 
@@ -140,6 +144,7 @@ Public media depends on `purpose` and `publicAccess`, not only on linked model v
 - `site-settings`
 - `homepage-content`
 - `homepage-items`
+- `formal-pages`
 - `posts`
 - `announcements`
 - `model-bundles`
@@ -164,8 +169,12 @@ Public media depends on `purpose` and `publicAccess`, not only on linked model v
 ## Current Integration Notes
 
 - The homepage content model is split between `homepage-content` for section copy and `homepage-items` for repeated curated placements.
+- Formal info and marketing page body copy is centralized in `formal-pages`; source helpers remain fallback/default seed content.
+- Public header navigation and formal page footer link groups are shared site chrome owned by `site-settings`; pages should not define separate footer link arrays.
+- `/model-detail?id=<modelId>` is the canonical model detail route for public models and for models owned by the signed-in user. `/showcase/[id]` and `/workbench/models/[id]` are retained only as compatibility redirects.
+- `/blog` and `/blog/[slug]` are the formal Tavern Journal routes and reuse the active `posts` collection. Do not introduce a parallel blog collection or custom APIs under Payload REST namespaces.
 - `/account` is the single formal customer account surface. Do not document or route new customer workflows through old `/dashboard/*` paths.
-- The frontend still contains some fallback/hardcoded content. New frontend integration should replace those with Payload-managed data where possible.
+- The frontend still contains some route/workflow fallback copy. New formal marketing or policy copy should use Payload-managed data where possible.
 - Account, social, engagement, model detail, model viewer, image generation, and admin repair endpoint modules are registered in `src/payload.config.ts`; treat them as active API surface.
 - Runtime database is PostgreSQL only.
 

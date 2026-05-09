@@ -7,6 +7,8 @@ import { TopNavigation, migrationTestNavItems } from '@/components/ui-lab/top-na
 import { getPublicBundleBySlug } from '@/lib/bundleService'
 import { getCachedPayload } from '@/lib/getCachedPayload'
 
+import { FooterBar } from '../../_components/shell/FooterBar'
+import { getMarketingSiteData } from '../../_lib/marketing'
 import { getCurrentNavUser } from '../../_lib/session'
 import styles from './page.module.css'
 
@@ -25,7 +27,7 @@ function getModelTags(model: { formats: string[]; printReady: boolean; tags: str
 }
 
 export default async function BundleDetailPage({ params }: { params: Promise<{ slug: string }> }) {
-  const [{ slug }, payload, navUser] = await Promise.all([params, getCachedPayload(), getCurrentNavUser()])
+  const [{ slug }, payload, navUser, marketing] = await Promise.all([params, getCachedPayload(), getCurrentNavUser(), getMarketingSiteData()])
   const bundle = await getPublicBundleBySlug(payload, slug).catch(() => null)
 
   if (!bundle) {
@@ -48,6 +50,8 @@ export default async function BundleDetailPage({ params }: { params: Promise<{ s
     bundle.technicalSpecs.textured ? 'Textured' : null,
     ctaBadge,
   ].filter((chip): chip is string => Boolean(chip))
+  const supportEmail = marketing.siteSettings.supportEmail || 'support@example.com'
+  const siteDescription = marketing.siteSettings.siteDescription || 'An AI 3D product platform for character creation, asset management, and print fulfillment.'
 
   return (
     <main className={styles.page}>
@@ -181,14 +185,7 @@ export default async function BundleDetailPage({ params }: { params: Promise<{ s
             </section>
           ) : null}
 
-          <footer className={styles.footerBlock}>
-            <span>Copyright 2024 Thorns Tavern</span>
-            <nav aria-label="Bundle footer links">
-              <Link href="/privacy-policy">Privacy Policy</Link>
-              <Link href="/refund-policy">Refund Policy</Link>
-              <Link href="/contact">Contact</Link>
-            </nav>
-          </footer>
+          <FooterBar footerContent={marketing.siteSettings.footer} siteDescription={siteDescription} supportEmail={supportEmail} />
         </div>
       </AuthModalStage>
     </main>

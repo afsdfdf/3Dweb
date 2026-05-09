@@ -17,13 +17,13 @@ const topNavigationCssPath = path.join(rootDir, 'src', 'components', 'ui-lab', '
 const topNavBarPath = path.join(rootDir, 'src', 'app', '(frontend)', '_components', 'shell', 'TopNavBar.tsx')
 const workbenchModelPagePath = path.join(rootDir, 'src', 'app', '(frontend)', 'workbench', 'models', '[id]', 'page.tsx')
 const frontendSessionPath = path.join(rootDir, 'src', 'app', '(frontend)', '_lib', 'session.ts')
-const personalCenterTestPath = path.join(
+const accountCenterPath = path.join(
   rootDir,
   'src',
   'components',
-  'ui-lab',
-  'personal-center-test',
-  'personal-center-test.tsx',
+  'account',
+  'account-center',
+  'account-center.tsx',
 )
 
 test('public pages share one canonical navigation contract', () => {
@@ -35,6 +35,7 @@ test('public pages share one canonical navigation contract', () => {
     "{ href: '/', id: 'HOME', label: 'HOME' }",
     "{ href: '/workbench', id: 'WORKBENCH', label: 'WORKBENCH' }",
     "{ href: '/pricing', id: 'PLANS', label: 'PLANS' }",
+    "{ href: '/blog', id: 'BLOG', label: 'BLOG' }",
     "{ href: '/about', id: 'ABOUT', label: 'ABOUT' }",
   ]) {
     assert.match(source, new RegExp(item.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
@@ -77,25 +78,30 @@ test('shared navigation components use the canonical navigation source', () => {
 
 test('shell-rendered pages use the same top navigation template as UI-lab pages', () => {
   const siteShellSource = readFileSync(siteShellPath, 'utf8')
-  const workbenchModelPageSource = readFileSync(workbenchModelPagePath, 'utf8')
 
   assert.match(siteShellSource, /@\/components\/ui-lab\/top-navigation/)
   assert.match(siteShellSource, /getPublicNavigationActiveID/)
   assert.match(siteShellSource, /<TopNavigation/)
   assert.doesNotMatch(siteShellSource, /shell\/TopNavBar/)
   assert.doesNotMatch(siteShellSource, /<TopNavBar/)
+})
 
-  assert.match(workbenchModelPageSource, /@\/components\/ui-lab\/top-navigation/)
-  assert.match(workbenchModelPageSource, /<TopNavigation/)
+test('workbench model detail route is only a canonical detail redirect', () => {
+  const workbenchModelPageSource = readFileSync(workbenchModelPagePath, 'utf8')
+
+  assert.match(workbenchModelPageSource, /next\/navigation/)
+  assert.match(workbenchModelPageSource, /redirect\(`\/model-detail\?id=/)
+  assert.doesNotMatch(workbenchModelPageSource, /buildPreviewModel/)
+  assert.doesNotMatch(workbenchModelPageSource, /SketchExactPreview/)
   assert.doesNotMatch(workbenchModelPageSource, /TopNavBar/)
 })
 
 test('account-style pages do not carry private navigation arrays', () => {
-  const personalCenterTestSource = readFileSync(personalCenterTestPath, 'utf8')
+  const accountCenterSource = readFileSync(accountCenterPath, 'utf8')
 
-  assert.match(personalCenterTestSource, /@\/lib\/publicNavigation/)
-  assert.doesNotMatch(personalCenterTestSource, /realNavigationItems/)
-  assert.doesNotMatch(personalCenterTestSource, /id:\s*["']ADMIN["']/)
+  assert.match(accountCenterSource, /@\/lib\/publicNavigation/)
+  assert.doesNotMatch(accountCenterSource, /realNavigationItems/)
+  assert.doesNotMatch(accountCenterSource, /id:\s*["']ADMIN["']/)
 })
 
 test('top navigation user label is normalized and display-limited', () => {
@@ -110,13 +116,16 @@ test('top navigation user label is normalized and display-limited', () => {
   assert.equal(formatTopNavigationUserLabel(label).length, topNavigationUserLabelMaxCharacters)
 })
 
-test('top navigation session data avoids duplicate credit account queries', () => {
+test('top navigation session data reads the canonical cached credit account', () => {
   const source = readFileSync(frontendSessionPath, 'utf8')
   const navFunction = source.match(/export async function getCurrentNavUser\(\) \{[\s\S]*?\n\}/)?.[0] ?? ''
 
   assert.match(source, /import \{ cache \} from ["']react["']/)
   assert.match(source, /const getPayloadWithUser = cache/)
   assert.match(source, /const getCurrentUserDocument = cache/)
+  assert.match(source, /const getCurrentCreditAccountDocument = cache/)
+  assert.match(source, /collection:\s*["']credits["']/)
   assert.match(navFunction, /creditsBalance/)
-  assert.doesNotMatch(navFunction, /collection:\s*["']credits["']/)
+  assert.match(navFunction, /getCurrentCreditAccountDocument/)
+  assert.match(navFunction, /creditAccount\?\.balance/)
 })

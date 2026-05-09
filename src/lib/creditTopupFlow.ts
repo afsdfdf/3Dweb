@@ -5,6 +5,7 @@ import type { CreditProduct, ShopifyPayment } from '@/payload-types'
 import { writeAuditLog } from '@/lib/auditLog'
 import { purchaseCredits } from '@/lib/creditLedger'
 import { getCanonicalAppURL } from '@/lib/getCanonicalAppURL'
+import { createUserNotification } from '@/lib/notificationService'
 import { getPaymentProviderSettings } from '@/lib/paymentProviders'
 import { PAYMENT_LEGACY_FIELD_NAMES, setPaymentLegacyFields } from '@/lib/paymentRecords'
 import { ensureStripeCustomer } from '@/lib/stripeBilling'
@@ -338,6 +339,29 @@ export async function finalizeCreditTopupCheckoutSession(args: {
     status: grantResult.applied ? 'completed' : 'idempotent',
     userId: paymentUserId || checkoutUserId,
   })
+
+  const notificationUserId = paymentUserId || checkoutUserId
+  if (grantResult.applied && notificationUserId) {
+    await createUserNotification({
+      body: `${credits} credits have been added to your account.`,
+      href: '/account?section=billing',
+      metadata: {
+        checkoutReference: payment.checkoutReference,
+        paymentId: payment.id,
+      },
+      req,
+      severity: 'success',
+      sourceKey: `credit-topup:${checkoutSession.id}:paid`,
+      title: 'Credits added',
+      type: 'credits_purchased',
+      userId: notificationUserId,
+    }).catch((error) => {
+      req.payload.logger?.error?.({
+        err: error,
+        msg: `Failed to create notification for credit top-up ${checkoutSession.id}.`,
+      })
+    })
+  }
 
   return {
     account: grantResult.account,

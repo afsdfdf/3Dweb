@@ -3,6 +3,9 @@ import { buildModelViewerURL, getModelPreviewURL } from "@/lib/modelAssetURL";
 import { getMediaAccessURL } from "@/lib/mediaAccessURL";
 import { isGuestReadableMedia } from "@/lib/mediaVisibility";
 import type { Where } from "payload";
+import type { getCurrentUser } from "../../_lib/session";
+
+type CurrentUser = NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>;
 
 type ImageLike = {
   thumbnailURL?: null | string;
@@ -64,7 +67,16 @@ type ModelLike = {
   visibility?: null | string;
 };
 
+type DownloadPolicy = {
+  chargeDownloadCredits: boolean;
+  downloadCredits: number;
+};
+
 export type ModelDetailSideModel = {
+  commentsCount: number;
+  commentsEnabled: boolean;
+  downloadCredits: number;
+  downloadCreditsLabel: string;
   href: string;
   id: string;
   imageSrc: string;
@@ -82,7 +94,11 @@ export type ModelDetailData = {
   authorProfileBannerFocalX: number;
   authorProfileBannerFocalY: number;
   authorProfileBannerSrc: null | string;
+  chargeDownloadCredits: boolean;
+  commentsCount: number;
+  commentsEnabled: boolean;
   commentsLabel: string;
+  downloadCredits: number;
   downloadCreditsLabel: string;
   favoritesLabel: string;
   formatsLabel: string;
@@ -176,6 +192,39 @@ const compactCount = (value: unknown, fallback = "0") => {
   return String(count);
 };
 
+const readPositiveNumber = (value: unknown) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) return 0;
+  return numeric;
+};
+
+const formatCredits = (value: number) => value.toFixed(2);
+
+async function getDownloadPolicy(
+  payload: Awaited<ReturnType<typeof getCachedPayload>>,
+): Promise<DownloadPolicy> {
+  try {
+    const settings = await payload.findGlobal({
+      depth: 0,
+      overrideAccess: true,
+      slug: "site-settings",
+    });
+    const policy = isRecord(settings?.modelAccessPolicy)
+      ? settings.modelAccessPolicy
+      : null;
+
+    return {
+      chargeDownloadCredits: policy?.chargeDownloadCredits === true,
+      downloadCredits: readPositiveNumber(policy?.downloadCredits),
+    };
+  } catch {
+    return {
+      chargeDownloadCredits: false,
+      downloadCredits: 0,
+    };
+  }
+}
+
 const getAgeLabel = (value: null | string | undefined) => {
   if (!value) return "Recently";
 
@@ -214,14 +263,28 @@ const getOwnerName = (owner: null | OwnerLike | undefined) => {
   return displayName || fullName || email?.split("@")[0] || "Creator";
 };
 
-const getPublicAvatarURL = (owner: null | OwnerLike | undefined) => {
-  const avatar = owner?.avatar;
-  return isRecord(avatar) ? getImageURL(avatar) : null;
+const isStaffUser = (user: CurrentUser | null | undefined) => {
+  return ["admin", "operator"].includes(String(user?.role || "customer"));
 };
 
-const getPublicProfileBannerURL = (owner: null | OwnerLike | undefined) => {
+const getOwnerAvatarURL = (
+  owner: null | OwnerLike | undefined,
+  allowPrivateProfileMedia: boolean,
+) => {
+  const avatar = owner?.avatar;
+  if (!isRecord(avatar)) return null;
+  if (!allowPrivateProfileMedia && !isGuestReadableMedia(avatar)) return null;
+
+  return getImageURL(avatar);
+};
+
+const getOwnerProfileBannerURL = (
+  owner: null | OwnerLike | undefined,
+  allowPrivateProfileMedia: boolean,
+) => {
   const banner = owner?.profileBackground;
-  if (!isRecord(banner) || !isGuestReadableMedia(banner)) return null;
+  if (!isRecord(banner)) return null;
+  if (!allowPrivateProfileMedia && !isGuestReadableMedia(banner)) return null;
 
   return getImageURL(banner);
 };
@@ -285,15 +348,25 @@ const getFormatLabel = (model: ModelLike) => {
   return formats.length > 0 ? formats.join(" / ") : "GLB";
 };
 
-const getDownloadCreditsLabel = (model: ModelLike) => {
-  const values = Array.isArray(model.formats)
-    ? model.formats
-        .map((item) => Number(item?.downloadCredits ?? 0))
-        .filter((value) => Number.isFinite(value) && value > 0)
-    : [];
+const getFormatDownloadCredits = (model: ModelLike, format = "glb") => {
+  if (!Array.isArray(model.formats)) return 0;
 
-  if (values.length === 0) return "0.00";
-  return Math.min(...values).toFixed(2);
+  const selectedFormat = model.formats.find(
+    (item) => normalizeText(item?.format)?.toLowerCase() === format,
+  );
+  const selectedCredits = readPositiveNumber(selectedFormat?.downloadCredits);
+  if (selectedCredits > 0) return selectedCredits;
+
+  const formatCredits = model.formats
+    .map((item) => readPositiveNumber(item?.downloadCredits))
+    .filter((value) => value > 0);
+  return formatCredits.length > 0 ? Math.min(...formatCredits) : 0;
+};
+
+const getDownloadCredits = (model: ModelLike, policy: DownloadPolicy) => {
+  if (!policy.chargeDownloadCredits) return 0;
+
+  return getFormatDownloadCredits(model) || policy.downloadCredits;
 };
 
 const getTags = (model: ModelLike) => {
@@ -309,6 +382,7 @@ async function getSideModels(
   payload: Awaited<ReturnType<typeof getCachedPayload>>,
   model: ModelLike,
   ownerId: null | number,
+  policy: DownloadPolicy,
 ) {
   const where: Where = ownerId
     ? {
@@ -328,6 +402,7 @@ async function getSideModels(
     overrideAccess: false,
     pagination: false,
     select: {
+      commentsCount: true,
       createdAt: true,
       formats: true,
       id: true,
@@ -342,21 +417,30 @@ async function getSideModels(
 
   const docs = result.docs as ModelLike[];
   return Promise.all(
-    docs.map(async (item) => ({
-      href: `/model-detail?id=${encodeURIComponent(String(item.id))}`,
-      id: String(item.id),
-      imageSrc:
-        (await resolveMediaAccessURL(payload, getModelPreviewURL(item))) ||
-        fallbackSidePreview,
-      tags: getTags(item),
-      title: normalizeText(item.title) || `Model ${item.id}`,
-      updatedLabel: formatDateLabel(item.updatedAt || item.createdAt),
-      viewerURL: buildModelViewerURL({ modelId: Number(item.id) }),
-    })),
+    docs.map(async (item) => {
+      const downloadCredits = getDownloadCredits(item, policy);
+
+      return {
+        commentsCount: Number(item.commentsCount || 0),
+        commentsEnabled: true,
+        downloadCredits,
+        downloadCreditsLabel: formatCredits(downloadCredits),
+        href: `/model-detail?id=${encodeURIComponent(String(item.id))}`,
+        id: String(item.id),
+        imageSrc:
+          (await resolveMediaAccessURL(payload, getModelPreviewURL(item))) ||
+          fallbackSidePreview,
+        tags: getTags(item),
+        title: normalizeText(item.title) || `Model ${item.id}`,
+        updatedLabel: formatDateLabel(item.updatedAt || item.createdAt),
+        viewerURL: buildModelViewerURL({ modelId: Number(item.id) }),
+      };
+    }),
   );
 }
 
 export async function getModelDetailData(args: {
+  currentUser?: CurrentUser | null;
   currentUserId?: null | number | string;
   id?: null | number | string;
 }): Promise<ModelDetailData | null> {
@@ -364,6 +448,7 @@ export async function getModelDetailData(args: {
   if (!Number.isFinite(modelId) || modelId <= 0) return null;
 
   const payload = await getCachedPayload();
+  const currentUser = args.currentUser ?? null;
   const result = await payload.find({
     collection: "models",
     depth: 1,
@@ -390,20 +475,31 @@ export async function getModelDetailData(args: {
       visibility: true,
     },
     where: {
-      and: [{ id: { equals: modelId } }, { visibility: { equals: "public" } }],
+      id: {
+        equals: modelId,
+      },
     },
+    ...(currentUser ? { user: currentUser } : {}),
   });
 
   const model = result.docs[0] as ModelLike | undefined;
   if (!model) return null;
 
   const ownerId = getRelationId(model.owner);
+  const currentUserId = currentUser?.id ?? args.currentUserId;
+  const isOwnedByCurrentUser =
+    ownerId !== null && String(ownerId) === String(currentUserId ?? "");
+  const allowPrivateProfileMedia =
+    isOwnedByCurrentUser || isStaffUser(currentUser);
+  const commentsEnabled = model.visibility === "public";
+  const policy = await getDownloadPolicy(payload);
   const [owner, previewURL, sideModels] = await Promise.all([
     getPublicOwner(payload, model.owner),
     resolveMediaAccessURL(payload, getModelPreviewURL(model)),
-    getSideModels(payload, model, ownerId),
+    getSideModels(payload, model, ownerId, policy),
   ]);
   const title = normalizeText(model.title) || `Model ${model.id}`;
+  const downloadCredits = getDownloadCredits(model, policy);
   const dimensions = isRecord(model.dimensions) ? model.dimensions : null;
   const vertexLabel =
     typeof dimensions?.widthMm === "number" ||
@@ -423,27 +519,32 @@ export async function getModelDetailData(args: {
     ageLabel: getAgeLabel(model.updatedAt || model.createdAt),
     authorAvatarSrc: await resolveMediaAccessURL(
       payload,
-      getPublicAvatarURL(owner),
+      getOwnerAvatarURL(owner, allowPrivateProfileMedia),
     ),
     authorDescription:
       normalizeText(owner?.bio) ||
       normalizeText(model.description) ||
-      "Public creator model available for preview and reference.",
+      (commentsEnabled
+        ? "Public creator model available for preview and reference."
+        : "Private model available to its owner and staff."),
     authorName: getOwnerName(owner),
     authorProfileBannerFocalX: normalizeFocalPoint(owner?.profileBannerFocalX),
     authorProfileBannerFocalY: normalizeFocalPoint(owner?.profileBannerFocalY),
     authorProfileBannerSrc: await resolveMediaAccessURL(
       payload,
-      getPublicProfileBannerURL(owner),
+      getOwnerProfileBannerURL(owner, allowPrivateProfileMedia),
     ),
-    commentsLabel: compactCount(model.commentsCount),
-    downloadCreditsLabel: getDownloadCreditsLabel(model),
+    chargeDownloadCredits: policy.chargeDownloadCredits,
+    commentsCount: commentsEnabled ? Number(model.commentsCount || 0) : 0,
+    commentsEnabled,
+    commentsLabel: commentsEnabled ? compactCount(model.commentsCount) : "0",
+    downloadCredits,
+    downloadCreditsLabel: formatCredits(downloadCredits),
     favoritesLabel: compactCount(model.favoritesCount),
     formatsLabel: getFormatLabel(model),
     id: Number(model.id),
     inputPreviewSrc: previewURL,
-    isOwnedByCurrentUser:
-      ownerId !== null && String(ownerId) === String(args.currentUserId ?? ""),
+    isOwnedByCurrentUser,
     likesLabel: compactCount(model.likesCount),
     previewImages: [previewURL || fallbackPreview],
     printReadyLabel: model.printReady ? "Print Ready" : "Preview Only",

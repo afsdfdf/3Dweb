@@ -1,6 +1,6 @@
 import { FormalInfoPage } from '../_components/FormalInfoPage'
-import { formalPages } from '../_lib/formal-pages'
+import { getFormalPageContent } from '../_lib/formal-page-content'
 
-export default function ShippingPolicyPage() {
-  return <FormalInfoPage page={formalPages.shippingPolicy} />
+export default async function ShippingPolicyPage() {
+  return <FormalInfoPage page={await getFormalPageContent('shippingPolicy')} />
 }

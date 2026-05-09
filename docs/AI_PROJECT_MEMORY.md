@@ -1,4 +1,4 @@
-# AI Project Memory
+﻿# AI Project Memory
 
 ## Purpose
 
@@ -56,6 +56,8 @@ Runtime database:
 Registered collections:
 
 - `users`
+- `user-follows`
+- `user-notifications`
 - `media`
 - `avatar-frame-styles`
 - `generation-tasks`
@@ -77,6 +79,7 @@ Registered globals:
 
 - `site-settings`
 - `homepage-content`
+- `formal-pages`
 - `ai-provider-settings`
 - `storage-settings`
 - `security-settings`
@@ -107,6 +110,10 @@ Registered Payload endpoints:
 - `POST /api/account/auth/reset-password`
 - `POST /api/account/auth/verify-email`
 - `POST /api/account/auth/resend-verification`
+- `GET /api/account/notifications`
+- `GET /api/account/notifications/unread-count`
+- `PATCH /api/account/notifications/:notificationId/read`
+- `POST /api/account/notifications/read-all`
 
 Additional active endpoint modules registered in `src/payload.config.ts`:
 
@@ -117,10 +124,33 @@ Additional active endpoint modules registered in `src/payload.config.ts`:
 - `src/endpoints/modelComments.ts`
 - `src/endpoints/modelDetails.ts`
 - `src/endpoints/modelReactions.ts`
+- `src/endpoints/notifications.ts`
 
 Important implication:
 
-- Account, social, image-generation, model detail, engagement, and admin-repair endpoints are active production surface. Treat them as live backend APIs, keep origin checks and endpoint-level rate limits on mutations, and do not describe them as dormant.
+- Account, notifications, social, image-generation, model detail, engagement, and admin-repair endpoints are active production surface. Treat them as live backend APIs, keep origin checks and endpoint-level rate limits on mutations, and do not describe them as dormant.
+
+## User Notifications
+
+`user-notifications` is the private account notification collection for the shared top navigation bell. It is not the public `announcements` collection and should not expose raw `task-events` payloads to the UI.
+
+Rules:
+
+- Users can read only their own notification records through `ownerOrStaff('user')`.
+- Direct collection writes are staff-only; account notification endpoints call `src/lib/notificationService.ts` after authenticating and checking ownership.
+- Business flows create concise notifications with idempotent `sourceKey` values for generation completion/failure, print order payment/status changes, credit top-ups, subscription credit grants, and admin credit adjustments.
+- The shared `TopNavigation` bell calls `/api/account/notifications*`; do not reintroduce hard-coded badge counts.
+
+## Credit Balance Display
+
+The canonical user credit balance is `credits.balance`. `users.creditsBalance` is only a denormalized mirror for lightweight display and admin scanning.
+
+Rules:
+
+- `src/app/(frontend)/_lib/session.ts` should read the cached current `credits` account for navigation/account balance display and only fall back to `users.creditsBalance` when no active credit account is available.
+- `src/hooks/syncCreditBalanceMirror.ts` keeps `users.creditsBalance` synchronized when admins edit the `credits` collection directly in Payload Admin.
+- Ledger flows still update both `credits.balance` and `users.creditsBalance` atomically.
+- Do not treat a stale `users.creditsBalance` value as proof that a manual backend credit adjustment failed; check `credits.balance` first.
 
 ## Core Guardrails
 
@@ -277,10 +307,12 @@ Homepage content split:
 
 - `homepage-content`: singleton section copy and section-level settings.
 - `homepage-items`: repeated cards, curated promos, image-led items, and operator-managed placements.
+- `formal-pages`: operator-editable body copy, CTAs, summaries, and sections for formal info/marketing pages.
 
 Rules:
 
 - Do not add new hardcoded homepage rails if Payload can manage the data.
+- Do not add new hardcoded formal page body copy for pages already represented in `formal-pages`; source content in `formal-pages.ts` and `marketing-content.ts` is fallback/seeding content only.
 - Public homepage rendering should use public models and guest-readable preview media only.
 - For detailed collection mappings, see `docs/COLLECTIONS_REFERENCE.md`.
 - Backend-owned UI slot notes for the migrated formal frontend are tracked in `docs/BACKEND_UI_DEVELOPMENT_MEMO.md`.
@@ -362,7 +394,7 @@ Current evergreen references:
 - Root docs were consolidated into evergreen documents plus `docs/archive/`.
 - AI memory was compacted into guardrails and active registration facts.
 - Detailed collection documentation moved to `docs/COLLECTIONS_REFERENCE.md`.
-- Account, social, model detail, model viewer, image generation, engagement, and admin repair endpoint modules are registered. Frontend integration can use their public `/api/...` paths while preserving the documented security contracts.
+- Account, notifications, social, model detail, model viewer, image generation, engagement, and admin repair endpoint modules are registered. Frontend integration can use their public `/api/...` paths while preserving the documented security contracts.
 - Workbench model viewing is currently stabilized through the controlled `/api/platform/models/:modelId/viewer` path plus frontend/service-worker caching. After the formal frontend flow is complete, plan a production delivery refactor around a manifest/signing layer, Supabase Storage delivery for public hot assets, short-lived signed access for private assets, and durable cache keys for models and images.
 - Public model discovery/detail and Workbench ownership are separate. `/model-detail?id=<modelId>` is the formal public detail route; Workbench library panels should keep showing only the current user's own models, with other users' public models used only as read-only references.
 - Backend UI development memo added for formal page wiring. Current findings: `users.avatarFrame` and `accountService` support a basic avatar frame value, but there is no admin-managed style catalog; account profile/dashboard/password endpoints are registered; model detail sidebar banner is still static and needs a backend promotion slot; the homepage featured strip and collection shelf are mostly covered by `homepage-items`, with a possible missing editable ribbon/badge label.
@@ -400,7 +432,7 @@ Current evergreen references:
 - Vercel/Supabase cutover check found that social service code depends on `user-follows`, `model-comments`, `model-likes`, `model-favorites`, and `engagement-views`. These collections must stay registered in `src/payload.config.ts`, and empty/new Supabase databases must include the 2026-04-29 social baseline migration so comments, likes, favorites, follows, and view dedupe do not fail at runtime.
 - `D:\py\thornstavern_downloads` was imported into the new Supabase-backed database after the first admin account was created. Import owner is `admin@thornstavern.com`; `42` public `models`, `42` GLB `models_formats`, and `123` `media` rows were created. Assets are stored in Supabase Storage bucket `media` under `media/imports/thornstavern-downloads-20260429`; do not re-import this set through AWS S3. Three optional source images referenced by the manifest were absent, but every model has a GLB and preview image.
 - Current imported public model previews and downloads do not require credit charging. Future backend work should keep preview credit cost and download credit cost independently configurable from admin/runtime settings, with charging performed server-side and download refunds issued automatically when asset delivery fails.
-- Workbench is an authenticated action workspace, not a public gallery. Anonymous visitors may enter `/workbench` to inspect the UI, but generation and user-owned model/image library data require login. `/workbench/history` and `/workbench/models/:id` remain account-specific routes. Anonymous public model preview belongs on `/model-detail?id=<modelId>` through `/api/platform/models/:modelId/viewer`.
+- Workbench is an authenticated action workspace, not a public gallery. Anonymous visitors may enter `/workbench` to inspect the UI, but generation and user-owned model/image library data require login. `/workbench/history` remains account-specific; `/workbench/models/:id` is now only a compatibility redirect to `/model-detail?id=<modelId>`. Anonymous public model preview belongs on `/model-detail?id=<modelId>` through `/api/platform/models/:modelId/viewer`.
 - Model detail should reuse the same `ModelViewer` canvas when selecting creator-rail models. Do not key `ModelViewer` by `viewerURL` on that page; forcing a remount creates new WebGL contexts and browsers can stop loading models after roughly six selections even though the viewer endpoint and GLB files are healthy.
 - `ModelViewer` should keep GLTF/Draco loading resources singleton-style where possible. Reuse the shared Draco decoder loader instead of creating a new `DRACOLoader` per selected model, and release WebGL renderers on unmount so route changes or dev remounts do not leak contexts. On model detail, keep the slide key stable too; keying the parent slide by preview image URL still remounts the canvas even if `ModelViewer` itself has no key.
 
@@ -442,18 +474,19 @@ Current evergreen references:
 - `GET /api/platform/models/:modelId/download` now returns a controlled `404` when no real model asset URL can be resolved. It must not return generated mock model-file content in production paths.
 - Download credit charging is policy-driven by `site-settings.modelAccessPolicy.chargeDownloadCredits`. Current imported public downloads remain free by default; if charging is enabled later, charges happen only after a real source asset is resolved and are refunded on delivery failure.
 - Runtime environment guidance is consolidated around `DATABASE_PROVIDER=postgres`, `DATABASE_URL`, Supabase project variables, and Supabase Storage settings. Active `.env.example`, admin runtime preview, and active docs must not guide operators toward AWS/S3 runtime setup.
-- `/account` now owns the formal personal center route and renders the former `personal-center-test` UI with server-side current-user data for profile, credits, transactions, tasks, models, and orders. The `/personal-center-test` route was removed after promotion; do not revive parallel personal-center routes. Profile and password edits use the existing `/api/account/profile` and `/api/account/password` endpoints without changing backend schemas.
+- `/account` now owns the formal personal center route through `src/components/account/account-center`. It uses server-side current-user data for profile, credits, transactions, tasks, models, and orders. The `/personal-center-test` route was removed after promotion; do not revive parallel personal-center routes. Profile and password edits use the existing `/api/account/profile` and `/api/account/password` endpoints without changing backend schemas.
 - `ModelViewer` keeps the current-model-first architecture and still fetches only the selected viewer URL, but the loading UI is split into network, verify, parse, and ready phases so fast downloads with slower GLB/Draco parsing are visible without changing the fast Supabase redirect path.
 - Homepage managed items now read `homepage-items.badgeLabel`, `ribbonLabel`, and `altText` for homepage card display metadata instead of forcing the same hardcoded ribbon copy for curated cards.
 - Model detail's right-side image slot is the creator profile banner. The frontend uses `users.profileBackground` only when that media is guest-readable, with focal point fields applied as object positioning. Do not model this slot as a generic ad/promotion placement.
 - The account page can consume the backend-managed `avatar-frame-styles` catalog and the current user's profile banner summary. Avatar frame visuals remain catalog-driven instead of adding new hardcoded frame names to frontend source.
 - Auth modal context imports must use the canonical alias path `@/components/auth/AuthModalProvider` across provider consumers. Mixing a relative `./AuthModalProvider` import with the alias import can create duplicate context instances in Turbopack/HMR and surface as `useAuthModal must be used within AuthModalProvider`, which can make navigation disappear after login modal flows. `useAuthModal` now also has a compatibility fallback to `/login`, `/register`, or `/forgot-password` so a missing provider cannot crash the public page shell. Route changes and top navigation clicks must dismiss stale auth modal state, and the auth overlay layer must stay below the fixed top navigation layer.
 - `/account` is now a protected signed-in route via `requireUser()`. It passes `fullName`, `phone`, `bio`, and `profileVisibility` into the formal personal center UI, mounts `AuthModalStage` for shared navigation compatibility, and wires avatar/profile-banner edits through `/api/account/profile-media/upload-url` plus `/api/account/profile`. Profile/password saves refresh the server component data after successful writes, and records search/range/export/pagination are real client interactions instead of static shell controls.
+- `/account` current-user list helpers must add explicit owner/user `where` clauses for models, generation tasks, print orders, and credit transactions. Do not rely on collection read access alone for account rows, because public model read access can otherwise mix public gallery records into a user's model library and staff access can widen account billing/history queries.
 
 ### 2026-05-04
 
 - `/dashboard` frontend routes were removed after confirming `/account` is the single formal personal center. Former dashboard-era user flows now land on `/account?section=tasks|models|orders|billing`; this includes login defaults, account menu model-library links, print-order follow-up, subscription portal returns, checkout returns, and business email CTAs. Keep `/api/account/dashboard` and `/api/platform/ops/dashboard` as backend API names only; do not recreate a frontend `/dashboard` personal-center surface.
-- The `/account` personal center accepts a `section` search param and passes it into `PersonalCenterTest` as the initial section. Use this instead of adding new account subroutes for models, orders, tasks, or billing unless a future product decision asks for real routable detail pages.
+- The `/account` personal center accepts a `section` search param and passes it into `AccountCenter` as the initial section. Use this instead of adding new account subroutes for models, orders, tasks, or billing unless a future product decision asks for real routable detail pages.
 - Source language cleanup added `scripts/audit-source-language.mjs` and `npm`/package script `audit:source-language`. The audit fails on Chinese characters outside explicit `src/i18n/**` resources and on common mojibake markers, while excluding generated files, migrations, and local test routes.
 - Production UI and backend/service copy should default to English. The corrupted admin `zh` resource was replaced with a clean `src/i18n/admin/zh.ts` translation overlay that deep-merges onto `adminEn`, so backend/admin Chinese stays in the explicit I18N resource while missing keys safely fall back to English. Do not scatter Chinese fallback strings back into collection configs, globals, admin components, or service code.
 - Backend admin UI field labels, field descriptions, option labels, tabs, collection labels, and global labels are localized through `src/lib/payloadAdminI18n.ts` plus the phrase table in `src/i18n/admin/phrases.ts`. Keep future Payload config UI copy as English in config files and add Chinese only to the explicit I18N phrase table. Custom admin components should read the current Payload admin language and resolve phrases through `src/lib/adminPhrase.ts`.
@@ -506,5 +539,30 @@ Current evergreen references:
 - Public `/pricing` and `/showcase` list queries should fail soft to empty states when local database reads fail; this is page resilience only and does not replace fixing database connectivity.
 - `/results/[taskCode]` clamps progress to the 0-100 range and renders download buttons from actual available model formats.
 - The confirmed stale `GenerateForm` component and `personal-center-legacy` UI-lab files were removed after reference checks. Do not recreate those legacy entry points; `/generate` redirects to `/workbench` and `/account` owns the formal personal center.
-- A 2026-05-07 audit found P1 permission-design work that still needs owner discussion before remediation: direct Payload REST create ownership for owner/user-scoped collections, client-controlled identity/visibility fields on user-writable collections, and `/model-detail` fake/static fallback behavior for missing or invalid IDs.
+- A 2026-05-07 audit found P1 permission-design work that still needs owner discussion before remediation: direct Payload REST create ownership for owner/user-scoped collections and client-controlled identity/visibility fields on user-writable collections.
 - Model bundle detail hero copy now has an optional `heroMarketing` group on `model-bundles` for operator-controlled eyebrow, title override, subtitle override, slogan, and three fixed selling points. `/bundles/[slug]` should use these fields only as detail-page marketing copy and fall back to the basic bundle title/subtitle/summary when they are empty, keeping the layout stable instead of allowing arbitrary rich page composition.
+
+### 2026-05-08
+
+- `/features`, `/solutions`, `/resources`, and `/developers` now share the formal dark gold `MarketingPage` layout. The shared shell uses the same public navigation, auth modal stage, hero artwork treatment, and footer-link helper pattern as the newer `/about` and `/showcase` pages.
+- `/showcase/[id]` is now only a compatibility redirect to `/model-detail?id=<id>`. Keep `/model-detail` as the canonical public model detail route, and point future public model cards directly to that route.
+- `/model-detail` no longer renders static fake model data when `id` is missing, invalid, or not a public model. `src/app/(frontend)/model-detail/page.tsx` calls `notFound()` when `getModelDetailData()` returns null, and `ModelDetailNative` requires real `ModelDetailData`.
+- `/results/[taskCode]` is a lightweight compatibility generation receipt/status route, not a model preview page. Workbench and `/model-detail` remain the primary model preview surfaces. The result route uses a dark gold receipt layout, links users back to Workbench/account history, and only shows delivery actions from real result model formats.
+- `/reset-password` uses a route-local responsive shell instead of the fixed `h-[960px]` stage. It passes `mobileChildren` into `SiteShell` so mobile does not use the desktop 1920px scaled stage, while the shared auth form component remains unchanged.
+
+### 2026-05-09
+
+- `/blog` and `/blog/[slug]` are the formal public Tavern Journal routes. They reuse the registered `posts` collection; do not add a duplicate `blog-posts` collection or custom `/api/posts` or `/api/blog` routes.
+- Public blog reads must go through access-controlled Payload Local API calls with `overrideAccess: false`. Guest-visible posts require `_status = published`, `isVisible = true`, and an empty or past `publishedAt`; drafts, hidden posts, and future posts must not render on list or detail pages.
+- Published visible posts with `coverImage` must use guest-readable media (`purpose = preview` or `publicAccess = true`). `validatePostCoverImage` enforces this business rule without silently changing media visibility.
+- Blog rich text is rendered from Lexical node data, not with `dangerouslySetInnerHTML`. Cover media URLs are normalized for browser display, and missing/private covers fall back to branded empty artwork instead of leaking private media.
+- Public page footers are now centralized in `FooterBar` and backed by `site-settings.footer.linkGroups`. Do not add new page-local footer link arrays; update Site Settings when footer groups or links need to change. The related tables are `site_settings_footer_link_groups` and `site_settings_footer_link_groups_links`.
+- `/verify-email/[token]` uses a route-local responsive shell instead of `SiteShell`'s desktop 1920px fixed stage. It keeps `VerifyEmailClient` as the verification worker and shares `FooterBar` for both desktop and mobile.
+- Formal public page body copy is now centralized in the `formal-pages` global. It covers info pages (`/about`, `/contact`, `/privacy-policy`, `/refund-policy`, `/shipping-policy`) and marketing pages (`/features`, `/solutions`, `/resources`, `/developers`, `/pricing`, `/showcase`). Frontend reads use `payload.findGlobal({ slug: 'formal-pages', overrideAccess: false })` and merge CMS values over source fallbacks.
+- `/blog` page header settings are also owned by `formal-pages.blogPage`: hero eyebrow/title/text/image, CTAs, category labels, dispatch count label, and SEO title/description. `/blog` resolves them through `blogPageContent.ts` and falls back to `blogPageDefaults.ts`; article data remains owned by `posts`.
+- `GET /api/platform/models/:modelId/download` allows anonymous redirects for public models only when `site-settings.modelAccessPolicy.chargeDownloadCredits` is disabled and the request is a normal file download. The public fast path resolves `models -> models_formats -> media.url` directly, matching the viewer endpoint's public-asset boundary; inline delivery, charged downloads, private models, and missing public format rows still require authentication or return controlled errors.
+- `/model-detail` comments are backed by `/api/social/models/:id/comments`, not static sidebar copy. The page loads a sanitized comment DTO, opens the shared auth modal for anonymous submissions, and posts authenticated comments through the existing comment service. Its displayed download cost comes from `site-settings.modelAccessPolicy` plus per-format `downloadCredits`; when charging is disabled the UI shows the download as free and uses the anonymous public download path.
+- `/model-detail` is the single model detail UI for public models and for models owned by the signed-in user. Its Payload read passes the current user with `overrideAccess: false`, so private models are available only to their owner or staff through the existing `models` access rule. `/workbench/models/[id]` is a compatibility redirect and the old demo/detail implementation files were removed.
+- UI delivery review is currently in the mobile/browser verification phase. `/workbench`, `/model-detail`, and `/` have independent mobile layouts verified with Edge/Playwright; `/` was accepted with the desktop-style "Ideas to Miniatures" mobile generator hero and checked at 360/390/430 mobile widths plus 1440 desktop width with zero horizontal overflow. The desktop audit report on the user's Desktop was updated to mark those routes verified.
+- Next UI review task: continue with the remaining routes still marked `鏈獙璇乣 in `C:\Users\changcheng\Desktop\Thorns_Tavern_浜や粯瀹℃煡鎶ュ憡_20260508.md`, starting with the shared public/formal pages (`/about`, `/showcase`, `/bundles`, `/bundles/[slug]`, `/pricing`, then the shared `MarketingPage` and `FormalInfoPage` groups) before moving to `/account` cleanup or backend P1/P2 security items.
+- The shared public/formal page verification pass has now been completed for `/about`, `/showcase`, `/bundles`, `/bundles/starter-guide-first-tavern-kit`, `/pricing`, `/features`, `/solutions`, `/resources`, `/developers`, `/contact`, `/privacy-policy`, `/refund-policy`, `/shipping-policy`, and `/verify-email/not-a-real-token`. Each returned `200` and had zero horizontal overflow at 1366x768 desktop and 390x844 mobile. The audit report was updated; the only UI matrix row still pending visual review is `/account`; `/workbench/models/[id]` has been resolved as a redirect.

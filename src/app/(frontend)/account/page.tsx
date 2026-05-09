@@ -1,7 +1,7 @@
 import {
-  PersonalCenterTest,
-  type PersonalCenterData,
-} from "@/components/ui-lab/personal-center-test";
+  AccountCenter,
+  type AccountCenterData,
+} from "@/components/account/account-center";
 import type { GenerationTask, Model, PrintOrder } from "@/payload-types";
 
 import {
@@ -74,6 +74,8 @@ const accountSections = [
   "settings",
 ] as const;
 
+const accountRecordLimit = 200;
+
 type AccountSection = (typeof accountSections)[number];
 
 function getInitialSection(value?: null | string): AccountSection {
@@ -102,10 +104,10 @@ export default async function AccountPage({
     getCurrentNavUser(),
     getCurrentAccountProfileSummary(),
     getCurrentUserCreditAccount(),
-    getCurrentUserCreditTransactions(),
-    getCurrentUserTasks(),
-    getCurrentUserModels(),
-    getCurrentUserOrders(),
+    getCurrentUserCreditTransactions({ limit: accountRecordLimit }),
+    getCurrentUserTasks({ limit: accountRecordLimit }),
+    getCurrentUserModels({ limit: accountRecordLimit }),
+    getCurrentUserOrders({ limit: accountRecordLimit }),
   ]);
 
   const activeTasks = tasks.docs.filter((task: GenerationTask) =>
@@ -115,7 +117,7 @@ export default async function AccountPage({
     ["paid", "in-production", "shipped"].includes(String(order.status)),
   ).length;
 
-  const accountData: PersonalCenterData = {
+  const accountData: AccountCenterData = {
     avatarUrl: navUser?.avatarUrl ?? null,
     avatarFrame: accountProfile?.avatarFrame ?? "none",
     avatarFrameStyles: accountProfile?.avatarFrameStyles ?? [],
@@ -130,6 +132,10 @@ export default async function AccountPage({
     metrics: {
       activeOrders,
       activeTasks,
+      billingCount:
+        "totalDocs" in creditTransactions
+          ? creditTransactions.totalDocs
+          : creditTransactions.docs.length,
       modelCount: "totalDocs" in models ? models.totalDocs : models.docs.length,
       orderCount: "totalDocs" in orders ? orders.totalDocs : orders.docs.length,
       taskCount: "totalDocs" in tasks ? tasks.totalDocs : tasks.docs.length,
@@ -138,35 +144,33 @@ export default async function AccountPage({
     profileVisibility:
       accountProfile?.profileVisibility === "public" ? "public" : "private",
     rows: {
-      billing: creditTransactions.docs
-        .slice(0, 10)
-        .map((transaction, index) => ({
-          amount: formatSignedNumber(transaction.amount),
-          id: String(transaction.referenceCode || transaction.id || index + 1),
-          item: String(
-            transaction.referenceCode ||
-              transaction.type ||
-              "Credit transaction",
-          ),
-          status:
-            transaction.balanceAfter === null ||
-            transaction.balanceAfter === undefined
-              ? "Posted"
-              : `Balance ${formatNumber(transaction.balanceAfter)}`,
-          time: formatDate(transaction.createdAt),
-          type:
-            transactionTypeLabels[String(transaction.type)] ??
-            String(transaction.type || "Transaction"),
-        })),
-      models: models.docs.slice(0, 10).map((model: Model) => ({
+      billing: creditTransactions.docs.map((transaction, index) => ({
+        amount: formatSignedNumber(transaction.amount),
+        id: String(transaction.referenceCode || transaction.id || index + 1),
+        item: String(
+          transaction.referenceCode || transaction.type || "Credit transaction",
+        ),
+        status:
+          transaction.balanceAfter === null ||
+          transaction.balanceAfter === undefined
+            ? "Posted"
+            : `Balance ${formatNumber(transaction.balanceAfter)}`,
+        time: formatDate(transaction.createdAt),
+        type:
+          transactionTypeLabels[String(transaction.type)] ??
+          String(transaction.type || "Transaction"),
+      })),
+      models: models.docs.map((model: Model) => ({
+        actionLabel: "Open",
         amount: "-",
+        href: `/model-detail?id=${encodeURIComponent(String(model.id))}`,
         id: String(model.id),
         item: String(model.title || `Model ${model.id}`),
         status: String(model.status || model.visibility || "Ready"),
         time: formatDate(model.updatedAt || model.createdAt),
         type: String(model.visibility || "Model"),
       })),
-      orders: orders.docs.slice(0, 10).map((order: PrintOrder) => ({
+      orders: orders.docs.map((order: PrintOrder) => ({
         amount:
           order.amount === null || order.amount === undefined
             ? "-"
@@ -177,11 +181,15 @@ export default async function AccountPage({
         time: formatDate(order.updatedAt || order.createdAt),
         type: "Print order",
       })),
-      tasks: tasks.docs.slice(0, 10).map((task: GenerationTask) => ({
+      tasks: tasks.docs.map((task: GenerationTask) => ({
+        actionLabel: task.taskCode ? "Result" : undefined,
         amount:
           task.creditsSpent === null || task.creditsSpent === undefined
             ? "0"
             : `-${formatNumber(task.creditsSpent)}`,
+        href: task.taskCode
+          ? `/results/${encodeURIComponent(String(task.taskCode))}`
+          : undefined,
         id: String(task.taskCode || task.id),
         item: String(task.prompt || task.taskCode || `Task ${task.id}`),
         status: String(task.status || "Queued"),
@@ -195,7 +203,7 @@ export default async function AccountPage({
   };
 
   return (
-    <PersonalCenterTest
+    <AccountCenter
       accountData={accountData}
       initialSection={getInitialSection(query.section)}
       navUser={navUser}

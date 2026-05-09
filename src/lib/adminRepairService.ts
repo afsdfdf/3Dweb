@@ -2,6 +2,7 @@ import type { PayloadRequest } from 'payload'
 
 import { writeAuditLog } from '@/lib/auditLog'
 import { adjustCreditsManually } from '@/lib/creditLedger'
+import { createUserNotification } from '@/lib/notificationService'
 
 const INTERNAL_ACCESS = true
 
@@ -18,6 +19,12 @@ const requireReason = (value: unknown, label: string) => {
     throw new Error(`${label} is required.`)
   }
   return reason
+}
+
+const getRelationId = (value: unknown) => {
+  if (typeof value === 'number' || typeof value === 'string') return Number(value)
+  if (value && typeof value === 'object' && 'id' in value) return Number((value as { id?: unknown }).id)
+  return 0
 }
 
 export async function adminUpdateOrderStatus(args: {
@@ -66,6 +73,31 @@ export async function adminUpdateOrderStatus(args: {
     userId: args.req.user?.id,
   })
 
+  const orderUserId = getRelationId(order.user) || getRelationId(updated.user)
+  if (orderUserId && String(order.status) !== String(updated.status)) {
+    await createUserNotification({
+      body: `${updated.orderNumber || `Order ${updated.id}`} is now ${String(updated.status).replace(/-/g, ' ')}.`,
+      href: '/account?section=orders',
+      metadata: {
+        fromStatus: order.status,
+        reason,
+        toStatus: updated.status,
+      },
+      req: args.req,
+      severity: updated.status === 'cancelled' ? 'warning' : 'info',
+      sourceKey: `print-order:${updated.id}:status:${updated.status}`,
+      sourceOrderId: updated.id,
+      title: 'Order status updated',
+      type: 'order_status',
+      userId: orderUserId,
+    }).catch((error) => {
+      args.req.payload.logger?.error?.({
+        err: error,
+        msg: `Failed to create notification for order ${updated.id}.`,
+      })
+    })
+  }
+
   return updated
 }
 
@@ -101,6 +133,28 @@ export async function adminAdjustCredits(args: {
     status: result.applied ? 'completed' : 'ignored',
     userId: args.userId,
   })
+
+  if (result.applied) {
+    await createUserNotification({
+      body: `Your credit balance was adjusted by ${args.amountDelta} credits.`,
+      href: '/account?section=billing',
+      metadata: {
+        amountDelta: args.amountDelta,
+        reason,
+      },
+      req: args.req,
+      severity: args.amountDelta >= 0 ? 'success' : 'warning',
+      sourceKey: `admin-credit-adjust:${args.userId}:${Date.now()}`,
+      title: 'Credit balance adjusted',
+      type: 'credits_adjusted',
+      userId: args.userId,
+    }).catch((error) => {
+      args.req.payload.logger?.error?.({
+        err: error,
+        msg: `Failed to create notification for credit adjustment ${args.userId}.`,
+      })
+    })
+  }
 
   return result
 }

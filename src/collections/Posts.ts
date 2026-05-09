@@ -3,6 +3,7 @@
 import { isStaff } from '@/access'
 import { assignCurrentUser } from '@/hooks/assignCurrentUser'
 import { fillPublishAtOnPublish } from '@/hooks/fillPublishAtOnPublish'
+import { validatePostCoverImage } from '@/hooks/validatePostCoverImage'
 import { adminLabelsKey, adminTextKey } from '@/lib/adminText'
 
 const publicReadOrStaff: Access = ({ req }) => {
@@ -11,9 +12,32 @@ const publicReadOrStaff: Access = ({ req }) => {
   }
 
   return {
-    _status: {
-      equals: 'published',
-    },
+    and: [
+      {
+        _status: {
+          equals: 'published',
+        },
+      },
+      {
+        isVisible: {
+          equals: true,
+        },
+      },
+      {
+        or: [
+          {
+            publishedAt: {
+              exists: false,
+            },
+          },
+          {
+            publishedAt: {
+              less_than_equal: new Date().toISOString(),
+            },
+          },
+        ],
+      },
+    ] as import('payload').Where[],
   }
 }
 
@@ -33,7 +57,7 @@ export const Posts: CollectionConfig = {
     update: isStaff,
   },
   hooks: {
-    beforeChange: [assignCurrentUser('createdBy'), fillPublishAtOnPublish('publishedAt')],
+    beforeChange: [assignCurrentUser('createdBy'), fillPublishAtOnPublish('publishedAt'), validatePostCoverImage],
   },
   defaultSort: ['-isPinned', 'sortOrder', '-publishedAt'],
   fields: [

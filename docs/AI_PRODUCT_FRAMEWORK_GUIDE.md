@@ -76,8 +76,11 @@ Primary routes:
 - `/generate`
 - `/workbench`
 - `/workbench/history`
-- `/workbench/models/[id]`
 - `/results/[taskCode]`
+
+Compatibility redirects:
+
+- `/workbench/models/[id]` redirects to `/model-detail?id=<id>`
 
 Primary backend sources:
 

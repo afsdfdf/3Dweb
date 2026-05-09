@@ -46,11 +46,13 @@ function FormalMobilePage({
             <p className="text-sm leading-6 text-[#b9bac0]">{page.heroText}</p>
             <div className="flex flex-wrap gap-3">
               <Button asChild size="sm">
-                <Link href="/generate">Open Studio</Link>
+                <Link href={page.heroPrimaryCTA.href}>{page.heroPrimaryCTA.label}</Link>
               </Button>
-              <Button asChild className="border-[#5c4a35] bg-[#17181b] text-[#d8d0bf] hover:bg-[#23252b]" size="sm" variant="outline">
-                <Link href="/contact">Contact support</Link>
-              </Button>
+              {page.heroSecondaryCTA ? (
+                <Button asChild className="border-[#5c4a35] bg-[#17181b] text-[#d8d0bf] hover:bg-[#23252b]" size="sm" variant="outline">
+                  <Link href={page.heroSecondaryCTA.href}>{page.heroSecondaryCTA.label}</Link>
+                </Button>
+              ) : null}
             </div>
           </div>
         </BorderComboFrame1>
@@ -157,11 +159,13 @@ export async function FormalInfoPage({ page }: FormalInfoPageProps) {
                 <p className="mt-5 max-w-3xl text-base leading-7 text-[#b9bac0]">{page.heroText}</p>
                 <div className="mt-6 flex flex-wrap gap-3">
                   <Button asChild>
-                    <Link href="/generate">Open Studio</Link>
+                    <Link href={page.heroPrimaryCTA.href}>{page.heroPrimaryCTA.label}</Link>
                   </Button>
-                  <Button asChild className="border-[#5c4a35] bg-[#17181b] text-[#d8d0bf] hover:bg-[#23252b]" variant="outline">
-                    <Link href="/contact">Contact support</Link>
-                  </Button>
+                  {page.heroSecondaryCTA ? (
+                    <Button asChild className="border-[#5c4a35] bg-[#17181b] text-[#d8d0bf] hover:bg-[#23252b]" variant="outline">
+                      <Link href={page.heroSecondaryCTA.href}>{page.heroSecondaryCTA.label}</Link>
+                    </Button>
+                  ) : null}
                 </div>
               </div>
             </BorderComboFrame1>

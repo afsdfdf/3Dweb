@@ -7,6 +7,40 @@ import { rejectDisallowedMutationOrigin } from '@/lib/requestSecurity'
 
 const unauthorized = () => Response.json({ message: 'Please sign in first.' }, { status: 401 })
 
+const isRecord = (value: unknown): value is Record<string, unknown> => {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
+const normalizeText = (value: unknown) => {
+  return typeof value === 'string' && value.trim() ? value.trim() : null
+}
+
+const serializeComment = (comment: unknown) => {
+  const item = isRecord(comment) ? comment : {}
+  const author = isRecord(item.author) ? item.author : null
+  const authorName =
+    normalizeText(author?.displayName) ||
+    normalizeText(author?.fullName) ||
+    'Member'
+
+  return {
+    authorName,
+    content: normalizeText(item.content) || '',
+    createdAt: normalizeText(item.createdAt),
+    id: item.id,
+  }
+}
+
+const serializeCommentPage = (comments: unknown) => {
+  if (!isRecord(comments)) return comments
+  const docs = Array.isArray(comments.docs) ? comments.docs.map(serializeComment) : []
+
+  return {
+    ...comments,
+    docs,
+  }
+}
+
 export const listModelCommentsEndpoint = {
   path: '/social/models/:modelId/comments',
   method: 'get' as const,
@@ -28,7 +62,7 @@ export const listModelCommentsEndpoint = {
         req,
       })
 
-      return Response.json(comments)
+      return Response.json(serializeCommentPage(comments))
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to load comments.'
       const status = message.includes('public models') ? 404 : 400
@@ -67,7 +101,7 @@ export const createModelCommentEndpoint = {
       })
 
       return Response.json({
-        comment,
+        comment: serializeComment(comment),
         message: 'Comment created successfully.',
       })
     } catch (error) {

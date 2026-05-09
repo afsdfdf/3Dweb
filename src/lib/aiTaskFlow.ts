@@ -7,6 +7,7 @@ import {
   settleReservedTaskCredits,
   spendTaskCredits,
 } from '@/lib/creditLedger'
+import { createGenerationTaskNotification } from '@/lib/notificationService'
 import {
   createMeshyImageTask,
   createMeshyMultiImageTask,
@@ -684,7 +685,7 @@ export async function createTaskEvent(args: {
 }) {
   const { eventType, message, payload, provider, req, taskId, userId } = args
 
-  return req.payload.create({
+  const taskEvent = await req.payload.create({
     collection: 'task-events',
     data: {
       eventType,
@@ -697,6 +698,23 @@ export async function createTaskEvent(args: {
     req,
     ...accessOptions(req),
   })
+
+  if (eventType === 'completed' || eventType === 'failed') {
+    await createGenerationTaskNotification({
+      eventType,
+      message,
+      req,
+      taskId,
+      userId,
+    }).catch((error) => {
+      req.payload.logger?.error?.({
+        err: error,
+        msg: `Failed to create notification for task ${taskId}.`,
+      })
+    })
+  }
+
+  return taskEvent
 }
 
 async function maybeCreatePollingTaskEvent(args: {

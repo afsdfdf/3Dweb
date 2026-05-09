@@ -4,6 +4,7 @@ import { getSubscriptionPlans } from '@/lib/subscriptionPlans'
 
 import { SiteShell } from '../_components/SiteShell'
 import { SubscriptionMobilePage, SubscriptionPage } from '../_components/SubscriptionPage'
+import { getMarketingPageContent } from '../_lib/formal-page-content'
 import { getMarketingSiteData } from '../_lib/marketing'
 import { getCurrentUser, getCurrentUserActiveSubscription } from '../_lib/session'
 
@@ -64,15 +65,17 @@ export default async function PricingPage({
   searchParams: Promise<{ checkout?: string; credits_checkout?: string; session_id?: string }>
 }) {
   const payload = await getCachedPayload()
-  const [user, activeSubscription, query, subscriptionPlans, creditTopupProducts, paymentProviders, marketing] = await Promise.all([
-    getCurrentUser(),
-    getCurrentUserActiveSubscription(),
-    searchParams,
-    getSubscriptionPlans(payload),
-    getCreditTopupProducts(payload),
-    getPaymentProviderSettings(payload),
-    getMarketingSiteData(),
-  ])
+  const [user, activeSubscription, query, subscriptionPlans, creditTopupProducts, paymentProviders, marketing, pageContent] =
+    await Promise.all([
+      getCurrentUser(),
+      getCurrentUserActiveSubscription(),
+      searchParams,
+      getSubscriptionPlans(payload),
+      getCreditTopupProducts(payload),
+      getPaymentProviderSettings(payload),
+      getMarketingSiteData(),
+      getMarketingPageContent('pricing'),
+    ])
 
   const shouldSync = Boolean(user && query.checkout === 'success' && query.session_id)
   const shouldSyncCreditTopup = Boolean(user && query.credits_checkout === 'success' && query.session_id)
@@ -87,6 +90,7 @@ export default async function PricingPage({
     footerContent: siteSettings.footer,
     isCreditTopupCancelled,
     isCancelled,
+    pageContent,
     paymentProviderNotice: paymentProviders.providerNotice,
     shouldSyncCreditTopup,
     shouldSync,

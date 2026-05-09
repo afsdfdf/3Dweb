@@ -8,6 +8,7 @@ type RateLimitScope =
   | 'auth-login'
   | 'auth-register'
   | 'auth-reset-password'
+  | 'account-notifications-write'
   | "ai-image-submit"
   | 'credit-checkout'
   | 'credit-sync'
@@ -55,6 +56,12 @@ const scopeConfigs: Record<RateLimitScope, ScopeConfig> = {
     fallbackWindowMs: 10 * 60 * 1000,
     limitEnv: 'AUTH_RESET_PASSWORD_RATE_LIMIT_MAX',
     windowEnv: 'AUTH_RESET_PASSWORD_RATE_LIMIT_WINDOW_MS',
+  },
+  'account-notifications-write': {
+    fallbackLimit: 120,
+    fallbackWindowMs: 10 * 60 * 1000,
+    limitEnv: 'ACCOUNT_NOTIFICATIONS_WRITE_RATE_LIMIT_MAX',
+    windowEnv: 'ACCOUNT_NOTIFICATIONS_WRITE_RATE_LIMIT_WINDOW_MS',
   },
   "ai-image-submit": {
     fallbackLimit: 6,
@@ -153,6 +160,7 @@ const scopeMessages: Record<RateLimitScope, string> = {
   'auth-login': 'Too many login attempts. Please try again later.',
   'auth-register': 'Too many registration attempts. Please try again later.',
   'auth-reset-password': 'Too many password reset attempts. Please try again later.',
+  'account-notifications-write': 'Too many notification updates. Please try again later.',
   'ai-image-submit': 'Too many image generation requests. Please try again later.',
   'credit-checkout': 'Too many credit checkout attempts. Please try again later.',
   'credit-sync': 'Too many credit purchase sync requests. Please wait a moment and retry.',
