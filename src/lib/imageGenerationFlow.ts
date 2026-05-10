@@ -146,8 +146,8 @@ async function createTaskEvent(args: {
       task: args.taskId,
       user: args.userId,
     },
+    overrideAccess: INTERNAL_ACCESS,
     req: args.req,
-    ...accessOptions(args.req),
   })
 
   if (args.eventType === 'completed' || args.eventType === 'failed') {

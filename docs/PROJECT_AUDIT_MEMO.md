@@ -29,10 +29,11 @@ Completed after the addendum:
 - Removed production account-center demo row and fake credit fallbacks; empty data now renders as empty records with zero metrics.
 - Expanded blog detail resilience and rich-text node rendering without using raw HTML injection.
 - Changed pricing card containers from clipped fixed heights to minimum heights for backend-managed plan copy.
+- Closed direct Payload REST write bypasses for social reactions, comments, follows, engagement views, and task events. Formal service endpoints remain the write path so business validation, rate limiting, dedupe, and counter synchronization cannot be skipped.
+- Removed AWS/S3 runtime media variables from active Vercel env examples; runtime storage remains Supabase Storage managed through Payload Storage Settings.
 
 Open P1 discussion items from the addendum:
 
-- Direct Payload REST create ownership for owner/user-scoped collections needs a design pass before implementation.
 - User-writable identity and visibility fields need direct REST boundary tests and likely server-assignment rules.
 
 ## Audit Date

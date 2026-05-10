@@ -1,6 +1,6 @@
 import type { Access, CollectionConfig, Where } from 'payload'
 
-import { isLoggedIn, isStaff } from '@/access'
+import { isStaff } from '@/access'
 import { forceCurrentUserField } from '@/hooks/forceCurrentUserField'
 
 type UserWithRole = {
@@ -41,8 +41,8 @@ export const UserFollows: CollectionConfig = {
     useAsTitle: 'id',
   },
   access: {
-    create: isLoggedIn,
-    delete: ownFollowOrStaff,
+    create: isStaff,
+    delete: isStaff,
     read: ownFollowOrStaff,
     update: isStaff,
   },

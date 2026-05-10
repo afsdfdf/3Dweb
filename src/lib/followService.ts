@@ -1,19 +1,6 @@
 import type { PayloadRequest } from 'payload'
 
-const isRecord = (value: unknown): value is Record<string, unknown> => {
-  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
-}
-
-const accessOptions = (req: PayloadRequest) => {
-  return req.user ? { overrideAccess: false as const } : {}
-}
-
-const resolveRelationId = (value: unknown) => {
-  if (typeof value === 'number') return value
-  if (typeof value === 'string' && value.trim()) return Number(value)
-  if (isRecord(value) && value.id !== undefined && value.id !== null) return Number(value.id)
-  return null
-}
+const INTERNAL_ACCESS = true
 
 async function syncUserFollowCounts(args: {
   req: PayloadRequest
@@ -154,8 +141,8 @@ export async function followCreator(args: {
         followee: targetUserId,
         follower: followerId,
       },
+      overrideAccess: INTERNAL_ACCESS,
       req,
-      ...accessOptions(req),
     })
   }
 
@@ -234,9 +221,9 @@ export async function listCurrentUserFollows(req: PayloadRequest) {
     collection: 'user-follows',
     depth: 1,
     limit: 50,
+    overrideAccess: false,
     req,
     sort: '-createdAt',
     user: req.user,
-    ...accessOptions(req),
   })
 }

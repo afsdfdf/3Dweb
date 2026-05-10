@@ -8,6 +8,7 @@ import { GenerationTasks } from '../src/collections/GenerationTasks.ts'
 import { Models } from '../src/collections/Models.ts'
 import { PrintOrders } from '../src/collections/PrintOrders.ts'
 import { ShopifyPayments } from '../src/collections/ShopifyPayments.ts'
+import { TaskEvents } from '../src/collections/TaskEvents.ts'
 import { Users } from '../src/collections/Users.ts'
 import { EmailSettings } from '../src/globals/EmailSettings.ts'
 import { HomepageContent } from '../src/globals/HomepageContent.ts'
@@ -53,11 +54,17 @@ test('customer direct REST writes are blocked for provider-owned workflow record
   assert.equal(Boolean(Models.access?.create?.(createArgs('customer'))), false)
   assert.equal(Boolean(GenerationTasks.access?.create?.(createArgs('customer'))), false)
   assert.equal(Boolean(GenerationTasks.access?.update?.(createArgs('customer'))), false)
+  assert.equal(Boolean(TaskEvents.access?.create?.(createArgs('customer'))), false)
+  assert.equal(Boolean(TaskEvents.access?.update?.(createArgs('customer'))), false)
+  assert.equal(Boolean(TaskEvents.access?.delete?.(createArgs('customer'))), false)
   assert.equal(Boolean(PrintOrders.access?.create?.(createArgs('customer'))), false)
 
   assert.equal(Boolean(Models.access?.create?.(createArgs('operator'))), true)
   assert.equal(Boolean(GenerationTasks.access?.create?.(createArgs('operator'))), true)
   assert.equal(Boolean(GenerationTasks.access?.update?.(createArgs('operator'))), true)
+  assert.equal(Boolean(TaskEvents.access?.create?.(createArgs('operator'))), true)
+  assert.equal(Boolean(TaskEvents.access?.update?.(createArgs('operator'))), true)
+  assert.equal(Boolean(TaskEvents.access?.delete?.(createArgs('operator'))), true)
   assert.equal(Boolean(PrintOrders.access?.create?.(createArgs('operator'))), true)
 })
 

@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
 import test from 'node:test'
 
 import { EngagementViews } from '../src/collections/EngagementViews.ts'
@@ -8,6 +10,9 @@ import { ModelLikes } from '../src/collections/ModelLikes.ts'
 import { UserFollows } from '../src/collections/UserFollows.ts'
 import { assignCurrentUser } from '../src/hooks/assignCurrentUser.ts'
 import { forceCurrentUserField } from '../src/hooks/forceCurrentUserField.ts'
+
+const rootDir = process.cwd()
+const readSource = (...parts: string[]) => readFileSync(path.join(rootDir, ...parts), 'utf8')
 
 const customerReq = {
   user: {
@@ -107,15 +112,40 @@ test('social collections force current user fields before change', () => {
   }
 })
 
-test('UserFollows no longer allows customer update reassignment', () => {
+test('social collections block customer direct REST writes', () => {
   const customerArgs = {
     req: customerReq,
   } as never
   const staffArgs = {
     req: staffReq,
   } as never
+  const serviceOwnedCollections = [
+    ModelLikes,
+    ModelFavorites,
+    UserFollows,
+    ModelComments,
+    EngagementViews,
+  ]
 
-  assert.equal(Boolean(UserFollows.access?.create?.(customerArgs)), true)
-  assert.equal(Boolean(UserFollows.access?.update?.(customerArgs)), false)
-  assert.equal(Boolean(UserFollows.access?.update?.(staffArgs)), true)
+  for (const collection of serviceOwnedCollections) {
+    assert.equal(Boolean(collection.access?.create?.(customerArgs)), false)
+    assert.equal(Boolean(collection.access?.delete?.(customerArgs)), false)
+    assert.equal(Boolean(collection.access?.update?.(customerArgs)), false)
+    assert.equal(Boolean(collection.access?.create?.(staffArgs)), true)
+    assert.equal(Boolean(collection.access?.delete?.(staffArgs)), true)
+    assert.equal(Boolean(collection.access?.update?.(staffArgs)), true)
+  }
+})
+
+test('social services use internal writes after endpoint validation', () => {
+  const reactionSource = readSource('src', 'lib', 'reactionService.ts')
+  const commentSource = readSource('src', 'lib', 'commentService.ts')
+  const followSource = readSource('src', 'lib', 'followService.ts')
+
+  assert.match(reactionSource, /assertPublicModel/)
+  assert.match(reactionSource, /overrideAccess:\s*INTERNAL_ACCESS/)
+  assert.match(commentSource, /assertPublicModel/)
+  assert.match(commentSource, /overrideAccess:\s*INTERNAL_ACCESS/)
+  assert.match(followSource, /assertFollowTargetIsPublic/)
+  assert.match(followSource, /overrideAccess:\s*INTERNAL_ACCESS/)
 })

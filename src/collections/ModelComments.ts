@@ -1,6 +1,6 @@
 import type { Access, CollectionConfig, Where } from 'payload'
 
-import { isLoggedIn, isStaff } from '@/access'
+import { isStaff } from '@/access'
 import { forceCurrentUserField } from '@/hooks/forceCurrentUserField'
 
 type UserWithRole = {
@@ -31,18 +31,6 @@ const visibleOrOwnerOrStaff: Access = ({ req }) => {
   } satisfies Where
 }
 
-const authorOrStaff: Access = ({ req }) => {
-  const user = req.user as UserWithRole | null
-  if (!user) return false
-  if (isStaff({ req })) return true
-
-  return {
-    author: {
-      equals: user.id,
-    },
-  } satisfies Where
-}
-
 export const ModelComments: CollectionConfig = {
   slug: 'model-comments',
   admin: {
@@ -51,8 +39,8 @@ export const ModelComments: CollectionConfig = {
     useAsTitle: 'content',
   },
   access: {
-    create: isLoggedIn,
-    delete: authorOrStaff,
+    create: isStaff,
+    delete: isStaff,
     read: visibleOrOwnerOrStaff,
     update: isStaff,
   },

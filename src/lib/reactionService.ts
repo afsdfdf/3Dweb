@@ -1,8 +1,6 @@
 import type { PayloadRequest } from 'payload'
 
-const accessOptions = (req: PayloadRequest) => {
-  return req.user ? { overrideAccess: false as const } : {}
-}
+const INTERNAL_ACCESS = true
 
 async function assertPublicModel(args: {
   modelId: number
@@ -124,8 +122,8 @@ async function createReaction(args: {
         model: args.modelId,
         user: args.req.user.id,
       },
+      overrideAccess: INTERNAL_ACCESS,
       req: args.req,
-      ...accessOptions(args.req),
     })
   }
 
@@ -252,9 +250,9 @@ export async function listCurrentUserFavoriteModels(req: PayloadRequest) {
     collection: 'model-favorites',
     depth: 1,
     limit: 50,
+    overrideAccess: false,
     req,
     sort: '-createdAt',
     user: req.user,
-    ...accessOptions(req),
   })
 }

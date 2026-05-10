@@ -1,8 +1,6 @@
 import type { PayloadRequest } from 'payload'
 
-const accessOptions = (req: PayloadRequest) => {
-  return req.user ? { overrideAccess: false as const } : {}
-}
+const INTERNAL_ACCESS = true
 
 const normalizeContent = (value: unknown) => {
   if (typeof value !== 'string') return ''
@@ -136,8 +134,8 @@ export async function createModelComment(args: {
       model: args.modelId,
       status: 'visible',
     },
+    overrideAccess: INTERNAL_ACCESS,
     req: args.req,
-    ...accessOptions(args.req),
   })
 
   await syncModelCommentCount({

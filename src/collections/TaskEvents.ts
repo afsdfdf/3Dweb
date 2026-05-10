@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
-import { ownerOrStaff } from '@/access'
+import { isStaff, ownerOrStaff } from '@/access'
 import { adminLabelsKey, adminTextKey } from '@/lib/adminText'
 
 export const TaskEvents: CollectionConfig = {
@@ -12,10 +12,10 @@ export const TaskEvents: CollectionConfig = {
     useAsTitle: 'eventType',
   },
   access: {
-    create: ({ req }) => Boolean(req.user),
-    delete: ownerOrStaff('user'),
+    create: isStaff,
+    delete: isStaff,
     read: ownerOrStaff('user'),
-    update: ownerOrStaff('user'),
+    update: isStaff,
   },
   defaultSort: '-createdAt',
   timestamps: true,

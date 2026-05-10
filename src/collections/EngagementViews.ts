@@ -11,7 +11,7 @@ export const EngagementViews: CollectionConfig = {
     useAsTitle: 'viewerKeyHash',
   },
   access: {
-    create: () => true,
+    create: isStaff,
     delete: isStaff,
     read: isStaff,
     update: isStaff,
