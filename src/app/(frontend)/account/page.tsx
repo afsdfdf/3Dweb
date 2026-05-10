@@ -14,6 +14,7 @@ import {
   getCurrentUserTasks,
   requireUser,
 } from "../_lib/session";
+import { getMarketingSiteData } from "../_lib/marketing";
 import { formatTaskGenerationType } from "../_lib/ui-text";
 
 const transactionTypeLabels: Record<string, string> = {
@@ -100,6 +101,7 @@ export default async function AccountPage({
     tasks,
     models,
     orders,
+    marketing,
   ] = await Promise.all([
     getCurrentNavUser(),
     getCurrentAccountProfileSummary(),
@@ -108,6 +110,7 @@ export default async function AccountPage({
     getCurrentUserTasks({ limit: accountRecordLimit }),
     getCurrentUserModels({ limit: accountRecordLimit }),
     getCurrentUserOrders({ limit: accountRecordLimit }),
+    getMarketingSiteData(),
   ]);
 
   const activeTasks = tasks.docs.filter((task: GenerationTask) =>
@@ -206,6 +209,7 @@ export default async function AccountPage({
     <AccountCenter
       accountData={accountData}
       initialSection={getInitialSection(query.section)}
+      navigationItems={marketing.siteSettings.headerNav}
       navUser={navUser}
     />
   );

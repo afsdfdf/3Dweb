@@ -3,7 +3,8 @@ import Link from 'next/link'
 import { ArrowRight, Boxes, Code2, Compass, FileText, Layers, Sparkles } from 'lucide-react'
 
 import { AuthModalStage } from '@/components/auth/AuthModalStage'
-import { TopNavigation, migrationTestNavItems } from '@/components/ui-lab/top-navigation'
+import { TopNavigation } from '@/components/ui-lab/top-navigation'
+import { getPublicNavigationActiveID, resolvePublicNavigationItems } from '@/lib/publicNavigation'
 
 import type { MarketingPageContent, MarketingSection } from '../_lib/marketing-content'
 import { getMarketingSiteData } from '../_lib/marketing'
@@ -32,19 +33,24 @@ export async function MarketingPage({ page }: MarketingPageProps) {
   const [navUser, marketing] = await Promise.all([getCurrentNavUser(), getMarketingSiteData()])
   const supportEmail = marketing.siteSettings.supportEmail || 'support@example.com'
   const siteDescription = marketing.siteSettings.siteDescription || 'An AI 3D product platform for character creation, asset management, and print fulfillment.'
+  const navigationItems = resolvePublicNavigationItems(marketing.siteSettings.headerNav)
+  const mobileNavigationItems = navigationItems.filter((item) => item.href !== '/').slice(0, 3)
   const sectionItemCount = countSectionItems(page.sections)
 
   return (
     <main className={styles.page}>
       <AuthModalStage>
-        <TopNavigation active="HOME" className={styles.topNavigation} items={migrationTestNavItems} user={navUser} />
+        <TopNavigation active={getPublicNavigationActiveID(page.currentPath, navigationItems)} className={styles.topNavigation} items={navigationItems} user={navUser} />
         <header className={styles.mobileHeader}>
           <Link href="/" aria-label="Thorns Tavern home">
             <img alt="Thorns Tavern" src="/ui-lab/top-navigation/logo-wordmark.png" />
           </Link>
           <nav aria-label="Mobile navigation">
-            <Link href="/workbench">Workbench</Link>
-            <Link href="/pricing">Plans</Link>
+            {mobileNavigationItems.map((item) => (
+              <Link href={item.href} key={item.href}>
+                {item.label}
+              </Link>
+            ))}
           </nav>
         </header>
 

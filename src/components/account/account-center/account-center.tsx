@@ -22,7 +22,11 @@ import {
 
 import { AuthModalStage } from "@/components/auth/AuthModalStage";
 import { TopNavigation } from "@/components/ui-lab/top-navigation";
-import { publicNavigationItems } from "@/lib/publicNavigation";
+import {
+  getPublicNavigationActiveID,
+  resolvePublicNavigationItems,
+  type PublicNavigationInputItem,
+} from "@/lib/publicNavigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 import styles from "./account-center.module.css";
@@ -86,6 +90,7 @@ export type AccountCenterData = {
 type AccountCenterProps = {
   accountData?: AccountCenterData;
   initialSection?: SectionId;
+  navigationItems?: null | PublicNavigationInputItem[];
   navUser?: null | {
     avatarUrl?: null | string;
     credits?: null | number;
@@ -249,6 +254,7 @@ const escapeCsvValue = (value: string) => {
 export function AccountCenter({
   accountData,
   initialSection = "overview",
+  navigationItems,
   navUser = null,
 }: AccountCenterProps) {
   const router = useRouter();
@@ -282,6 +288,10 @@ export function AccountCenter({
       : null;
   const selectedAvatarFrameUrl =
     selectedAvatarFrame?.frameImageUrl || selectedAvatarFrame?.thumbnailUrl || null;
+  const topNavigationItems = useMemo(
+    () => resolvePublicNavigationItems(navigationItems),
+    [navigationItems],
+  );
   const backgroundUrl =
     profileData.backgroundUrl ||
     "/ui-lab/model-detail-uicut/images/detail-side-banner.png";
@@ -763,9 +773,9 @@ export function AccountCenter({
     <main className={styles.pageShell}>
       <AuthModalStage>
         <TopNavigation
-          active="ACCOUNT"
+          active={getPublicNavigationActiveID("/account", topNavigationItems)}
           className={styles.boundTopNavigation}
-          items={publicNavigationItems}
+          items={topNavigationItems}
           user={navUser}
         />
 

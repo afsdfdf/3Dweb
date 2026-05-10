@@ -76,7 +76,7 @@ test("account center is promoted to the default account route", () => {
   assert.match(source, /selectedAvatarFrameUrl/);
   assert.match(source, /avatarFrameImage/);
   assert.match(source, /TopNavigation/);
-  assert.match(source, /publicNavigationItems/);
+  assert.match(source, /resolvePublicNavigationItems/);
   assert.doesNotMatch(source, /realNavigationItems/);
   assert.match(source, /fetch\(\s*["']\/api\/account\/profile["']/);
   assert.match(source, /fetch\(\s*["']\/api\/account\/password["']/);

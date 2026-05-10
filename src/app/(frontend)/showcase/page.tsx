@@ -4,9 +4,10 @@ import type { Where } from 'payload'
 import { ArrowRight, Box, Eye, Sparkles } from 'lucide-react'
 
 import { AuthModalStage } from '@/components/auth/AuthModalStage'
-import { TopNavigation, migrationTestNavItems } from '@/components/ui-lab/top-navigation'
+import { TopNavigation } from '@/components/ui-lab/top-navigation'
 import { getCachedPayload } from '@/lib/getCachedPayload'
 import { getMediaAccessURL } from '@/lib/mediaAccessURL'
+import { getPublicNavigationActiveID, resolvePublicNavigationItems } from '@/lib/publicNavigation'
 
 import { getMarketingPageContent } from '../_lib/formal-page-content'
 import { getMarketingSiteData } from '../_lib/marketing'
@@ -244,6 +245,8 @@ export default async function ShowcasePage({ searchParams }: ShowcasePageProps) 
   const { models, pagination } = showcaseList
   const supportEmail = marketing.siteSettings.supportEmail || 'support@example.com'
   const siteDescription = marketing.siteSettings.siteDescription || 'An AI 3D product platform for character creation, asset management, and print fulfillment.'
+  const navigationItems = resolvePublicNavigationItems(marketing.siteSettings.headerNav)
+  const mobileNavigationItems = navigationItems.filter((item) => item.href !== '/').slice(0, 3)
   const previewReadyCount = models.filter((model) => model.previewURL).length
   const printReadyCount = models.filter((model) => model.printReady).length
   const introSection = pageContent.sections[0]
@@ -251,14 +254,17 @@ export default async function ShowcasePage({ searchParams }: ShowcasePageProps) 
   return (
     <main className={styles.page}>
       <AuthModalStage>
-        <TopNavigation active="HOME" className={styles.topNavigation} items={migrationTestNavItems} user={navUser} />
+        <TopNavigation active={getPublicNavigationActiveID('/showcase', navigationItems)} className={styles.topNavigation} items={navigationItems} user={navUser} />
         <header className={styles.mobileHeader}>
           <Link href="/" aria-label="Thorns Tavern home">
             <img alt="Thorns Tavern" src="/ui-lab/top-navigation/logo-wordmark.png" />
           </Link>
           <nav aria-label="Mobile navigation">
-            <Link href="/workbench">Workbench</Link>
-            <Link href="/pricing">Plans</Link>
+            {mobileNavigationItems.map((item) => (
+              <Link href={item.href} key={item.href}>
+                {item.label}
+              </Link>
+            ))}
           </nav>
         </header>
 

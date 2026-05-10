@@ -5,7 +5,7 @@ import { ArrowRight, BookOpen, ExternalLink, Play, Search, Sparkles } from 'luci
 
 import { AuthModalStage } from '@/components/auth/AuthModalStage'
 import { TopNavigation } from '@/components/ui-lab/top-navigation'
-import { publicNavigationItems } from '@/lib/publicNavigation'
+import { getPublicNavigationActiveID, resolvePublicNavigationItems } from '@/lib/publicNavigation'
 
 import { FooterBar } from '../../_components/shell/FooterBar'
 import type { getMarketingSiteData } from '../../_lib/marketing'
@@ -93,19 +93,23 @@ export function BlogShell({
 }) {
   const siteDescription = siteSettings.siteDescription || 'An AI 3D product platform for character creation, asset management, and print fulfillment.'
   const supportEmail = siteSettings.supportEmail || 'support@example.com'
+  const navigationItems = resolvePublicNavigationItems(siteSettings.headerNav)
+  const mobileNavigationItems = navigationItems.filter((item) => item.href !== '/').slice(0, 3)
 
   return (
     <main className={styles.page}>
       <AuthModalStage>
-        <TopNavigation active="BLOG" className={styles.topNavigation} items={publicNavigationItems} user={navUser} />
+        <TopNavigation active={getPublicNavigationActiveID('/blog', navigationItems)} className={styles.topNavigation} items={navigationItems} user={navUser} />
         <header className={styles.mobileHeader}>
           <Link href="/" aria-label="Thorns Tavern home">
             <img alt="Thorns Tavern" src="/ui-lab/top-navigation/logo-wordmark.png" />
           </Link>
           <nav aria-label="Mobile navigation">
-            <Link href="/blog">Blog</Link>
-            <Link href="/workbench">Workbench</Link>
-            <Link href="/pricing">Plans</Link>
+            {mobileNavigationItems.map((item) => (
+              <Link href={item.href} key={item.href}>
+                {item.label}
+              </Link>
+            ))}
           </nav>
         </header>
         {children}

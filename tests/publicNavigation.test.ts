@@ -8,6 +8,11 @@ import {
   getTopNavigationUserLabel,
   topNavigationUserLabelMaxCharacters,
 } from '../src/components/ui-lab/top-navigation/user-label.ts'
+import {
+  getPublicNavigationActiveID,
+  publicNavigationItems,
+  resolvePublicNavigationItems,
+} from '../src/lib/publicNavigation.ts'
 
 const rootDir = process.cwd()
 const publicNavigationPath = path.join(rootDir, 'src', 'lib', 'publicNavigation.ts')
@@ -15,6 +20,9 @@ const siteShellPath = path.join(rootDir, 'src', 'app', '(frontend)', '_component
 const topNavigationPath = path.join(rootDir, 'src', 'components', 'ui-lab', 'top-navigation', 'top-navigation.tsx')
 const topNavigationCssPath = path.join(rootDir, 'src', 'components', 'ui-lab', 'top-navigation', 'top-navigation.module.css')
 const topNavBarPath = path.join(rootDir, 'src', 'app', '(frontend)', '_components', 'shell', 'TopNavBar.tsx')
+const marketingPagePath = path.join(rootDir, 'src', 'app', '(frontend)', '_components', 'MarketingPage.tsx')
+const blogComponentsPath = path.join(rootDir, 'src', 'app', '(frontend)', 'blog', '_components', 'BlogComponents.tsx')
+const showcasePagePath = path.join(rootDir, 'src', 'app', '(frontend)', 'showcase', 'page.tsx')
 const workbenchModelPagePath = path.join(rootDir, 'src', 'app', '(frontend)', 'workbench', 'models', '[id]', 'page.tsx')
 const frontendSessionPath = path.join(rootDir, 'src', 'app', '(frontend)', '_lib', 'session.ts')
 const accountCenterPath = path.join(
@@ -34,6 +42,7 @@ test('public pages share one canonical navigation contract', () => {
   for (const item of [
     "{ href: '/', id: 'HOME', label: 'HOME' }",
     "{ href: '/workbench', id: 'WORKBENCH', label: 'WORKBENCH' }",
+    "{ href: '/showcase', id: 'SHOWCASE', label: 'SHOWCASE' }",
     "{ href: '/pricing', id: 'PLANS', label: 'PLANS' }",
     "{ href: '/blog', id: 'BLOG', label: 'BLOG' }",
     "{ href: '/about', id: 'ABOUT', label: 'ABOUT' }",
@@ -45,6 +54,23 @@ test('public pages share one canonical navigation contract', () => {
   assert.doesNotMatch(source, /CENTER/)
   assert.doesNotMatch(source, /ADMIN/)
   assert.doesNotMatch(source, /\/generate/)
+})
+
+test('backend header navigation resolves to stable top navigation items', () => {
+  const items = resolvePublicNavigationItems([
+    { href: '/', label: 'Start' },
+    { href: '/showcase', label: 'Gallery' },
+    { href: '/account', label: 'Account' },
+  ])
+
+  assert.deepEqual(items, [
+    { href: '/', id: 'HOME', label: 'Start' },
+    { href: '/showcase', id: 'SHOWCASE', label: 'Gallery' },
+    { href: '/account', id: 'ACCOUNT', label: 'Account' },
+  ])
+  assert.equal(getPublicNavigationActiveID('/showcase?q=dragon', items), 'SHOWCASE')
+  assert.equal(getPublicNavigationActiveID('/account?section=models', items), 'ACCOUNT')
+  assert.equal(resolvePublicNavigationItems([]).length, publicNavigationItems.length)
 })
 
 test('shared navigation components use the canonical navigation source', () => {
@@ -81,9 +107,23 @@ test('shell-rendered pages use the same top navigation template as UI-lab pages'
 
   assert.match(siteShellSource, /@\/components\/ui-lab\/top-navigation/)
   assert.match(siteShellSource, /getPublicNavigationActiveID/)
+  assert.match(siteShellSource, /resolvePublicNavigationItems/)
   assert.match(siteShellSource, /<TopNavigation/)
+  assert.match(siteShellSource, /items=\{navigationItems\}/)
+  assert.doesNotMatch(siteShellSource, /items=\{publicNavigationItems\}/)
   assert.doesNotMatch(siteShellSource, /shell\/TopNavBar/)
   assert.doesNotMatch(siteShellSource, /<TopNavBar/)
+})
+
+test('formal content pages consume backend header navigation', () => {
+  for (const sourcePath of [marketingPagePath, blogComponentsPath, showcasePagePath]) {
+    const source = readFileSync(sourcePath, 'utf8')
+
+    assert.match(source, /resolvePublicNavigationItems/)
+    assert.match(source, /siteSettings\.headerNav/)
+    assert.doesNotMatch(source, /migrationTestNavItems/)
+    assert.doesNotMatch(source, /items=\{publicNavigationItems\}/)
+  }
 })
 
 test('workbench model detail route is only a canonical detail redirect', () => {

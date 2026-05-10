@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 
 import { AuthModalStage } from '@/components/auth/AuthModalStage'
 import { TopNavigation } from '@/components/ui-lab/top-navigation'
-import { getPublicNavigationActiveID, publicNavigationItems } from '@/lib/publicNavigation'
+import { getPublicNavigationActiveID, resolvePublicNavigationItems } from '@/lib/publicNavigation'
 
 import type { FooterContent, NavigationItem } from '../_lib/marketing-content'
 import { getDefaultFooter, getDefaultSiteSettings } from '../_lib/marketing-content'
@@ -35,6 +35,7 @@ export async function SiteShell({
   currentPath,
   footer,
   mobileChildren,
+  navigation,
   showAuthEntry = true,
   showFooter = true,
   showLocaleSwitcher = true,
@@ -46,6 +47,7 @@ export async function SiteShell({
   const navUser = await getCurrentNavUser()
   const defaultSiteSettings = getDefaultSiteSettings(locale)
   const footerContent = { ...getDefaultFooter(locale), ...footer }
+  const navigationItems = resolvePublicNavigationItems(navigation)
   const navigationUser = navUser
     ? {
         avatarUrl: navUser.avatarUrl,
@@ -68,9 +70,9 @@ export async function SiteShell({
       {mobileChildren ? <div className="h-screen w-screen overflow-y-auto bg-[#181818] text-[#ededee] md:hidden">{mobileChildren}</div> : null}
       <div className={`${mobileChildren ? 'hidden md:block' : ''} relative h-screen w-screen overflow-hidden bg-[#181818] text-[#ededee]`} style={fixedStageStyle}>
         <TopNavigation
-          active={getPublicNavigationActiveID(currentPath)}
+          active={getPublicNavigationActiveID(currentPath, navigationItems)}
           className="absolute left-0 right-0 top-0 z-[60]"
-          items={publicNavigationItems}
+          items={navigationItems}
           showAuthEntry={showAuthEntry}
           user={navigationUser}
         />

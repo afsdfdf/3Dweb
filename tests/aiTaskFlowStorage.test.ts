@@ -35,6 +35,90 @@ const createRequestMock = () => ({
   },
 })
 
+const createWebhookRequestMock = (taskOverrides: Record<string, unknown> = {}) => {
+  let currentTask = {
+    callbackPayload: null,
+    creditsReserved: 0,
+    id: 31,
+    parameterSnapshot: {},
+    progress: 85,
+    provider: 'custom',
+    providerTaskId: 'provider-empty-1',
+    resultModel: null,
+    status: 'processing',
+    taskCode: 'TASK-EMPTY',
+    user: 7,
+    ...taskOverrides,
+  }
+  const createdCollections: string[] = []
+  const generationTaskUpdates: Array<Record<string, unknown>> = []
+
+  return {
+    createdCollections,
+    generationTaskUpdates,
+    get currentTask() {
+      return currentTask
+    },
+    req: {
+      payload: {
+        findGlobal: async ({ slug }: { slug: string }) => {
+          if (slug === 'security-settings') {
+            return {
+              allowedRemoteAssetHosts: [{ host: 'cdn.example-assets.com' }],
+            }
+          }
+
+          return null
+        },
+        find: async ({ collection }: { collection: string }) => {
+          if (collection === 'generation-tasks') {
+            return { docs: [currentTask] }
+          }
+
+          if (collection === 'models') {
+            return { docs: [] }
+          }
+
+          return { docs: [] }
+        },
+        findByID: async ({ collection }: { collection: string }) => {
+          if (collection === 'generation-tasks') {
+            return currentTask
+          }
+
+          throw new Error(`Unexpected findByID collection: ${collection}`)
+        },
+        update: async ({ collection, data }: { collection: string; data: Record<string, unknown> }) => {
+          if (collection === 'generation-tasks') {
+            generationTaskUpdates.push(data)
+            currentTask = {
+              ...currentTask,
+              ...data,
+            }
+            return currentTask
+          }
+
+          throw new Error(`Unexpected update collection: ${collection}`)
+        },
+        create: async ({ collection, data }: { collection: string; data: Record<string, unknown> }) => {
+          createdCollections.push(collection)
+          return {
+            id: createdCollections.length + 100,
+            ...data,
+          }
+        },
+        logger: {
+          error: () => undefined,
+          warn: () => undefined,
+        },
+      },
+      user: {
+        id: 7,
+      },
+    },
+  }
+}
+
 test('resolveModelFormatAssets uploads model, thumbnail, and texture assets to user-scoped Supabase paths', async () => {
   const previousFetch = globalThis.fetch
   const uploads: Array<{ contentType: string; path: string }> = []
@@ -203,6 +287,104 @@ test('resolveModelFormatAssets rejects Meshy-style strict ingestion when Supabas
     )
   } finally {
     globalThis.fetch = previousFetch
+    __setAITaskFlowStorageTestHooks(null)
+  }
+})
+
+test('handleAIWebhook fails succeeded provider payloads with no model assets', async () => {
+  const previousMockFlag = process.env.ENABLE_AI_MOCK_RESULTS
+  const { handleAIWebhook } = await import('../src/lib/aiTaskFlow.ts')
+  const harness = createWebhookRequestMock()
+
+  delete process.env.ENABLE_AI_MOCK_RESULTS
+
+  try {
+    const result = await handleAIWebhook({
+      payloadData: {
+        provider: 'custom',
+        providerTaskId: 'provider-empty-1',
+        status: 'succeeded',
+      },
+      req: harness.req as never,
+    })
+
+    assert.equal(result.status, 'failed')
+    assert.equal(harness.currentTask.status, 'failed')
+    assert.match(String(harness.currentTask.failureReason), /without a downloadable model asset/)
+    assert.equal(harness.createdCollections.includes('models'), false)
+  } finally {
+    if (previousMockFlag === undefined) {
+      delete process.env.ENABLE_AI_MOCK_RESULTS
+    } else {
+      process.env.ENABLE_AI_MOCK_RESULTS = previousMockFlag
+    }
+  }
+})
+
+test('handleAIWebhook rejects production model formats that only fall back to remote URLs', async () => {
+  const previousFetch = globalThis.fetch
+  const previousCanonicalAppURL = process.env.CANONICAL_APP_URL
+  const previousNextPublicAppURL = process.env.NEXT_PUBLIC_APP_URL
+  const previousNodeEnv = process.env.NODE_ENV
+  const { __setAITaskFlowStorageTestHooks, handleAIWebhook } = await import('../src/lib/aiTaskFlow.ts')
+  const harness = createWebhookRequestMock({
+    providerTaskId: 'provider-remote-1',
+    taskCode: 'TASK-REMOTE',
+  })
+
+  process.env.NODE_ENV = 'production'
+  process.env.CANONICAL_APP_URL = 'https://thorns.example'
+  process.env.NEXT_PUBLIC_APP_URL = 'https://thorns.example'
+  __setAITaskFlowStorageTestHooks({
+    getRuntimeStorageSettings: async () => ({
+      baseUrl: null,
+      bucket: 'demo-bucket',
+      enabled: true,
+      prefix: 'media',
+      provider: 'supabase-storage',
+      signedDownloads: true,
+    }),
+    uploadToSupabaseStorage: async () => {
+      throw new Error('upload failed')
+    },
+  })
+  globalThis.fetch = async () =>
+    new Response(new Uint8Array([1, 2, 3, 4]), {
+      headers: {
+        'content-type': 'model/gltf-binary',
+      },
+      status: 200,
+    })
+
+  try {
+    await handleAIWebhook({
+      payloadData: {
+        modelUrls: {
+          glb: 'https://cdn.example-assets.com/models/demo.glb',
+        },
+        provider: 'custom',
+        providerTaskId: 'provider-remote-1',
+        status: 'succeeded',
+      },
+      req: harness.req as never,
+    })
+
+    assert.equal(harness.currentTask.status, 'failed')
+    assert.match(String(harness.currentTask.failureReason), /managed storage/)
+    assert.equal(harness.createdCollections.includes('models'), false)
+  } finally {
+    globalThis.fetch = previousFetch
+    if (previousCanonicalAppURL === undefined) {
+      delete process.env.CANONICAL_APP_URL
+    } else {
+      process.env.CANONICAL_APP_URL = previousCanonicalAppURL
+    }
+    if (previousNextPublicAppURL === undefined) {
+      delete process.env.NEXT_PUBLIC_APP_URL
+    } else {
+      process.env.NEXT_PUBLIC_APP_URL = previousNextPublicAppURL
+    }
+    process.env.NODE_ENV = previousNodeEnv
     __setAITaskFlowStorageTestHooks(null)
   }
 })

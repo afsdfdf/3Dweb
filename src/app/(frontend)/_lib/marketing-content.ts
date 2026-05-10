@@ -225,6 +225,7 @@ const siteSettings: MarketingSiteSettings = {
   headerNav: [
     { href: '/', label: 'HOME' },
     { href: '/workbench', label: 'WORKBENCH' },
+    { href: '/showcase', label: 'SHOWCASE' },
     { href: '/pricing', label: 'PLANS' },
     { href: '/blog', label: 'BLOG' },
     { href: '/about', label: 'ABOUT' },
