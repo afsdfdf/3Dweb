@@ -38,6 +38,7 @@ type RunImageGenerationTaskArgs = {
 }
 
 const imageGenerationTaskLocks = new Set<number>()
+const INTERNAL_ACCESS = true
 
 const accessOptions = (req: PayloadRequest) => {
   return req.user ? { overrideAccess: false as const } : {}
@@ -303,7 +304,7 @@ export async function createImageGenerationTask(args: SubmitImageGenerationArgs)
       user: req.user.id,
     },
     req,
-    ...accessOptions(req),
+    overrideAccess: INTERNAL_ACCESS,
   })
 
   try {
@@ -345,7 +346,7 @@ export async function createImageGenerationTask(args: SubmitImageGenerationArgs)
         },
         id: task.id,
         req,
-        ...accessOptions(req),
+        overrideAccess: INTERNAL_ACCESS,
       })
       .catch(() => null)
 
@@ -486,7 +487,7 @@ export async function runImageGenerationTask(args: RunImageGenerationTaskArgs) {
       },
       id: task.id,
       req,
-      ...accessOptions(req),
+      overrideAccess: INTERNAL_ACCESS,
     })
 
     await createTaskEvent({
@@ -564,7 +565,7 @@ export async function runImageGenerationTask(args: RunImageGenerationTaskArgs) {
       },
       id: task.id,
       req,
-      ...accessOptions(req),
+      overrideAccess: INTERNAL_ACCESS,
     })
 
     await createTaskEvent({
@@ -595,7 +596,7 @@ export async function runImageGenerationTask(args: RunImageGenerationTaskArgs) {
       },
       id: task.id,
       req,
-      ...accessOptions(req),
+      overrideAccess: INTERNAL_ACCESS,
     })
 
     if (

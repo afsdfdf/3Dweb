@@ -2131,6 +2131,10 @@ export interface AiProviderSetting {
     enablePBR?: boolean | null;
     hdTexture?: boolean | null;
     multiImageEnabled?: boolean | null;
+    /**
+     * Maximum Meshy provider dispatches allowed at the same time. Environment fallback: MESHY_MAX_CONCURRENT_TASKS.
+     */
+    maxConcurrentTasks?: number | null;
     pricing?: {
       textTo3DCredits?: number | null;
       imageTo3DCredits?: number | null;
@@ -2160,6 +2164,10 @@ export interface AiProviderSetting {
   imageGeneration?: {
     defaultProvider?: ('gemini-official' | 'gemini-third-party' | 'openai-compatible') | null;
     timeoutSeconds?: number | null;
+    /**
+     * Maximum image provider dispatches allowed at the same time. Environment fallback: IMAGE_GENERATION_MAX_CONCURRENT_TASKS.
+     */
+    maxConcurrentTasks?: number | null;
     /**
      * Optional site-wide prompt text prepended to every Workbench image-generation request, such as the Thorns Tavern symbol style. Leave empty to use only the user prompt.
      */
@@ -2784,6 +2792,7 @@ export interface AiProviderSettingsSelect<T extends boolean = true> {
         enablePBR?: T;
         hdTexture?: T;
         multiImageEnabled?: T;
+        maxConcurrentTasks?: T;
         pricing?:
           | T
           | {
@@ -2817,6 +2826,7 @@ export interface AiProviderSettingsSelect<T extends boolean = true> {
     | {
         defaultProvider?: T;
         timeoutSeconds?: T;
+        maxConcurrentTasks?: T;
         defaultPrompt?: T;
         official?:
           | T

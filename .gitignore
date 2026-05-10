@@ -67,6 +67,7 @@ node_modules/
 /playwright/.cache/
 
 # Codex local diagnostics and generated review artifacts
+.claude/
 .codex*.log
 codex-*.log
 *-audit*.json

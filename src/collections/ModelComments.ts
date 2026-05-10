@@ -1,6 +1,7 @@
 import type { Access, CollectionConfig, Where } from 'payload'
 
 import { isLoggedIn, isStaff } from '@/access'
+import { forceCurrentUserField } from '@/hooks/forceCurrentUserField'
 
 type UserWithRole = {
   id?: number | string | null
@@ -54,6 +55,9 @@ export const ModelComments: CollectionConfig = {
     delete: authorOrStaff,
     read: visibleOrOwnerOrStaff,
     update: isStaff,
+  },
+  hooks: {
+    beforeChange: [forceCurrentUserField('author')],
   },
   defaultSort: '-createdAt',
   timestamps: true,

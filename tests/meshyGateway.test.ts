@@ -18,6 +18,7 @@ test('getMeshySettings keeps Meshy API key in env while reading non-sensitive ad
             apiKey: 'stored-key',
             baseURL: 'https://api.meshy.ai',
             imageTo3DAiModel: 'meshy-6',
+            maxConcurrentTasks: 12,
             shouldTexture: false,
           },
           }
@@ -27,6 +28,7 @@ test('getMeshySettings keeps Meshy API key in env while reading non-sensitive ad
 
     assert.equal(settings.apiKey, 'env-key')
     assert.equal(settings.imageTo3DAiModel, 'meshy-6')
+    assert.equal(settings.maxConcurrentTasks, 12)
     assert.equal(settings.shouldTexture, false)
     assert.equal(calls[0]?.overrideAccess, true)
   } finally {
@@ -107,6 +109,7 @@ test('createMeshyMultiImageTask sends official multi-image request body', async 
         hdTexture: false,
         imageEnhancement: true,
         imageTo3DAiModel: 'latest',
+        maxConcurrentTasks: 20,
         modelType: 'standard',
         moderation: false,
         multiImageEnabled: true,

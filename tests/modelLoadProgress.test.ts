@@ -7,6 +7,7 @@ import { getModelLoadPhaseDisplay } from '../src/lib/modelLoadProgress.ts'
 
 const rootDir = process.cwd()
 const modelViewerPath = path.join(rootDir, 'src', 'app', '(frontend)', '_components', 'ModelViewer.tsx')
+const modelDetailNativePath = path.join(rootDir, 'src', 'app', '(frontend)', 'model-detail', 'ModelDetailNative.tsx')
 
 test('model load progress keeps download below parse and ready phases', () => {
   const download = getModelLoadPhaseDisplay({ phase: 'download', progress: 76 })
@@ -43,4 +44,17 @@ test('ModelViewer avoids mounting Canvas when WebGL is unavailable', () => {
   assert.match(source, /setWebGLStatus\(available \? "available" : "unavailable"\)/)
   assert.match(source, /webGLStatus === "available" \? \(/)
   assert.match(source, /webGLStatus === "unavailable"/)
+})
+
+test('model detail mounts the viewer only for the active responsive branch', () => {
+  const source = readFileSync(modelDetailNativePath, 'utf8')
+
+  assert.match(source, /mobileViewportMediaQuery = "\(max-width: 767px\)"/)
+  assert.match(source, /shouldRenderMobileViewer = isMobileViewport === true/)
+  assert.match(source, /shouldRenderDesktopViewer = isMobileViewport === false/)
+  assert.match(source, /activeModel\.viewerURL && shouldRenderMobileViewer/)
+  assert.match(
+    source,
+    /activeModel\.viewerURL &&\s*shouldRenderDesktopViewer/s,
+  )
 })

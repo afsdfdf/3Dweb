@@ -46,7 +46,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> => {
 }
 
 const accessOptions = (req: PayloadRequest) => {
-  return req.user ? { overrideAccess: false as const } : {}
+  return req.user ? { overrideAccess: false as const, user: req.user } : {}
 }
 
 const normalizeOptionalText = (value: unknown) => {

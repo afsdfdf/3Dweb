@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
 import { isStaff } from '@/access'
+import { forceCurrentUserField } from '@/hooks/forceCurrentUserField'
 
 export const EngagementViews: CollectionConfig = {
   slug: 'engagement-views',
@@ -14,6 +15,9 @@ export const EngagementViews: CollectionConfig = {
     delete: isStaff,
     read: isStaff,
     update: isStaff,
+  },
+  hooks: {
+    beforeChange: [forceCurrentUserField('viewer', { clearWhenAnonymous: true })],
   },
   defaultSort: '-lastViewedAt',
   timestamps: true,

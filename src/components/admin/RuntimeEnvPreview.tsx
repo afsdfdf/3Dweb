@@ -10,7 +10,9 @@ export function RuntimeEnvPreview() {
   const fields = useFormFields(([formFields]) => formFields as Record<string, RuntimeFieldValue>)
 
   const databaseUrlTemplate = String(fields.databaseUrlTemplate?.value || '')
-  const nextPublicAppUrl = String(fields.nextPublicAppUrl?.value || 'http://localhost:3000')
+  const configuredAppUrl =
+    typeof fields.nextPublicAppUrl?.value === 'string' ? fields.nextPublicAppUrl.value.trim() : ''
+  const nextPublicAppUrl = configuredAppUrl || '<not-configured>'
 
   const envLines = [
     'DATABASE_PROVIDER=postgres',

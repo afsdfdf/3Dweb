@@ -4,6 +4,10 @@ import { getStripeClient } from '@/lib/stripeGateway'
 import { getSubscriptionPlan } from '@/lib/subscriptionPlans'
 import type { AppUser } from '@/lib/supabase/queries'
 
+// Legacy Supabase/Stripe compatibility path. This file may sync Stripe customer,
+// subscription, print order, and order payment rows, but credit account and
+// ledger mutations must stay in the Payload credit ledger services.
+
 type StripeCustomerRow = {
   email: string | null
   full_name: string | null

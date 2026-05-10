@@ -80,6 +80,7 @@ export type ModelDetailSideModel = {
   href: string;
   id: string;
   imageSrc: string;
+  printReady: boolean;
   tags: string[];
   title: string;
   updatedLabel: string;
@@ -107,6 +108,7 @@ export type ModelDetailData = {
   isOwnedByCurrentUser: boolean;
   likesLabel: string;
   previewImages: string[];
+  printReady: boolean;
   printReadyLabel: string;
   sideModels: ModelDetailSideModel[];
   tags: string[];
@@ -407,6 +409,7 @@ async function getSideModels(
       formats: true,
       id: true,
       previewImage: true,
+      printReady: true,
       tags: true,
       title: true,
       updatedAt: true,
@@ -430,6 +433,7 @@ async function getSideModels(
         imageSrc:
           (await resolveMediaAccessURL(payload, getModelPreviewURL(item))) ||
           fallbackSidePreview,
+        printReady: item.printReady === true,
         tags: getTags(item),
         title: normalizeText(item.title) || `Model ${item.id}`,
         updatedLabel: formatDateLabel(item.updatedAt || item.createdAt),
@@ -547,6 +551,7 @@ export async function getModelDetailData(args: {
     isOwnedByCurrentUser,
     likesLabel: compactCount(model.likesCount),
     previewImages: [previewURL || fallbackPreview],
+    printReady: model.printReady === true,
     printReadyLabel: model.printReady ? "Print Ready" : "Preview Only",
     sideModels,
     tags: getTags(model),

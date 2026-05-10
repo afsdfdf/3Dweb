@@ -302,7 +302,7 @@ export async function createPrintOrder(args: {
       status: 'pending-payment',
       user: req.user.id,
     },
-    overrideAccess: false,
+    overrideAccess: INTERNAL_ACCESS,
     req,
   })
 
@@ -330,7 +330,7 @@ export async function createPrintOrder(args: {
         checkoutUrl: checkout.checkoutUrl,
       }),
     },
-    overrideAccess: false,
+    overrideAccess: INTERNAL_ACCESS,
     req,
   })
 
@@ -425,7 +425,7 @@ export async function syncPrintOrder(args: { orderId: number; req: PayloadReques
       data: {
         internalNotes: 'Payment record missing. Please recreate the order or contact support.',
       },
-      overrideAccess: false,
+      overrideAccess: INTERNAL_ACCESS,
       req,
     })
   }
@@ -440,7 +440,7 @@ export async function syncPrintOrder(args: { orderId: number; req: PayloadReques
       data: {
         internalNotes: 'Payment record is not linked to a Stripe checkout session.',
       },
-      overrideAccess: false,
+      overrideAccess: INTERNAL_ACCESS,
       req,
     })
   }

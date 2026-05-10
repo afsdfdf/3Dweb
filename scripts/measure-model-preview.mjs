@@ -1,8 +1,46 @@
+import { existsSync } from "node:fs";
 import { chromium } from "playwright";
 
 const DEFAULT_BASE_URL = "http://localhost:3000";
 const DEFAULT_IDS = [1, 20, 42];
 const DEFAULT_TIMEOUT_MS = 90_000;
+const EDGE_EXECUTABLE_PATHS = [
+  "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+  "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe",
+];
+const BROWSER_LAUNCH_ARGS = [
+  "--use-angle=swiftshader",
+  "--enable-webgl",
+  "--ignore-gpu-blocklist",
+  "--disable-dev-shm-usage",
+  "--no-sandbox",
+];
+
+function getInstalledEdgePath() {
+  return EDGE_EXECUTABLE_PATHS.find((candidate) => existsSync(candidate)) || null;
+}
+
+async function launchMeasurementBrowser() {
+  const launchOptions = {
+    args: BROWSER_LAUNCH_ARGS,
+    headless: true,
+  };
+
+  try {
+    return await chromium.launch(launchOptions);
+  } catch (error) {
+    const edgePath = getInstalledEdgePath();
+    if (!edgePath) {
+      throw error;
+    }
+
+    console.warn(`Bundled Playwright Chromium is unavailable; using installed Edge at ${edgePath}.`);
+    return chromium.launch({
+      ...launchOptions,
+      executablePath: edgePath,
+    });
+  }
+}
 
 function parseArgs(argv) {
   const args = {
@@ -207,18 +245,36 @@ async function measureBrowserModel({ baseURL, browser, id, timeoutMs }) {
       await page.waitForTimeout(1000);
       let state;
       try {
-        state = await page.evaluate(() => ({
-          canvasCount: document.querySelectorAll("canvas").length,
-          errorVisible: Boolean(
-            document.querySelector(".model-viewer-error-overlay"),
-          ),
-          loadingText:
-            document.querySelector(".model-viewer-loading-overlay")
-              ?.textContent || "",
-          relatedRealImages: [
-            ...document.querySelectorAll(".list2 img"),
-          ].filter((img) => img.getAttribute("src")?.startsWith("http")).length,
-        }));
+        state = await page.evaluate(() => {
+          const isVisible = (element) => {
+            const rect = element.getBoundingClientRect();
+            const style = window.getComputedStyle(element);
+            return (
+              rect.width > 0 &&
+              rect.height > 0 &&
+              style.display !== "none" &&
+              style.visibility !== "hidden"
+            );
+          };
+          const loadingOverlay = [
+            ...document.querySelectorAll(".model-viewer-loading-overlay"),
+          ].find(isVisible);
+          const errorOverlay = [
+            ...document.querySelectorAll(".model-viewer-error-overlay"),
+          ].find(isVisible);
+
+          return {
+            canvasCount: [...document.querySelectorAll("canvas")].filter(
+              isVisible,
+            ).length,
+            errorVisible: Boolean(errorOverlay),
+            loadingText: loadingOverlay?.textContent || "",
+            relatedRealImages: [
+              ...document.querySelectorAll(".list2 img"),
+            ].filter((img) => img.getAttribute("src")?.startsWith("http"))
+              .length,
+          };
+        });
       } catch (error) {
         if (
           error instanceof Error &&
@@ -276,16 +332,7 @@ function printSummary(results) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  const browser = await chromium.launch({
-    headless: true,
-    args: [
-      "--use-angle=swiftshader",
-      "--enable-webgl",
-      "--ignore-gpu-blocklist",
-      "--disable-dev-shm-usage",
-      "--no-sandbox",
-    ],
-  });
+  const browser = await launchMeasurementBrowser();
 
   const results = [];
 

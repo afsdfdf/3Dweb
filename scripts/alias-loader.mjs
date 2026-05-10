@@ -13,6 +13,11 @@ function resolveExistingTypeScriptPath(basePath) {
 }
 
 export async function resolve(specifier, context, nextResolve) {
+  if (specifier === '@payload-config') {
+    const targetURL = pathToFileURL(path.join(rootDir, 'src', 'payload.config.ts')).href
+    return nextResolve(targetURL, context)
+  }
+
   if (specifier.startsWith('@/')) {
     const relativePath = specifier.slice(2)
     const matchedPath = resolveExistingTypeScriptPath(path.join(rootDir, 'src', relativePath))

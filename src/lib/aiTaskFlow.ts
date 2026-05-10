@@ -75,6 +75,7 @@ type AITaskFlowStorageTestHooks = {
 let aiTaskFlowStorageTestHooks: AITaskFlowStorageTestHooks | null = null
 const meshyDispatchLocks = new Set<number>()
 const taskFinalizationLocks = new Set<number>()
+const INTERNAL_ACCESS = true
 
 export function __setAITaskFlowStorageTestHooks(hooks: AITaskFlowStorageTestHooks | null) {
   aiTaskFlowStorageTestHooks = hooks
@@ -258,7 +259,10 @@ async function createGeneratedMediaRecord(args: {
       url: args.url,
     },
     req: args.req,
-    ...accessOptions(args.req),
+    context: {
+      allowManagedMediaVisibility: true,
+    },
+    overrideAccess: INTERNAL_ACCESS,
   })
 }
 
@@ -659,7 +663,7 @@ async function finalizeTaskBilling(args: {
         creditsSpent: billedCredits,
       },
       req,
-      ...accessOptions(req),
+      overrideAccess: INTERNAL_ACCESS,
     })
   }
 
@@ -871,7 +875,7 @@ async function createResultModel(args: {
         visibility: finalVisibility,
       },
       req,
-      ...accessOptions(req),
+      overrideAccess: INTERNAL_ACCESS,
     })
 
     modelId = model.id
@@ -891,7 +895,7 @@ async function createResultModel(args: {
     },
     id: task.id,
     req,
-    ...accessOptions(req),
+    overrideAccess: INTERNAL_ACCESS,
   })
 
   return modelId
@@ -957,7 +961,7 @@ async function updateTaskStatus(args: {
       },
       id: currentTask.id,
       req,
-      ...accessOptions(req),
+      overrideAccess: INTERNAL_ACCESS,
     })
 
     if (status === 'succeeded') {
@@ -979,7 +983,7 @@ async function updateTaskStatus(args: {
           },
           id: updated.id,
           req,
-          ...accessOptions(req),
+          overrideAccess: INTERNAL_ACCESS,
         })
 
         await finalizeTaskBilling({
@@ -1061,7 +1065,11 @@ async function resolveSubmitProvider(args: {
   return preferredProvider
 }
 
-const getMeshyProviderConcurrencyLimit = () => Math.max(1, Number(process.env.MESHY_MAX_CONCURRENT_TASKS || 20))
+const getMeshyProviderConcurrencyLimit = async (req: PayloadRequest) => {
+  const settings = await getMeshySettings(req)
+  const configuredValue = Number(settings.maxConcurrentTasks || process.env.MESHY_MAX_CONCURRENT_TASKS || 20)
+  return Number.isFinite(configuredValue) && configuredValue > 0 ? Math.max(1, Math.floor(configuredValue)) : 20
+}
 
 const getMeshyDispatchStaleMs = () => Math.max(30_000, Number(process.env.MESHY_DISPATCH_STALE_MS || 120_000))
 
@@ -1198,7 +1206,7 @@ async function getActiveMeshyDispatchCount(args: { excludeTaskId?: number; req: 
 }
 
 async function hasMeshyDispatchCapacity(args: { excludeTaskId?: number; req: PayloadRequest }) {
-  return (await getActiveMeshyDispatchCount(args)) < getMeshyProviderConcurrencyLimit()
+  return (await getActiveMeshyDispatchCount(args)) < (await getMeshyProviderConcurrencyLimit(args.req))
 }
 
 function assertProviderAllowedInCurrentEnv(provider: SupportedProvider) {
@@ -1361,7 +1369,7 @@ async function dispatchMeshyTask(args: {
   if (!(await hasMeshyDispatchCapacity({ excludeTaskId: taskId, req }))) {
     req.payload.logger.info(
       {
-        limit: getMeshyProviderConcurrencyLimit(),
+        limit: await getMeshyProviderConcurrencyLimit(req),
         taskId: task.id,
       },
       'Meshy dispatch deferred because provider concurrency is at capacity.',
@@ -1399,7 +1407,7 @@ async function dispatchMeshyTask(args: {
     },
     id: task.id,
     req,
-    ...accessOptions(req),
+    overrideAccess: INTERNAL_ACCESS,
   })
 
   try {
@@ -1432,7 +1440,7 @@ async function dispatchMeshyTask(args: {
       },
       id: task.id,
       req,
-      ...accessOptions(req),
+      overrideAccess: INTERNAL_ACCESS,
     })
 
     await createTaskEvent({
@@ -1471,7 +1479,7 @@ async function dispatchMeshyTask(args: {
         },
         id: task.id,
         req,
-        ...accessOptions(req),
+        overrideAccess: INTERNAL_ACCESS,
       })
 
       await createTaskEvent({
@@ -1503,7 +1511,7 @@ async function dispatchMeshyTask(args: {
       },
       id: task.id,
       req,
-      ...accessOptions(req),
+      overrideAccess: INTERNAL_ACCESS,
     })
 
     if (creditRules.reserveOnSubmit && configuredCredits > 0 && creditRules.refundOnFailure) {
@@ -1537,7 +1545,8 @@ async function dispatchMeshyTask(args: {
 
 async function dispatchQueuedMeshyTasks(args: { req: PayloadRequest }) {
   const { req } = args
-  const availableSlots = getMeshyProviderConcurrencyLimit() - (await getActiveMeshyDispatchCount({ req }))
+  const concurrencyLimit = await getMeshyProviderConcurrencyLimit(req)
+  const availableSlots = concurrencyLimit - (await getActiveMeshyDispatchCount({ req }))
 
   if (availableSlots <= 0) {
     return
@@ -1546,7 +1555,7 @@ async function dispatchQueuedMeshyTasks(args: { req: PayloadRequest }) {
   const queuedTasks = await req.payload.find({
     collection: 'generation-tasks',
     depth: 0,
-    limit: Math.min(availableSlots, getMeshyProviderConcurrencyLimit()),
+    limit: Math.min(availableSlots, concurrencyLimit),
     pagination: false,
     req,
     sort: 'createdAt',
@@ -1729,7 +1738,7 @@ async function syncMeshyTask(args: { req: PayloadRequest; task: any; userId: num
         },
         id: task.id,
         req,
-        ...accessOptions(req),
+        overrideAccess: INTERNAL_ACCESS,
       })
     }
 
@@ -1784,7 +1793,7 @@ async function syncMeshyTask(args: { req: PayloadRequest; task: any; userId: num
         },
         id: task.id,
         req,
-        ...accessOptions(req),
+        overrideAccess: INTERNAL_ACCESS,
       })
     }
 
@@ -1822,7 +1831,7 @@ async function syncMeshyTask(args: { req: PayloadRequest; task: any; userId: num
       },
       id: task.id,
       req,
-      ...accessOptions(req),
+      overrideAccess: INTERNAL_ACCESS,
     })
   }
 
@@ -1883,7 +1892,7 @@ async function syncMeshyTask(args: { req: PayloadRequest; task: any; userId: num
       },
       id: task.id,
       req,
-      ...accessOptions(req),
+      overrideAccess: INTERNAL_ACCESS,
     })
   }
 
@@ -1943,7 +1952,7 @@ async function syncMeshyTask(args: { req: PayloadRequest; task: any; userId: num
     },
     id: task.id,
     req,
-    ...accessOptions(req),
+    overrideAccess: INTERNAL_ACCESS,
   })
 }
 
@@ -2034,7 +2043,7 @@ export async function submitAITask(args: {
       user: req.user.id,
     },
     req,
-    overrideAccess: false,
+    overrideAccess: INTERNAL_ACCESS,
   })
 
   try {
@@ -2111,7 +2120,7 @@ export async function submitAITask(args: {
       },
       id: task.id,
       req,
-      overrideAccess: false,
+      overrideAccess: INTERNAL_ACCESS,
     })
 
     if (creditRules.reserveOnSubmit && configuredCredits > 0 && creditRules.refundOnFailure) {
@@ -2232,7 +2241,7 @@ export async function syncAITask(args: { req: PayloadRequest; taskId: number }) 
       data: { progress: 35, status: 'processing' },
       id: task.id,
       req,
-      overrideAccess: false,
+      overrideAccess: INTERNAL_ACCESS,
     })
   }
 
@@ -2245,7 +2254,7 @@ export async function syncAITask(args: { req: PayloadRequest; taskId: number }) 
       },
       id: task.id,
       req,
-      overrideAccess: false,
+      overrideAccess: INTERNAL_ACCESS,
     })
   }
 

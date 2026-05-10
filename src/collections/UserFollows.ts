@@ -1,6 +1,7 @@
 import type { Access, CollectionConfig, Where } from 'payload'
 
 import { isLoggedIn, isStaff } from '@/access'
+import { forceCurrentUserField } from '@/hooks/forceCurrentUserField'
 
 type UserWithRole = {
   id?: number | string | null
@@ -32,15 +33,6 @@ const ownFollowOrStaff: Access = ({ req }) => {
   } satisfies Where
 }
 
-const createFollowAccess: Access = ({ data, req }) => {
-  const user = req.user as UserWithRole | null
-  if (!user) return false
-  if (isStaff({ req })) return true
-  if (user.id === undefined || user.id === null) return false
-
-  return String(data?.follower || '') === String(user.id || '')
-}
-
 export const UserFollows: CollectionConfig = {
   slug: 'user-follows',
   admin: {
@@ -49,10 +41,13 @@ export const UserFollows: CollectionConfig = {
     useAsTitle: 'id',
   },
   access: {
-    create: createFollowAccess,
+    create: isLoggedIn,
     delete: ownFollowOrStaff,
     read: ownFollowOrStaff,
-    update: ownFollowOrStaff,
+    update: isStaff,
+  },
+  hooks: {
+    beforeChange: [forceCurrentUserField('follower')],
   },
   defaultSort: '-createdAt',
   timestamps: true,

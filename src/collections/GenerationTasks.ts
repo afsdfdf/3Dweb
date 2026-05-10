@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
-import { ownerOrStaff } from '@/access'
+import { isStaff, ownerOrStaff } from '@/access'
 import { adminLabelsKey, adminTextKey } from '@/lib/adminText'
 
 export const GenerationTasks: CollectionConfig = {
@@ -13,9 +13,9 @@ export const GenerationTasks: CollectionConfig = {
     defaultColumns: ['taskCode', 'user', 'taskType', 'inputMode', 'status', 'progress', 'updatedAt'],
   },
   access: {
-    create: ownerOrStaff('user'),
+    create: isStaff,
     read: ownerOrStaff('user'),
-    update: ownerOrStaff('user'),
+    update: isStaff,
   },
   defaultSort: '-createdAt',
   timestamps: true,

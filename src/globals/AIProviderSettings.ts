@@ -138,6 +138,16 @@ export const AIProviderSettings: GlobalConfig = {
         { name: 'hdTexture', type: 'checkbox', defaultValue: false, label: 'Generate 4K base color texture' },
         { name: 'multiImageEnabled', type: 'checkbox', defaultValue: true, label: 'Enable Multi Image to 3D' },
         {
+          name: 'maxConcurrentTasks',
+          type: 'number',
+          defaultValue: 20,
+          min: 1,
+          label: 'Max concurrent model tasks',
+          admin: {
+            description: 'Maximum Meshy provider dispatches allowed at the same time. Environment fallback: MESHY_MAX_CONCURRENT_TASKS.',
+          },
+        },
+        {
           name: 'pricing',
           type: 'group',
           label: 'Meshy credit pricing',
@@ -234,6 +244,17 @@ export const AIProviderSettings: GlobalConfig = {
           type: 'number',
           defaultValue: 60,
           label: 'Provider timeout seconds',
+        },
+        {
+          name: 'maxConcurrentTasks',
+          type: 'number',
+          defaultValue: 20,
+          min: 1,
+          label: 'Max concurrent image tasks',
+          admin: {
+            description:
+              'Maximum image provider dispatches allowed at the same time. Environment fallback: IMAGE_GENERATION_MAX_CONCURRENT_TASKS.',
+          },
         },
         {
           name: 'defaultPrompt',

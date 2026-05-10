@@ -3790,6 +3790,9 @@ export const ai_provider_settings = pgTable("ai_provider_settings", {
   meshy_enablePBR: boolean("meshy_enable_p_b_r").default(false),
   meshy_hdTexture: boolean("meshy_hd_texture").default(false),
   meshy_multiImageEnabled: boolean("meshy_multi_image_enabled").default(true),
+  meshy_maxConcurrentTasks: numeric("meshy_max_concurrent_tasks", {
+    mode: "number",
+  }).default(20),
   meshy_pricing_textTo3DCredits: numeric("meshy_pricing_text_to3_d_credits", {
     mode: "number",
   }).default(20),
@@ -3831,6 +3834,10 @@ export const ai_provider_settings = pgTable("ai_provider_settings", {
   imageGeneration_timeoutSeconds: numeric("image_generation_timeout_seconds", {
     mode: "number",
   }).default(60),
+  imageGeneration_maxConcurrentTasks: numeric(
+    "image_generation_max_concurrent_tasks",
+    { mode: "number" },
+  ).default(20),
   imageGeneration_defaultPrompt: varchar("image_generation_default_prompt"),
   imageGeneration_official_baseURL: varchar(
     "image_generation_official_base_u_r_l",

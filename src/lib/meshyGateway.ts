@@ -28,6 +28,7 @@ export type MeshySettings = {
   hdTexture: boolean
   imageEnhancement: boolean
   imageTo3DAiModel: string
+  maxConcurrentTasks: number
   modelType: 'lowpoly' | 'standard'
   moderation: boolean
   multiImageEnabled: boolean
@@ -47,6 +48,7 @@ const DEFAULT_MESHY_SETTINGS: MeshySettings = {
   hdTexture: false,
   imageEnhancement: true,
   imageTo3DAiModel: 'latest',
+  maxConcurrentTasks: 20,
   modelType: 'standard',
   moderation: false,
   multiImageEnabled: true,
@@ -98,6 +100,16 @@ const readString = (value: unknown) => {
 
 const readBoolean = (value: unknown, fallback: boolean) => {
   return typeof value === 'boolean' ? value : fallback
+}
+
+const readPositiveInteger = (value: unknown, fallback: number) => {
+  const numberValue = Number(value)
+  return Number.isFinite(numberValue) && numberValue > 0 ? Math.max(1, Math.floor(numberValue)) : fallback
+}
+
+const readEnvPositiveInteger = (value: unknown, fallback: number) => {
+  const numberValue = Number(value)
+  return Number.isFinite(numberValue) && numberValue > 0 ? Math.max(1, Math.floor(numberValue)) : fallback
 }
 
 const readMeshyModelType = (value: unknown): MeshySettings['modelType'] => {
@@ -198,6 +210,10 @@ export async function getMeshySettings(req: PayloadRequest): Promise<MeshySettin
       typeof meshy.imageTo3DAiModel === 'string' && meshy.imageTo3DAiModel.trim()
         ? meshy.imageTo3DAiModel
         : DEFAULT_MESHY_SETTINGS.imageTo3DAiModel,
+    maxConcurrentTasks: readPositiveInteger(
+      meshy.maxConcurrentTasks,
+      readEnvPositiveInteger(process.env.MESHY_MAX_CONCURRENT_TASKS, DEFAULT_MESHY_SETTINGS.maxConcurrentTasks),
+    ),
     modelType: readMeshyModelType(meshy.modelType),
     moderation: readBoolean(meshy.moderation, DEFAULT_MESHY_SETTINGS.moderation),
     multiImageEnabled: readBoolean(meshy.multiImageEnabled, DEFAULT_MESHY_SETTINGS.multiImageEnabled),

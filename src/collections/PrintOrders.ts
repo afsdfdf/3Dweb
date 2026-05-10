@@ -13,7 +13,7 @@ export const PrintOrders: CollectionConfig = {
     defaultColumns: ['orderNumber', 'user', 'status', 'paymentStatus', 'amount', 'updatedAt'],
   },
   access: {
-    create: ownerOrStaff('user'),
+    create: isStaff,
     read: ownerOrStaff('user'),
     update: isStaff,
   },

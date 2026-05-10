@@ -2,6 +2,9 @@ import type { User as SupabaseAuthUser } from '@supabase/supabase-js'
 
 import { queryPostgres } from '@/lib/postgres'
 
+// Read-only legacy/reporting query facade for historical Supabase tables.
+// Do not add billing, credit ledger, or other business mutations here.
+
 type Nullable<T> = null | T
 
 export type AppUser = {

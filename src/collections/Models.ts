@@ -1,8 +1,12 @@
 import type { CollectionConfig } from 'payload'
 
-import { ownerOrStaff, publicOwnerOrStaff } from '@/access'
+import { isStaff, ownerOrStaff, publicOwnerOrStaff } from '@/access'
 import { validatePublicModelPreview } from '@/hooks/validatePublicModelPreview'
 import { adminLabelsKey, adminTextKey } from '@/lib/adminText'
+
+const staffFieldAccess = ({ req }: { req: { user?: { role?: string | null } | null } }) => {
+  return req.user?.role === 'admin' || req.user?.role === 'operator'
+}
 
 const ownerOrStaffFieldAccess = ({ doc, req }: { doc?: Record<string, unknown> | null; req: { user?: { id?: number | string | null; role?: string | null } | null } }) => {
   if (req.user?.role === 'admin' || req.user?.role === 'operator') {
@@ -28,7 +32,7 @@ export const Models: CollectionConfig = {
     defaultColumns: ['title', 'owner', 'status', 'visibility', 'updatedAt'],
   },
   access: {
-    create: ownerOrStaff('owner'),
+    create: isStaff,
     read: publicOwnerOrStaff('owner'),
     update: ownerOrStaff('owner'),
   },
@@ -84,10 +88,21 @@ export const Models: CollectionConfig = {
           relationTo: 'media',
           label: 'File',
           access: {
+            create: staffFieldAccess,
             read: ownerOrStaffFieldAccess,
+            update: staffFieldAccess,
           },
         },
-        { name: 'downloadCredits', type: 'number', defaultValue: 0, label: 'Download credits' },
+        {
+          name: 'downloadCredits',
+          type: 'number',
+          defaultValue: 0,
+          label: 'Download credits',
+          access: {
+            create: staffFieldAccess,
+            update: staffFieldAccess,
+          },
+        },
         { name: 'fileSizeMb', type: 'number', label: 'File size (MB)' },
       ],
     },
@@ -96,7 +111,9 @@ export const Models: CollectionConfig = {
       type: 'text',
       label: 'Viewer URL',
       access: {
+        create: staffFieldAccess,
         read: ownerOrStaffFieldAccess,
+        update: staffFieldAccess,
       },
     },
     { name: 'printReady', type: 'checkbox', defaultValue: false, label: 'Print ready' },
@@ -105,6 +122,10 @@ export const Models: CollectionConfig = {
       type: 'number',
       defaultValue: 0,
       label: 'View count',
+      access: {
+        create: staffFieldAccess,
+        update: staffFieldAccess,
+      },
       admin: {
         position: 'sidebar',
         readOnly: true,
@@ -115,6 +136,10 @@ export const Models: CollectionConfig = {
       type: 'number',
       defaultValue: 0,
       label: 'Comments count',
+      access: {
+        create: staffFieldAccess,
+        update: staffFieldAccess,
+      },
       admin: {
         position: 'sidebar',
         readOnly: true,
@@ -125,6 +150,10 @@ export const Models: CollectionConfig = {
       type: 'number',
       defaultValue: 0,
       label: 'Likes count',
+      access: {
+        create: staffFieldAccess,
+        update: staffFieldAccess,
+      },
       admin: {
         position: 'sidebar',
         readOnly: true,
@@ -135,6 +164,10 @@ export const Models: CollectionConfig = {
       type: 'number',
       defaultValue: 0,
       label: 'Favorites count',
+      access: {
+        create: staffFieldAccess,
+        update: staffFieldAccess,
+      },
       admin: {
         position: 'sidebar',
         readOnly: true,

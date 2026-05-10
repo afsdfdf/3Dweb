@@ -14,6 +14,7 @@ import { ModelDownloadConfirmation } from "@/components/ui-lab/model-download-co
 import type { TopNavigationUser } from "@/components/ui-lab/top-navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ModelViewer } from "../_components/ModelViewer";
+import { PrintOrderDialog } from "../_components/PrintOrderDialog";
 import { ModelDetailHeader } from "./ModelDetailHeader";
 import type {
   ModelDetailData,
@@ -37,6 +38,7 @@ const relatedModelColumns = 3;
 const relatedModelCardHeight = 222;
 const relatedModelInitialVisibleCount = 6;
 const commentLimit = 3;
+const mobileViewportMediaQuery = "(max-width: 767px)";
 
 type ModelDetailNativeProps = {
   data: ModelDetailData;
@@ -50,6 +52,7 @@ type ActiveModel = {
   downloadCreditsLabel: string;
   id: number;
   imageSrc: null | string;
+  printReady: boolean;
   tags: string[];
   title: string;
   updatedLabel: string;
@@ -70,6 +73,7 @@ const getInitialActiveModel = (detail: ModelDetailData): ActiveModel => ({
   downloadCreditsLabel: detail.downloadCreditsLabel,
   id: detail.id,
   imageSrc: detail.inputPreviewSrc,
+  printReady: detail.printReady,
   tags: detail.tags,
   title: detail.title,
   updatedLabel: detail.updatedLabel,
@@ -85,6 +89,7 @@ const getActiveModelFromSideModel = (
   downloadCreditsLabel: item.downloadCreditsLabel,
   id: Number(item.id),
   imageSrc: item.imageSrc,
+  printReady: item.printReady,
   tags: item.tags,
   title: item.title,
   updatedLabel: item.updatedLabel,
@@ -146,6 +151,26 @@ const getDownloadFilename = (header: null | string, modelId: number) => {
   return plain?.[1]?.trim() || `model-${modelId}.glb`;
 };
 
+function useMobileDetailViewport() {
+  const [isMobileViewport, setIsMobileViewport] = useState<boolean | null>(
+    null,
+  );
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia(mobileViewportMediaQuery);
+    const syncViewport = () => setIsMobileViewport(mediaQuery.matches);
+
+    syncViewport();
+    mediaQuery.addEventListener("change", syncViewport);
+
+    return () => {
+      mediaQuery.removeEventListener("change", syncViewport);
+    };
+  }, []);
+
+  return isMobileViewport;
+}
+
 export default function ModelDetailNative({
   data,
   navUser = null,
@@ -173,6 +198,9 @@ export default function ModelDetailNative({
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [commentSubmitting, setCommentSubmitting] = useState(false);
   const [commentTotal, setCommentTotal] = useState(activeModel.commentsCount);
+  const isMobileViewport = useMobileDetailViewport();
+  const shouldRenderMobileViewer = isMobileViewport === true;
+  const shouldRenderDesktopViewer = isMobileViewport === false;
   const activeModelId = String(activeModel.id);
   const downloadIsCharged =
     detail.chargeDownloadCredits && activeModel.downloadCredits > 0;
@@ -181,6 +209,13 @@ export default function ModelDetailNative({
     ? `Downloading this GLB file will cost ${activeModel.downloadCreditsLabel} points.`
     : "Download this GLB file for free.";
   const commentCountLabel = compactCountLabel(commentTotal);
+  const canPrintActiveModel =
+    detail.isOwnedByCurrentUser && activeModel.printReady;
+  const printActionLabel = canPrintActiveModel
+    ? "PRINT NOW"
+    : detail.isOwnedByCurrentUser
+      ? "REVIEW NEEDED"
+      : "WORKBENCH";
 
   const getCurrentRedirect = useCallback(() => {
     if (typeof window === "undefined") return `/model-detail?id=${activeModel.id}`;
@@ -418,7 +453,7 @@ export default function ModelDetailNative({
         </section>
 
         <section className={styles.mobilePreview} aria-label="Model preview">
-          {activeModel.viewerURL ? (
+          {activeModel.viewerURL && shouldRenderMobileViewer ? (
             <ModelViewer
               className={styles.mobileViewer}
               showGround={false}
@@ -460,6 +495,14 @@ export default function ModelDetailNative({
           <button className={styles.mobilePrimaryAction} onClick={handleDownloadConfirm} type="button">
             Download GLB
           </button>
+          {canPrintActiveModel ? (
+            <PrintOrderDialog
+              buttonLabel="Print this model"
+              modelId={activeModel.id}
+              modelPreviewSrc={activeModel.imageSrc}
+              modelTitle={activeModel.title}
+            />
+          ) : null}
           <a href={activeModel.id ? `/workbench?reference=${activeModel.id}` : "/workbench"}>
             Use in Workbench
           </a>
@@ -596,7 +639,9 @@ export default function ModelDetailNative({
                         className="swiper-slide"
                         key={`model-preview-slide-${index}`}
                       >
-                        {index === 0 && activeModel.viewerURL ? (
+                        {index === 0 &&
+                        activeModel.viewerURL &&
+                        shouldRenderDesktopViewer ? (
                           <div className="detail-model-stage">
                             <ModelViewer
                               className="detail-model-viewer"
@@ -924,7 +969,7 @@ export default function ModelDetailNative({
               <div className="center">
                 <div className="btn2-slot">
                   <OrangeMediumActionButton
-                    label="ADD TO CART"
+                    label="DOWNLOAD"
                     onClick={() => setShowDownloadConfirm(true)}
                     style={detailBottomActionButtonStyle}
                   />
@@ -936,15 +981,34 @@ export default function ModelDetailNative({
                   />
                 </div>
                 <div className="btn2-slot">
-                  <SourcePurpleMediumButton
-                    label="PRINT NOW"
-                    onClick={() => {
-                      window.location.href = activeModel.id
-                        ? `/workbench?reference=${activeModel.id}`
-                        : "/workbench";
-                    }}
-                    style={detailBottomActionButtonStyle}
-                  />
+                  {canPrintActiveModel ? (
+                    <PrintOrderDialog
+                      modelId={activeModel.id}
+                      modelPreviewSrc={activeModel.imageSrc}
+                      modelTitle={activeModel.title}
+                      renderTrigger={({ loading, open }) => (
+                        <SourcePurpleMediumButton
+                          disabled={loading}
+                          label="PRINT NOW"
+                          onClick={open}
+                          style={detailBottomActionButtonStyle}
+                        />
+                      )}
+                    />
+                  ) : (
+                    <SourcePurpleMediumButton
+                      disabled={detail.isOwnedByCurrentUser && !activeModel.printReady}
+                      label={printActionLabel}
+                      onClick={() => {
+                        if (detail.isOwnedByCurrentUser && !activeModel.printReady) return;
+
+                        window.location.href = activeModel.id
+                          ? `/workbench?reference=${activeModel.id}`
+                          : "/workbench";
+                      }}
+                      style={detailBottomActionButtonStyle}
+                    />
+                  )}
                   <img
                     src="/ui-lab/model-detail-assets/images/Boolean_operation_1_8833.png"
                     alt=""

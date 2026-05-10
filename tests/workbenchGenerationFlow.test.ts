@@ -140,7 +140,12 @@ test('image generation background work can be recovered by sync polling', () => 
   const endpointSource = readFileSync(imageGenerationEndpointPath, 'utf8')
   const flowSource = readFileSync(imageGenerationFlowPath, 'utf8')
 
-  assert.match(endpointSource, /after\(\(\) => task\(\)\)/)
+  assert.match(endpointSource, /setTimeout\(runOnce, 0\)/)
+  assert.match(endpointSource, /after\(\(\) => \{/)
+  assert.match(endpointSource, /IMAGE_GENERATION_MAX_CONCURRENT_TASKS/)
+  assert.match(endpointSource, /imageGeneration\.maxConcurrentTasks/)
+  assert.match(endpointSource, /activeImageGenerationWorkCount/)
+  assert.match(endpointSource, /scheduledImageGenerationTaskIds/)
   assert.match(endpointSource, /scheduleTaskRun\(\{ req, taskId \}\)/)
   assert.match(endpointSource, /isRunnableImageGenerationStatus\(task\.status\)/)
   assert.match(flowSource, /imageGenerationTaskLocks/)

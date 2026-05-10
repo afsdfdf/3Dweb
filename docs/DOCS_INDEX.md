@@ -13,6 +13,7 @@ Root `docs/` contains evergreen documents only. Dated reports, rollout checklist
 - [ARCHITECTURE_BLUEPRINT.md](/D:/web/payload-local-demo/docs/ARCHITECTURE_BLUEPRINT.md) - product surface and domain map
 - [AI_PRODUCT_FRAMEWORK_GUIDE.md](/D:/web/payload-local-demo/docs/AI_PRODUCT_FRAMEWORK_GUIDE.md) - product framework and integration boundaries
 - [PROJECT_USER_MANUAL.md](/D:/web/payload-local-demo/docs/PROJECT_USER_MANUAL.md) - Chinese owner/operator user manual for current product pages and workflows
+- [CLIENT_ACCEPTANCE_FLOW.md](/D:/web/payload-local-demo/docs/CLIENT_ACCEPTANCE_FLOW.md) - Chinese client acceptance flowchart and inspection checklist
 - [COLLECTIONS_REFERENCE.md](/D:/web/payload-local-demo/docs/COLLECTIONS_REFERENCE.md) - active Payload collection map for development
 - [UI_MIGRATION_PLAN.md](/D:/web/payload-local-demo/docs/UI_MIGRATION_PLAN.md) - UI lab migration plan and review checklist
 - [BACKEND_UI_DEVELOPMENT_MEMO.md](/D:/web/payload-local-demo/docs/BACKEND_UI_DEVELOPMENT_MEMO.md) - backend-owned UI slots and formal frontend wiring memo

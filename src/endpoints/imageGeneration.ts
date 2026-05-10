@@ -16,6 +16,18 @@ type ImageGenerationEndpointTestHooks = {
 
 let imageGenerationEndpointTestHooks: ImageGenerationEndpointTestHooks | null = null
 
+type ImageGenerationWorkItem = {
+  reject: (error: unknown) => void
+  resolve: () => void
+  task: () => Promise<void>
+  taskId?: number
+}
+
+let activeImageGenerationWorkCount = 0
+const queuedImageGenerationWork: ImageGenerationWorkItem[] = []
+const scheduledImageGenerationTaskIds = new Set<number>()
+let imageGenerationWorkConcurrencyLimit = 20
+
 export function __setImageGenerationEndpointTestHooks(hooks: ImageGenerationEndpointTestHooks | null) {
   imageGenerationEndpointTestHooks = hooks
 }
@@ -53,18 +65,109 @@ const normalizeImageGenerationProvider = (value: unknown) => {
   return undefined
 }
 
-const scheduleImageGenerationWork = (task: () => Promise<void>) => {
+const getImageGenerationWorkConcurrencyLimit = () => {
+  const configuredValue = Number(imageGenerationWorkConcurrencyLimit || process.env.IMAGE_GENERATION_MAX_CONCURRENT_TASKS || 20)
+  return Number.isFinite(configuredValue) && configuredValue > 0 ? Math.max(1, Math.floor(configuredValue)) : 20
+}
+
+const readPositiveInteger = (value: unknown, fallback: number) => {
+  const numberValue = Number(value)
+  return Number.isFinite(numberValue) && numberValue > 0 ? Math.max(1, Math.floor(numberValue)) : fallback
+}
+
+const resolveImageGenerationWorkConcurrencyLimit = async (req: PayloadRequest) => {
+  const envFallback = readPositiveInteger(process.env.IMAGE_GENERATION_MAX_CONCURRENT_TASKS, 20)
+  const payload = req.payload as PayloadRequest['payload'] & {
+    findGlobal?: PayloadRequest['payload']['findGlobal']
+  }
+
+  if (typeof payload.findGlobal !== 'function') {
+    return envFallback
+  }
+
+  const config = await payload
+    .findGlobal({
+      overrideAccess: true,
+      slug: 'ai-provider-settings',
+    })
+    .catch(() => null)
+  const imageGeneration = isRecord(config?.imageGeneration) ? config.imageGeneration : {}
+
+  return readPositiveInteger(imageGeneration.maxConcurrentTasks, envFallback)
+}
+
+const refreshImageGenerationWorkConcurrencyLimit = async (req: PayloadRequest) => {
+  imageGenerationWorkConcurrencyLimit = await resolveImageGenerationWorkConcurrencyLimit(req)
+  pumpImageGenerationWorkQueue()
+}
+
+const pumpImageGenerationWorkQueue = () => {
+  const limit = getImageGenerationWorkConcurrencyLimit()
+
+  while (activeImageGenerationWorkCount < limit && queuedImageGenerationWork.length > 0) {
+    const item = queuedImageGenerationWork.shift()
+    if (!item) return
+
+    activeImageGenerationWorkCount += 1
+    void item
+      .task()
+      .then(item.resolve, item.reject)
+      .finally(() => {
+        activeImageGenerationWorkCount = Math.max(0, activeImageGenerationWorkCount - 1)
+        if (item.taskId) {
+          scheduledImageGenerationTaskIds.delete(item.taskId)
+        }
+        pumpImageGenerationWorkQueue()
+      })
+  }
+}
+
+const enqueueImageGenerationWork = (task: () => Promise<void>, taskId?: number) => {
+  if (taskId && scheduledImageGenerationTaskIds.has(taskId)) {
+    return Promise.resolve()
+  }
+
+  if (taskId) {
+    scheduledImageGenerationTaskIds.add(taskId)
+  }
+
+  return new Promise<void>((resolve, reject) => {
+    queuedImageGenerationWork.push({
+      reject,
+      resolve,
+      task,
+      taskId,
+    })
+    pumpImageGenerationWorkQueue()
+  })
+}
+
+const scheduleImageGenerationWork = (task: () => Promise<void>, taskId?: number) => {
+  const queuedTask = () => enqueueImageGenerationWork(task, taskId)
+
   if (imageGenerationEndpointTestHooks?.scheduleAfterResponse) {
-    imageGenerationEndpointTestHooks.scheduleAfterResponse(task)
+    imageGenerationEndpointTestHooks.scheduleAfterResponse(queuedTask)
     return
   }
 
+  let started = false
+  const runOnce = () => {
+    if (started) return
+    started = true
+    void queuedTask()
+  }
+  const fallbackTimer = setTimeout(runOnce, 0)
+
   void import('next/server')
     .then(({ after }) => {
-      after(() => task())
+      after(() => {
+        clearTimeout(fallbackTimer)
+        runOnce()
+      })
     })
     .catch(() => {
-      void task()
+      clearTimeout(fallbackTimer)
+      runOnce()
     })
 }
 
@@ -72,7 +175,9 @@ const isRunnableImageGenerationStatus = (value: unknown) => {
   return value === 'queued' || value === 'processing'
 }
 
-const scheduleTaskRun = (args: { req: PayloadRequest; taskId: number }) => {
+const scheduleTaskRun = async (args: { req: PayloadRequest; taskId: number }) => {
+  await refreshImageGenerationWorkConcurrencyLimit(args.req)
+
   scheduleImageGenerationWork(async () => {
     try {
       await (imageGenerationEndpointTestHooks?.runImageGenerationTask || runImageGenerationTask)({
@@ -88,7 +193,7 @@ const scheduleTaskRun = (args: { req: PayloadRequest; taskId: number }) => {
         'Image generation background worker failed.',
       )
     }
-  })
+  }, args.taskId)
 }
 
 export const submitImageGenerationEndpoint = {
@@ -133,7 +238,7 @@ export const submitImageGenerationEndpoint = {
       }
 
       if (!imageGenerationEndpointTestHooks?.submitImageGeneration || imageGenerationEndpointTestHooks.runImageGenerationTask) {
-        scheduleTaskRun({ req, taskId })
+        await scheduleTaskRun({ req, taskId })
       }
 
       return Response.json(
@@ -216,7 +321,7 @@ export const syncImageGenerationEndpoint = {
       : null
 
     if (!media && isRunnableImageGenerationStatus(task.status)) {
-      scheduleTaskRun({ req, taskId })
+      await scheduleTaskRun({ req, taskId })
     }
 
     return Response.json({

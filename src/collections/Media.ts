@@ -1,9 +1,14 @@
 import type { CollectionConfig } from 'payload'
 
 import { ownerOrStaff } from '@/access'
+import { sanitizeMediaUploadVisibility } from '@/hooks/sanitizeMediaUploadVisibility'
 import { uploadMediaToSupabase } from '@/hooks/uploadMediaToSupabase'
 import { adminLabelsKey, adminTextKey } from '@/lib/adminText'
 import { mediaReadAccess } from '@/lib/mediaReadAccess'
+
+const staffFieldAccess = ({ req }: { req: { user?: { role?: string | null } | null } }) => {
+  return req.user?.role === 'admin' || req.user?.role === 'operator'
+}
 
 function normalizeOptionalMediaURL(value: unknown) {
   if (typeof value !== 'string') {
@@ -39,7 +44,7 @@ export const Media: CollectionConfig = {
     update: ownerOrStaff('owner'),
   },
   hooks: {
-    beforeChange: [uploadMediaToSupabase],
+    beforeChange: [sanitizeMediaUploadVisibility, uploadMediaToSupabase],
     afterRead: [
       ({ doc }) => {
         if (!doc || typeof doc !== 'object') {
@@ -66,6 +71,9 @@ export const Media: CollectionConfig = {
         description:
           'Use preview for guest-readable model images. Use avatar and profile banner for user profile media. Keep model files as model and source assets as input.',
       },
+      access: {
+        update: staffFieldAccess,
+      },
       options: [
         { label: 'Input image', value: 'input' },
         { label: 'Avatar image', value: 'avatar' },
@@ -83,6 +91,9 @@ export const Media: CollectionConfig = {
       label: 'Guest readable',
       admin: {
         description: 'Enable this when administrators want guests to access this exact asset, including example files or public 3D files.',
+      },
+      access: {
+        update: staffFieldAccess,
       },
     },
   ],
