@@ -27,6 +27,12 @@ const sanitizePathPart = (value: string) =>
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')
 
+const getProfileMediaPublicAccess = (user: unknown) =>
+  user !== null &&
+  typeof user === 'object' &&
+  'profileVisibility' in user &&
+  user.profileVisibility === 'public'
+
 async function completeProfileMediaRecord(args: {
   filename: string
   mediaId: number
@@ -148,7 +154,7 @@ export async function POST(request: NextRequest) {
   const contentType = String(body.contentType || '').toLowerCase()
   const purpose = String(body.purpose || '')
   const size = Number(body.size || 0)
-  const publicAccess = body.publicAccess === true
+  const publicAccess = getProfileMediaPublicAccess(user)
 
   if (!mediaId) {
     return Response.json({ message: 'Media record is required.' }, { status: 400 })

@@ -22,6 +22,9 @@ const topNavigationCssPath = path.join(rootDir, 'src', 'components', 'ui-lab', '
 const topNavBarPath = path.join(rootDir, 'src', 'app', '(frontend)', '_components', 'shell', 'TopNavBar.tsx')
 const marketingPagePath = path.join(rootDir, 'src', 'app', '(frontend)', '_components', 'MarketingPage.tsx')
 const blogComponentsPath = path.join(rootDir, 'src', 'app', '(frontend)', 'blog', '_components', 'BlogComponents.tsx')
+const blogArticleBodyPath = path.join(rootDir, 'src', 'app', '(frontend)', 'blog', '_components', 'BlogArticleBody.tsx')
+const blogDataPath = path.join(rootDir, 'src', 'app', '(frontend)', 'blog', '_lib', 'blogData.ts')
+const bundleServicePath = path.join(rootDir, 'src', 'lib', 'bundleService.ts')
 const showcasePagePath = path.join(rootDir, 'src', 'app', '(frontend)', 'showcase', 'page.tsx')
 const workbenchModelPagePath = path.join(rootDir, 'src', 'app', '(frontend)', 'workbench', 'models', '[id]', 'page.tsx')
 const frontendSessionPath = path.join(rootDir, 'src', 'app', '(frontend)', '_lib', 'session.ts')
@@ -142,6 +145,27 @@ test('account-style pages do not carry private navigation arrays', () => {
   assert.match(accountCenterSource, /@\/lib\/publicNavigation/)
   assert.doesNotMatch(accountCenterSource, /realNavigationItems/)
   assert.doesNotMatch(accountCenterSource, /id:\s*["']ADMIN["']/)
+})
+
+test('blog detail is fail-soft and renders common rich text nodes', () => {
+  const bodySource = readFileSync(blogArticleBodyPath, 'utf8')
+  const dataSource = readFileSync(blogDataPath, 'utf8')
+
+  assert.match(dataSource, /export async function getBlogPostBySlug/)
+  assert.match(dataSource, /catch \{\s*return null\s*\}/)
+  assert.match(bodySource, /node\.type === 'upload'/)
+  assert.match(bodySource, /node\.type === 'code'/)
+  assert.match(bodySource, /node\.type === 'horizontalrule'/)
+  assert.match(bodySource, /node\.tag === 'h4'/)
+  assert.doesNotMatch(bodySource, /dangerouslySetInnerHTML/)
+})
+
+test('public bundle creator names do not fall back to email local-parts', () => {
+  const source = readFileSync(bundleServicePath, 'utf8')
+
+  assert.doesNotMatch(source, /email\.split/)
+  assert.doesNotMatch(source, /email:\s*true/)
+  assert.match(source, /Creator \$\{ownerId\}/)
 })
 
 test('top navigation user label is normalized and display-limited', () => {

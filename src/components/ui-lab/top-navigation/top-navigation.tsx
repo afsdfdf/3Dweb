@@ -291,13 +291,13 @@ function NotificationBellButton({ authenticated }: { authenticated: boolean }) {
 
 function CartIconButton() {
   return (
-    <button aria-label="Cart" className={styles.cartIconButton} type="button">
+    <Link aria-label="Orders" className={styles.cartIconButton} href="/account?section=orders">
       <span className={styles.navActionIcon} aria-hidden="true">
         <img alt="" className={styles.navActionIconNormal} decoding="async" src={`${assetBase}/icon-cart-line.png`} />
         <img alt="" className={styles.navActionIconHover} decoding="async" src={`${assetBase}/icon-cart-line-emphasis.png`} />
         <img alt="" className={styles.navActionIconActive} decoding="async" src={`${assetBase}/icon-cart-gold.png`} />
       </span>
-    </button>
+    </Link>
   );
 }
 

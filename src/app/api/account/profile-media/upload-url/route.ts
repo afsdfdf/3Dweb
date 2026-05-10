@@ -26,6 +26,12 @@ const sanitizePathPart = (value: string) =>
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')
 
+const getProfileMediaPublicAccess = (user: unknown) =>
+  user !== null &&
+  typeof user === 'object' &&
+  'profileVisibility' in user &&
+  user.profileVisibility === 'public'
+
 async function createProfileMediaRecord(args: {
   alt: string
   ownerId: number
@@ -79,7 +85,7 @@ export async function POST(request: NextRequest) {
   const contentType = String(body.contentType || '').toLowerCase()
   const purpose = String(body.purpose || '')
   const size = Number(body.size || 0)
-  const publicAccess = body.publicAccess === true
+  const publicAccess = getProfileMediaPublicAccess(user)
 
   if (!allowedPurposes.has(purpose)) {
     return Response.json({ message: 'Unsupported profile media purpose.' }, { status: 400 })

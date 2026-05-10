@@ -11,7 +11,6 @@ type ImageLike = {
 type UserLike = {
   avatar?: null | number | ImageLike
   displayName?: null | string
-  email?: null | string
   fullName?: null | string
   id?: number | string
   profileVisibility?: null | string
@@ -259,8 +258,8 @@ const getOwnerName = (owner: unknown) => {
 
   const displayName = normalizeText(owner.displayName)
   const fullName = normalizeText(owner.fullName)
-  const email = normalizeText(owner.email)
-  return displayName || fullName || email.split('@')[0] || 'Creator'
+  const ownerId = getRelationId(owner.id)
+  return displayName || fullName || (ownerId ? `Creator ${ownerId}` : 'Creator')
 }
 
 async function resolveMediaURL(payload: Payload, value: null | string | undefined) {
@@ -288,7 +287,6 @@ async function getPublicOwnerProfile(payload: Payload, owner: unknown) {
             select: {
               avatar: true,
               displayName: true,
-              email: true,
               fullName: true,
               profileVisibility: true,
             },

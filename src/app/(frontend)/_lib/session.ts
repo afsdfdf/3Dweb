@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { cache } from "react";
 import { getCachedPayload } from "@/lib/getCachedPayload";
 import { resolvePayloadUserFromHeaders } from "@/lib/payloadAuthFallback";
+import { getSafeInternalRedirect } from "@/lib/safeRedirect";
 
 const getPayloadWithUser = cache(async () => {
   noStore();
@@ -157,7 +158,7 @@ export async function getCurrentAccountProfileSummary() {
 
 export async function requireUser(redirectTo = "/account") {
   const user = await getCurrentUser();
-  const safeRedirect = redirectTo.startsWith("/") ? redirectTo : "/account";
+  const safeRedirect = getSafeInternalRedirect(redirectTo, "/account");
   if (!user) redirect(`/login?redirect=${encodeURIComponent(safeRedirect)}`);
   return user;
 }

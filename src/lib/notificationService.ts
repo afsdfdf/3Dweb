@@ -321,47 +321,57 @@ export async function markAllNotificationsRead(args: { req: PayloadRequest; user
   const userId = toNumericId(args.userId)
   if (!userId) return { updated: 0 }
 
-  const unread = await args.req.payload.find({
-    collection: 'user-notifications',
-    depth: 0,
-    limit: maxNotificationLimit,
-    overrideAccess: false,
-    pagination: false,
-    req: args.req,
-    sort: '-createdAt',
-    user: args.req.user,
-    where: {
-      and: [
-        {
-          user: {
-            equals: userId,
-          },
-        },
-        {
-          readAt: {
-            exists: false,
-          },
-        },
-      ],
-    },
-  })
+  let updated = 0
 
-  await Promise.all(
-    unread.docs.map((notification) =>
-      args.req.payload.update({
-        collection: 'user-notifications',
-        data: {
-          readAt: new Date().toISOString(),
-        },
-        id: notification.id,
-        overrideAccess: INTERNAL_ACCESS,
-        req: args.req,
-      }),
-    ),
-  )
+  while (true) {
+    const unread = await args.req.payload.find({
+      collection: 'user-notifications',
+      depth: 0,
+      limit: maxNotificationLimit,
+      overrideAccess: false,
+      pagination: false,
+      req: args.req,
+      sort: '-createdAt',
+      user: args.req.user,
+      where: {
+        and: [
+          {
+            user: {
+              equals: userId,
+            },
+          },
+          {
+            readAt: {
+              exists: false,
+            },
+          },
+        ],
+      },
+    })
+
+    if (!unread.docs.length) break
+
+    const readAt = new Date().toISOString()
+    await Promise.all(
+      unread.docs.map((notification) =>
+        args.req.payload.update({
+          collection: 'user-notifications',
+          data: {
+            readAt,
+          },
+          id: notification.id,
+          overrideAccess: INTERNAL_ACCESS,
+          req: args.req,
+        }),
+      ),
+    )
+
+    updated += unread.docs.length
+    if (unread.docs.length < maxNotificationLimit) break
+  }
 
   return {
-    updated: unread.docs.length,
+    updated,
   }
 }
 

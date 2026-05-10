@@ -20,11 +20,20 @@ Completed during the addendum:
 - Removed confirmed stale `GenerateForm` and `personal-center-legacy` files after reference checks.
 - Added `docs/PROJECT_USER_MANUAL.md` as the current Chinese owner/operator usage manual.
 
+Completed after the addendum:
+
+- Removed the remaining `/model-detail` UI-lab preview and related-model placeholder behavior from the formal data path.
+- Hardened profile media public visibility so avatar/banner upload routes derive `public_access` from server-side profile visibility instead of client input.
+- Hardened auth compatibility redirects against protocol-relative paths.
+- Updated notifications read-all behavior to process all unread records, not only the first top-navigation page.
+- Removed production account-center demo row and fake credit fallbacks; empty data now renders as empty records with zero metrics.
+- Expanded blog detail resilience and rich-text node rendering without using raw HTML injection.
+- Changed pricing card containers from clipped fixed heights to minimum heights for backend-managed plan copy.
+
 Open P1 discussion items from the addendum:
 
 - Direct Payload REST create ownership for owner/user-scoped collections needs a design pass before implementation.
 - User-writable identity and visibility fields need direct REST boundary tests and likely server-assignment rules.
-- `/model-detail` should stop using fake/static fallback behavior for missing or invalid IDs after product behavior is confirmed.
 
 ## Audit Date
 
@@ -123,7 +132,6 @@ The third highest-risk area was production route cleanup. `/test` and `/formal-c
 
 - P1: Keep UI-lab account variants out of production; local-only design review routes must use `notFound()` in production.
 - P1: Keep Model Detail and Workbench current-model-first: one visible `ModelViewer`, one selected GLB request, visible-range thumbnails only.
-- P2: Replace remaining demo/static account copy with data adapters or remove it from production navigation.
 - P2: Add copy-action error handling where `navigator.clipboard.writeText` is used.
 
 ## Payload Backend Audit

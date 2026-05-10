@@ -1,8 +1,9 @@
 import { redirect } from 'next/navigation'
 
+import { getSafeInternalRedirect } from '@/lib/safeRedirect'
+
 const safeRedirect = (value?: null | string) => {
-  if (!value || typeof value !== 'string') return '/account?section=tasks'
-  return value.startsWith('/') ? value : '/account?section=tasks'
+  return getSafeInternalRedirect(value, '/account?section=tasks')
 }
 
 export default async function LoginPage({

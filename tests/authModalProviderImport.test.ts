@@ -9,6 +9,7 @@ const authModalProviderPath = path.join(rootDir, 'src', 'components', 'auth', 'A
 const authFlowCardPath = path.join(rootDir, 'src', 'components', 'auth', 'AuthFlowCard.tsx')
 const authModalStageCssPath = path.join(rootDir, 'src', 'components', 'auth', 'AuthModalStage.module.css')
 const resetPasswordFormPath = path.join(rootDir, 'src', 'app', '(frontend)', '_components', 'ResetPasswordForm.tsx')
+const loginPagePath = path.join(rootDir, 'src', 'app', '(frontend)', 'login', 'page.tsx')
 const homePageCssPath = path.join(rootDir, 'src', 'app', '(frontend)', '_home', 'homePage.module.css')
 const modelDetailNativePath = path.join(rootDir, 'src', 'app', '(frontend)', 'model-detail', 'ModelDetailNative.tsx')
 const modelDetailCssPath = path.join(rootDir, 'src', 'app', '(frontend)', 'model-detail', 'page.module.css')
@@ -76,6 +77,18 @@ test('AuthFlowCard keeps the forgot password success state in the auth modal flo
   assert.match(source, /password reset link/)
 })
 
+test('auth redirects reject protocol-relative external paths', () => {
+  const providerSource = readFileSync(authModalProviderPath, 'utf8')
+  const cardSource = readFileSync(authFlowCardPath, 'utf8')
+  const loginSource = readFileSync(loginPagePath, 'utf8')
+
+  assert.match(providerSource, /isSafeInternalRedirect/)
+  assert.match(providerSource, /getSafeInternalRedirect/)
+  assert.match(cardSource, /getSafeInternalRedirect/)
+  assert.match(loginSource, /getSafeInternalRedirect/)
+  assert.doesNotMatch(providerSource, /redirectTo\?\.startsWith\('\/'\)/)
+})
+
 test('ResetPasswordForm delegates to the shared account auth reset flow', () => {
   const resetPasswordFormSource = readFileSync(resetPasswordFormPath, 'utf8')
   const authFlowCardSource = readFileSync(authFlowCardPath, 'utf8')
@@ -119,6 +132,13 @@ test('Model Detail reads owner-private models through access-controlled Local AP
   assert.match(dataSource, /overrideAccess:\s*false/)
   assert.match(dataSource, /\.\.\.\(currentUser \? \{ user: currentUser \} : \{\}\)/)
   assert.match(dataSource, /commentsEnabled = model\.visibility === "public"/)
+  assert.doesNotMatch(dataSource, /fallbackPreview/)
+  assert.doesNotMatch(dataSource, /fallbackSidePreview/)
+  assert.doesNotMatch(dataSource, /email\.split/)
+  assert.doesNotMatch(dataSource, /email:\s*true/)
+  assert.match(dataSource, /if \(!previewURL\) return null/)
+  assert.match(nativeSource, /side-empty-state/)
+  assert.doesNotMatch(nativeSource, /detail-side-img-1\.png/)
   assert.match(nativeSource, /Comments are available after this model is public\./)
 })
 

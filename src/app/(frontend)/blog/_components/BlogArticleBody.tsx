@@ -6,14 +6,21 @@ import styles from '../page.module.css'
 type LexicalNode = {
   children?: LexicalNode[]
   direction?: string | null
+  fields?: Record<string, unknown>
   format?: number | string
   indent?: number
   listType?: string
+  relationTo?: string
   tag?: string
   text?: string
   type?: string
   url?: string
+  value?: unknown
   version?: number
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 }
 
 function isSafeHref(value: unknown) {
@@ -46,6 +53,25 @@ function renderTextNode(node: LexicalNode, key: string) {
   return <span key={key}>{content}</span>
 }
 
+function getUploadImage(node: LexicalNode) {
+  const value = isRecord(node.value) ? node.value : isRecord(node.fields) ? node.fields : null
+  if (!value) return null
+
+  const src = typeof value.thumbnailURL === 'string' && value.thumbnailURL ? value.thumbnailURL : typeof value.url === 'string' && value.url ? value.url : null
+  if (!src || !isSafeHref(src)) return null
+
+  return {
+    alt: typeof value.alt === 'string' && value.alt.trim() ? value.alt.trim() : 'Article image',
+    src,
+  }
+}
+
+function getCodeText(node: LexicalNode) {
+  if (typeof node.text === 'string') return node.text
+  if (!Array.isArray(node.children)) return ''
+  return node.children.map((child) => child.text || '').join('\n')
+}
+
 function renderNode(node: LexicalNode, key: string): ReactNode {
   if (!node || typeof node !== 'object') return null
 
@@ -53,8 +79,32 @@ function renderNode(node: LexicalNode, key: string): ReactNode {
   if (node.type === 'linebreak') return <br key={key} />
 
   if (node.type === 'heading') {
-    const Tag = node.tag === 'h3' ? 'h3' : 'h2'
+    const Tag = node.tag === 'h4' ? 'h4' : node.tag === 'h3' ? 'h3' : 'h2'
     return <Tag key={key}>{renderChildren(node.children, key)}</Tag>
+  }
+
+  if (node.type === 'horizontalrule' || node.type === 'horizontal-rule') {
+    return <hr key={key} />
+  }
+
+  if (node.type === 'code' || node.type === 'codeblock') {
+    return (
+      <pre key={key}>
+        <code>{getCodeText(node)}</code>
+      </pre>
+    )
+  }
+
+  if (node.type === 'upload') {
+    const image = getUploadImage(node)
+    if (!image) return null
+
+    return (
+      <figure key={key}>
+        <img alt={image.alt} loading="lazy" src={image.src} />
+        {image.alt !== 'Article image' ? <figcaption>{image.alt}</figcaption> : null}
+      </figure>
+    )
   }
 
   if (node.type === 'quote') {

@@ -69,6 +69,12 @@ test("account center is promoted to the default account route", () => {
   assert.match(source, /export function AccountCenter/);
   assert.match(source, /AccountCenterData/);
   assert.match(source, /accountData/);
+  assert.match(source, /emptyRowsBySection/);
+  assert.doesNotMatch(source, /fallbackRowsBySection/);
+  assert.doesNotMatch(source, /Dragon rider/);
+  assert.doesNotMatch(source, /Northern Watcher/);
+  assert.doesNotMatch(source, /Lava Colossus/);
+  assert.doesNotMatch(source, /\b1280\b/);
   assert.doesNotMatch(source, /OrangeMediumActionButton/);
   assert.doesNotMatch(source, /PurpleMediumActionButton/);
   assert.doesNotMatch(source, /mediumActionSlot/);
@@ -94,6 +100,7 @@ test("account center is promoted to the default account route", () => {
   assert.match(source, /router\.push\("\/pricing"\)/);
   assert.match(source, /downloadCsv/);
   assert.match(source, /AuthModalStage/);
+  assert.doesNotMatch(source, /publicAccess:/);
   assert.match(accountRouteSource, /@\/components\/account\/account-center/);
   assert.match(accountRouteSource, /AccountCenter/);
   assert.doesNotMatch(accountRouteSource, /PersonalCenterTest/);
@@ -173,8 +180,12 @@ test("profile media upload creates media only after Supabase upload completion",
   assert.doesNotMatch(uploadURLSource, /url:\s*publicUrl/);
   assert.match(uploadURLSource, /mediaId:\s*media\.id/);
   assert.match(uploadURLSource, /INSERT INTO media/);
+  assert.match(uploadURLSource, /getProfileMediaPublicAccess\(user\)/);
+  assert.doesNotMatch(uploadURLSource, /body\.publicAccess/);
   assert.match(completeSource, /exists\(objectPath\)/);
   assert.match(completeSource, /UPDATE media/);
+  assert.match(completeSource, /getProfileMediaPublicAccess\(user\)/);
+  assert.doesNotMatch(completeSource, /body\.publicAccess/);
   assert.match(completeSource, /url\s*=\s*\$\d+/);
   assert.match(completeSource, /width\s*=\s*\$\d+/);
   assert.match(completeSource, /height\s*=\s*\$\d+/);

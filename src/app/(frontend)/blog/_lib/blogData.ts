@@ -321,48 +321,52 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPostDetailDat
   const normalizedSlug = typeof slug === 'string' ? slug.trim() : ''
   if (!normalizedSlug) return null
 
-  const payload = await getCachedPayload()
-  const result = await payload.find({
-    collection: 'posts',
-    depth: 1,
-    fallbackLocale: 'en' as never,
-    limit: 1,
-    locale: 'en' as never,
-    overrideAccess: false,
-    pagination: false,
-    where: buildPublicPostsWhere({
-      slug: normalizedSlug,
-    }),
-  })
+  try {
+    const payload = await getCachedPayload()
+    const result = await payload.find({
+      collection: 'posts',
+      depth: 1,
+      fallbackLocale: 'en' as never,
+      limit: 1,
+      locale: 'en' as never,
+      overrideAccess: false,
+      pagination: false,
+      where: buildPublicPostsWhere({
+        slug: normalizedSlug,
+      }),
+    })
 
-  const post = result.docs[0] as Post | undefined
-  if (!post) return null
+    const post = result.docs[0] as Post | undefined
+    if (!post) return null
 
-  const card = normalizePostCard(post)
-  const relatedPosts = await getRelatedBlogPosts(card)
+    const card = normalizePostCard(post)
+    const relatedPosts = await getRelatedBlogPosts(card)
 
-  return {
-    ...card,
-    content: post.content,
-    jsonLd: {
-      '@context': 'https://schema.org',
-      '@type': 'Article',
-      author: {
-        '@type': 'Organization',
-        name: 'Thorns Tavern',
+    return {
+      ...card,
+      content: post.content,
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'Article',
+        author: {
+          '@type': 'Organization',
+          name: 'Thorns Tavern',
+        },
+        dateModified: post.updatedAt,
+        datePublished: getPublishedTime(post),
+        description: card.excerpt,
+        headline: card.title,
+        image: card.coverSrc || undefined,
+        publisher: {
+          '@type': 'Organization',
+          name: 'Thorns Tavern',
+        },
       },
-      dateModified: post.updatedAt,
-      datePublished: getPublishedTime(post),
-      description: card.excerpt,
-      headline: card.title,
-      image: card.coverSrc || undefined,
-      publisher: {
-        '@type': 'Organization',
-        name: 'Thorns Tavern',
-      },
-    },
-    relatedPosts,
-    updatedAt: post.updatedAt,
-    videoUrl: typeof post.videoUrl === 'string' && post.videoUrl.trim() ? post.videoUrl.trim() : null,
+      relatedPosts,
+      updatedAt: post.updatedAt,
+      videoUrl: typeof post.videoUrl === 'string' && post.videoUrl.trim() ? post.videoUrl.trim() : null,
+    }
+  } catch {
+    return null
   }
 }

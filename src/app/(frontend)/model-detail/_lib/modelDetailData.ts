@@ -19,7 +19,6 @@ type OwnerLike = {
     | (ImageLike & { publicAccess?: null | boolean; purpose?: null | string });
   bio?: null | string;
   displayName?: null | string;
-  email?: null | string;
   followersCount?: null | number;
   followingCount?: null | number;
   fullName?: null | string;
@@ -121,9 +120,6 @@ export type ModelDetailData = {
   visibilityLabel: string;
 };
 
-const fallbackPreview = "/ui-lab/model-detail-uicut/images/detail.png";
-const fallbackSidePreview =
-  "/ui-lab/model-detail-uicut/images/detail-side-img-1.png";
 const sideModelLimit = 24;
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
@@ -260,9 +256,9 @@ const getOwnerName = (owner: null | OwnerLike | undefined) => {
 
   const displayName = normalizeText(owner.displayName);
   const fullName = normalizeText(owner.fullName);
-  const email = normalizeText(owner.email);
+  const ownerId = getRelationId(owner.id);
 
-  return displayName || fullName || email?.split("@")[0] || "Creator";
+  return displayName || fullName || (ownerId ? `Creator ${ownerId}` : "Creator");
 };
 
 const isStaffUser = (user: CurrentUser | null | undefined) => {
@@ -323,7 +319,6 @@ async function getPublicOwner(
               avatar: true,
               bio: true,
               displayName: true,
-              email: true,
               followersCount: true,
               followingCount: true,
               fullName: true,
@@ -419,9 +414,15 @@ async function getSideModels(
   });
 
   const docs = result.docs as ModelLike[];
-  return Promise.all(
+  const mappedModels = await Promise.all(
     docs.map(async (item) => {
       const downloadCredits = getDownloadCredits(item, policy);
+      const imageSrc = await resolveMediaAccessURL(
+        payload,
+        getModelPreviewURL(item),
+      );
+
+      if (!imageSrc) return null;
 
       return {
         commentsCount: Number(item.commentsCount || 0),
@@ -430,9 +431,7 @@ async function getSideModels(
         downloadCreditsLabel: formatCredits(downloadCredits),
         href: `/model-detail?id=${encodeURIComponent(String(item.id))}`,
         id: String(item.id),
-        imageSrc:
-          (await resolveMediaAccessURL(payload, getModelPreviewURL(item))) ||
-          fallbackSidePreview,
+        imageSrc,
         printReady: item.printReady === true,
         tags: getTags(item),
         title: normalizeText(item.title) || `Model ${item.id}`,
@@ -440,6 +439,10 @@ async function getSideModels(
         viewerURL: buildModelViewerURL({ modelId: Number(item.id) }),
       };
     }),
+  );
+
+  return mappedModels.filter(
+    (item): item is ModelDetailSideModel => Boolean(item),
   );
 }
 
@@ -504,6 +507,8 @@ export async function getModelDetailData(args: {
   ]);
   const title = normalizeText(model.title) || `Model ${model.id}`;
   const downloadCredits = getDownloadCredits(model, policy);
+  if (!previewURL) return null;
+
   const dimensions = isRecord(model.dimensions) ? model.dimensions : null;
   const vertexLabel =
     typeof dimensions?.widthMm === "number" ||
@@ -550,7 +555,7 @@ export async function getModelDetailData(args: {
     inputPreviewSrc: previewURL,
     isOwnedByCurrentUser,
     likesLabel: compactCount(model.likesCount),
-    previewImages: [previewURL || fallbackPreview],
+    previewImages: [previewURL],
     printReady: model.printReady === true,
     printReadyLabel: model.printReady ? "Print Ready" : "Preview Only",
     sideModels,

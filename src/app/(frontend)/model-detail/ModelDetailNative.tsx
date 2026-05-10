@@ -31,7 +31,6 @@ const detailBottomActionButtonStyle = {
   width: 198,
 } as const;
 
-const sideModels = Array.from({ length: 5 }, (_, index) => index);
 const transparentImageSrc =
   "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
 const relatedModelColumns = 3;
@@ -183,7 +182,7 @@ export default function ModelDetailNative({
   const modelImages = activeModel.imageSrc
     ? [activeModel.imageSrc]
     : detail.previewImages;
-  const relatedModels = detail.sideModels.length > 0 ? detail.sideModels : null;
+  const relatedModels = detail.sideModels;
   const relatedScrollRef = useRef<HTMLDivElement | null>(null);
   const [slide, setSlide] = useState(0);
   const [visibleRelatedImageCount, setVisibleRelatedImageCount] = useState(
@@ -571,7 +570,7 @@ export default function ModelDetailNative({
           ) : null}
         </section>
 
-        {relatedModels ? (
+        {relatedModels.length > 0 ? (
           <section className={styles.mobileRelated} aria-label="Related models">
             <div className={styles.mobileSectionHeader}>
               <span>{detail.isOwnedByCurrentUser ? "My models" : "Creator models"}</span>
@@ -848,8 +847,8 @@ export default function ModelDetailNative({
                         : "CREATOR MODELS"}
                     </div>
                     <ul className="list2">
-                      {relatedModels
-                        ? relatedModels.map((item, index) => (
+                      {relatedModels.length > 0 ? (
+                        relatedModels.map((item, index) => (
                             <li key={item.id}>
                               <ButtonBoxFrame
                                 className="side-model-card-frame"
@@ -886,23 +885,11 @@ export default function ModelDetailNative({
                               </ButtonBoxFrame>
                             </li>
                           ))
-                        : sideModels.map((item) => (
-                            <li key={item}>
-                              <ButtonBoxFrame
-                                className="side-model-card-frame"
-                                contentClassName="side-model-card-content"
-                              >
-                                <a href="#" className="item">
-                                  <img
-                                    src={asset("detail-side-img-1.png")}
-                                    alt=""
-                                    decoding="async"
-                                    loading="lazy"
-                                  />
-                                </a>
-                              </ButtonBoxFrame>
-                            </li>
-                          ))}
+                      ) : (
+                        <li className="side-empty-state">
+                          No additional public models yet.
+                        </li>
+                      )}
                     </ul>
                   </div>
                 </div>

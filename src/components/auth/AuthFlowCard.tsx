@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { OrangeMediumActionButton, PurpleMediumActionButton } from '@/components/ui-lab/action-buttons'
 import { BorderComboFrame1 } from '@/components/ui-lab/border-combo-frame-1'
 import { registrationPrivacyMessage } from '@/lib/registrationPrivacy'
+import { getSafeInternalRedirect } from '@/lib/safeRedirect'
 
 import styles from '@/components/ui-lab/formal-auth-collections.module.css'
 
@@ -21,8 +22,7 @@ type AuthFlowCardProps = {
 type RegistrationVerificationMode = 'email-code' | 'email-link'
 
 const safeRedirect = (value?: null | string) => {
-  if (!value || typeof value !== 'string') return '/generate'
-  return value.startsWith('/') ? value : '/generate'
+  return getSafeInternalRedirect(value, '/generate')
 }
 
 function EyeButton({ onClick, visible }: { onClick: () => void; visible: boolean }) {

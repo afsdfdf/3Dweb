@@ -4,6 +4,8 @@ import type { ReactNode } from 'react'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 
+import { getSafeInternalRedirect, isSafeInternalRedirect } from '@/lib/safeRedirect'
+
 type AuthModalMode = 'forgot' | 'login' | 'register'
 
 type AuthModalContextValue = {
@@ -22,7 +24,10 @@ function openAuthCompatibilityRoute(mode: AuthModalMode = 'login', redirectTo?: 
 
   const pathname = mode === 'register' ? '/register' : mode === 'forgot' ? '/forgot-password' : '/login'
   const url = new URL(pathname, window.location.origin)
-  const safeRedirect = redirectTo?.startsWith('/') ? redirectTo : `${window.location.pathname}${window.location.search}`
+  const safeRedirect = getSafeInternalRedirect(
+    redirectTo,
+    `${window.location.pathname}${window.location.search}`,
+  )
   if (safeRedirect && safeRedirect !== pathname) {
     url.searchParams.set('redirect', safeRedirect)
   }
@@ -61,7 +66,7 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
     if (authMode === 'login' || authMode === 'register' || authMode === 'forgot') {
       const nextRedirect = params.get('redirect')
       openAuthModal(authMode, {
-        redirectTo: nextRedirect?.startsWith('/') ? nextRedirect : null,
+        redirectTo: isSafeInternalRedirect(nextRedirect) ? nextRedirect : null,
       })
       return
     }

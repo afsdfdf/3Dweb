@@ -101,114 +101,14 @@ type AccountCenterProps = {
   };
 };
 
-const fallbackRowsBySection: Record<
+const emptyRowsBySection: Record<
   Exclude<SectionId, "overview" | "settings">,
   RecordRow[]
 > = {
-  billing: [
-    {
-      amount: "-120",
-      id: "BIL-1008",
-      item: "Dragon rider generation",
-      status: "Debited",
-      time: "2026.04.29 18:42",
-      type: "Credits",
-    },
-    {
-      amount: "$48.00",
-      id: "BIL-1007",
-      item: "Northern Watcher print",
-      status: "Captured",
-      time: "2026.04.30 10:13",
-      type: "Payment",
-    },
-    {
-      amount: "+500",
-      id: "BIL-1006",
-      item: "Credit refill pack",
-      status: "Posted",
-      time: "2026.04.27 12:18",
-      type: "Recharge",
-    },
-  ],
-  models: [
-    {
-      amount: "-",
-      id: "MD-204",
-      item: "Northern Watcher",
-      status: "Public",
-      time: "2026.04.29 20:12",
-      type: "Generated",
-    },
-    {
-      amount: "-",
-      id: "MD-203",
-      item: "Lava Colossus",
-      status: "Private",
-      time: "2026.04.28 16:05",
-      type: "Review",
-    },
-    {
-      amount: "-",
-      id: "MD-202",
-      item: "Mithril Archer",
-      status: "Public",
-      time: "2026.04.26 11:44",
-      type: "Printable",
-    },
-  ],
-  orders: [
-    {
-      amount: "$48.00",
-      id: "OR-311",
-      item: "Northern Watcher print",
-      status: "In production",
-      time: "2026.04.30 10:12",
-      type: "Print order",
-    },
-    {
-      amount: "$16.00",
-      id: "OR-309",
-      item: "Model file download",
-      status: "Complete",
-      time: "2026.04.28 17:45",
-      type: "Digital order",
-    },
-    {
-      amount: "$72.00",
-      id: "OR-305",
-      item: "Lava Colossus print",
-      status: "Awaiting payment",
-      time: "2026.04.26 13:28",
-      type: "Print order",
-    },
-  ],
-  tasks: [
-    {
-      amount: "-120",
-      id: "TSK-442",
-      item: "Dragon rider generation",
-      status: "Succeeded",
-      time: "2026.04.29 18:42",
-      type: "Text to model",
-    },
-    {
-      amount: "-80",
-      id: "TSK-438",
-      item: "Mithril Archer cleanup",
-      status: "Processing",
-      time: "2026.04.28 16:05",
-      type: "Refine",
-    },
-    {
-      amount: "0",
-      id: "TSK-431",
-      item: "Lava Colossus preview",
-      status: "Queued",
-      time: "2026.04.26 11:44",
-      type: "Preview",
-    },
-  ],
+  billing: [],
+  models: [],
+  orders: [],
+  tasks: [],
 };
 
 const titleBySection: Record<SectionId, string> = {
@@ -299,30 +199,30 @@ export function AccountCenter({
     profileData.creditsBalance ??
     navUser?.creditsBalance ??
     navUser?.credits ??
-    1280;
+    0;
   const formattedCredits = formatNumber(creditsBalance);
   const accountMetrics = accountData?.metrics ?? {
-    activeOrders: 3,
-    activeTasks: 4,
-    billingCount: fallbackRowsBySection.billing.length,
-    modelCount: 12,
-    orderCount: 8,
-    taskCount: 4,
+    activeOrders: 0,
+    activeTasks: 0,
+    billingCount: 0,
+    modelCount: 0,
+    orderCount: 0,
+    taskCount: 0,
   };
   const rowsBySection = useMemo(
     () => ({
       billing: accountData?.rows
         ? (accountData.rows.billing ?? [])
-        : fallbackRowsBySection.billing,
+        : emptyRowsBySection.billing,
       models: accountData?.rows
         ? (accountData.rows.models ?? [])
-        : fallbackRowsBySection.models,
+        : emptyRowsBySection.models,
       orders: accountData?.rows
         ? (accountData.rows.orders ?? [])
-        : fallbackRowsBySection.orders,
+        : emptyRowsBySection.orders,
       tasks: accountData?.rows
         ? (accountData.rows.tasks ?? [])
-        : fallbackRowsBySection.tasks,
+        : emptyRowsBySection.tasks,
     }),
     [accountData?.rows],
   );
@@ -640,7 +540,6 @@ export function AccountCenter({
           contentType: file.type || "application/octet-stream",
           filename: file.name || "profile-media",
           purpose,
-          publicAccess: profileData.profileVisibility === "public",
           size: file.size,
         }),
         credentials: "include",
@@ -676,7 +575,6 @@ export function AccountCenter({
           filename: file.name || "profile-media",
           mediaId: Number(config.mediaId),
           path: config.path,
-          publicAccess: profileData.profileVisibility === "public",
           purpose,
           size: file.size,
         }),

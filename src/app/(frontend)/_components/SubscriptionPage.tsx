@@ -353,7 +353,7 @@ export function SubscriptionPage(props: SubscriptionPageProps) {
         <section className="mx-auto max-w-[1600px] px-4 py-4 sm:px-6">
           <div className="grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)]">
             <BorderComboFrame2Variant className="min-h-[396px] bg-[#1c1c20]" style={{ pointerEvents: 'auto' }}>
-              <div className="flex h-[404px] flex-col gap-4 p-1">
+              <div className="flex min-h-[404px] flex-col gap-4 p-1">
                 <p className="text-xs uppercase tracking-[0.24em] text-[#8f7a4a]">Current subscription</p>
                 <h2 className="text-3xl font-semibold tracking-tight text-[#f1e2bc]">{currentPlan}</h2>
                 <FreePlanSummary />
@@ -382,7 +382,7 @@ export function SubscriptionPage(props: SubscriptionPageProps) {
 
                 return (
                   <BorderComboFrame1 className="min-h-[500px] bg-[#1c1c20]" key={plan.key} style={{ pointerEvents: 'auto' }}>
-                    <article className="flex h-[432px] flex-col gap-3 p-1">
+                    <article className="flex min-h-[432px] flex-col gap-3 p-1">
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="text-xs uppercase tracking-[0.24em] text-[#8f7a4a]">{plan.shortLabel}</p>
@@ -397,7 +397,7 @@ export function SubscriptionPage(props: SubscriptionPageProps) {
                         <p className="mt-1 text-2xl font-semibold tracking-tight text-[#f0d188]">{plan.creditsPerMonth} credits</p>
                       </div>
                       <BillingComparison plan={plan} />
-                      <ul className="grid h-[90px] content-start gap-2 overflow-hidden text-sm leading-6 text-[#9b9da5]">
+                      <ul className="grid min-h-[90px] content-start gap-2 text-sm leading-6 text-[#9b9da5]">
                         {plan.features.map((feature) => (
                           <li key={feature}>{feature}</li>
                         ))}

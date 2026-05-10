@@ -52,6 +52,8 @@ test('payload registers notification collection and account endpoints', () => {
   assert.match(serviceSource, /overrideAccess:\s*false/)
   assert.match(serviceSource, /sourceKey/)
   assert.match(serviceSource, /createGenerationTaskNotification/)
+  assert.match(serviceSource, /while \(true\)/)
+  assert.match(serviceSource, /updated \+= unread\.docs\.length/)
 })
 
 test('top navigation bell uses real notification APIs instead of static badge data', () => {
@@ -63,6 +65,9 @@ test('top navigation bell uses real notification APIs instead of static badge da
   assert.match(source, /\/api\/account\/notifications\?limit=5/)
   assert.match(source, /\/api\/account\/notifications\/read-all/)
   assert.match(source, /NotificationBellButton authenticated/)
+  assert.match(source, /aria-label="Orders"/)
+  assert.match(source, /href="\/account\?section=orders"/)
+  assert.doesNotMatch(source, /aria-label="Cart"/)
   assert.match(cssSource, /\.notificationPopover/)
   assert.match(cssSource, /\.notificationItemUnread/)
   assert.match(cssSource, /linear-gradient\(180deg, rgba\(31, 25, 19/)
