@@ -11,8 +11,8 @@
 .shell {
   box-sizing: border-box;
   margin: 0 auto;
-  max-width: 1480px;
-  padding: 32px 28px 48px;
+  max-width: var(--content-page-max-width);
+  padding: 32px var(--content-page-gutter) 52px;
   width: 100%;
 }
 
@@ -77,7 +77,7 @@
   letter-spacing: 0;
   line-height: 1.05;
   margin: 18px 0 0;
-  max-width: 860px;
+  max-width: var(--content-subject-max-width);
 }
 
 .heroCopy p,
@@ -92,7 +92,7 @@
 
 .heroCopy p {
   margin: 14px 0 0;
-  max-width: 820px;
+  max-width: var(--content-subject-max-width);
 }
 
 .metaPills {
@@ -356,7 +356,8 @@
 
 .notFoundPanel {
   margin: 80px auto 0;
-  max-width: 760px;
+  max-width: var(--content-subject-max-width);
+  width: 100%;
 }
 
 .notFoundPanel p {
@@ -383,6 +384,7 @@
 @media (max-width: 640px) {
   .shell {
     padding: 22px 18px 36px;
+    width: 100%;
   }
 
   .heroPanel,

@@ -20,7 +20,7 @@ const SLOT_CLASS_BY_VARIANT: Record<FeaturedItem['variant'], string> = {
 
 export function HomeFeaturedRail({ copy, items }: { copy?: HomeFeaturedRailCopy; items: FeaturedItem[] }) {
   return (
-    <section className="relative z-[2] mx-auto -mt-8 max-w-[1600px] bg-[linear-gradient(180deg,rgba(24,24,24,0)_0%,rgba(24,24,24,0.82)_42%,#181818_100%)] px-4 pt-2 sm:px-6">
+    <section className="relative z-[2] mx-auto -mt-8 max-w-[var(--public-page-max-width)] bg-[linear-gradient(180deg,rgba(24,24,24,0)_0%,rgba(24,24,24,0.82)_42%,#181818_100%)] px-4 pt-2 sm:px-[var(--public-page-gutter)]">
       <div className="relative overflow-hidden rounded-[18px]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img alt="" aria-hidden="true" className="pointer-events-none block h-auto w-full select-none" src={FRAME_SRC} />

@@ -45,6 +45,7 @@ import {
   getCreatorProfileEndpoint,
   listCurrentUserFollowsEndpoint,
   unfollowCreatorEndpoint,
+  updateAccountModelVisibilityEndpoint,
   updateAccountProfileEndpoint,
 } from './endpoints/account'
 import {
@@ -74,7 +75,7 @@ import {
   listModelCommentsEndpoint,
   moderateModelCommentEndpoint,
 } from './endpoints/modelComments'
-import { getModelDetailEndpoint } from './endpoints/modelDetails'
+import { getModelDetailEndpoint, listModelRelatedEndpoint } from './endpoints/modelDetails'
 import {
   favoriteModelEndpoint,
   getModelReactionStateEndpoint,
@@ -227,6 +228,7 @@ export default buildConfig({
     resendVerificationEndpoint,
     getAccountProfileEndpoint,
     updateAccountProfileEndpoint,
+    updateAccountModelVisibilityEndpoint,
     changeAccountPasswordEndpoint,
     getAccountDashboardEndpoint,
     listAccountNotificationsEndpoint,
@@ -243,6 +245,7 @@ export default buildConfig({
     deleteModelCommentEndpoint,
     moderateModelCommentEndpoint,
     getModelDetailEndpoint,
+    listModelRelatedEndpoint,
     getModelReactionStateEndpoint,
     likeModelEndpoint,
     unlikeModelEndpoint,

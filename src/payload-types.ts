@@ -2163,6 +2163,9 @@ export interface AiProviderSetting {
     | null;
   imageGeneration?: {
     defaultProvider?: ('gemini-official' | 'gemini-third-party' | 'openai-compatible') | null;
+    /**
+     * Long-running image providers can queue for several minutes under concurrency. Runtime raises values below 600 seconds to the stability floor.
+     */
     timeoutSeconds?: number | null;
     /**
      * Maximum image provider dispatches allowed at the same time. Environment fallback: IMAGE_GENERATION_MAX_CONCURRENT_TASKS.

@@ -11,11 +11,13 @@ import styles from './AuthModalStage.module.css'
 
 export function AuthModalStage({
   children,
+  clipContent = true,
   fitViewport = false,
   overlayHeight,
   topOffset = 0,
 }: {
   children: ReactNode
+  clipContent?: boolean
   fitViewport?: boolean
   overlayHeight?: string
   topOffset?: number
@@ -59,7 +61,7 @@ export function AuthModalStage({
   return (
     <div
       ref={stageRef}
-      className={styles.stage}
+      className={[styles.stage, clipContent ? '' : styles.stageUnclipped].join(' ')}
       style={
         {
           '--auth-modal-overlay-height': resolvedOverlayHeight,
@@ -67,7 +69,15 @@ export function AuthModalStage({
         } as CSSProperties
       }
     >
-      <div className={[styles.content, isAuthModalOpen ? styles.contentMuted : ''].join(' ')}>{children}</div>
+      <div
+        className={[
+          styles.content,
+          clipContent ? '' : styles.contentUnclipped,
+          isAuthModalOpen ? styles.contentMuted : '',
+        ].join(' ')}
+      >
+        {children}
+      </div>
 
       {isAuthModalOpen ? (
         <div

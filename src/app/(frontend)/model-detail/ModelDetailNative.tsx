@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
+import Link from "next/link";
 import {
   OrangeMediumActionButton,
   SourcePurpleMediumButton,
@@ -19,6 +20,7 @@ import { ModelDetailHeader } from "./ModelDetailHeader";
 import type {
   ModelDetailData,
   ModelDetailSideModel,
+  ModelDetailSideModelsPagination,
 } from "./_lib/modelDetailData";
 import styles from "./page.module.css";
 
@@ -31,11 +33,6 @@ const detailBottomActionButtonStyle = {
   width: 198,
 } as const;
 
-const transparentImageSrc =
-  "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
-const relatedModelColumns = 3;
-const relatedModelCardHeight = 222;
-const relatedModelInitialVisibleCount = 6;
 const commentLimit = 3;
 const mobileViewportMediaQuery = "(max-width: 767px)";
 
@@ -93,6 +90,17 @@ const getActiveModelFromSideModel = (
   title: item.title,
   updatedLabel: item.updatedLabel,
   viewerURL: item.viewerURL,
+});
+
+const normalizeSideModelPagination = (
+  value: ModelDetailSideModelsPagination,
+): ModelDetailSideModelsPagination => ({
+  hasNextPage: value.hasNextPage === true,
+  hasPrevPage: value.hasPrevPage === true,
+  limit: Math.max(1, Number(value.limit) || 12),
+  page: Math.max(1, Number(value.page) || 1),
+  totalDocs: Math.max(0, Number(value.totalDocs) || 0),
+  totalPages: Math.max(1, Number(value.totalPages) || 1),
 });
 
 const compactCountLabel = (value: number) => {
@@ -182,12 +190,17 @@ export default function ModelDetailNative({
   const modelImages = activeModel.imageSrc
     ? [activeModel.imageSrc]
     : detail.previewImages;
-  const relatedModels = detail.sideModels;
   const relatedScrollRef = useRef<HTMLDivElement | null>(null);
   const [slide, setSlide] = useState(0);
-  const [visibleRelatedImageCount, setVisibleRelatedImageCount] = useState(
-    relatedModelInitialVisibleCount,
+  const [relatedModels, setRelatedModels] = useState<ModelDetailSideModel[]>(
+    detail.sideModels,
   );
+  const [relatedPagination, setRelatedPagination] =
+    useState<ModelDetailSideModelsPagination>(() =>
+      normalizeSideModelPagination(detail.sideModelsPage),
+    );
+  const [relatedLoading, setRelatedLoading] = useState(false);
+  const [relatedError, setRelatedError] = useState<null | string>(null);
   const [showDownloadConfirm, setShowDownloadConfirm] = useState(false);
   const [downloadStatus, setDownloadStatus] = useState<null | string>(null);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -197,6 +210,7 @@ export default function ModelDetailNative({
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [commentSubmitting, setCommentSubmitting] = useState(false);
   const [commentTotal, setCommentTotal] = useState(activeModel.commentsCount);
+  const [viewCount, setViewCount] = useState(detail.viewCount);
   const isMobileViewport = useMobileDetailViewport();
   const shouldRenderMobileViewer = isMobileViewport === true;
   const shouldRenderDesktopViewer = isMobileViewport === false;
@@ -208,6 +222,7 @@ export default function ModelDetailNative({
     ? `Downloading this GLB file will cost ${activeModel.downloadCreditsLabel} points.`
     : "Download this GLB file for free.";
   const commentCountLabel = compactCountLabel(commentTotal);
+  const viewCountLabel = compactCountLabel(viewCount);
   const canPrintActiveModel =
     detail.isOwnedByCurrentUser && activeModel.printReady;
   const printActionLabel = canPrintActiveModel
@@ -264,27 +279,65 @@ export default function ModelDetailNative({
     }
   }, [activeModel.commentsCount, activeModel.commentsEnabled, activeModel.id]);
 
-  const updateVisibleRelatedImages = useCallback(() => {
-    const node = relatedScrollRef.current;
-    if (!node) {
-      setVisibleRelatedImageCount(relatedModelInitialVisibleCount);
-      return;
-    }
+  const loadRelatedPage = useCallback(
+    async (page: number) => {
+      const nextPage = Math.max(1, Math.min(page, relatedPagination.totalPages));
+      if (nextPage === relatedPagination.page || relatedLoading) return;
 
-    const visibleRows = Math.ceil(
-      (node.scrollTop + node.clientHeight) / relatedModelCardHeight,
-    );
-    const nextCount = Math.max(
-      relatedModelInitialVisibleCount,
-      (visibleRows + 1) * relatedModelColumns,
-    );
-    setVisibleRelatedImageCount((current) => Math.max(current, nextCount));
-  }, []);
+      setRelatedLoading(true);
+      setRelatedError(null);
+
+      try {
+        const response = await fetch(
+          `/api/platform/models/${activeModel.id}/related?page=${nextPage}&limit=${relatedPagination.limit}`,
+          { credentials: "same-origin" },
+        );
+        if (!response.ok) {
+          throw new Error(
+            await getResponseMessage(response, "Failed to load models."),
+          );
+        }
+
+        const payload = (await response.json()) as
+          ModelDetailSideModelsPagination & {
+            docs?: ModelDetailSideModel[];
+          };
+        const nextModels = Array.isArray(payload.docs) ? payload.docs : [];
+
+        setRelatedModels(nextModels);
+        setRelatedPagination(
+          normalizeSideModelPagination({
+            hasNextPage: payload.hasNextPage,
+            hasPrevPage: payload.hasPrevPage,
+            limit: payload.limit,
+            page: payload.page,
+            totalDocs: payload.totalDocs,
+            totalPages: payload.totalPages,
+          }),
+        );
+        relatedScrollRef.current?.scrollTo({ top: 0 });
+      } catch (error) {
+        setRelatedError(
+          error instanceof Error ? error.message : "Failed to load models.",
+        );
+      } finally {
+        setRelatedLoading(false);
+      }
+    },
+    [
+      activeModel.id,
+      relatedLoading,
+      relatedPagination.limit,
+      relatedPagination.page,
+      relatedPagination.totalPages,
+    ],
+  );
 
   useEffect(() => {
-    setVisibleRelatedImageCount(relatedModelInitialVisibleCount);
-    window.requestAnimationFrame(updateVisibleRelatedImages);
-  }, [activeModelId, updateVisibleRelatedImages]);
+    setRelatedModels(detail.sideModels);
+    setRelatedPagination(normalizeSideModelPagination(detail.sideModelsPage));
+    setRelatedError(null);
+  }, [detail.id, detail.sideModels, detail.sideModelsPage]);
 
   useEffect(() => {
     setCommentInput("");
@@ -292,7 +345,53 @@ export default function ModelDetailNative({
     void loadComments();
   }, [activeModel.commentsCount, activeModelId, loadComments]);
 
+  useEffect(() => {
+    setViewCount(detail.viewCount);
+  }, [detail.id, detail.viewCount]);
+
+  useEffect(() => {
+    if (!detail.commentsEnabled) return;
+
+    const controller = new AbortController();
+
+    void fetch("/api/engagement/view", {
+      body: JSON.stringify({
+        targetId: detail.id,
+        targetType: "model",
+      }),
+      credentials: "same-origin",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      method: "POST",
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return (await response.json()) as { counted?: unknown };
+      })
+      .then((payload) => {
+        if (payload?.counted === true) {
+          setViewCount((current) => current + 1);
+        }
+      })
+      .catch(() => {
+        // Engagement tracking is best-effort; the detail page should stay readable.
+      });
+
+    return () => controller.abort();
+  }, [detail.commentsEnabled, detail.id]);
+
+  const primeSideModelImage = (item: ModelDetailSideModel) => {
+    if (typeof window === "undefined" || !item.imageSrc) return;
+
+    const image = new Image();
+    image.decoding = "async";
+    image.src = item.imageSrc;
+  };
+
   const selectSideModel = (item: ModelDetailSideModel) => {
+    primeSideModelImage(item);
     const nextModel = getActiveModelFromSideModel(item);
     setActiveModel(nextModel);
     setSlide(0);
@@ -426,19 +525,27 @@ export default function ModelDetailNative({
   return (
     <main className={styles.pageRoot}>
       {activeModel.viewerURL ? (
-        <link
-          rel="preload"
-          href={activeModel.viewerURL}
-          as="fetch"
-          crossOrigin="anonymous"
-        />
+        <>
+          <link
+            rel="preload"
+            href="/three-draco/gltf/draco_wasm_wrapper.js"
+            as="script"
+          />
+          <link
+            rel="preload"
+            href="/three-draco/gltf/draco_decoder.wasm"
+            as="fetch"
+            type="application/wasm"
+          />
+          <link rel="preload" href={activeModel.viewerURL} as="fetch" />
+        </>
       ) : null}
       <div className={styles.mobileDetail}>
         <header className={styles.mobileHeader}>
-          <a href="/" aria-label="Thorns Tavern home">
+          <Link href="/" aria-label="Thorns Tavern home">
             <img alt="Thorns Tavern" src="/ui-lab/top-navigation/logo-wordmark.png" />
-          </a>
-          <a href="/workbench">Workbench</a>
+          </Link>
+          <Link href="/workbench">Workbench</Link>
         </header>
 
         <section className={styles.mobileHero}>
@@ -449,6 +556,16 @@ export default function ModelDetailNative({
               <span key={tag}># {tag}</span>
             ))}
           </div>
+          <form action="/showcase" className={styles.mobileSearchForm} method="get" role="search">
+            <input
+              aria-label="Search public models"
+              maxLength={80}
+              name="q"
+              placeholder="Search public models"
+              type="search"
+            />
+            <button type="submit">Search</button>
+          </form>
         </section>
 
         <section className={styles.mobilePreview} aria-label="Model preview">
@@ -502,9 +619,9 @@ export default function ModelDetailNative({
               modelTitle={activeModel.title}
             />
           ) : null}
-          <a href={activeModel.id ? `/workbench?reference=${activeModel.id}` : "/workbench"}>
+          <Link href={activeModel.id ? `/workbench?reference=${activeModel.id}` : "/workbench"}>
             Use in Workbench
-          </a>
+          </Link>
         </section>
         {downloadStatus ? <div className={styles.mobileStatus}>{downloadStatus}</div> : null}
 
@@ -574,13 +691,15 @@ export default function ModelDetailNative({
           <section className={styles.mobileRelated} aria-label="Related models">
             <div className={styles.mobileSectionHeader}>
               <span>{detail.isOwnedByCurrentUser ? "My models" : "Creator models"}</span>
-              <strong>{relatedModels.length}</strong>
+              <strong>{relatedPagination.totalDocs}</strong>
             </div>
             <div className={styles.mobileRelatedGrid}>
-              {relatedModels.slice(0, 6).map((item) => (
+              {relatedModels.map((item) => (
                 <a
                   href={item.href}
                   key={item.id}
+                  onMouseEnter={() => primeSideModelImage(item)}
+                  onFocus={() => primeSideModelImage(item)}
                   onClick={(event) => {
                     event.preventDefault();
                     if (item.id !== activeModelId) {
@@ -593,13 +712,35 @@ export default function ModelDetailNative({
                 </a>
               ))}
             </div>
+            {relatedPagination.totalPages > 1 ? (
+              <div className={styles.mobileRelatedPager}>
+                <button
+                  disabled={!relatedPagination.hasPrevPage || relatedLoading}
+                  onClick={() => void loadRelatedPage(relatedPagination.page - 1)}
+                  type="button"
+                >
+                  Prev
+                </button>
+                <span>
+                  {relatedPagination.page} / {relatedPagination.totalPages}
+                </span>
+                <button
+                  disabled={!relatedPagination.hasNextPage || relatedLoading}
+                  onClick={() => void loadRelatedPage(relatedPagination.page + 1)}
+                  type="button"
+                >
+                  Next
+                </button>
+              </div>
+            ) : null}
+            {relatedError ? <p className={styles.mobileStatus}>{relatedError}</p> : null}
           </section>
         ) : null}
       </div>
       <div className={styles.scaleViewport}>
-        <div className={styles.scaleStage}>
-          <ModelDetailHeader navUser={navUser} />
+        <ModelDetailHeader navUser={navUser} />
 
+        <div className={styles.scaleStage}>
           <AuthModalStage fitViewport topOffset={60}>
           <section className="uc-detail">
             <section className="detail-main">
@@ -611,6 +752,25 @@ export default function ModelDetailNative({
                     <span key={tag}># {tag}</span>
                   ))}
                 </div>
+                <form action="/showcase" className="search-box" method="get" role="search">
+                  <input
+                    aria-label="Search public models"
+                    className="uc-input"
+                    maxLength={80}
+                    name="q"
+                    placeholder="Search public models"
+                    type="search"
+                  />
+                  <img
+                    src={asset("icon-search-white.png")}
+                    className="icon"
+                    alt=""
+                    decoding="async"
+                  />
+                  <button className="uc-btn" type="submit">
+                    Search
+                  </button>
+                </form>
               </div>
               <ul className="detail-right-top">
                 <li>
@@ -644,8 +804,6 @@ export default function ModelDetailNative({
                           <div className="detail-model-stage">
                             <ModelViewer
                               className="detail-model-viewer"
-                              onError={updateVisibleRelatedImages}
-                              onReady={updateVisibleRelatedImages}
                               showGround={false}
                               showPlaceholderModel={false}
                               src={activeModel.viewerURL}
@@ -732,7 +890,7 @@ export default function ModelDetailNative({
                         className="uc-icon24"
                         decoding="async"
                       />
-                      {detail.viewLabel}
+                      {detail.authorProfileViewCountLabel}
                     </div>
                     <div className="item">
                       <img
@@ -741,7 +899,7 @@ export default function ModelDetailNative({
                         className="uc-icon24"
                         decoding="async"
                       />
-                      {detail.likesLabel}
+                      {detail.authorModelCountLabel}
                     </div>
                     <time>{detail.ageLabel}</time>
                   </div>
@@ -838,7 +996,6 @@ export default function ModelDetailNative({
                   ) : null}
                   <div
                     className="model-scroll"
-                    onScroll={updateVisibleRelatedImages}
                     ref={relatedScrollRef}
                   >
                     <div className="side-title">
@@ -848,7 +1005,7 @@ export default function ModelDetailNative({
                     </div>
                     <ul className="list2">
                       {relatedModels.length > 0 ? (
-                        relatedModels.map((item, index) => (
+                        relatedModels.map((item) => (
                             <li key={item.id}>
                               <ButtonBoxFrame
                                 className="side-model-card-frame"
@@ -862,6 +1019,8 @@ export default function ModelDetailNative({
                                   }
                                   className="item"
                                   href={item.href}
+                                  onFocus={() => primeSideModelImage(item)}
+                                  onMouseEnter={() => primeSideModelImage(item)}
                                   onClick={(event) => {
                                     event.preventDefault();
                                     if (item.id !== activeModelId) {
@@ -870,16 +1029,11 @@ export default function ModelDetailNative({
                                   }}
                                 >
                                   <img
-                                    src={
-                                      index < visibleRelatedImageCount ||
-                                      item.id === activeModelId
-                                        ? item.imageSrc
-                                        : transparentImageSrc
-                                    }
+                                    src={item.imageSrc}
                                     alt={item.title}
                                     decoding="async"
                                     fetchPriority="low"
-                                    loading="lazy"
+                                    loading="eager"
                                   />
                                 </a>
                               </ButtonBoxFrame>
@@ -891,27 +1045,36 @@ export default function ModelDetailNative({
                         </li>
                       )}
                     </ul>
+                    {relatedPagination.totalPages > 1 ? (
+                      <div className="side-model-pagination">
+                        <button
+                          aria-label="Previous model page"
+                          disabled={!relatedPagination.hasPrevPage || relatedLoading}
+                          onClick={() => void loadRelatedPage(relatedPagination.page - 1)}
+                          type="button"
+                        >
+                          PREV
+                        </button>
+                        <span>
+                          {relatedPagination.page} / {relatedPagination.totalPages}
+                        </span>
+                        <button
+                          aria-label="Next model page"
+                          disabled={!relatedPagination.hasNextPage || relatedLoading}
+                          onClick={() => void loadRelatedPage(relatedPagination.page + 1)}
+                          type="button"
+                        >
+                          NEXT
+                        </button>
+                      </div>
+                    ) : null}
+                    {relatedError ? (
+                      <div className="side-model-error">{relatedError}</div>
+                    ) : null}
                   </div>
                 </div>
               </ButtonBoxFrame>
             </section>
-
-            <div className="search-box">
-              <input
-                type="text"
-                className="uc-input"
-                placeholder="Please enter keywords"
-              />
-              <img
-                src={asset("icon-search-white.png")}
-                className="icon"
-                alt=""
-                decoding="async"
-              />
-              <a href="#" className="uc-btn">
-                Search
-              </a>
-            </div>
 
             <section className="detail-bottom">
               <div className="left">
@@ -934,7 +1097,7 @@ export default function ModelDetailNative({
                     alt=""
                     decoding="async"
                   />
-                  {detail.viewLabel}
+                  {viewCountLabel}
                 </a>
                 <a href="#" className="btn">
                   <img
@@ -1013,7 +1176,7 @@ export default function ModelDetailNative({
                   />
                 </div>
                 <div className="bd">
-                  <a
+                  <Link
                     href={
                       activeModel.id
                         ? `/workbench?reference=${activeModel.id}`
@@ -1022,16 +1185,16 @@ export default function ModelDetailNative({
                     className="item"
                   >
                     Use As Reference
-                  </a>
+                  </Link>
                   <a href="#" className="item">
                     Favorite Model
                   </a>
-                  <a
+                  <Link
                     href={activeModel.id ? `/model-detail?id=${activeModel.id}` : "#"}
                     className="item"
                   >
                     Open Detail
-                  </a>
+                  </Link>
                 </div>
               </div>
             </section>

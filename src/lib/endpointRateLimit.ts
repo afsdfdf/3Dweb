@@ -8,11 +8,13 @@ type RateLimitScope =
   | 'auth-login'
   | 'auth-register'
   | 'auth-reset-password'
+  | 'account-model-write'
   | 'account-notifications-write'
   | "ai-image-submit"
   | 'credit-checkout'
   | 'credit-sync'
   | 'engagement-view-write'
+  | 'media-upload-url'
   | 'social-comment-write'
   | 'social-follow-write'
   | 'social-reaction-write'
@@ -57,6 +59,12 @@ const scopeConfigs: Record<RateLimitScope, ScopeConfig> = {
     limitEnv: 'AUTH_RESET_PASSWORD_RATE_LIMIT_MAX',
     windowEnv: 'AUTH_RESET_PASSWORD_RATE_LIMIT_WINDOW_MS',
   },
+  'account-model-write': {
+    fallbackLimit: 60,
+    fallbackWindowMs: 10 * 60 * 1000,
+    limitEnv: 'ACCOUNT_MODEL_WRITE_RATE_LIMIT_MAX',
+    windowEnv: 'ACCOUNT_MODEL_WRITE_RATE_LIMIT_WINDOW_MS',
+  },
   'account-notifications-write': {
     fallbackLimit: 120,
     fallbackWindowMs: 10 * 60 * 1000,
@@ -64,7 +72,7 @@ const scopeConfigs: Record<RateLimitScope, ScopeConfig> = {
     windowEnv: 'ACCOUNT_NOTIFICATIONS_WRITE_RATE_LIMIT_WINDOW_MS',
   },
   "ai-image-submit": {
-    fallbackLimit: 6,
+    fallbackLimit: 60,
     fallbackWindowMs: 10 * 60 * 1000,
     limitEnv: 'AI_IMAGE_SUBMIT_RATE_LIMIT_MAX',
     windowEnv: 'AI_IMAGE_SUBMIT_RATE_LIMIT_WINDOW_MS',
@@ -86,6 +94,12 @@ const scopeConfigs: Record<RateLimitScope, ScopeConfig> = {
     fallbackWindowMs: 10 * 60 * 1000,
     limitEnv: 'ENGAGEMENT_VIEW_WRITE_RATE_LIMIT_MAX',
     windowEnv: 'ENGAGEMENT_VIEW_WRITE_RATE_LIMIT_WINDOW_MS',
+  },
+  'media-upload-url': {
+    fallbackLimit: 30,
+    fallbackWindowMs: 10 * 60 * 1000,
+    limitEnv: 'MEDIA_UPLOAD_URL_RATE_LIMIT_MAX',
+    windowEnv: 'MEDIA_UPLOAD_URL_RATE_LIMIT_WINDOW_MS',
   },
   'social-comment-write': {
     fallbackLimit: 12,
@@ -160,11 +174,13 @@ const scopeMessages: Record<RateLimitScope, string> = {
   'auth-login': 'Too many login attempts. Please try again later.',
   'auth-register': 'Too many registration attempts. Please try again later.',
   'auth-reset-password': 'Too many password reset attempts. Please try again later.',
+  'account-model-write': 'Too many model updates. Please try again later.',
   'account-notifications-write': 'Too many notification updates. Please try again later.',
   'ai-image-submit': 'Too many image generation requests. Please try again later.',
   'credit-checkout': 'Too many credit checkout attempts. Please try again later.',
   'credit-sync': 'Too many credit purchase sync requests. Please wait a moment and retry.',
   'engagement-view-write': 'Too many view events. Please try again later.',
+  'media-upload-url': 'Too many media upload requests. Please try again later.',
   'social-comment-write': 'Too many comment actions. Please try again later.',
   'social-follow-write': 'Too many follow actions. Please try again later.',
   'social-reaction-write': 'Too many reaction actions. Please try again later.',

@@ -145,7 +145,7 @@ export async function FormalInfoPage({ page }: FormalInfoPageProps) {
       user={user}
     >
       <div className="h-[1020px] overflow-y-auto bg-[radial-gradient(circle_at_50%_4%,rgba(155,112,45,0.16),transparent_24%),linear-gradient(180deg,#181818_0%,#222225_42%,#181818_100%)]">
-        <section className="mx-auto max-w-[1600px] px-4 pb-6 pt-10 sm:px-6">
+        <section className="mx-auto max-w-[var(--content-page-max-width)] px-[var(--content-page-gutter)] pb-6 pt-10">
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_440px]">
             <BorderComboFrame1
               className="min-h-[360px] bg-[radial-gradient(circle_at_12%_14%,rgba(240,209,136,0.12),transparent_22%),linear-gradient(135deg,rgba(13,13,15,0.96),rgba(47,45,48,0.9))] shadow-[0_20px_52px_rgba(0,0,0,0.36)]"
@@ -155,8 +155,8 @@ export async function FormalInfoPage({ page }: FormalInfoPageProps) {
                 <Badge className="w-fit border-[#8d5c25] bg-[#24211c] text-[#f1d99c]" variant="outline">
                   {page.heroEyebrow}
                 </Badge>
-                <h1 className="mt-5 max-w-4xl text-5xl font-semibold leading-tight tracking-tight text-[#f5ead0]">{page.heroTitle}</h1>
-                <p className="mt-5 max-w-3xl text-base leading-7 text-[#b9bac0]">{page.heroText}</p>
+                <h1 className="mt-5 max-w-[var(--content-subject-max-width)] text-5xl font-semibold leading-tight tracking-tight text-[#f5ead0]">{page.heroTitle}</h1>
+                <p className="mt-5 max-w-[var(--content-subject-max-width)] text-base leading-7 text-[#b9bac0]">{page.heroText}</p>
                 <div className="mt-6 flex flex-wrap gap-3">
                   <Button asChild>
                     <Link href={page.heroPrimaryCTA.href}>{page.heroPrimaryCTA.label}</Link>
@@ -192,7 +192,7 @@ export async function FormalInfoPage({ page }: FormalInfoPageProps) {
           </div>
         </section>
 
-        <section className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6">
+        <section className="mx-auto max-w-[var(--content-page-max-width)] px-[var(--content-page-gutter)] py-6">
           <div className="mb-5 flex items-end justify-between border-b border-[#403f46] pb-4">
             <div>
               <p className="text-xs uppercase tracking-[0.24em] text-[#8f7a4a]">{page.heroEyebrow}</p>
@@ -225,7 +225,7 @@ export async function FormalInfoPage({ page }: FormalInfoPageProps) {
         </section>
 
         {page.contactCards?.length ? (
-          <section className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6">
+          <section className="mx-auto max-w-[var(--content-page-max-width)] px-[var(--content-page-gutter)] py-6">
             <div className="mb-5 flex items-end justify-between border-b border-[#403f46] pb-4">
               <div>
                 <p className="text-xs uppercase tracking-[0.24em] text-[#8f7a4a]">Next steps</p>

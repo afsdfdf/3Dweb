@@ -10,12 +10,27 @@ import {
 import { __setModelDownloadEndpointTestHooks, modelDownloadEndpoint } from '../src/endpoints/modelDownloads.ts'
 import { __setStripeWebhookTestHooks, stripeWebhookEndpoint } from '../src/endpoints/stripeWebhook.ts'
 import { __setSubscriptionFlowTestHooks, syncStripeSubscriptionState } from '../src/lib/subscriptionFlow.ts'
+import { __setWorkbenchSourceAssetSecurityTestHooks } from '../src/lib/workbenchSourceAssets.ts'
 
 const createLogger = () => ({
   error: () => undefined,
   info: () => undefined,
   warn: () => undefined,
 })
+
+const setWorkbenchSourceAssetTestHooks = () => {
+  __setWorkbenchSourceAssetSecurityTestHooks({
+    getRuntimeStorageSettings: async () => ({
+      baseUrl: null,
+      bucket: 'media',
+      enabled: true,
+      prefix: 'media',
+      provider: 'supabase-storage',
+      signedDownloads: true,
+    }),
+    getSupabaseStoragePublicUrl: ({ bucket, path }) => `https://storage.example.com/${bucket}/${path}`,
+  })
+}
 
 test('Stripe webhook completes print-order payment flow', async () => {
   let finalizedSessionId = ''
@@ -372,6 +387,7 @@ test('image generation endpoint tolerates multiple source image assets by using 
   let forwardedParameterSnapshot: Record<string, unknown> | undefined
   let forwardedSourceImageAsset: Record<string, unknown> | undefined
 
+  setWorkbenchSourceAssetTestHooks()
   __setImageGenerationEndpointTestHooks({
     submitImageGeneration: async ({ parameterSnapshot, sourceImageAsset }) => {
       forwardedParameterSnapshot = parameterSnapshot
@@ -393,15 +409,15 @@ test('image generation endpoint tolerates multiple source image assets by using 
         parameterSnapshot: {
           workbench: {
             sourceImageAssets: [
-              { publicUrl: 'https://storage.example.com/a.png' },
-              { publicUrl: 'https://storage.example.com/b.png' },
+              { bucket: 'media', path: 'media/input/user-7/a.png', publicUrl: 'https://storage.example.com/media/media/input/user-7/a.png' },
+              { bucket: 'media', path: 'media/input/user-7/b.png', publicUrl: 'https://storage.example.com/media/media/input/user-7/b.png' },
             ],
           },
         },
         prompt: 'make a clean concept image',
         sourceImageAssets: [
-          { publicUrl: 'https://storage.example.com/a.png' },
-          { publicUrl: 'https://storage.example.com/b.png' },
+          { bucket: 'media', path: 'media/input/user-7/a.png', publicUrl: 'https://storage.example.com/media/media/input/user-7/a.png' },
+          { bucket: 'media', path: 'media/input/user-7/b.png', publicUrl: 'https://storage.example.com/media/media/input/user-7/b.png' },
         ],
       }),
       payload: {
@@ -414,17 +430,71 @@ test('image generation endpoint tolerates multiple source image assets by using 
     } as never)
 
     assert.equal(response.status, 202)
-    assert.equal(forwardedSourceImageAsset?.publicUrl, 'https://storage.example.com/a.png')
+    assert.equal(forwardedSourceImageAsset?.publicUrl, 'https://storage.example.com/media/media/input/user-7/a.png')
 
     const workbench = forwardedParameterSnapshot?.workbench as { sourceImageAssets?: unknown[] } | undefined
     assert.equal(workbench?.sourceImageAssets?.length, 1)
   } finally {
     __setImageGenerationEndpointTestHooks(null)
+    __setWorkbenchSourceAssetSecurityTestHooks(null)
   }
 })
 
 test('image generation endpoint forwards a single source image asset from the array payload', async () => {
   let forwardedSourceImageAsset: Record<string, unknown> | undefined
+
+  setWorkbenchSourceAssetTestHooks()
+  __setImageGenerationEndpointTestHooks({
+    submitImageGeneration: async ({ sourceImageAsset }) => {
+      forwardedSourceImageAsset = sourceImageAsset
+      return {
+        media: {
+          id: 3,
+          mimeType: 'image/png',
+          url: 'https://storage.example.com/result.png',
+        },
+        task: {
+          id: 9,
+        },
+      } as never
+    },
+  })
+
+  try {
+    const response = await submitImageGenerationEndpoint.handler({
+      headers: new Headers(),
+      json: async () => ({
+        inputMode: 'image',
+        prompt: 'make a clean concept image',
+        sourceImageAssets: [
+          {
+            bucket: 'media',
+            path: 'media/input/user-7/a.png',
+            publicUrl: 'https://storage.example.com/media/media/input/user-7/a.png',
+          },
+        ],
+      }),
+      payload: {
+        config: { cookiePrefix: 'payload' },
+        logger: createLogger(),
+      },
+      user: {
+        id: 7,
+      },
+    } as never)
+
+    assert.equal(response.status, 202)
+    assert.equal(forwardedSourceImageAsset?.bucket, 'media')
+    assert.equal(forwardedSourceImageAsset?.path, 'media/input/user-7/a.png')
+  } finally {
+    __setImageGenerationEndpointTestHooks(null)
+    __setWorkbenchSourceAssetSecurityTestHooks(null)
+  }
+})
+
+test('image generation endpoint canonicalizes media source assets after access checks', async () => {
+  let forwardedSourceImageAsset: Record<string, unknown> | undefined
+  let mediaReadUsedAccessControl = false
 
   __setImageGenerationEndpointTestHooks({
     submitImageGeneration: async ({ sourceImageAsset }) => {
@@ -448,7 +518,67 @@ test('image generation endpoint forwards a single source image asset from the ar
       json: async () => ({
         inputMode: 'image',
         prompt: 'make a clean concept image',
-        sourceImageAssets: [{ bucket: 'media', path: 'media/input/a.png', publicUrl: 'https://storage.example.com/a.png' }],
+        sourceImageAsset: {
+          mediaId: 44,
+          publicUrl: 'https://attacker.example.com/not-the-media.png',
+        },
+      }),
+      payload: {
+        config: { cookiePrefix: 'payload' },
+        findByID: async ({ collection, id, overrideAccess, user }: Record<string, unknown>) => {
+          assert.equal(collection, 'media')
+          assert.equal(id, 44)
+          assert.equal(overrideAccess, false)
+          assert.deepEqual(user, { id: 7 })
+          mediaReadUsedAccessControl = true
+          return {
+            filename: 'trusted-source.png',
+            id: 44,
+            mimeType: 'image/png',
+            url: 'https://storage.example.com/media/media/input/user-7/trusted-source.png',
+          }
+        },
+        logger: createLogger(),
+      },
+      user: {
+        id: 7,
+      },
+    } as never)
+
+    assert.equal(response.status, 202)
+    assert.equal(mediaReadUsedAccessControl, true)
+    assert.equal(forwardedSourceImageAsset?.mediaId, 44)
+    assert.equal(forwardedSourceImageAsset?.fileName, 'trusted-source.png')
+    assert.equal(forwardedSourceImageAsset?.publicUrl, 'https://storage.example.com/media/media/input/user-7/trusted-source.png')
+  } finally {
+    __setImageGenerationEndpointTestHooks(null)
+  }
+})
+
+test('image generation endpoint rejects source image assets outside the current user upload prefix', async () => {
+  let submitted = false
+
+  setWorkbenchSourceAssetTestHooks()
+  __setImageGenerationEndpointTestHooks({
+    submitImageGeneration: async () => {
+      submitted = true
+      return {} as never
+    },
+  })
+
+  try {
+    const response = await submitImageGenerationEndpoint.handler({
+      headers: new Headers(),
+      json: async () => ({
+        inputMode: 'image',
+        prompt: 'make a clean concept image',
+        sourceImageAssets: [
+          {
+            bucket: 'media',
+            path: 'media/input/user-8/a.png',
+            publicUrl: 'https://storage.example.com/media/media/input/user-8/a.png',
+          },
+        ],
       }),
       payload: {
         config: { cookiePrefix: 'payload' },
@@ -458,12 +588,14 @@ test('image generation endpoint forwards a single source image asset from the ar
         id: 7,
       },
     } as never)
+    const body = await response.json()
 
-    assert.equal(response.status, 202)
-    assert.equal(forwardedSourceImageAsset?.bucket, 'media')
-    assert.equal(forwardedSourceImageAsset?.path, 'media/input/a.png')
+    assert.equal(response.status, 400)
+    assert.equal(submitted, false)
+    assert.match(body.message, /current user/i)
   } finally {
     __setImageGenerationEndpointTestHooks(null)
+    __setWorkbenchSourceAssetSecurityTestHooks(null)
   }
 })
 
@@ -566,6 +698,290 @@ test('image generation endpoint returns a queued task and schedules provider wor
     assert.equal(dispatchedTaskId, 11)
   } finally {
     __setImageGenerationEndpointTestHooks(null)
+  }
+})
+
+test('image generation submit response does not wait for background concurrency refresh', async () => {
+  let releaseFindGlobal: (() => void) | null = null
+  let findGlobalStarted = false
+  let scheduledTask: (() => Promise<void>) | null = null
+
+  __setImageGenerationEndpointTestHooks({
+    runImageGenerationTask: async () =>
+      ({
+        media: null,
+        task: {
+          id: 22,
+        },
+      }) as never,
+    scheduleAfterResponse: (task) => {
+      scheduledTask = task
+    },
+    submitImageGeneration: async ({ dispatchProvider }) => {
+      assert.equal(dispatchProvider, false)
+      return {
+        media: null,
+        task: {
+          id: 22,
+          status: 'queued',
+          taskCode: 'IMG-ASYNC-SCHEDULE',
+        },
+      } as never
+    },
+  })
+
+  try {
+    const responsePromise = submitImageGenerationEndpoint.handler({
+      headers: new Headers(),
+      json: async () => ({
+        inputMode: 'text',
+        prompt: 'make a clean concept image',
+      }),
+      payload: {
+        config: { cookiePrefix: 'payload' },
+        findGlobal: async () => {
+          findGlobalStarted = true
+          await new Promise<void>((resolve) => {
+            releaseFindGlobal = resolve
+          })
+          return {
+            imageGeneration: {
+              maxConcurrentTasks: 20,
+            },
+          }
+        },
+        logger: createLogger(),
+      },
+      user: {
+        id: 7,
+      },
+    } as never)
+
+    const raceResult = await Promise.race([
+      responsePromise.then(() => 'responded'),
+      new Promise((resolve) => setTimeout(() => resolve('blocked'), 25)),
+    ])
+
+    assert.equal(raceResult, 'responded')
+    assert.equal(findGlobalStarted, true)
+    const response = await responsePromise
+    assert.equal(response.status, 202)
+    assert.ok(scheduledTask)
+  } finally {
+    releaseFindGlobal?.()
+    __setImageGenerationEndpointTestHooks(null)
+  }
+})
+
+test('image generation endpoint queues provider work above the configured concurrency limit', async () => {
+  const previousLimit = process.env.AI_IMAGE_SUBMIT_RATE_LIMIT_MAX
+  const previousWindow = process.env.AI_IMAGE_SUBMIT_RATE_LIMIT_WINDOW_MS
+  const previousWorkerStartInterval = process.env.IMAGE_GENERATION_WORKER_START_INTERVAL_MS
+  const scheduledTasks: Array<() => Promise<void>> = []
+  const releaseCallbacks: Array<() => void> = []
+  const runners: Array<Promise<void>> = []
+  const startedTaskIds: number[] = []
+  let activeWorkers = 0
+  let maxActiveWorkers = 0
+  let nextTaskId = 1000
+
+  process.env.AI_IMAGE_SUBMIT_RATE_LIMIT_MAX = '100'
+  process.env.AI_IMAGE_SUBMIT_RATE_LIMIT_WINDOW_MS = '60000'
+  process.env.IMAGE_GENERATION_WORKER_START_INTERVAL_MS = '0'
+
+  const releaseAll = () => {
+    while (releaseCallbacks.length > 0) {
+      releaseCallbacks.shift()?.()
+    }
+  }
+
+  __setImageGenerationEndpointTestHooks({
+    runImageGenerationTask: async ({ taskId }) => {
+      activeWorkers += 1
+      maxActiveWorkers = Math.max(maxActiveWorkers, activeWorkers)
+      startedTaskIds.push(taskId)
+
+      await new Promise<void>((resolve) => {
+        releaseCallbacks.push(resolve)
+      })
+
+      activeWorkers -= 1
+      return {
+        media: null,
+        task: {
+          id: taskId,
+        },
+      } as never
+    },
+    scheduleAfterResponse: (task) => {
+      scheduledTasks.push(task)
+    },
+    submitImageGeneration: async ({ dispatchProvider }) => {
+      assert.equal(dispatchProvider, false)
+      nextTaskId += 1
+      return {
+        media: null,
+        task: {
+          id: nextTaskId,
+          status: 'queued',
+          taskCode: `IMG-${nextTaskId}`,
+        },
+      } as never
+    },
+  })
+
+  try {
+    const payload = {
+      config: { cookiePrefix: 'payload' },
+      findGlobal: async () => ({
+        imageGeneration: {
+          maxConcurrentTasks: 20,
+        },
+      }),
+      logger: createLogger(),
+    }
+
+    const responses = await Promise.all(
+      Array.from({ length: 25 }, () =>
+        submitImageGenerationEndpoint.handler({
+          headers: new Headers(),
+          json: async () => ({
+            inputMode: 'text',
+            prompt: 'make a clean concept image',
+          }),
+          payload,
+          user: {
+            id: 700,
+          },
+        } as never),
+      ),
+    )
+
+    assert.deepEqual(
+      responses.map((response) => response.status),
+      Array.from({ length: 25 }, () => 202),
+    )
+    assert.equal(scheduledTasks.length, 25)
+
+    runners.push(...scheduledTasks.map((task) => task()))
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    assert.equal(startedTaskIds.length, 20)
+    assert.equal(activeWorkers, 20)
+    assert.equal(maxActiveWorkers, 20)
+
+    const firstReleaseBatch = releaseCallbacks.splice(0, 5)
+    firstReleaseBatch.forEach((release) => release())
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    assert.equal(startedTaskIds.length, 25)
+    assert.equal(maxActiveWorkers, 20)
+  } finally {
+    releaseAll()
+    await Promise.allSettled(runners)
+    __setImageGenerationEndpointTestHooks(null)
+
+    if (previousLimit === undefined) {
+      delete process.env.AI_IMAGE_SUBMIT_RATE_LIMIT_MAX
+    } else {
+      process.env.AI_IMAGE_SUBMIT_RATE_LIMIT_MAX = previousLimit
+    }
+
+    if (previousWindow === undefined) {
+      delete process.env.AI_IMAGE_SUBMIT_RATE_LIMIT_WINDOW_MS
+    } else {
+      process.env.AI_IMAGE_SUBMIT_RATE_LIMIT_WINDOW_MS = previousWindow
+    }
+
+    if (previousWorkerStartInterval === undefined) {
+      delete process.env.IMAGE_GENERATION_WORKER_START_INTERVAL_MS
+    } else {
+      process.env.IMAGE_GENERATION_WORKER_START_INTERVAL_MS = previousWorkerStartInterval
+    }
+  }
+})
+
+test('image generation scheduled worker locks expire so stale processing tasks can recover', async () => {
+  const previousScheduledTaskTtl = process.env.IMAGE_GENERATION_SCHEDULED_TASK_TTL_MS
+  const previousWorkerStartInterval = process.env.IMAGE_GENERATION_WORKER_START_INTERVAL_MS
+  const scheduledTasks: Array<() => Promise<void>> = []
+  const releaseCallbacks: Array<() => void> = []
+  let dispatchCount = 0
+
+  process.env.IMAGE_GENERATION_SCHEDULED_TASK_TTL_MS = '0'
+  process.env.IMAGE_GENERATION_WORKER_START_INTERVAL_MS = '0'
+
+  __setImageGenerationEndpointTestHooks({
+    runImageGenerationTask: async () => {
+      dispatchCount += 1
+      await new Promise<void>((resolve) => {
+        releaseCallbacks.push(resolve)
+      })
+      return {} as never
+    },
+    scheduleAfterResponse: (task) => {
+      scheduledTasks.push(task)
+    },
+  })
+
+  const makeReq = () =>
+    ({
+      headers: new Headers(),
+      payload: {
+        find: async () => ({
+          docs: [
+            {
+              id: 44,
+              callbackPayload: null,
+              parameterSnapshot: {
+                imageGeneration: {
+                  dispatchStartedAt: '2000-01-01T00:00:00.000Z',
+                },
+              },
+              status: 'processing',
+              user: 7,
+            },
+          ],
+        }),
+        logger: createLogger(),
+      },
+      routeParams: {
+        taskId: '44',
+      },
+      user: {
+        id: 7,
+      },
+    }) as never
+
+  try {
+    await syncImageGenerationEndpoint.handler(makeReq())
+    assert.equal(scheduledTasks.length, 1)
+    void scheduledTasks[0]?.()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    assert.equal(dispatchCount, 1)
+
+    await syncImageGenerationEndpoint.handler(makeReq())
+    assert.equal(scheduledTasks.length, 2)
+    void scheduledTasks[1]?.()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    assert.equal(dispatchCount, 2)
+  } finally {
+    while (releaseCallbacks.length > 0) {
+      releaseCallbacks.shift()?.()
+    }
+    __setImageGenerationEndpointTestHooks(null)
+
+    if (previousScheduledTaskTtl === undefined) {
+      delete process.env.IMAGE_GENERATION_SCHEDULED_TASK_TTL_MS
+    } else {
+      process.env.IMAGE_GENERATION_SCHEDULED_TASK_TTL_MS = previousScheduledTaskTtl
+    }
+
+    if (previousWorkerStartInterval === undefined) {
+      delete process.env.IMAGE_GENERATION_WORKER_START_INTERVAL_MS
+    } else {
+      process.env.IMAGE_GENERATION_WORKER_START_INTERVAL_MS = previousWorkerStartInterval
+    }
   }
 })
 

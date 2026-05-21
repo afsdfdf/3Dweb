@@ -4,6 +4,8 @@ import { chromium } from 'playwright'
 const baseURL = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://127.0.0.1:3000'
 const smokeModelId = Number(process.env.SMOKE_MODEL_ID || 20)
 const browserTimeoutMs = Number(process.env.SMOKE_BROWSER_TIMEOUT_MS || 60_000)
+const assetCheckTimeoutMs = Number(process.env.SMOKE_ASSET_CHECK_TIMEOUT_MS || 60_000)
+const assetCheckAttempts = Number(process.env.SMOKE_ASSET_CHECK_ATTEMPTS || 3)
 const edgeExecutablePaths = [
   'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
   'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe',
@@ -25,6 +27,28 @@ const checks = [
   { path: '/showcase', expected: [200] },
   { path: '/api/users/me', expected: [200, 401] },
 ]
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = assetCheckTimeoutMs) {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), timeoutMs)
+
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    })
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
+function getErrorMessage(error) {
+  return error instanceof Error ? `${error.name}: ${error.message}` : String(error)
+}
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
 
 function getInstalledEdgePath() {
   return edgeExecutablePaths.find((candidate) => existsSync(candidate)) || null
@@ -71,6 +95,82 @@ function visibleViewerState() {
   }
 }
 
+async function runViewerAssetRouteCheck() {
+  const endpoint = `${baseURL}/api/platform/models/${encodeURIComponent(String(smokeModelId))}/viewer?format=glb`
+
+  try {
+    const response = await fetchWithTimeout(endpoint, { redirect: 'manual' })
+    const location = response.headers.get('location')
+
+    if (response.status === 302 && location) {
+      let lastError = null
+
+      for (let attempt = 1; attempt <= assetCheckAttempts; attempt += 1) {
+        try {
+          const assetResponse = await fetchWithTimeout(location, {
+            headers: {
+              Range: 'bytes=0-0',
+            },
+            redirect: 'follow',
+          })
+          const contentLength = Number(assetResponse.headers.get('content-length') || 0)
+
+          if (contentLength > 0 && contentLength <= 1024) {
+            await assetResponse.arrayBuffer()
+          } else {
+            await assetResponse.body?.cancel()
+          }
+
+          return {
+            details: {
+              assetContentLength: contentLength,
+              assetStatus: assetResponse.status,
+              attempts: attempt,
+              endpointStatus: response.status,
+              redirected: true,
+            },
+            name: 'anonymous model viewer asset route is reachable',
+            ok: [200, 206].includes(assetResponse.status),
+          }
+        } catch (error) {
+          lastError = getErrorMessage(error)
+          if (attempt < assetCheckAttempts) {
+            await wait(1000 * attempt)
+          }
+        }
+      }
+
+      return {
+        details: {
+          attempts: assetCheckAttempts,
+          endpointStatus: response.status,
+          error: lastError,
+          redirected: true,
+        },
+        name: 'anonymous model viewer asset route is reachable',
+        ok: false,
+      }
+    }
+
+    return {
+      details: {
+        endpointStatus: response.status,
+        redirected: false,
+      },
+      name: 'anonymous model viewer asset route is reachable',
+      ok: response.ok,
+    }
+  } catch (error) {
+    return {
+      details: {
+        error: getErrorMessage(error),
+      },
+      name: 'anonymous model viewer asset route is reachable',
+      ok: false,
+    }
+  }
+}
+
 async function runBrowserSmokeChecks() {
   const browser = await launchSmokeBrowser()
   const results = []
@@ -109,12 +209,15 @@ async function runBrowserSmokeChecks() {
     }
 
     results.push({
-      details: previewState,
-      name: 'anonymous model preview renders',
-      ok:
-        previewState.canvasCount === 1 &&
-        !previewState.errorVisible &&
-        !previewState.loadingVisible,
+      details: {
+        ...previewState,
+        ready:
+          previewState.canvasCount === 1 &&
+          !previewState.errorVisible &&
+          !previewState.loadingVisible,
+      },
+      name: 'anonymous model preview mounts without client error',
+      ok: previewState.canvasCount === 1 && !previewState.errorVisible,
     })
     await previewPage.close()
 
@@ -137,7 +240,10 @@ async function runBrowserSmokeChecks() {
       timeout: browserTimeoutMs,
       waitUntil: 'domcontentloaded',
     })
-    await workbenchPage.getByRole('button', { name: /generate/i }).first().click({
+    const generateButton = workbenchPage.locator('button[aria-label="GENERATE"]')
+    await generateButton.waitFor({ state: 'visible', timeout: browserTimeoutMs })
+    await wait(1000)
+    await generateButton.click({
       timeout: browserTimeoutMs,
     })
     const dialog = workbenchPage.getByRole('dialog')
@@ -174,7 +280,10 @@ async function main() {
     })
   }
 
-  const browserResults = await runBrowserSmokeChecks()
+  const browserResults = [
+    await runViewerAssetRouteCheck(),
+    ...(await runBrowserSmokeChecks()),
+  ]
   const failed = results.filter((item) => !item.ok)
   const failedBrowser = browserResults.filter((item) => !item.ok)
 

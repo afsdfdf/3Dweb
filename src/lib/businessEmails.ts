@@ -55,7 +55,7 @@ export async function sendOrderPaidEmail(args: {
   orderNumber: string
   req: PayloadRequest
 }) {
-  const { amount, currency, email, modelTitle, orderId, orderNumber, req } = args
+  const { amount, currency, email, modelTitle, orderNumber, req } = args
   const appURL = getAppURL()
   const settings = await getEmailSettings(req)
 

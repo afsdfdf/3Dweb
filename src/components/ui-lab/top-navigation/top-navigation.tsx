@@ -32,6 +32,7 @@ type TopNavigationProps = {
   active?: string;
   className?: string;
   credits?: number;
+  fitViewport?: boolean;
   items?: readonly TopNavigationItem[];
   loginHref?: string;
   registerHref?: string;
@@ -326,6 +327,7 @@ export function TopNavigation({
   active = "WORKBENCH",
   className,
   credits = 560,
+  fitViewport = false,
   items = defaultNavItems,
   loginHref = "/login",
   showAuthEntry = true,
@@ -340,8 +342,8 @@ export function TopNavigation({
   const displayCredits = user ? getUserCredits(user, credits) : credits;
   const avatarUrl = user?.avatarUrl || `${assetBase}/icon-user-avatar-placeholder.png`;
 
-  return (
-    <div className={[styles.topNav, className].filter(Boolean).join(" ")} data-authenticated={user ? "true" : "false"}>
+  const topNav = (
+    <div className={[styles.topNav, fitViewport ? null : className].filter(Boolean).join(" ")} data-authenticated={user ? "true" : "false"}>
       <img alt="" className={styles.navBg} decoding="async" fetchPriority="high" src={`${assetBase}/nav-background.png`} />
       <img alt="Thorns Tavern" className={styles.logo} decoding="async" fetchPriority="high" src={`${assetBase}/logo-wordmark.png`} />
       <img alt="" className={styles.navCenter} decoding="async" src={`${assetBase}/nav-center-separator.png`} />
@@ -409,4 +411,14 @@ export function TopNavigation({
       )}
     </div>
   );
+
+  if (fitViewport) {
+    return (
+      <div className={[styles.scaledTopNav, className].filter(Boolean).join(" ")}>
+        <div className={styles.scaledTopNavStage}>{topNav}</div>
+      </div>
+    );
+  }
+
+  return topNav;
 }

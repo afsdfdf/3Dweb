@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 import type { RefObject } from "react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LogOut, PackageOpen, UserRound, WalletCards } from "lucide-react";
@@ -68,12 +68,12 @@ export function TopNavigationUserMenu({
   const email = typeof user.email === "string" ? user.email : "";
   const credits = getCredits(user);
 
-  const setOpen = (nextOpen: boolean) => {
+  const setOpen = useCallback((nextOpen: boolean) => {
     if (!isControlled) {
       setInternalOpen(nextOpen);
     }
     onOpenChange?.(nextOpen);
-  };
+  }, [isControlled, onOpenChange]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -99,7 +99,7 @@ export function TopNavigationUserMenu({
       document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen, triggerRef]);
+  }, [isOpen, setOpen, triggerRef]);
 
   if (!isOpen) return null;
 

@@ -7,6 +7,10 @@ import { rejectRateLimitedEndpoint } from '@/lib/endpointRateLimit'
 import { ensurePayloadRequestUser } from '@/lib/payloadAuthFallback'
 import { rejectDisallowedMutationOrigin } from '@/lib/requestSecurity'
 import { verifyWebhookSignature } from '@/lib/webhookSignature'
+import {
+  applyWorkbenchSourceImageAssetsToSnapshot,
+  validateWorkbenchSourceImageAssets,
+} from '@/lib/workbenchSourceAssets'
 
 type AITasksEndpointTestHooks = {
   handleAIWebhook?: typeof handleAIWebhook
@@ -22,6 +26,11 @@ export function __setAITasksEndpointTestHooks(hooks: AITasksEndpointTestHooks | 
 }
 
 const unauthorized = () => Response.json({ message: 'Please sign in first.' }, { status: 401 })
+
+const readPositiveNumber = (value: unknown) => {
+  const numberValue = typeof value === 'number' ? value : Number(value)
+  return Number.isFinite(numberValue) && numberValue > 0 ? numberValue : undefined
+}
 
 const getMeshyWebhookSecret = () =>
   (process.env.MESHY_WEBHOOK_TOKEN || process.env.AI_WEBHOOK_SECRET || process.env.PAYLOAD_AI_WEBHOOK_SECRET || '').trim()
@@ -81,6 +90,16 @@ const validateWebhook = async (args: { payload: string; req: PayloadRequest }) =
   })
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> => {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
+const isWorkbenchImageTo3DRequest = (value: unknown) => {
+  if (!isRecord(value)) return false
+  const workbench = isRecord(value.workbench) ? value.workbench : {}
+  return workbench.mode === 'image3d'
+}
+
 export const submitAITaskEndpoint = {
   path: '/studio/ai/tasks',
   method: 'post' as const,
@@ -99,21 +118,41 @@ export const submitAITaskEndpoint = {
 
     try {
       const body = req.json ? await req.json() : {}
+      const inputMode = body.inputMode === 'hybrid' || body.inputMode === 'image' || body.inputMode === 'text' ? body.inputMode : 'text'
+      const { sourceImageAsset, sourceImageAssets } = await validateWorkbenchSourceImageAssets({
+        maxAssets: 4,
+        req,
+        sourceImageAsset: body.sourceImageAsset,
+        sourceImageAssets: body.sourceImageAssets,
+      })
+      const parameterSnapshot = applyWorkbenchSourceImageAssetsToSnapshot({
+        parameterSnapshot: body.parameterSnapshot ?? {},
+        sourceImageAsset,
+        sourceImageAssets,
+      })
+
+      if (
+        (isWorkbenchImageTo3DRequest(parameterSnapshot) || inputMode === 'hybrid' || inputMode === 'image') &&
+        !sourceImageAsset &&
+        !readPositiveNumber(body.sourceImage)
+      ) {
+        return Response.json(
+          { message: 'Image To 3D requires at least one reference image.' },
+          { status: 400 },
+        )
+      }
+
       const task = await submitAITask({
         dispatchProvider: false,
-        inputMode: body.inputMode ?? 'text',
-        parameterSnapshot: body.parameterSnapshot ?? {},
+        inputMode,
+        parameterSnapshot,
         printRequested: Boolean(body.printRequested ?? false),
         prompt: body.prompt,
         provider: body.provider ?? 'custom',
         req,
-        sourceImageAsset: body.sourceImageAsset ?? undefined,
-        sourceImageAssets: Array.isArray(body.sourceImageAssets)
-          ? (body.sourceImageAssets.filter(
-              (item: unknown) => item && typeof item === 'object' && !Array.isArray(item),
-            ) as Record<string, unknown>[])
-          : undefined,
-        sourceImage: body.sourceImage,
+        sourceImageAsset,
+        sourceImageAssets,
+        sourceImage: readPositiveNumber(body.sourceImage),
       })
 
       return Response.json({

@@ -114,6 +114,39 @@ test("AI sync default limit supports multi-minute Workbench polling", async () =
   }
 });
 
+test("AI image submit default limit allows bursts that can enter the backend queue", async () => {
+  const previousLimit = process.env.AI_IMAGE_SUBMIT_RATE_LIMIT_MAX;
+  const previousWindow = process.env.AI_IMAGE_SUBMIT_RATE_LIMIT_WINDOW_MS;
+
+  delete process.env.AI_IMAGE_SUBMIT_RATE_LIMIT_MAX;
+  delete process.env.AI_IMAGE_SUBMIT_RATE_LIMIT_WINDOW_MS;
+
+  try {
+    const req = createRequest({ user: { id: 78 } });
+
+    for (let index = 0; index < 25; index += 1) {
+      const result = await rejectRateLimitedEndpoint({
+        req,
+        scope: "ai-image-submit",
+      });
+
+      assert.equal(result, null);
+    }
+  } finally {
+    if (previousLimit === undefined) {
+      delete process.env.AI_IMAGE_SUBMIT_RATE_LIMIT_MAX;
+    } else {
+      process.env.AI_IMAGE_SUBMIT_RATE_LIMIT_MAX = previousLimit;
+    }
+
+    if (previousWindow === undefined) {
+      delete process.env.AI_IMAGE_SUBMIT_RATE_LIMIT_WINDOW_MS;
+    } else {
+      process.env.AI_IMAGE_SUBMIT_RATE_LIMIT_WINDOW_MS = previousWindow;
+    }
+  }
+});
+
 test("rejectRateLimitedEndpoint isolates credit checkout from subscription checkout", async () => {
   const previousCreditLimit = process.env.CREDIT_CHECKOUT_RATE_LIMIT_MAX;
   const previousCreditWindow = process.env.CREDIT_CHECKOUT_RATE_LIMIT_WINDOW_MS;
@@ -184,6 +217,33 @@ test("rejectRateLimitedEndpoint falls back to IP when the user is anonymous", as
     process.env.ORDER_CREATE_RATE_LIMIT_MAX = previousLimit;
     process.env.ORDER_CREATE_RATE_LIMIT_WINDOW_MS = previousWindow;
     process.env.TRUST_PROXY_HEADERS = previousTrustProxy;
+  }
+});
+
+test("media upload URL scope is rate limited independently", async () => {
+  const previousLimit = process.env.MEDIA_UPLOAD_URL_RATE_LIMIT_MAX;
+  const previousWindow = process.env.MEDIA_UPLOAD_URL_RATE_LIMIT_WINDOW_MS;
+
+  process.env.MEDIA_UPLOAD_URL_RATE_LIMIT_MAX = "1";
+  process.env.MEDIA_UPLOAD_URL_RATE_LIMIT_WINDOW_MS = "60000";
+
+  try {
+    const req = createRequest({ user: { id: 99 } });
+
+    const first = await rejectRateLimitedEndpoint({
+      req,
+      scope: "media-upload-url",
+    });
+    const second = await rejectRateLimitedEndpoint({
+      req,
+      scope: "media-upload-url",
+    });
+
+    assert.equal(first, null);
+    assert.equal(second?.status, 429);
+  } finally {
+    process.env.MEDIA_UPLOAD_URL_RATE_LIMIT_MAX = previousLimit;
+    process.env.MEDIA_UPLOAD_URL_RATE_LIMIT_WINDOW_MS = previousWindow;
   }
 });
 

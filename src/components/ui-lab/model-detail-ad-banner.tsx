@@ -19,7 +19,12 @@ export function ModelDetailAdBanner({
 }: ModelDetailAdBannerProps) {
   return (
     <a {...anchorProps} className={[styles.banner, className].filter(Boolean).join(" ")} href={href}>
-      <img className={styles.image} src={imageSrc} alt={imageAlt} style={imagePosition ? { objectPosition: imagePosition } : undefined} />
+      <img
+        className={styles.image}
+        src={imageSrc}
+        alt={imageAlt}
+        style={imagePosition ? { objectPosition: imagePosition } : undefined}
+      />
     </a>
   );
 }

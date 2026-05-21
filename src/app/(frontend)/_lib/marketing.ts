@@ -3,6 +3,15 @@ import type { FooterContent } from './marketing-content'
 import { getDefaultFooterLinkGroups, getDefaultHomepageContent, getDefaultSiteSettings } from './marketing-content'
 import { getCurrentLocale } from './locale-server'
 
+type NullablePartial<T> = { [K in keyof T]?: null | T[K] }
+type SiteSettingsInput = {
+  creditPackages?: unknown
+  footer?: unknown
+  generationPricing?: unknown
+  headerNav?: unknown
+  supportEmail?: unknown
+}
+
 const pickArray = <T,>(value: null | T[] | undefined, fallback: T[]) => {
   return Array.isArray(value) && value.length > 0 ? value : fallback
 }
@@ -26,6 +35,71 @@ const mergeNullableObject = <T extends Record<string, unknown>>(
   return merged
 }
 
+function mergeSiteSettings(
+  defaultSiteSettings: ReturnType<typeof getDefaultSiteSettings>,
+  siteSettings: null | undefined | SiteSettingsInput,
+) {
+  const supportEmail =
+    typeof siteSettings?.supportEmail === 'string' && siteSettings.supportEmail
+      ? siteSettings.supportEmail
+      : defaultSiteSettings.supportEmail
+  const footerInput =
+    siteSettings?.footer && typeof siteSettings.footer === 'object' && !Array.isArray(siteSettings.footer)
+      ? (siteSettings.footer as NullablePartial<FooterContent>)
+      : null
+  const generationPricingInput =
+    siteSettings?.generationPricing && typeof siteSettings.generationPricing === 'object' && !Array.isArray(siteSettings.generationPricing)
+      ? siteSettings.generationPricing
+      : null
+  const footer = mergeNullableObject<FooterContent>(defaultSiteSettings.footer, footerInput)
+  const footerLinkGroups = pickArray(footer.linkGroups, getDefaultFooterLinkGroups(supportEmail))
+
+  return {
+    ...defaultSiteSettings,
+    ...siteSettings,
+    supportEmail,
+    creditPackages: pickArray(
+      Array.isArray(siteSettings?.creditPackages)
+        ? (siteSettings.creditPackages as typeof defaultSiteSettings.creditPackages)
+        : null,
+      defaultSiteSettings.creditPackages,
+    ),
+    footer: {
+      ...footer,
+      linkGroups: footerLinkGroups,
+    },
+    generationPricing: {
+      ...defaultSiteSettings.generationPricing,
+      ...generationPricingInput,
+    },
+    headerNav: pickArray(
+      Array.isArray(siteSettings?.headerNav)
+        ? (siteSettings.headerNav as typeof defaultSiteSettings.headerNav)
+        : null,
+      defaultSiteSettings.headerNav,
+    ),
+  }
+}
+
+export async function getMarketingSiteSettings() {
+  const locale = await getCurrentLocale()
+  const defaultSiteSettings = getDefaultSiteSettings(locale)
+
+  try {
+    const payload = await getCachedPayload()
+    const siteSettings = await payload.findGlobal({
+      slug: 'site-settings',
+      locale: locale as never,
+      overrideAccess: true,
+      fallbackLocale: 'en' as never,
+    })
+
+    return mergeSiteSettings(defaultSiteSettings, siteSettings)
+  } catch {
+    return defaultSiteSettings
+  }
+}
+
 export async function getMarketingSiteData() {
   const locale = await getCurrentLocale()
   const defaultHomepageContent = getDefaultHomepageContent(locale)
@@ -46,10 +120,6 @@ export async function getMarketingSiteData() {
         fallbackLocale: 'en' as never,
       }),
     ])
-
-    const supportEmail = siteSettings?.supportEmail || defaultSiteSettings.supportEmail
-    const footer = mergeNullableObject<FooterContent>(defaultSiteSettings.footer, siteSettings?.footer)
-    const footerLinkGroups = pickArray(footer.linkGroups, getDefaultFooterLinkGroups(supportEmail))
 
     return {
       homepageContent: {
@@ -101,20 +171,7 @@ export async function getMarketingSiteData() {
         },
         useCases: pickArray(homepageContent?.useCases, defaultHomepageContent.useCases),
       },
-      siteSettings: {
-        ...defaultSiteSettings,
-        ...siteSettings,
-        creditPackages: pickArray(siteSettings?.creditPackages, defaultSiteSettings.creditPackages),
-        footer: {
-          ...footer,
-          linkGroups: footerLinkGroups,
-        },
-        generationPricing: {
-          ...defaultSiteSettings.generationPricing,
-          ...siteSettings?.generationPricing,
-        },
-        headerNav: pickArray(siteSettings?.headerNav, defaultSiteSettings.headerNav),
-      },
+      siteSettings: mergeSiteSettings(defaultSiteSettings, siteSettings),
     }
   } catch {
     return {

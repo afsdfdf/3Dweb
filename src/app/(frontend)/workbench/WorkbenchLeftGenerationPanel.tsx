@@ -88,10 +88,14 @@ export function WorkbenchLeftGenerationPanel({
   const isDualMode = modeTabs === "dual";
   const isImage3D = activeMode === "image3d";
   const isImageToImage = activeMode === "imageTools";
-  const isTextToImage = activeMode === "text3d";
-  const isImageGenerationMode = isTextToImage || isImageToImage;
+  const isTextTo3D = activeMode === "text3d";
+  const isImageOutputMode = isImageToImage;
   const showMultiView = isImage3D;
-  const maxReferenceImages = isImageToImage ? 1 : 4;
+  const maxReferenceImages = isImage3D && multiView ? 4 : 1;
+  const canAddMoreImages = images.length < maxReferenceImages;
+  const replaceSingleImage = isImageToImage && maxReferenceImages === 1 && images.length >= maxReferenceImages;
+  const showPrimaryAddImageCard = images.length === 0 || replaceSingleImage;
+  const addImageLabel = replaceSingleImage ? "Replace Image" : canAddMoreImages ? "Add Image" : "Max Reached";
   const activeModeButton =
     activeMode === "image3d"
       ? "purple"
@@ -100,7 +104,7 @@ export function WorkbenchLeftGenerationPanel({
         : "button";
   const showImageInputs = isImage3D || isImageToImage;
   const useStreamlinedImageFlow =
-    streamlinedImageFlow && (showImageInputs || isTextToImage);
+    streamlinedImageFlow && (showImageInputs || isTextTo3D);
 
   useEffect(() => {
     if (!licenseMenuOpen) return;
@@ -201,7 +205,7 @@ export function WorkbenchLeftGenerationPanel({
           <SmallButtonTriple
             labels={{
               purple: "Image To 3D",
-              dark: "Text To Image",
+              dark: "Text To 3D",
               button: "Image To Image",
             }}
             selected={activeModeButton}
@@ -224,6 +228,7 @@ export function WorkbenchLeftGenerationPanel({
                 }
               }}
               onChange={(event) => onPromptChange(event.target.value)}
+              placeholder={workbenchDefaultPrompt}
               value={prompt}
             />
           </div>
@@ -232,13 +237,15 @@ export function WorkbenchLeftGenerationPanel({
         {showImageInputs ? (
           <section className={styles.mediaSection}>
             <div className={styles.mediaSectionHeader}>
-              <h2>{isImageToImage ? "Reference Image" : "Reference Images"}</h2>
+              <h2>{maxReferenceImages === 1 ? "Reference Image" : "Reference Images"}</h2>
               <span>{images.length}/{maxReferenceImages}</span>
             </div>
             <p className={styles.mediaSectionHint}>
               {isImageToImage
                 ? "Upload the main image you want to transform."
-                : "Add reference images to guide the generation."}
+                : multiView
+                  ? "Add angle references for the same subject."
+                  : "Upload the main image you want to convert."}
             </p>
             <div className={styles.referenceBox}>
               <div className={styles.thumbGrid}>
@@ -261,21 +268,27 @@ export function WorkbenchLeftGenerationPanel({
                     </button>
                   </div>
                 ))}
-                <label className={styles.addImageCard}>
-                  <span>+</span>
-                  Add Image
-                  <input
-                    accept={getWorkbenchUploadAccept()}
-                    className={styles.hiddenFileInput}
-                    disabled={images.length >= maxReferenceImages}
-                    multiple={!isImageToImage}
-                    onChange={(event) => {
-                      onAddImages(event.target.files);
-                      event.target.value = "";
-                    }}
-                    type="file"
-                  />
-                </label>
+                {showPrimaryAddImageCard ? (
+                  <label
+                    className={`${styles.addImageCard} ${
+                      !canAddMoreImages && !replaceSingleImage ? styles.addImageCardDisabled : ""
+                    }`}
+                  >
+                    <span>+</span>
+                    {addImageLabel}
+                    <input
+                      accept={getWorkbenchUploadAccept()}
+                      className={styles.hiddenFileInput}
+                      disabled={!canAddMoreImages && !replaceSingleImage}
+                      multiple={isImage3D && multiView}
+                      onChange={(event) => {
+                        onAddImages(event.target.files);
+                        event.target.value = "";
+                      }}
+                      type="file"
+                    />
+                  </label>
+                ) : null}
               </div>
             </div>
           </section>
@@ -285,9 +298,9 @@ export function WorkbenchLeftGenerationPanel({
           <section className={styles.metaSection}>
             <div className={styles.metaHeader}>
               <div>
-                <h2>{isImageGenerationMode ? "Image Title" : "Model Name"}</h2>
+                <h2>{isImageOutputMode ? "Image Title" : "Model Name"}</h2>
                 <p className={styles.metaHint}>
-                  {isImageGenerationMode
+                  {isImageOutputMode
                     ? "A default image title is assigned for this result. You can adjust it later if needed."
                     : "A default name is assigned for this result. You can adjust it later if needed."}
                 </p>
@@ -373,7 +386,7 @@ export function WorkbenchLeftGenerationPanel({
         {!isImage3D && !useStreamlinedImageFlow ? (
           <>
             <label className={styles.fieldLabel} htmlFor="model-title">
-              {isImageGenerationMode ? "Image Title" : "Model Title"}
+              {isImageOutputMode ? "Image Title" : "Model Title"}
             </label>
             <div className={styles.inputWrap}>
               <input
@@ -565,40 +578,46 @@ export function WorkbenchLeftGenerationPanel({
           </>
         ) : null}
 
-        <label className={styles.fieldLabel} htmlFor="model-license">
-          {isImageGenerationMode ? "Image Visibility" : "Model License"}
-        </label>
-        <div className={styles.selectWrap} ref={licenseMenuRef}>
-          <button
-            aria-controls="model-license-menu"
-            aria-expanded={licenseMenuOpen}
-            className={styles.selectButton}
-            id="model-license"
-            onClick={() => setLicenseMenuOpen((value) => !value)}
-            type="button"
-          >
-            <span>{license}</span>
-          </button>
-          {licenseMenuOpen ? (
-            <div className={styles.selectMenu} id="model-license-menu" role="listbox">
-              {(["Public", "Private"] as const).map((option) => (
-                <button
-                  aria-selected={license === option}
-                  className={`${styles.selectOption} ${license === option ? styles.selectOptionActive : ""}`}
-                  key={option}
-                  onClick={() => {
-                    onLicenseChange(option);
-                    setLicenseMenuOpen(false);
-                  }}
-                  role="option"
-                  type="button"
-                >
-                  {option}
-                </button>
-              ))}
+        {isImageOutputMode ? (
+          <p className={styles.visibilityNote}>Generated images stay private in your assets.</p>
+        ) : (
+          <>
+            <label className={styles.fieldLabel} htmlFor="model-license">
+              Model License
+            </label>
+            <div className={styles.selectWrap} ref={licenseMenuRef}>
+              <button
+                aria-controls="model-license-menu"
+                aria-expanded={licenseMenuOpen}
+                className={styles.selectButton}
+                id="model-license"
+                onClick={() => setLicenseMenuOpen((value) => !value)}
+                type="button"
+              >
+                <span>{license}</span>
+              </button>
+              {licenseMenuOpen ? (
+                <div className={styles.selectMenu} id="model-license-menu" role="listbox">
+                  {(["Public", "Private"] as const).map((option) => (
+                    <button
+                      aria-selected={license === option}
+                      className={`${styles.selectOption} ${license === option ? styles.selectOptionActive : ""}`}
+                      key={option}
+                      onClick={() => {
+                        onLicenseChange(option);
+                        setLicenseMenuOpen(false);
+                      }}
+                      role="option"
+                      type="button"
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
             </div>
-          ) : null}
-        </div>
+          </>
+        )}
       </div>
 
       <div className={styles.panelFooterArea}>
@@ -618,10 +637,9 @@ export function WorkbenchLeftGenerationPanel({
         </div>
         <GenerateCtaButton
           className={styles.generateCta}
-          disabled={isSubmitting}
           label={
             isSubmitting
-              ? "SUBMITTING"
+              ? "GENERATE AGAIN"
               : isDualMode && !streamlinedImageFlow
                 ? "GENERATE PREVIEW"
                 : "GENERATE"

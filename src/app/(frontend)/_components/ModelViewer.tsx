@@ -8,6 +8,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import * as THREE from "three";
@@ -19,9 +20,27 @@ import {
   type ModelLoadPhase,
 } from "@/lib/modelLoadProgress";
 
-if (typeof window !== "undefined" && "createImageBitmap" in window) {
-  // Force GLTFLoader to use classic image loading instead of ImageBitmap for better
-  // compatibility with embedded texture blobs in certain browser/driver combinations.
+const classicImageLoaderStorageKey = "thornstavern:classic-image-loader";
+
+function shouldUseClassicImageLoading() {
+  if (typeof window === "undefined") return false;
+
+  try {
+    const query = new URLSearchParams(window.location.search);
+    return (
+      query.get("classicImageLoader") === "1" ||
+      window.localStorage.getItem(classicImageLoaderStorageKey) === "1"
+    );
+  } catch {
+    return false;
+  }
+}
+
+function maybeDisableCreateImageBitmap() {
+  if (typeof window === "undefined") return;
+  if (!("createImageBitmap" in window)) return;
+  if (!shouldUseClassicImageLoading()) return;
+
   Reflect.deleteProperty(globalThis, "createImageBitmap");
 }
 
@@ -193,31 +212,89 @@ function CharacterFigure({
 
 const sharedDracoLoader = new DRACOLoader();
 sharedDracoLoader.setDecoderPath("/three-draco/gltf/");
+let hasPreloadedDracoDecoder = false;
+const WORKBENCH_BASE_SCALE = 0.5;
+const WORKBENCH_BASE_TOP_Y = -0.88;
+const WORKBENCH_BASE_GROUP_Y = WORKBENCH_BASE_TOP_Y - 0.118 * WORKBENCH_BASE_SCALE;
+
+function preloadSharedDracoDecoder() {
+  if (hasPreloadedDracoDecoder) return;
+
+  try {
+    hasPreloadedDracoDecoder = true;
+    sharedDracoLoader.preload();
+  } catch {
+    hasPreloadedDracoDecoder = false;
+  }
+}
 
 function configureGLTFLoader(loader: GLTFLoader) {
+  maybeDisableCreateImageBitmap();
   loader.setCrossOrigin("anonymous");
   loader.setDRACOLoader(sharedDracoLoader);
 }
 
-function LoadedModel({ onReady, src }: { onReady?: () => void; src: string }) {
+function LoadedModel({
+  alignToWorkbenchBase = false,
+  onPhase,
+  onReady,
+  src,
+}: {
+  alignToWorkbenchBase?: boolean;
+  onPhase?: (phase: ModelLoadPhase, src: string) => void;
+  onReady?: (src: string) => void;
+  src: string;
+}) {
+  // Reaching this component means GLTFLoader has finished parsing and decoding (including Draco).
+  // Notify the viewer so the progress overlay can leave the network/decode phase before scene setup.
   const gltf = useLoader(GLTFLoader, src, configureGLTFLoader);
-  const scene = useMemo(() => gltf.scene.clone(true), [gltf.scene]);
+  // Detail pages mount only one live viewer per responsive branch, so they can reuse the scene.
+  // Workbench can keep mobile and desktop viewers mounted for the same src; clone there so two
+  // Canvas roots don't compete for the same Object3D parent.
+  const scene = useMemo(
+    () => (alignToWorkbenchBase ? gltf.scene.clone(true) : gltf.scene),
+    [alignToWorkbenchBase, gltf.scene],
+  );
 
   useEffect(() => {
+    onPhase?.("build", src);
     scene.traverse((child) => {
       if (child instanceof THREE.Mesh) {
         child.castShadow = true;
         child.receiveShadow = true;
       }
     });
-    onReady?.();
-  }, [onReady, scene]);
+
+    // Defer onReady by two animation frames so the BUILD SCENE label gets at least one paint
+    // and Bounds fit (which runs during the next render commit) has time to settle before we
+    // flip the overlay to READY.
+    let firstFrame = 0;
+    let secondFrame = 0;
+    firstFrame = window.requestAnimationFrame(() => {
+      secondFrame = window.requestAnimationFrame(() => {
+        onReady?.(src);
+      });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(firstFrame);
+      window.cancelAnimationFrame(secondFrame);
+    };
+  }, [onPhase, onReady, scene, src]);
 
   return (
-    <Bounds clip fit margin={1.1} observe>
-      <Center>
-        <primitive object={scene} />
-      </Center>
+    <Bounds clip fit margin={alignToWorkbenchBase ? 1.16 : 1.1}>
+      {alignToWorkbenchBase ? (
+        <group position={[0, WORKBENCH_BASE_TOP_Y, 0]}>
+          <Center top>
+            <primitive object={scene} />
+          </Center>
+        </group>
+      ) : (
+        <Center>
+          <primitive object={scene} />
+        </Center>
+      )}
     </Bounds>
   );
 }
@@ -514,8 +591,8 @@ function ModelLoadingOverlay({
             style={{ width: `${display.progress}%` }}
           />
         </div>
-        <div className="mt-2 grid grid-cols-4 gap-1 text-[9px] font-semibold uppercase tracking-[0.08em] text-white/45">
-          {["NETWORK", "VERIFY", "PARSE", "READY"].map((stage) => (
+        <div className="mt-2 grid grid-cols-5 gap-1 text-[9px] font-semibold uppercase tracking-[0.08em] text-white/45">
+          {["NETWORK", "VERIFY", "DECODE", "BUILD", "READY"].map((stage) => (
             <span
               className={
                 stage === display.stage
@@ -626,15 +703,59 @@ export function ModelViewer({
   const [webGLStatus, setWebGLStatus] =
     useState<WebGLStatus>("checking");
   const activeSrc = loadState.objectURL;
+  const activeSrcRef = useRef<null | string>(null);
+  const readyNotifiedSrcRef = useRef<null | string>(null);
+  if (activeSrcRef.current !== activeSrc) {
+    activeSrcRef.current = activeSrc;
+    readyNotifiedSrcRef.current = null;
+  }
+  const onReadyRef = useRef(onReady);
+  onReadyRef.current = onReady;
   const frameloop = activeSrc || showPlaceholderModel ? "always" : "demand";
   const fallbackModel = showPlaceholderModel ? (
     <CharacterFigure accent={accent} />
   ) : null;
   const hasSceneModel = Boolean(activeSrc || showPlaceholderModel);
   const showWorkbenchBase = displayBase === "workbench";
-  const handleModelReady = useCallback(() => {
+  // Both callbacks are intentionally identity-stable: <LoadedModel>'s effect uses them as deps,
+  // and we don't want viewer re-renders (which churn activeSrc via setLoadState) to retrigger
+  // the scene.traverse + double-rAF readiness handshake. The current src is read from a ref.
+  const handleModelPhase = useCallback((phase: ModelLoadPhase, loadedSrc: string) => {
+    if (loadedSrc !== activeSrcRef.current) return;
+
+    setLoadState((previous) => {
+      if (previous.objectURL !== loadedSrc) return previous;
+      if (previous.status !== "loading") return previous;
+      if (previous.phase === phase) return previous;
+
+      // Only move forward through decode -> build; never regress while loading.
+      const order: ModelLoadPhase[] = ["decode", "build"];
+      const previousIndex = order.indexOf(previous.phase);
+      const nextIndex = order.indexOf(phase);
+      if (previousIndex >= 0 && nextIndex >= 0 && nextIndex < previousIndex) {
+        return previous;
+      }
+
+      const progressByPhase: Partial<Record<ModelLoadPhase, number>> = {
+        build: 94,
+        decode: 85,
+      };
+
+      return {
+        ...previous,
+        phase,
+        progress: progressByPhase[phase] ?? previous.progress,
+      };
+    });
+  }, []);
+
+  const handleModelReady = useCallback((loadedSrc: string) => {
+    if (loadedSrc !== activeSrcRef.current) return;
+    if (readyNotifiedSrcRef.current === loadedSrc) return;
+
+    readyNotifiedSrcRef.current = loadedSrc;
     setLoadState((previous) =>
-      previous.objectURL === activeSrc
+      previous.objectURL === loadedSrc
         ? previous.status === "ready"
           ? previous
           : {
@@ -645,8 +766,8 @@ export function ModelViewer({
             }
         : previous,
     );
-    onReady?.();
-  }, [activeSrc, onReady]);
+    onReadyRef.current?.();
+  }, []);
 
   useEffect(() => {
     const available = canCreateWebGLContext();
@@ -692,8 +813,8 @@ export function ModelViewer({
     if (cached) {
       setLoadState({
         objectURL: cached.objectURL,
-        phase: "parse",
-        progress: 99,
+        phase: "decode",
+        progress: 85,
         source: modelSrc,
         status: "loading",
       });
@@ -719,7 +840,11 @@ export function ModelViewer({
     ) {
       const requestController = new AbortController();
       const abortRequest = () => requestController.abort();
-      const timeout = window.setTimeout(abortRequest, timeoutMs);
+      let timeout = window.setTimeout(abortRequest, timeoutMs);
+      const refreshTimeout = () => {
+        window.clearTimeout(timeout);
+        timeout = window.setTimeout(abortRequest, timeoutMs);
+      };
 
       if (controller.signal.aborted) {
         requestController.abort();
@@ -739,6 +864,7 @@ export function ModelViewer({
         if (!response.ok || !response.body) {
           throw new Error(`MODEL_FETCH_FAILED:${response.status}`);
         }
+        refreshTimeout();
 
         const contentLength = Number(
           response.headers.get("content-length") || 0,
@@ -756,6 +882,7 @@ export function ModelViewer({
 
           chunks.push(value);
           receivedLength += value.length;
+          refreshTimeout();
 
           if (!canceled) {
             const nextProgress =
@@ -763,14 +890,14 @@ export function ModelViewer({
                 ? Math.max(
                     3,
                     Math.min(
-                      98,
-                      Math.round((receivedLength / contentLength) * 100),
+                      80,
+                      Math.round((receivedLength / contentLength) * 80),
                     ),
                   )
                 : Math.max(
                     3,
                     Math.min(
-                      85,
+                      80,
                       3 +
                         Math.round(Math.log2(receivedLength / 65536 + 1) * 12),
                     ),
@@ -794,7 +921,7 @@ export function ModelViewer({
               ? {
                   ...previous,
                   phase: "validate",
-                  progress: 84,
+                  progress: 80,
                 }
               : previous,
           );
@@ -827,8 +954,8 @@ export function ModelViewer({
 
           setLoadState({
             objectURL,
-            phase: "parse",
-            progress: 99,
+            phase: "decode",
+            progress: 85,
             source: modelSrc,
             status: "loading",
           });
@@ -869,8 +996,8 @@ export function ModelViewer({
 
         setLoadState({
           objectURL,
-          phase: "parse",
-          progress: 99,
+          phase: "decode",
+          progress: 85,
           source: modelSrc,
           status: "loading",
         });
@@ -897,12 +1024,20 @@ export function ModelViewer({
   }, [onError, src, webGLStatus]);
 
   useEffect(() => {
+    // Enable three.js's loader-side cache so subsequent model swaps can hit it.
+    // We intentionally do NOT call useLoader.preload(GLTFLoader, activeSrc) for the currently
+    // mounting src; <LoadedModel> already triggers parsing for that src, and adding a parallel
+    // preload only contends for the same large Draco/GLTF work without measurable benefit.
     THREE.Cache.enabled = true;
 
-    if (activeSrc) {
-      useLoader.preload(GLTFLoader, activeSrc, configureGLTFLoader);
+    // Kick off the Draco decoder wasm fetch immediately on mount. The bytes will land in HTTP
+    // cache before GLTFLoader needs them, removing the wasm-fetch stall from the decode phase.
+    try {
+      preloadSharedDracoDecoder();
+    } catch {
+      // Preload is best-effort; the loader will still fetch the decoder on demand.
     }
-  }, [activeSrc]);
+  }, []);
 
   return (
     <div
@@ -921,13 +1056,18 @@ export function ModelViewer({
           gl={{
             antialias: true,
             alpha: transparentBackground,
+            premultipliedAlpha: !transparentBackground,
             powerPreference: "low-power",
             preserveDrawingBuffer: false,
           }}
-          onCreated={({ gl }) => {
+          onCreated={({ gl, scene }) => {
             if (transparentBackground) {
+              scene.background = null;
+              scene.fog = null;
               gl.setClearColor(0x000000, 0);
               gl.setClearAlpha(0);
+              gl.domElement.style.background = "transparent";
+              gl.domElement.style.backgroundColor = "transparent";
             }
           }}
           style={
@@ -969,7 +1109,12 @@ export function ModelViewer({
           >
           <Suspense fallback={fallbackModel}>
               {activeSrc ? (
-                <LoadedModel onReady={handleModelReady} src={activeSrc} />
+                <LoadedModel
+                  alignToWorkbenchBase={showWorkbenchBase}
+                  onPhase={handleModelPhase}
+                  onReady={handleModelReady}
+                  src={activeSrc}
+                />
               ) : (
                 fallbackModel
               )}
@@ -1015,7 +1160,10 @@ export function ModelViewer({
 
 function WorkbenchDisplayBase() {
   return (
-    <group position={[0, -1.3, 0]}>
+    <group
+      position={[0, WORKBENCH_BASE_GROUP_Y, 0]}
+      scale={[WORKBENCH_BASE_SCALE, WORKBENCH_BASE_SCALE, WORKBENCH_BASE_SCALE]}
+    >
       <mesh position={[0, -0.08, 0]}>
         <cylinderGeometry args={[1.96, 2.18, 0.22, 128]} />
         <meshStandardMaterial

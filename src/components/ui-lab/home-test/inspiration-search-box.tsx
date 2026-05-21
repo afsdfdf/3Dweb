@@ -1,3 +1,8 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+
 import styles from "./inspiration-search-box.module.css";
 
 type InspirationPagerProps = {
@@ -9,6 +14,8 @@ type InspirationPagerProps = {
 type InspirationSearchBoxProps = InspirationPagerProps & {
   pageSize?: number;
 };
+
+const INSPIRATION_SECTION_ID = "inspiration";
 
 function buildPageHref(page: number, query = "") {
   const params = new URLSearchParams();
@@ -22,7 +29,7 @@ function buildPageHref(page: number, query = "") {
   }
 
   const search = params.toString();
-  return search ? `?${search}` : "?";
+  return `/${search ? `?${search}` : ""}#${INSPIRATION_SECTION_ID}`;
 }
 
 function getPagerItems(page: number, totalPages: number) {
@@ -67,18 +74,28 @@ export function InspirationPager({ page = 1, query = "", totalPages = 1 }: Inspi
 }
 
 export function InspirationSearchBox({ page = 1, pageSize = 24, query = "", totalPages = 1 }: InspirationSearchBoxProps) {
+  const router = useRouter();
+  const [searchText, setSearchText] = useState(query);
+
+  useEffect(() => {
+    if (query.trim().length === 0 || searchText.trim().length > 0) return;
+
+    router.replace(`/#${INSPIRATION_SECTION_ID}`);
+  }, [query, router, searchText]);
+
   return (
     <div className={styles.toolbar}>
-      <form action="" className={styles.searchBox} method="get" role="search">
+      <form action={`/#${INSPIRATION_SECTION_ID}`} className={styles.searchBox} method="get" role="search">
         <label className={styles.inputShell}>
           <span className={styles.icon} aria-hidden="true" />
           <input
             aria-label="Search inspiration"
             className={styles.input}
-            defaultValue={query}
             name="q"
+            onChange={(event) => setSearchText(event.target.value)}
             placeholder="Please enter keywords"
             type="search"
+            value={searchText}
           />
         </label>
         <button className={styles.button} type="submit">

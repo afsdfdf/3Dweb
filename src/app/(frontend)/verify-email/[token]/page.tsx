@@ -52,7 +52,7 @@ export default async function VerifyEmailPage({ params }: { params: Promise<{ to
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#181818] text-[#ededee]">
       <AuthModalStage>
-        <TopNavigation active={getPublicNavigationActiveID('/verify-email')} className="sticky top-0 z-[80] hidden md:block" items={publicNavigationItems} user={navUser} />
+        <TopNavigation active={getPublicNavigationActiveID('/verify-email')} className="sticky top-0 z-[80] hidden md:block" fitViewport items={publicNavigationItems} user={navUser} />
         <header className="sticky top-0 z-40 flex items-center justify-between border-b border-[#403f46] bg-[#181818]/95 px-4 py-3 backdrop-blur md:hidden">
           <Link className="flex h-8 w-[161px] items-center" href="/" aria-label="Thorns Tavern home">
             {/* eslint-disable-next-line @next/next/no-img-element */}

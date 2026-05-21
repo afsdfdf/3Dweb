@@ -17,6 +17,8 @@ type AccountProfileUpdateInput = {
   profileVisibility?: 'private' | 'public'
 }
 
+type AccountModelVisibility = 'private' | 'public'
+
 type ChangeAccountPasswordInput = {
   confirmNewPassword: string
   currentPassword: string
@@ -49,14 +51,30 @@ const accessOptions = (req: PayloadRequest) => {
   return req.user ? { overrideAccess: false as const, user: req.user } : {}
 }
 
-const normalizeOptionalText = (value: unknown) => {
+const displayNameMaxLength = 32
+const fullNameMaxLength = 64
+
+const limitTextLength = (value: string, maxLength: number) => {
+  return value.length > maxLength ? value.slice(0, maxLength) : value
+}
+
+const normalizeOptionalText = (value: unknown, maxLength?: number) => {
   if (typeof value !== 'string') return null
   const trimmed = value.trim()
-  return trimmed.length > 0 ? trimmed : null
+  if (!trimmed) return null
+  return maxLength ? limitTextLength(trimmed, maxLength) : trimmed
 }
 
 const normalizeProfileVisibility = (value: unknown) => {
   return value === 'public' ? 'public' : 'private'
+}
+
+const normalizeAccountModelVisibility = (value: unknown): AccountModelVisibility => {
+  if (value === 'public' || value === 'private') {
+    return value
+  }
+
+  throw new Error('Model visibility must be public or private.')
 }
 
 const normalizeAvatarFrame = (value: unknown) => {
@@ -131,11 +149,11 @@ export async function getAccountProfile(req: PayloadRequest) {
     backgroundUrl: getMediaUrl(user.profileBackground),
     bio: normalizeOptionalText(user.bio),
     creditsBalance: Number(user.creditsBalance || 0),
-    displayName: normalizeOptionalText(user.displayName),
+    displayName: normalizeOptionalText(user.displayName, displayNameMaxLength),
     email: typeof user.email === 'string' ? user.email : null,
     followersCount: Number(user.followersCount || 0),
     followingCount: Number(user.followingCount || 0),
-    fullName: normalizeOptionalText(user.fullName),
+    fullName: normalizeOptionalText(user.fullName, fullNameMaxLength),
     id: Number(user.id),
     lastActiveAt: typeof user.lastActiveAt === 'string' ? user.lastActiveAt : null,
     phone: normalizeOptionalText(user.phone),
@@ -175,8 +193,12 @@ export async function updateAccountProfile(args: {
       ...(input.avatar !== undefined ? { avatar: avatarId } : {}),
       ...(input.avatarFrame !== undefined ? { avatarFrame: normalizeAvatarFrame(input.avatarFrame) } : {}),
       ...(input.bio !== undefined ? { bio: normalizeOptionalText(input.bio) } : {}),
-      ...(input.displayName !== undefined ? { displayName: normalizeOptionalText(input.displayName) } : {}),
-      ...(input.fullName !== undefined ? { fullName: normalizeOptionalText(input.fullName) } : {}),
+      ...(input.displayName !== undefined
+        ? { displayName: normalizeOptionalText(input.displayName, displayNameMaxLength) }
+        : {}),
+      ...(input.fullName !== undefined
+        ? { fullName: normalizeOptionalText(input.fullName, fullNameMaxLength) }
+        : {}),
       ...(input.phone !== undefined ? { phone: normalizeOptionalText(input.phone) } : {}),
       ...(bannerInput !== undefined ? { profileBackground: backgroundId } : {}),
       ...(input.profileBannerFocalX !== undefined ? { profileBannerFocalX: normalizeFocalPoint(input.profileBannerFocalX) } : {}),
@@ -194,8 +216,8 @@ export async function updateAccountProfile(args: {
     avatarUrl: getMediaUrl(updated.avatar),
     backgroundUrl: getMediaUrl(updated.profileBackground),
     bio: normalizeOptionalText(updated.bio),
-    displayName: normalizeOptionalText(updated.displayName),
-    fullName: normalizeOptionalText(updated.fullName),
+    displayName: normalizeOptionalText(updated.displayName, displayNameMaxLength),
+    fullName: normalizeOptionalText(updated.fullName, fullNameMaxLength),
     phone: normalizeOptionalText(updated.phone),
     profileBanner: resolveRelationId(updated.profileBackground),
     profileBannerFocalX: normalizeFocalPoint(updated.profileBannerFocalX),
@@ -271,6 +293,40 @@ export async function changeAccountPassword(args: {
   return {
     changed: true,
     userId: Number(req.user.id),
+  }
+}
+
+export async function updateAccountModelVisibility(args: {
+  modelId: number | string
+  req: PayloadRequest
+  visibility: unknown
+}) {
+  const { req } = args
+
+  if (!req.user) {
+    throw new Error('Unauthorized')
+  }
+
+  const modelId = String(args.modelId || '').trim()
+  if (!modelId) {
+    throw new Error('Invalid model ID.')
+  }
+
+  const visibility = normalizeAccountModelVisibility(args.visibility)
+
+  const updated = await req.payload.update({
+    collection: 'models',
+    id: modelId,
+    data: { visibility },
+    req,
+    ...accessOptions(req),
+  })
+
+  return {
+    id: String(updated.id),
+    status: typeof updated.status === 'string' ? updated.status : null,
+    title: typeof updated.title === 'string' ? updated.title : null,
+    visibility: normalizeAccountModelVisibility(updated.visibility),
   }
 }
 

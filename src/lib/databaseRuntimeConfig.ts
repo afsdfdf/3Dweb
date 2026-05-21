@@ -32,7 +32,7 @@ export function readPostgresPoolConfig() {
     // Migration note:
     // These defaults are safe starting values for Supabase/Postgres deployments.
     // Override them with env vars only when load testing proves a different profile is needed.
-    connectionTimeoutMillis: Number(process.env.POSTGRES_POOL_CONNECTION_TIMEOUT_MS || 5000),
+    connectionTimeoutMillis: Number(process.env.POSTGRES_POOL_CONNECTION_TIMEOUT_MS || 60000),
     idleTimeoutMillis: Number(process.env.POSTGRES_POOL_IDLE_TIMEOUT_MS || 30000),
     max: Number(process.env.POSTGRES_POOL_MAX || 20),
     min: Number(process.env.POSTGRES_POOL_MIN || 2),

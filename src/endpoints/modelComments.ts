@@ -21,6 +21,7 @@ const serializeComment = (comment: unknown) => {
   const authorName =
     normalizeText(author?.displayName) ||
     normalizeText(author?.fullName) ||
+    normalizeText(author?.email)?.split('@')[0] ||
     'Member'
 
   return {

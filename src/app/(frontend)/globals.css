@@ -48,6 +48,11 @@
 }
 
 :root {
+    --public-page-max-width: 1600px;
+    --public-page-gutter: 24px;
+    --content-page-max-width: 1920px;
+    --content-page-gutter: clamp(32px, 2.5vw, 48px);
+    --content-subject-max-width: 1680px;
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);
@@ -80,6 +85,13 @@
     --sidebar-accent-foreground: oklch(0.205 0 0);
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.708 0 0);
+}
+
+@media (min-width: 2200px) {
+  :root {
+    --content-page-max-width: 2200px;
+    --content-subject-max-width: 1848px;
+  }
 }
 
 .dark {

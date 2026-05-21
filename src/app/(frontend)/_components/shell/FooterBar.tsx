@@ -51,7 +51,7 @@ export function FooterBar({ footerContent, siteDescription, supportEmail }: Foot
 
   return (
     <footer className="border-t border-[#403f46] bg-[#333333]">
-      <div className="mx-auto grid max-w-[1600px] gap-8 px-4 py-12 text-sm sm:px-6 md:grid-cols-[1.2fr_repeat(2,minmax(0,1fr))]">
+      <div className="mx-auto grid max-w-[var(--public-page-max-width)] gap-8 px-[var(--public-page-gutter)] py-12 text-sm md:grid-cols-[1.2fr_repeat(2,minmax(0,1fr))]">
         <div className="flex items-center gap-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img alt="Thorns Tavern" className="h-8 w-[161px] object-contain" src="/ui/nav/brand-wordmark.png" />

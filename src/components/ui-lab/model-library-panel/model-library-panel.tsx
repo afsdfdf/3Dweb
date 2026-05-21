@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ModelLibraryCard } from "@/components/ui-lab/model-library-card";
 import { ModuleCommonFrame } from "@/components/ui-lab/module-common-frame";
@@ -43,12 +43,12 @@ type ModelLibraryPanelProps = {
 
 const defaultCards: ModelLibraryPanelCard[] = [];
 
-const pages = ["<", "1", ">"];
 const transparentImageSrc =
   "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
 const libraryGridColumns = 2;
 const libraryCardHeight = 323;
 const libraryInitialVisibleCount = 6;
+const libraryPageSize = 10;
 
 export function ModelLibraryPanel({
   cards = defaultCards,
@@ -57,7 +57,7 @@ export function ModelLibraryPanel({
   style,
   title = "Model Library",
 }: ModelLibraryPanelProps) {
-  const [activePage, setActivePage] = useState("1");
+  const [activePage, setActivePage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCard, setSelectedCard] = useState(cards[0]?.id ?? 1);
   const gridRef = useRef<HTMLDivElement | null>(null);
@@ -65,9 +65,28 @@ export function ModelLibraryPanel({
     libraryInitialVisibleCount,
   );
   const isEmpty = cards.length === 0;
+  const filteredCards = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return cards;
+
+    return cards.filter((card) => {
+      return [card.name, card.license, card.date, card.generationStatusLabel, card.kind]
+        .filter((value): value is string => typeof value === "string")
+        .some((value) => value.toLowerCase().includes(query));
+    });
+  }, [cards, searchQuery]);
+  const totalPages = Math.max(1, Math.ceil(filteredCards.length / libraryPageSize));
+  const pageCards = filteredCards.slice(
+    (activePage - 1) * libraryPageSize,
+    activePage * libraryPageSize,
+  );
+  const isFilteredEmpty = !isEmpty && filteredCards.length === 0;
+  const selectedCardId = filteredCards.some((card) => card.id === selectedCard)
+    ? selectedCard
+    : filteredCards[0]?.id ?? 1;
   const selectedCardIndex = Math.max(
     0,
-    cards.findIndex((card) => card.id === selectedCard),
+    pageCards.findIndex((card) => card.id === selectedCardId),
   );
 
   const updateVisiblePreviews = useCallback(() => {
@@ -88,10 +107,16 @@ export function ModelLibraryPanel({
   }, []);
 
   useEffect(() => {
-    setVisiblePreviewCount(libraryInitialVisibleCount);
-    setSelectedCard((current) => (cards.some((card) => card.id === current) ? current : cards[0]?.id ?? 1));
+    setActivePage((current) => Math.min(current, totalPages));
+  }, [totalPages]);
+
+  useEffect(() => {
+    setActivePage(1);
+  }, [searchQuery]);
+
+  useEffect(() => {
     window.requestAnimationFrame(updateVisiblePreviews);
-  }, [cards, updateVisiblePreviews]);
+  }, [pageCards, updateVisiblePreviews]);
 
   return (
     <aside
@@ -120,25 +145,30 @@ export function ModelLibraryPanel({
       </div>
       <div className={styles.libraryRule} />
       <div className={styles.pagination}>
-        {pages.map((item) => (
-          <button
-            className={item === activePage ? styles.pageActive : ""}
-            key={item}
-            onClick={() => {
-              if (item !== "<" && item !== ">" && item !== "...") {
-                setActivePage(item);
-              }
-            }}
-            type="button"
-          >
-            {item}
-          </button>
-        ))}
+        <button
+          aria-label="Previous page"
+          disabled={activePage <= 1}
+          onClick={() => setActivePage((current) => Math.max(1, current - 1))}
+          type="button"
+        >
+          &lt;
+        </button>
+        <button className={styles.pageActive} type="button">
+          {activePage}
+        </button>
+        <button
+          aria-label="Next page"
+          disabled={activePage >= totalPages}
+          onClick={() => setActivePage((current) => Math.min(totalPages, current + 1))}
+          type="button"
+        >
+          &gt;
+        </button>
       </div>
-      {isEmpty ? (
+      {isEmpty || isFilteredEmpty ? (
         <div className={styles.emptyState}>
           <div className={styles.emptyIcon} aria-hidden="true" />
-          <p>No Models Available</p>
+          <p>{isFilteredEmpty ? "No Matches Found" : "No Models Available"}</p>
         </div>
       ) : (
         <>
@@ -147,10 +177,10 @@ export function ModelLibraryPanel({
             onScroll={updateVisiblePreviews}
             ref={gridRef}
           >
-            {cards.map((card, index) => (
+            {pageCards.map((card, index) => (
               <ModelLibraryCard
                 date={card.date}
-                key={card.id}
+                key={`${card.kind || "model"}-${card.id}`}
                 generationProgress={card.generationProgress}
                 generationState={card.generationState}
                 generationStatusLabel={card.generationStatusLabel}
@@ -167,7 +197,7 @@ export function ModelLibraryPanel({
                     ? card.previewSrc || (card.generationState ? transparentImageSrc : undefined)
                     : transparentImageSrc
                 }
-                selected={selectedCard === card.id}
+                selected={selectedCardId === card.id}
               />
             ))}
           </div>
@@ -175,7 +205,7 @@ export function ModelLibraryPanel({
             className={styles.bottomPagination}
             aria-label="Library pagination summary"
           >
-            <span>10 Items / Page</span>
+            <span>{filteredCards.length} Items</span>
           </div>
         </>
       )}

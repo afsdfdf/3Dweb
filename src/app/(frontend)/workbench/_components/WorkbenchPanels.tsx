@@ -1,6 +1,6 @@
 import Link from 'next/link'
 
-import { Box, ChevronLeft, ChevronRight, MoreHorizontal, Search } from 'lucide-react'
+import { Box, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { LineFrame } from '@/components/ui/line-frame'
@@ -135,89 +135,6 @@ function LibraryGridCard({
         </article>
       </LineFrame>
     </Link>
-  )
-}
-
-function LibraryPagination() {
-  return (
-    <div className="flex items-center justify-end gap-2 text-[11px] text-[#bab2a6]">
-      <button
-        className="rounded-[4px] border border-[#3e3b43] px-2 py-1.5 transition hover:border-[#6a654e] hover:text-[#f0eadc]"
-        type="button"
-      >
-        <ChevronLeft className="size-3.5" />
-      </button>
-      {['1', '2', '3', '4', '...', '10'].map((item, index) => (
-        <span
-          className={`rounded-[4px] border px-2.5 py-1.5 ${
-            index === 0 ? 'border-[#5d585f] bg-[#17171a] text-[#f0eadc]' : 'border-[#3e3b43] text-[#9e97a5]'
-          }`}
-          key={item}
-        >
-          {item}
-        </span>
-      ))}
-      <button
-        className="rounded-[4px] border border-[#3e3b43] px-2 py-1.5 transition hover:border-[#6a654e] hover:text-[#f0eadc]"
-        type="button"
-      >
-        <ChevronRight className="size-3.5" />
-      </button>
-    </div>
-  )
-}
-
-function LibrarySearchForm({
-  initialMode,
-  query,
-  scope,
-}: {
-  initialMode: 'image' | 'text'
-  query: string
-  scope: 'all' | 'mine' | 'public'
-}) {
-  return (
-    <form className="flex flex-col gap-3" method="get">
-      <input name="mode" suppressHydrationWarning type="hidden" value={initialMode} />
-      <div className="flex items-center gap-2 rounded-[4px] border border-[#34323a] bg-[#0e0e11] px-3 py-2 text-[#706b76]">
-        <Search className="size-4 shrink-0" />
-        <input
-          className="w-full bg-transparent text-xs text-[#efe7da] outline-none placeholder:text-[#706b76]"
-          defaultValue={query}
-          name="q"
-          placeholder="Search Keywords"
-          suppressHydrationWarning
-        />
-        <button
-          className="rounded-[4px] border border-[#5a535d] bg-[#17171a] px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#f0eadc] transition hover:border-[#82693d]"
-          type="submit"
-        >
-          Search
-        </button>
-      </div>
-
-      <div className="grid grid-cols-3 gap-2">
-        {[
-          { label: 'All', value: 'all' },
-          { label: 'Mine', value: 'mine' },
-          { label: 'Public', value: 'public' },
-        ].map((item) => (
-          <button
-            className={`rounded-[4px] border px-2 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] transition ${
-              scope === item.value
-                ? 'border-[#8d6a34] bg-[#20180d] text-[#f4d28b]'
-                : 'border-[#34323a] bg-[#111115] text-[#a49daa] hover:border-[#5a535d] hover:text-[#f0eadc]'
-            }`}
-            key={item.value}
-            name="scope"
-            type="submit"
-            value={item.value}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
-    </form>
   )
 }
 
@@ -367,6 +284,7 @@ export function WorkbenchLibrary({
 
           <form className="flex items-center gap-1.5" method="get">
             <input name="mode" suppressHydrationWarning type="hidden" value={initialMode} />
+            <input name="scope" suppressHydrationWarning type="hidden" value={scope} />
             <input
               className="h-8 w-[132px] border border-[#34323a] bg-[#0a0a0d] px-3 text-[10px] text-[#efe7da] outline-none placeholder:text-[#6f6973]"
               defaultValue={query}

@@ -1257,6 +1257,8 @@ async function createMeshyTask(args: {
   const sourceAssets = normalizeSourceImageAssets(sourceImageAssets)
   const legacySourceAsset = normalizeSourceImageAssets(sourceImageAsset)
   const imageAssets = dedupeSourceImageAssets([...sourceAssets, ...snapshotSourceAssets, ...legacySourceAsset]).slice(0, 4)
+  const workbenchSnapshot = isRecord(parameterSnapshot?.workbench) ? parameterSnapshot.workbench : null
+  const multiViewEnabled = workbenchSnapshot?.multiViewEnabled === true
 
   if (inputMode === 'text' || (imageAssets.length === 0 && !sourceImage)) {
     const previewTask = await createMeshyTextPreviewTask({
@@ -1276,7 +1278,7 @@ async function createMeshyTask(args: {
     }
   }
 
-  if (imageAssets.length > 1) {
+  if (imageAssets.length > 1 && multiViewEnabled) {
     if (!settings.multiImageEnabled) {
       throw new Error('Meshy Multi Image to 3D is disabled in backend settings.')
     }

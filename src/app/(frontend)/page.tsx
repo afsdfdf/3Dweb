@@ -3,15 +3,14 @@ import Link from "next/link";
 import { AuthModalStage } from "@/components/auth/AuthModalStage";
 import { BorderComboFrame2, BorderComboFrame2Variant } from "@/components/ui-lab/border-combo-frame-2";
 import { LinkedSourcePurpleMediumButton } from "@/components/ui-lab/action-buttons";
-import { SmallButtonPair } from "@/components/ui-lab/small-button-pair/small-button-pair";
 import { TopNavigation, migrationTestNavItems } from "@/components/ui-lab/top-navigation";
 import Frame12877 from "@/components/ui-lab/home-test/frame12877";
 import { HeroImageFrameStrip } from "@/components/ui-lab/home-test/hero-image-frame-strip";
 import { InspirationSearchBox, InspirationPager } from "@/components/ui-lab/home-test/inspiration-search-box";
 import { InspirationGrid } from "@/components/ui-lab/home-test/inspiration-grid";
-import { SelectableFrameRow } from "@/components/ui-lab/home-test/selectable-frame-row";
+import { BundleShelfControls } from "@/components/ui-lab/home-test/bundle-shelf-controls";
 import { FooterBar } from "./_components/shell/FooterBar";
-import { getHomeData } from "./_home/homeData";
+import { getFirstBundleShelfItems, getHomeData } from "./_home/homeData";
 import styles from "./_home/homePage.module.css";
 
 type HomePageProps = {
@@ -28,7 +27,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     inspirationQuery: query.q,
   });
   const mobileFeatureItems = data.featuredItems.slice(0, 4);
-  const mobileShelfItems = data.shelfItems.slice(0, 4);
+  const mobileShelfItems = getFirstBundleShelfItems(data.shelfItems);
   const mobileInspirationItems = data.inspirationItems.slice(0, 6);
 
   return (
@@ -111,10 +110,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             <div className={styles.mobileShelfList}>
               {mobileShelfItems.map((item) => (
                 <Link href={item.href || "/bundles"} key={item.id}>
-                  <img alt={item.title} src={item.imageSrc} />
+                  <img alt={item.alt || item.title || "Bundle"} src={item.imageSrc} />
                   <span>
-                    <strong>{item.title}</strong>
-                    <em>{item.count}</em>
+                    {item.title ? <strong>{item.title}</strong> : null}
+                    {item.count ? <em>{item.count}</em> : null}
                   </span>
                 </Link>
               ))}
@@ -168,17 +167,18 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                 <span className={[styles.bannerRightImage, styles.bannerRightImageText].join(" ")}>
                   Bundles
                 </span>
-                <div className={styles.smallButtonPairMount}>
-                  <SmallButtonPair purpleLabel="Hot" darkLabel="New" />
-                </div>
+                <BundleShelfControls
+                  controlsClassName={styles.smallButtonPairMount}
+                  items={data.shelfItems}
+                />
                 <div className={styles.sourceMediumButtonMount}>
                   <LinkedSourcePurpleMediumButton href="/bundles" label="More" />
                 </div>
-                <SelectableFrameRow items={data.shelfItems} />
               </div>
             </BorderComboFrame2>
             <BorderComboFrame2
               className={styles.heroThirdBanner}
+              id="inspiration"
               style={{ width: 1856, height: 2226 }}
             >
               <div className={styles.bannerContent}>

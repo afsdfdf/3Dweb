@@ -52,7 +52,7 @@ test('critical payment and webhook lookup fields are indexed in collection confi
 
 test('PostgreSQL pool config uses safe Supabase/Postgres defaults', () => {
   assert.deepEqual(readPostgresPoolConfig(), {
-    connectionTimeoutMillis: 5000,
+    connectionTimeoutMillis: 60000,
     idleTimeoutMillis: 30000,
     max: 20,
     min: 2,

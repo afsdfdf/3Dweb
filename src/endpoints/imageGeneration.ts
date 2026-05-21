@@ -5,6 +5,10 @@ import { rejectRateLimitedEndpoint } from '@/lib/endpointRateLimit'
 import { runImageGenerationTask, submitImageGeneration } from '@/lib/imageGenerationFlow'
 import { ensurePayloadRequestUser } from '@/lib/payloadAuthFallback'
 import { rejectDisallowedMutationOrigin } from '@/lib/requestSecurity'
+import {
+  applyWorkbenchSourceImageAssetsToSnapshot,
+  validateWorkbenchSourceImageAssets,
+} from '@/lib/workbenchSourceAssets'
 
 const unauthorized = () => Response.json({ message: 'Please sign in first.' }, { status: 401 })
 
@@ -19,14 +23,20 @@ let imageGenerationEndpointTestHooks: ImageGenerationEndpointTestHooks | null = 
 type ImageGenerationWorkItem = {
   reject: (error: unknown) => void
   resolve: () => void
+  scheduledAt?: number
   task: () => Promise<void>
   taskId?: number
 }
 
 let activeImageGenerationWorkCount = 0
 const queuedImageGenerationWork: ImageGenerationWorkItem[] = []
-const scheduledImageGenerationTaskIds = new Set<number>()
+const scheduledImageGenerationTaskIds = new Map<number, number>()
 let imageGenerationWorkConcurrencyLimit = 20
+let imageGenerationWorkPumpTimer: ReturnType<typeof setTimeout> | null = null
+let lastImageGenerationWorkerStartAt = 0
+
+const DEFAULT_IMAGE_GENERATION_SCHEDULED_TASK_TTL_MS = 900_000
+const DEFAULT_IMAGE_GENERATION_WORKER_START_INTERVAL_MS = 500
 
 export function __setImageGenerationEndpointTestHooks(hooks: ImageGenerationEndpointTestHooks | null) {
   imageGenerationEndpointTestHooks = hooks
@@ -36,25 +46,12 @@ const isRecord = (value: unknown): value is Record<string, unknown> => {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 }
 
-const normalizeSourceImageAssets = (value: unknown) => {
-  return Array.isArray(value) ? value.filter(isRecord) : []
-}
-
 const normalizeImageGenerationParameterSnapshot = (args: {
   parameterSnapshot?: Record<string, unknown>
   sourceImageAsset?: Record<string, unknown>
+  sourceImageAssets?: Record<string, unknown>[]
 }) => {
-  const snapshot = args.parameterSnapshot
-  if (!snapshot || !args.sourceImageAsset) return snapshot
-
-  const workbench = isRecord(snapshot.workbench) ? snapshot.workbench : null
-
-  return {
-    ...snapshot,
-    sourceImageAsset: args.sourceImageAsset,
-    ...(Array.isArray(snapshot.sourceImageAssets) ? { sourceImageAssets: [args.sourceImageAsset] } : {}),
-    ...(workbench ? { workbench: { ...workbench, sourceImageAssets: [args.sourceImageAsset] } } : {}),
-  }
+  return applyWorkbenchSourceImageAssetsToSnapshot(args)
 }
 
 const normalizeImageGenerationProvider = (value: unknown) => {
@@ -73,6 +70,25 @@ const getImageGenerationWorkConcurrencyLimit = () => {
 const readPositiveInteger = (value: unknown, fallback: number) => {
   const numberValue = Number(value)
   return Number.isFinite(numberValue) && numberValue > 0 ? Math.max(1, Math.floor(numberValue)) : fallback
+}
+
+const readNonNegativeInteger = (value: unknown, fallback: number) => {
+  const numberValue = Number(value)
+  return Number.isFinite(numberValue) && numberValue >= 0 ? Math.floor(numberValue) : fallback
+}
+
+const getImageGenerationScheduledTaskTTL = () => {
+  return readNonNegativeInteger(
+    process.env.IMAGE_GENERATION_SCHEDULED_TASK_TTL_MS,
+    DEFAULT_IMAGE_GENERATION_SCHEDULED_TASK_TTL_MS,
+  )
+}
+
+const getImageGenerationWorkerStartIntervalMs = () => {
+  return readNonNegativeInteger(
+    process.env.IMAGE_GENERATION_WORKER_START_INTERVAL_MS,
+    DEFAULT_IMAGE_GENERATION_WORKER_START_INTERVAL_MS,
+  )
 }
 
 const resolveImageGenerationWorkConcurrencyLimit = async (req: PayloadRequest) => {
@@ -101,20 +117,41 @@ const refreshImageGenerationWorkConcurrencyLimit = async (req: PayloadRequest) =
   pumpImageGenerationWorkQueue()
 }
 
+const scheduleImageGenerationWorkPump = (delayMs = 0) => {
+  if (imageGenerationWorkPumpTimer) return
+
+  imageGenerationWorkPumpTimer = setTimeout(() => {
+    imageGenerationWorkPumpTimer = null
+    pumpImageGenerationWorkQueue()
+  }, Math.max(0, delayMs))
+}
+
 const pumpImageGenerationWorkQueue = () => {
   const limit = getImageGenerationWorkConcurrencyLimit()
 
   while (activeImageGenerationWorkCount < limit && queuedImageGenerationWork.length > 0) {
+    const startIntervalMs = getImageGenerationWorkerStartIntervalMs()
+    const nextStartDelayMs =
+      startIntervalMs > 0 && lastImageGenerationWorkerStartAt > 0
+        ? startIntervalMs - (Date.now() - lastImageGenerationWorkerStartAt)
+        : 0
+
+    if (nextStartDelayMs > 0) {
+      scheduleImageGenerationWorkPump(nextStartDelayMs)
+      return
+    }
+
     const item = queuedImageGenerationWork.shift()
     if (!item) return
 
     activeImageGenerationWorkCount += 1
+    lastImageGenerationWorkerStartAt = Date.now()
     void item
       .task()
       .then(item.resolve, item.reject)
       .finally(() => {
         activeImageGenerationWorkCount = Math.max(0, activeImageGenerationWorkCount - 1)
-        if (item.taskId) {
+        if (item.taskId && scheduledImageGenerationTaskIds.get(item.taskId) === item.scheduledAt) {
           scheduledImageGenerationTaskIds.delete(item.taskId)
         }
         pumpImageGenerationWorkQueue()
@@ -122,23 +159,37 @@ const pumpImageGenerationWorkQueue = () => {
   }
 }
 
+const isImageGenerationTaskAlreadyScheduled = (taskId: number) => {
+  const scheduledAt = scheduledImageGenerationTaskIds.get(taskId)
+  if (!scheduledAt) return false
+
+  if (Date.now() - scheduledAt > getImageGenerationScheduledTaskTTL()) {
+    scheduledImageGenerationTaskIds.delete(taskId)
+    return false
+  }
+
+  return true
+}
+
 const enqueueImageGenerationWork = (task: () => Promise<void>, taskId?: number) => {
-  if (taskId && scheduledImageGenerationTaskIds.has(taskId)) {
+  if (taskId && isImageGenerationTaskAlreadyScheduled(taskId)) {
     return Promise.resolve()
   }
 
+  const scheduledAt = Date.now()
   if (taskId) {
-    scheduledImageGenerationTaskIds.add(taskId)
+    scheduledImageGenerationTaskIds.set(taskId, scheduledAt)
   }
 
   return new Promise<void>((resolve, reject) => {
     queuedImageGenerationWork.push({
       reject,
       resolve,
+      scheduledAt,
       task,
       taskId,
     })
-    pumpImageGenerationWorkQueue()
+    scheduleImageGenerationWorkPump()
   })
 }
 
@@ -175,8 +226,16 @@ const isRunnableImageGenerationStatus = (value: unknown) => {
   return value === 'queued' || value === 'processing'
 }
 
-const scheduleTaskRun = async (args: { req: PayloadRequest; taskId: number }) => {
-  await refreshImageGenerationWorkConcurrencyLimit(args.req)
+const scheduleTaskRun = (args: { req: PayloadRequest; taskId: number }) => {
+  void refreshImageGenerationWorkConcurrencyLimit(args.req).catch((error) => {
+    args.req.payload.logger.warn(
+      {
+        err: error,
+        taskId: args.taskId,
+      },
+      'Image generation worker concurrency refresh failed; using current limit.',
+    )
+  })
 
   scheduleImageGenerationWork(async () => {
     try {
@@ -215,11 +274,16 @@ export const submitImageGenerationEndpoint = {
     try {
       const body = req.json ? await req.json() : {}
       const inputMode = body.inputMode === 'image' ? 'image' : 'text'
-      const sourceImageAssets = normalizeSourceImageAssets(body.sourceImageAssets)
-      const sourceImageAsset = isRecord(body.sourceImageAsset) ? body.sourceImageAsset : sourceImageAssets[0]
+      const { sourceImageAsset, sourceImageAssets } = await validateWorkbenchSourceImageAssets({
+        maxAssets: 1,
+        req,
+        sourceImageAsset: body.sourceImageAsset,
+        sourceImageAssets: body.sourceImageAssets,
+      })
       const parameterSnapshot = normalizeImageGenerationParameterSnapshot({
         parameterSnapshot: isRecord(body.parameterSnapshot) ? body.parameterSnapshot : undefined,
         sourceImageAsset,
+        sourceImageAssets,
       })
       const result = await (imageGenerationEndpointTestHooks?.submitImageGeneration || submitImageGeneration)({
         dispatchProvider: false,
@@ -238,7 +302,7 @@ export const submitImageGenerationEndpoint = {
       }
 
       if (!imageGenerationEndpointTestHooks?.submitImageGeneration || imageGenerationEndpointTestHooks.runImageGenerationTask) {
-        await scheduleTaskRun({ req, taskId })
+        scheduleTaskRun({ req, taskId })
       }
 
       return Response.json(
@@ -321,7 +385,7 @@ export const syncImageGenerationEndpoint = {
       : null
 
     if (!media && isRunnableImageGenerationStatus(task.status)) {
-      await scheduleTaskRun({ req, taskId })
+      scheduleTaskRun({ req, taskId })
     }
 
     return Response.json({

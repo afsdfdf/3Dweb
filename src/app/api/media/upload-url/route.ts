@@ -1,12 +1,18 @@
 import { NextRequest } from 'next/server'
 
+import { rejectRateLimitedEndpoint } from '@/lib/endpointRateLimit'
 import { getCachedPayload } from '@/lib/getCachedPayload'
 import { resolvePayloadUserFromHeaders } from '@/lib/payloadAuthFallback'
 import { rejectDisallowedMutationOrigin } from '@/lib/requestSecurity'
 import { ensureSupabaseStorageBucket, getRuntimeStorageSettings } from '@/lib/supabase/storage'
 import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 
-const MAX_SOURCE_IMAGE_UPLOAD_BYTES = Number(process.env.MAX_SOURCE_IMAGE_UPLOAD_BYTES || 15 * 1024 * 1024)
+const DEFAULT_SOURCE_IMAGE_UPLOAD_BYTES = 8 * 1024 * 1024
+const configuredMaxUploadBytes = Number(process.env.NEXT_PUBLIC_MAX_UPLOAD_BYTES)
+const MAX_SOURCE_IMAGE_UPLOAD_BYTES =
+  Number.isFinite(configuredMaxUploadBytes) && configuredMaxUploadBytes > 0
+    ? configuredMaxUploadBytes
+    : DEFAULT_SOURCE_IMAGE_UPLOAD_BYTES
 const allowedImageContentTypes = new Set(['image/jpeg', 'image/png'])
 
 const sanitizeFilename = (value: string) =>
@@ -40,6 +46,18 @@ export async function POST(request: NextRequest) {
 
   if (!user) {
     return Response.json({ message: 'Please sign in first.' }, { status: 401 })
+  }
+
+  const rateLimited = await rejectRateLimitedEndpoint({
+    req: {
+      headers: request.headers,
+      user,
+    } as never,
+    scope: 'media-upload-url',
+  })
+
+  if (rateLimited) {
+    return rateLimited
   }
 
   const body = await request.json().catch(() => ({}))

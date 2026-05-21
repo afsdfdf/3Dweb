@@ -23,12 +23,13 @@ export const workbenchDraftStorageKey = "thornstavern.workbenchDraft.v1";
 export const workbenchDefaultPrompt =
   "A blue monk character with wooden beads, broad shoulders, and hand-painted fantasy style.";
 
+const DEFAULT_SOURCE_IMAGE_UPLOAD_BYTES = 8 * 1024 * 1024;
 const configuredMaxUploadBytes = Number(process.env.NEXT_PUBLIC_MAX_UPLOAD_BYTES);
 
 export const workbenchMaxUploadBytes =
   Number.isFinite(configuredMaxUploadBytes) && configuredMaxUploadBytes > 0
     ? configuredMaxUploadBytes
-    : 8 * 1024 * 1024;
+    : DEFAULT_SOURCE_IMAGE_UPLOAD_BYTES;
 
 export const workbenchAllowedImageTypes = new Set(["image/jpeg", "image/png"]);
 

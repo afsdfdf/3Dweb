@@ -155,8 +155,8 @@ export function WorkbenchComposer({
       let sourceImageAsset: SourceImageAsset | undefined
 
       if (primaryImage) {
-        if (!['image/jpeg', 'image/png', 'image/webp'].includes(primaryImage.type)) {
-          throw new Error('Only JPEG, PNG, or WEBP reference images are supported right now.')
+        if (!['image/jpeg', 'image/png'].includes(primaryImage.type)) {
+          throw new Error('Only JPEG or PNG reference images are supported right now.')
         }
 
         if (primaryImage.size > maxUploadBytes) {
@@ -270,7 +270,7 @@ export function WorkbenchComposer({
                   <Plus className="mb-2 size-4" />
                   Add Image
                   <input
-                    accept="image/jpeg,image/png,image/webp"
+                    accept="image/jpeg,image/png"
                     className="hidden"
                     multiple
                     name="sourceImages"

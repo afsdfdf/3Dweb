@@ -1,6 +1,11 @@
 .button {
   appearance: none;
-  background: transparent;
+  background-clip: border-box;
+  background-image: var(--button-image);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  background-origin: border-box;
   border-color: transparent;
   border-style: solid;
   border-width: 0 20px;

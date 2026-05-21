@@ -111,11 +111,11 @@
   background: rgba(255, 255, 255, 0.1);
   display: block;
   height: 2px;
-  left: 299px;
+  left: 321px;
   pointer-events: auto;
   position: absolute;
   top: 15px;
-  width: 1107px;
+  width: 1085px;
 }
 
 .smallButtonPairMount {
@@ -153,6 +153,8 @@
 }
 
 .lowerButtonGroupMount {
+  align-items: center;
+  display: flex;
   height: 48px;
   left: 1380px;
   position: absolute;
@@ -200,8 +202,8 @@
 }
 
 .heroThirdBanner .bannerDividerLine {
-  left: 272px;
-  width: 1514px;
+  left: 318px;
+  width: 1029px;
 }
 
 .footerMount {
@@ -702,4 +704,9 @@
   .mobileActions {
     grid-template-columns: 1fr;
   }
+}
+.bannerRightImageText {
+  min-width: 240px;
+  width: 240px;
+  padding-right: 34px;
 }

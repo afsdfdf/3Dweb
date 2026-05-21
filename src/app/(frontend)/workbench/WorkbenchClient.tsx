@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -13,6 +14,7 @@ import type { TopNavigationUser } from "@/components/ui-lab/top-navigation";
 import { ModelViewer } from "../_components/ModelViewer";
 import {
   clearWorkbenchDraft,
+  getWorkbenchUploadAccept,
   readWorkbenchDraft,
   uploadWorkbenchSourceImage,
   workbenchAllowedImageTypes,
@@ -25,6 +27,8 @@ import {
   type WorkbenchImageInput,
   type WorkbenchMode,
 } from "./WorkbenchLeftGenerationPanel";
+import { selectWorkbenchSyncTasks } from "./_lib/workbenchPolling";
+import { getEstimatedWorkbenchProgress } from "./_lib/workbenchProgress";
 import styles from "./page.module.css";
 
 type WorkbenchClientProps = {
@@ -60,6 +64,11 @@ type PendingGenerationTask = {
 };
 
 const syncIntervalMs = Math.max(1000, Number(process.env.NEXT_PUBLIC_TASK_SYNC_INTERVAL_MS || 5000));
+const configuredSyncBatchSize = Number(process.env.NEXT_PUBLIC_TASK_SYNC_BATCH_SIZE || 2);
+const syncBatchSize = Math.max(
+  1,
+  Math.min(4, Math.floor(Number.isFinite(configuredSyncBatchSize) ? configuredSyncBatchSize : 2)),
+);
 
 const defaultGenerationCreditCosts: GenerationCreditCosts = {
   image: 20,
@@ -176,6 +185,8 @@ class GenerationRequestError extends Error {
 }
 
 const insufficientCreditsMessage = "Insufficient credits. Please add credits before generating.";
+const imageTo3DRequiresImageMessage = "Image To 3D requires at least one reference image.";
+const imageToolsRequiresInputMessage = "Add a prompt or reference image before generating an image.";
 
 const buildInsufficientCreditsMessage = (requiredCredits: number) => {
   return `${insufficientCreditsMessage} This generation requires ${requiredCredits} credits.`;
@@ -230,14 +241,6 @@ const getPendingGenerationDetail = (task: PendingGenerationTask) => {
   return "Waiting for task code";
 };
 
-const getOptimisticProgressCeiling = (task: PendingGenerationTask) => {
-  if (task.status === "uploading") return 4;
-  if (task.status === "queued") return 12;
-  if (task.status === "finalizing") return 99;
-  if (task.status === "processing") return 96;
-  return task.progress;
-};
-
 const toPendingCard = (task: PendingGenerationTask): ModelLibraryPanelCard => ({
   date: formatLocalCardDate(task.createdAt),
   generationProgress: task.progress,
@@ -265,6 +268,7 @@ export function WorkbenchClient({
   const firstModelSrc = libraryCards[0]?.modelSrc ?? null;
   const imagesRef = useRef<WorkbenchImageInput[]>([]);
   const pendingTasksRef = useRef<PendingGenerationTask[]>([]);
+  const syncCursorRef = useRef(0);
   const syncingTaskIdsRef = useRef(new Set<number>());
   const [activePendingCardId, setActivePendingCardId] = useState<null | number>(
     () => initialPendingTasks[0]?.cardId ?? null,
@@ -273,7 +277,7 @@ export function WorkbenchClient({
     () => (initialPendingTasks[0]?.kind === "image" ? "imageTools" : "image3d"),
   );
   const [error, setError] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeSubmitCount, setActiveSubmitCount] = useState(0);
   const [multiView, setMultiView] = useState(false);
   const [tags, setTags] = useState(["game", "Unnamed"]);
   const [images, setImages] = useState<WorkbenchImageInput[]>([]);
@@ -284,15 +288,17 @@ export function WorkbenchClient({
   const [pendingTasks, setPendingTasks] = useState<PendingGenerationTask[]>(
     () => initialPendingTasks,
   );
-  const [prompt, setPrompt] = useState(workbenchDefaultPrompt);
+  const [prompt, setPrompt] = useState("");
   const [selectedImageCard, setSelectedImageCard] = useState<ModelLibraryPanelCard | null>(null);
   const [selectedModelSrc, setSelectedModelSrc] = useState<null | string>(firstModelSrc);
   const showImageInputs = activeMode === "image3d" || activeMode === "imageTools";
-  const maxReferenceImageCount = activeMode === "imageTools" ? 1 : 4;
+  const isSubmitting = activeSubmitCount > 0;
+  const maxReferenceImageCount = activeMode === "image3d" && multiView ? 4 : 1;
+  const billableImageCount = activeMode === "image3d" && multiView ? images.length : Math.min(images.length, 1);
   const activeGenerationCreditCost = getActiveGenerationCreditCost({
     activeMode,
     costs: generationCreditCosts,
-    imageCount: images.length,
+    imageCount: billableImageCount,
   });
   const rightPanelModelCards = useMemo(() => {
     const localModelIds = new Set(localModelCards.map((card) => card.id));
@@ -430,20 +436,22 @@ export function WorkbenchClient({
     if (!pendingTasks.some((task) => !isTerminalGenerationStatus(task.status))) return;
 
     const timer = window.setInterval(() => {
+      const nowMs = Date.now();
+
       setPendingTasks((current) =>
         current.map((task) => {
           if (isTerminalGenerationStatus(task.status)) return task;
 
-          const ceiling = getOptimisticProgressCeiling(task);
-          if (task.progress >= ceiling) return task;
+          const progress = getEstimatedWorkbenchProgress(task, nowMs);
+          if (task.progress >= progress) return task;
 
           return {
             ...task,
-            progress: Math.min(ceiling, task.progress + 1),
+            progress,
           };
         }),
       );
-    }, 1200);
+    }, 1000);
 
     return () => window.clearInterval(timer);
   }, [pendingTasks]);
@@ -497,7 +505,7 @@ export function WorkbenchClient({
                 item.cardId === task.cardId
                   ? {
                       ...item,
-                      progress: Math.min(99, Math.max(progress, 96)),
+                      progress: Math.max(item.progress, Math.min(99, Math.max(progress, 96))),
                       status: "finalizing",
                       taskCode,
                     }
@@ -575,7 +583,7 @@ export function WorkbenchClient({
               ? {
                   ...item,
                   failureReason,
-                  progress: nextProgress,
+                  progress: Math.max(item.progress, nextProgress),
                   status: nextStatus,
                   taskCode,
                 }
@@ -596,11 +604,15 @@ export function WorkbenchClient({
     const syncOnce = async () => {
       if (cancelled) return;
 
-      const syncableTasks = pendingTasksRef.current.filter(
-        (task) => task.taskId && !isTerminalGenerationStatus(task.status),
-      );
+      const { nextCursor, selectedTasks } = selectWorkbenchSyncTasks({
+        activePendingCardId,
+        batchSize: syncBatchSize,
+        cursor: syncCursorRef.current,
+        tasks: pendingTasksRef.current,
+      });
+      syncCursorRef.current = nextCursor;
 
-      await Promise.all(syncableTasks.map(syncTask));
+      await Promise.all(selectedTasks.map(syncTask));
 
       if (!cancelled && pendingTasksRef.current.some((task) => task.taskId && !isTerminalGenerationStatus(task.status))) {
         timer = setTimeout(() => {
@@ -615,7 +627,7 @@ export function WorkbenchClient({
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, [hasSyncablePendingTasks, router]);
+  }, [activePendingCardId, hasSyncablePendingTasks, router]);
 
   useEffect(() => {
     return () => {
@@ -641,7 +653,7 @@ export function WorkbenchClient({
 
     setActiveMode(draft.sourceImageAssets.length > 0 ? "image3d" : draft.mode);
     setMultiView(false);
-    setPrompt(draft.prompt.trim() || workbenchDefaultPrompt);
+    setPrompt(draft.prompt.trim());
     setImages(
       draft.sourceImageAssets.map((asset) => ({
         id: `${asset.path}-${asset.fileName}`,
@@ -658,21 +670,49 @@ export function WorkbenchClient({
     setError("");
     setImages((current) => {
       const availableSlots = Math.max(0, maxReferenceImageCount - current.length);
-      const selectedFiles = Array.from(files).slice(0, availableSlots);
-      const nextImages = selectedFiles
-        .filter((file) => workbenchAllowedImageTypes.has(file.type) && file.size <= workbenchMaxUploadBytes)
+      const selectedFiles = Array.from(files);
+      const validFiles = selectedFiles.filter(
+        (file) => workbenchAllowedImageTypes.has(file.type) && file.size <= workbenchMaxUploadBytes,
+      );
+      const nextImages = validFiles
+        .slice(0, maxReferenceImageCount === 1 ? 1 : availableSlots)
         .map((file) => ({
           file,
           id: `${file.name}-${file.size}-${file.lastModified}-${crypto.randomUUID()}`,
           previewUrl: URL.createObjectURL(file),
         }));
+      const shouldReplaceSingleImage = activeMode === "imageTools" && maxReferenceImageCount === 1 && nextImages.length > 0;
 
-      if (nextImages.length < selectedFiles.length) {
-        setError("Some images were skipped. Use JPEG, PNG, or WEBP under the upload size limit.");
+      if (shouldReplaceSingleImage) {
+        current.forEach((image) => {
+          if (image.file) URL.revokeObjectURL(image.previewUrl);
+        });
       }
 
-      return [...current, ...nextImages].slice(0, maxReferenceImageCount);
+      if (validFiles.length < selectedFiles.length) {
+        setError("Some images were skipped. Use JPEG or PNG under the upload size limit.");
+      } else if (!shouldReplaceSingleImage && availableSlots === 0) {
+        setError("Remove an image before adding another reference.");
+      } else if (nextImages.length < validFiles.length) {
+        setError(`Only ${maxReferenceImageCount} reference image${maxReferenceImageCount === 1 ? "" : "s"} can be used in this mode.`);
+      }
+
+      return shouldReplaceSingleImage ? nextImages.slice(0, 1) : [...current, ...nextImages].slice(0, maxReferenceImageCount);
     });
+  };
+
+  const handleMultiViewChange = (enabled: boolean) => {
+    setMultiView(enabled);
+
+    if (!enabled) {
+      setImages((current) => {
+        current.slice(1).forEach((image) => {
+          if (image.file) URL.revokeObjectURL(image.previewUrl);
+        });
+
+        return current.slice(0, 1);
+      });
+    }
   };
 
   const removeImage = (id: string) => {
@@ -715,10 +755,20 @@ export function WorkbenchClient({
   };
 
   const handleGenerate = async () => {
-    if (isSubmitting) return;
-
     if (!navUser) {
       openAuthModal("login");
+      return;
+    }
+
+    if (activeMode === "image3d" && images.length === 0) {
+      setError(imageTo3DRequiresImageMessage);
+      return;
+    }
+
+    const rawPrompt = prompt.trim();
+    const hasUserPrompt = rawPrompt.length > 0 && rawPrompt !== workbenchDefaultPrompt;
+    if (activeMode === "imageTools" && images.length === 0 && !hasUserPrompt) {
+      setError(imageToolsRequiresInputMessage);
       return;
     }
 
@@ -732,7 +782,7 @@ export function WorkbenchClient({
     }
 
     setError("");
-    setIsSubmitting(true);
+    setActiveSubmitCount((current) => current + 1);
     const pendingKind: PendingGenerationTask["kind"] = activeMode === "imageTools" ? "image" : "model";
     const pendingCardId = createPendingCardId();
     const requestedTitle = modelTitle.trim() || "Unnamed";
@@ -760,7 +810,7 @@ export function WorkbenchClient({
     }
 
     try {
-      const imagesForGeneration = activeMode === "imageTools" ? images.slice(0, 1) : images;
+      const imagesForGeneration = activeMode === "image3d" && multiView ? images : images.slice(0, 1);
       const sourceImageAssets = showImageInputs
         ? await Promise.all(
             imagesForGeneration.map((image) => {
@@ -771,7 +821,6 @@ export function WorkbenchClient({
           )
         : [];
       const sourceImageAsset = sourceImageAssets[0];
-      const rawPrompt = prompt.trim();
       const trimmedPrompt =
         sourceImageAssets.length > 0 && rawPrompt === workbenchDefaultPrompt
           ? ""
@@ -840,7 +889,7 @@ export function WorkbenchClient({
             item.cardId === pendingCardId
               ? {
                   ...item,
-                  progress: getTaskProgress(task?.progress ?? 5),
+                  progress: Math.max(item.progress, getTaskProgress(task?.progress ?? 5)),
                   status: getTaskStatus(task?.status),
                   taskCode,
                   taskId,
@@ -865,7 +914,7 @@ export function WorkbenchClient({
             item.cardId === pendingCardId
               ? {
                   ...item,
-                  progress: getTaskProgress(task?.progress ?? 5),
+                  progress: Math.max(item.progress, getTaskProgress(task?.progress ?? 5)),
                   status: getTaskStatus(task?.status),
                   taskCode,
                   taskId,
@@ -900,7 +949,7 @@ export function WorkbenchClient({
       }
       window.alert(message);
     } finally {
-      setIsSubmitting(false);
+      setActiveSubmitCount((current) => Math.max(0, current - 1));
     }
   };
 
@@ -908,10 +957,10 @@ export function WorkbenchClient({
     <main className={styles.page}>
       <div className={styles.mobileWorkbench}>
         <header className={styles.mobileHeader}>
-          <a href="/" aria-label="Thorns Tavern home">
+          <Link href="/" aria-label="Thorns Tavern home">
             <img alt="Thorns Tavern" src="/ui-lab/top-navigation/logo-wordmark.png" />
-          </a>
-          <a href="/account">Account</a>
+          </Link>
+          <Link href="/account">Account</Link>
         </header>
 
         <section className={styles.mobileHero}>
@@ -946,7 +995,7 @@ export function WorkbenchClient({
               onClick={() => setActiveMode("imageTools")}
               type="button"
             >
-              Image
+              Image Tools
             </button>
           </div>
 
@@ -957,30 +1006,95 @@ export function WorkbenchClient({
 
           <label className={styles.mobileField}>
             <span>Prompt</span>
-            <textarea onChange={(event) => setPrompt(event.target.value)} rows={5} value={prompt} />
+            <textarea
+              onFocus={() => {
+                if (prompt === workbenchDefaultPrompt) {
+                  setPrompt("");
+                }
+              }}
+              onChange={(event) => setPrompt(event.target.value)}
+              placeholder={workbenchDefaultPrompt}
+              rows={5}
+              value={prompt}
+            />
           </label>
 
-          <div className={styles.mobileOptionRow}>
-            <button
-              className={license === "Public" ? styles.mobileOptionActive : ""}
-              onClick={() => setLicense("Public")}
-              type="button"
-            >
-              Public
-            </button>
-            <button
-              className={license === "Private" ? styles.mobileOptionActive : ""}
-              onClick={() => setLicense("Private")}
-              type="button"
-            >
-              Private
-            </button>
-          </div>
+          {showImageInputs ? (
+            <div className={styles.mobileUploadBlock}>
+              <div className={styles.mobileUploadHeader}>
+                <span>{maxReferenceImageCount === 1 ? "Reference image" : "Reference images"}</span>
+                <em>{images.length}/{maxReferenceImageCount}</em>
+              </div>
+              <div className={styles.mobileImageGrid}>
+                {images.map((image) => (
+                  <div className={styles.mobileImageThumb} key={image.id}>
+                    <img
+                      alt={image.file?.name || image.sourceAsset?.fileName || "Reference preview"}
+                      src={image.previewUrl}
+                    />
+                    <button aria-label="Remove image" onClick={() => removeImage(image.id)} type="button">
+                      x
+                    </button>
+                  </div>
+                ))}
+                {images.length < maxReferenceImageCount || activeMode === "imageTools" ? (
+                  <label
+                    className={`${styles.mobileAddImage} ${
+                      images.length >= maxReferenceImageCount && maxReferenceImageCount > 1 ? styles.mobileAddImageDisabled : ""
+                    }`}
+                  >
+                    <span>+</span>
+                    {activeMode === "imageTools" && images.length >= maxReferenceImageCount
+                      ? "Replace"
+                      : images.length >= maxReferenceImageCount
+                        ? "Full"
+                        : "Add"}
+                    <input
+                      accept={getWorkbenchUploadAccept()}
+                      disabled={images.length >= maxReferenceImageCount && maxReferenceImageCount > 1}
+                      multiple={activeMode === "image3d" && multiView}
+                      onChange={(event) => {
+                        handleImageFiles(event.target.files);
+                        event.target.value = "";
+                      }}
+                      type="file"
+                    />
+                  </label>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
+
+          {activeMode !== "imageTools" ? (
+            <div className={styles.mobileOptionRow}>
+              <button
+                className={license === "Public" ? styles.mobileOptionActive : ""}
+                onClick={() => setLicense("Public")}
+                type="button"
+              >
+                Public
+              </button>
+              <button
+                className={license === "Private" ? styles.mobileOptionActive : ""}
+                onClick={() => setLicense("Private")}
+                type="button"
+              >
+                Private
+              </button>
+            </div>
+          ) : (
+            <p className={styles.mobileVisibilityNote}>Generated images stay private in your assets.</p>
+          )}
 
           {error ? <p className={styles.mobileError}>{error}</p> : null}
 
-          <button className={styles.mobileGenerateButton} disabled={isSubmitting} onClick={handleGenerate} type="button">
-            {isSubmitting ? "Submitting..." : `Generate for ${activeGenerationCreditCost} credits`}
+          <button
+            aria-busy={isSubmitting}
+            className={styles.mobileGenerateButton}
+            onClick={handleGenerate}
+            type="button"
+          >
+            {isSubmitting ? `Generate another for ${activeGenerationCreditCost} credits` : `Generate for ${activeGenerationCreditCost} credits`}
           </button>
         </section>
 
@@ -999,7 +1113,6 @@ export function WorkbenchClient({
             ) : (
               <ModelViewer
                 className={styles.mobileViewer}
-                displayBase="workbench"
                 showGround={false}
                 showPlaceholderModel={false}
                 src={activeModelSrc}
@@ -1066,14 +1179,15 @@ export function WorkbenchClient({
         </section>
       </div>
       <div className={styles.stageViewport}>
-        <section className={styles.stage} aria-label="Workbench model generation page">
-          <TopNavigation
-            active="WORKBENCH"
-            className={styles.boundTopNavigation}
-            items={migrationTestNavItems}
-            user={navUser}
-          />
+        <TopNavigation
+          active="WORKBENCH"
+          className={styles.boundTopNavigation}
+          fitViewport
+          items={migrationTestNavItems}
+          user={navUser}
+        />
 
+        <section className={styles.stage} aria-label="Workbench model generation page">
           <AuthModalStage fitViewport topOffset={60}>
           <WorkbenchLeftGenerationPanel
             activeMode={activeMode}
@@ -1082,7 +1196,7 @@ export function WorkbenchClient({
             images={images}
             isSubmitting={isSubmitting}
             license={license}
-            modeTabs="dual"
+            modeTabs="triple"
             modelTitle={modelTitle}
             multiView={multiView}
             onAddImages={handleImageFiles}
@@ -1090,7 +1204,7 @@ export function WorkbenchClient({
             onLicenseChange={setLicense}
             onModeChange={setActiveMode}
             onModelTitleChange={setModelTitle}
-            onMultiViewChange={setMultiView}
+            onMultiViewChange={handleMultiViewChange}
             onPromptChange={setPrompt}
             onRemoveImage={removeImage}
             onTagsChange={setTags}
@@ -1101,7 +1215,7 @@ export function WorkbenchClient({
 
           <main className={styles.centerPanel}>
             <div className={styles.breadcrumbRow}>
-              <button aria-label="Back" type="button">
+              <button aria-label="Back" onClick={() => router.back()} type="button">
                 {"<"}
               </button>
               <span>HOME</span>
@@ -1152,7 +1266,6 @@ export function WorkbenchClient({
                   ) : (
                     <ModelViewer
                       className={styles.viewerCanvas}
-                      displayBase="workbench"
                       showPlaceholderModel={false}
                       showGround={false}
                       src={activeModelSrc}

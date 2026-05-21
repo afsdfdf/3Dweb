@@ -19,16 +19,28 @@ type ModelAuthorCardProps = {
   style?: CSSProperties;
 };
 
+const getInitials = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return "C";
+
+  const [first, second] = trimmed.split(/\s+/);
+  return `${first?.[0] ?? ""}${second?.[0] ?? ""}`.toUpperCase();
+};
+
 export function ModelAuthorAvatar({
   alt = "",
   className,
-  imageSrc = "/ui-lab/model-detail-uicut/images/face.png",
+  imageSrc,
   style,
 }: ModelAuthorAvatarProps) {
   return (
     <div className={[styles.avatarFrame, className].filter(Boolean).join(" ")} style={style}>
       <div className={styles.avatarInner}>
-        <img className={styles.avatarImage} src={imageSrc} alt={alt} />
+        {imageSrc ? (
+          <img className={styles.avatarImage} src={imageSrc} alt={alt} />
+        ) : (
+          <span className={styles.avatarFallback}>{getInitials(alt)}</span>
+        )}
       </div>
     </div>
   );
@@ -36,7 +48,7 @@ export function ModelAuthorAvatar({
 
 export function ModelAuthorCard({
   avatarAlt = "",
-  avatarSrc = "/ui-lab/model-detail-uicut/images/face.png",
+  avatarSrc,
   className,
   description = "A Thorns Tavern creator profile.",
   name = "Creator",

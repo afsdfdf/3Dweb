@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
 } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Download,
@@ -48,12 +49,21 @@ type RecordRow = {
   status: string;
   time: string;
   type: string;
+  visibility?: "private" | "public";
+  visibilitySelectLabel?: string;
 };
 
 type SectionConfig = {
   id: SectionId;
   label: string;
   meta: string;
+  value: string;
+};
+
+type OverviewMetricCard = {
+  detail: string;
+  label: string;
+  section: Exclude<SectionId, "overview" | "settings">;
   value: string;
 };
 
@@ -111,15 +121,6 @@ const emptyRowsBySection: Record<
   tasks: [],
 };
 
-const titleBySection: Record<SectionId, string> = {
-  billing: "Billing",
-  models: "Model Library",
-  orders: "Orders",
-  overview: "Overview",
-  settings: "Account Settings",
-  tasks: "Generation Tasks",
-};
-
 const detailTitleBySection: Record<SectionId, string> = {
   billing: "Credit ledger and payment activity",
   models: "Model library records",
@@ -138,6 +139,12 @@ const formatNumber = (value: unknown) => {
 
 const profileImageAccept = "image/jpeg,image/png,image/webp";
 const profileImageTypes = new Set(profileImageAccept.split(","));
+const displayNameMaxLength = 32;
+const fullNameMaxLength = 64;
+
+const limitTextLength = (value: string, maxLength: number) => {
+  return value.length > maxLength ? value.slice(0, maxLength) : value;
+};
 
 const parseRowTime = (value: string) => {
   const date = new Date(value.replace(/\./g, "-"));
@@ -167,7 +174,11 @@ export function AccountCenter({
   const [recordPage, setRecordPage] = useState(1);
   const [recordRange, setRecordRange] = useState("all");
   const [recordSearch, setRecordSearch] = useState("");
+  const [recordMessage, setRecordMessage] = useState("");
   const [saveMessage, setSaveMessage] = useState("");
+  const [visibilityUpdatingId, setVisibilityUpdatingId] = useState<
+    null | string
+  >(null);
   const displayName =
     profileData.displayName ||
     navUser?.displayName ||
@@ -209,7 +220,7 @@ export function AccountCenter({
     orderCount: 0,
     taskCount: 0,
   };
-  const rowsBySection = useMemo(
+  const accountRowsBySection = useMemo(
     () => ({
       billing: accountData?.rows
         ? (accountData.rows.billing ?? [])
@@ -226,6 +237,7 @@ export function AccountCenter({
     }),
     [accountData?.rows],
   );
+  const [rowsBySection, setRowsBySection] = useState(accountRowsBySection);
   const sections = useMemo<SectionConfig[]>(
     () => [
       {
@@ -318,31 +330,47 @@ export function AccountCenter({
     (currentRecordPage - 1) * pageSize,
     currentRecordPage * pageSize,
   );
-  const metrics = [
+  const visibleRecordRowCount = pagedRows.length === 0 ? 1 : pagedRows.length;
+  const placeholderRecordRows = Array.from(
+    { length: Math.max(0, pageSize - visibleRecordRowCount) },
+    (_, index) => index,
+  );
+  const overviewMetricCards: OverviewMetricCard[] = [
     {
-      detail: "ready for preview",
+      detail: "Saved models",
       label: "Model Library",
+      section: "models",
       value: String(accountMetrics.modelCount || 0),
     },
     {
-      detail: "need review",
-      label: "Active Tasks",
+      detail: "Queued or processing",
+      label: "Generation Tasks",
+      section: "tasks",
       value: String(accountMetrics.activeTasks || 0),
     },
     {
-      detail: "in progress",
+      detail: "Active fulfillment",
       label: "Orders",
+      section: "orders",
       value: String(accountMetrics.activeOrders || 0),
     },
-    { detail: "available balance", label: "Credits", value: formattedCredits },
+    {
+      detail: "Available credits",
+      label: "Billing",
+      section: "billing",
+      value: formattedCredits,
+    },
   ];
   const sectionInsights: Record<SectionId, { label: string; value: string }[]> =
     {
       overview: [
-        { label: "Credits", value: formattedCredits },
-        { label: "Open tasks", value: String(accountMetrics.activeTasks || 0) },
+        { label: "Billing", value: formattedCredits },
         {
-          label: "Active orders",
+          label: "Generation Tasks",
+          value: String(accountMetrics.activeTasks || 0),
+        },
+        {
+          label: "Orders",
           value: String(accountMetrics.activeOrders || 0),
         },
       ],
@@ -393,24 +421,6 @@ export function AccountCenter({
         },
       ],
     };
-  const overviewHighlights = [
-    {
-      detail: "Ready assets",
-      label: "Model Library",
-      value: String(accountMetrics.modelCount || 0),
-    },
-    {
-      detail: "In production",
-      label: "Orders",
-      value: String(accountMetrics.activeOrders || 0),
-    },
-    {
-      detail: "Generation queue",
-      label: "Tasks",
-      value: String(accountMetrics.activeTasks || 0),
-    },
-    { detail: "Available credits", label: "Balance", value: formattedCredits },
-  ];
   const overviewActivity = [
     ...rowsBySection.orders
       .slice(0, 1)
@@ -431,7 +441,12 @@ export function AccountCenter({
   }, [accountData]);
 
   useEffect(() => {
+    setRowsBySection(accountRowsBySection);
+  }, [accountRowsBySection]);
+
+  useEffect(() => {
     setRecordPage(1);
+    setRecordMessage("");
   }, [activeSection, recordRange, recordSearch]);
 
   function updateProfileField<Key extends keyof AccountCenterData>(
@@ -450,6 +465,60 @@ export function AccountCenter({
     router.replace(target, { scroll: false });
   }
 
+  async function updateModelVisibility(
+    row: RecordRow,
+    nextVisibility: string,
+  ) {
+    if (!row.visibility) return;
+    if (nextVisibility !== "public" && nextVisibility !== "private") return;
+    if (nextVisibility === row.visibility) return;
+
+    setRecordMessage("");
+    setVisibilityUpdatingId(row.id);
+
+    try {
+      const response = await fetch(
+        `/api/account/models/${encodeURIComponent(row.id)}/visibility`,
+        {
+          body: JSON.stringify({ visibility: nextVisibility }),
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          method: "PATCH",
+        },
+      );
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(payload.message || "Model visibility update failed.");
+      }
+
+      const visibility =
+        payload.model?.visibility === "public" ? "public" : "private";
+      setRowsBySection((current) => ({
+        ...current,
+        models: current.models.map((item) =>
+          item.id === row.id
+            ? {
+                ...item,
+                type: visibility,
+                visibility,
+                visibilitySelectLabel: "Model visibility",
+              }
+            : item,
+        ),
+      }));
+      router.refresh();
+    } catch (error) {
+      setRecordMessage(
+        error instanceof Error
+          ? error.message
+          : "Model visibility update failed.",
+      );
+    } finally {
+      setVisibilityUpdatingId(null);
+    }
+  }
+
   async function saveProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -460,8 +529,14 @@ export function AccountCenter({
         body: JSON.stringify({
           avatarFrame: String(formData.get("avatarFrame") || "none"),
           bio: String(formData.get("bio") || ""),
-          displayName: String(formData.get("displayName") || ""),
-          fullName: String(formData.get("fullName") || ""),
+          displayName: limitTextLength(
+            String(formData.get("displayName") || ""),
+            displayNameMaxLength,
+          ),
+          fullName: limitTextLength(
+            String(formData.get("fullName") || ""),
+            fullNameMaxLength,
+          ),
           phone: String(formData.get("phone") || ""),
           profileVisibility:
             formData.get("profileVisibility") === "public"
@@ -671,8 +746,9 @@ export function AccountCenter({
     <main className={styles.pageShell}>
       <AuthModalStage>
         <TopNavigation
-          active={getPublicNavigationActiveID("/account", topNavigationItems)}
+          active="ACCOUNT"
           className={styles.boundTopNavigation}
+          fitViewport
           items={topNavigationItems}
           user={navUser}
         />
@@ -712,7 +788,7 @@ export function AccountCenter({
               </p>
             </div>
             <div className={styles.accountHeroStats}>
-              {overviewHighlights.slice(0, 3).map((item) => (
+              {overviewMetricCards.slice(0, 3).map((item) => (
                 <div key={item.label}>
                   <span>{item.label}</span>
                   <strong>{item.value}</strong>
@@ -752,7 +828,7 @@ export function AccountCenter({
                         </div>
                         <div>
                           <p>Personal Center</p>
-                          <h1>{displayName}</h1>
+                          <h1 title={displayName}>{displayName}</h1>
                           <span>{email}</span>
                         </div>
                       </section>
@@ -844,28 +920,6 @@ export function AccountCenter({
 
                   <section className={styles.accountPanel}>
                     <div className={styles.accountFrameContent}>
-                      <header className={styles.panelHeader}>
-                        <div>
-                          <p>Control Panel</p>
-                          <h2>{titleBySection[activeSection]}</h2>
-                        </div>
-                      </header>
-
-                      {activeSection === "overview" ? (
-                        <section
-                          className={styles.assetStrip}
-                          aria-label="Account asset summary"
-                        >
-                          {metrics.map((metric) => (
-                            <div key={metric.label}>
-                              <span>{metric.label}</span>
-                              <strong>{metric.value}</strong>
-                              <em>{metric.detail}</em>
-                            </div>
-                          ))}
-                        </section>
-                      ) : null}
-
                       <section
                         className={`${styles.contentPanel} ${activeSection === "overview" ? styles.contentPanelWithSummary : styles.contentPanelFull}`}
                       >
@@ -952,12 +1006,18 @@ export function AccountCenter({
                               className={styles.overviewGrid}
                               aria-label="Overview highlights"
                             >
-                              {overviewHighlights.map((item) => (
-                                <div key={item.label}>
+                              {overviewMetricCards.map((item) => (
+                                <button
+                                  aria-label={`Open ${item.label}`}
+                                  className={styles.metricCardButton}
+                                  key={item.label}
+                                  onClick={() => changeSection(item.section)}
+                                  type="button"
+                                >
                                   <span>{item.label}</span>
                                   <strong>{item.value}</strong>
                                   <em>{item.detail}</em>
-                                </div>
+                                </button>
                               ))}
                             </section>
 
@@ -988,10 +1048,14 @@ export function AccountCenter({
                                 <span>Display Name</span>
                                 <input
                                   name="displayName"
+                                  maxLength={displayNameMaxLength}
                                   onChange={(event) =>
                                     updateProfileField(
                                       "displayName",
-                                      event.target.value,
+                                      limitTextLength(
+                                        event.target.value,
+                                        displayNameMaxLength,
+                                      ),
                                     )
                                   }
                                   value={
@@ -1006,10 +1070,14 @@ export function AccountCenter({
                                 <span>Legal Name</span>
                                 <input
                                   name="fullName"
+                                  maxLength={fullNameMaxLength}
                                   onChange={(event) =>
                                     updateProfileField(
                                       "fullName",
-                                      event.target.value,
+                                      limitTextLength(
+                                        event.target.value,
+                                        fullNameMaxLength,
+                                      ),
                                     )
                                   }
                                   placeholder="Enter legal name"
@@ -1171,6 +1239,11 @@ export function AccountCenter({
                                 Export CSV
                               </button>
                             </div>
+                            {recordMessage ? (
+                              <p className={styles.recordMessage}>
+                                {recordMessage}
+                              </p>
+                            ) : null}
 
                             <table className={styles.recordsTable}>
                               <thead>
@@ -1188,7 +1261,43 @@ export function AccountCenter({
                                 {pagedRows.map((row) => (
                                   <tr key={row.id}>
                                     <td>{row.id}</td>
-                                    <td>{row.type}</td>
+                                    <td>
+                                      {activeSection === "models" &&
+                                      row.visibility ? (
+                                        <span className={styles.visibilitySelectWrap}>
+                                          <select
+                                            aria-label={`${row.visibilitySelectLabel ?? "Model visibility"}: ${row.item}`}
+                                            className={[
+                                              styles.visibilitySelect,
+                                              row.visibility === "public"
+                                                ? styles.visibilitySelectPublic
+                                                : "",
+                                            ]
+                                              .filter(Boolean)
+                                              .join(" ")}
+                                            disabled={
+                                              visibilityUpdatingId === row.id
+                                            }
+                                            onChange={(event) =>
+                                              void updateModelVisibility(
+                                                row,
+                                                event.target.value,
+                                              )
+                                            }
+                                            value={row.visibility}
+                                          >
+                                            <option value="public">
+                                              PUBLIC
+                                            </option>
+                                            <option value="private">
+                                              PRIVATE
+                                            </option>
+                                          </select>
+                                        </span>
+                                      ) : (
+                                        row.type
+                                      )}
+                                    </td>
                                     <td>{row.item}</td>
                                     <td>{row.status}</td>
                                     <td className={styles.amountCell}>
@@ -1197,17 +1306,17 @@ export function AccountCenter({
                                     <td>{row.time}</td>
                                     <td className={styles.recordActionCell}>
                                       {row.href ? (
-                                        <button
+                                        <Link
+                                          prefetch={false}
                                           className={styles.tableActionButton}
-                                          onClick={() => router.push(row.href!)}
-                                          type="button"
+                                          href={row.href}
                                         >
                                           {row.actionLabel ?? "Open"}
                                           <ExternalLink
                                             aria-hidden="true"
                                             size={13}
                                           />
-                                        </button>
+                                        </Link>
                                       ) : (
                                         <span aria-hidden="true">-</span>
                                       )}
@@ -1219,6 +1328,21 @@ export function AccountCenter({
                                     <td colSpan={7}>No matching records.</td>
                                   </tr>
                                 ) : null}
+                                {placeholderRecordRows.map((index) => (
+                                  <tr
+                                    aria-hidden="true"
+                                    className={styles.recordPlaceholderRow}
+                                    key={`placeholder-${index}`}
+                                  >
+                                    <td />
+                                    <td />
+                                    <td />
+                                    <td />
+                                    <td />
+                                    <td />
+                                    <td />
+                                  </tr>
+                                ))}
                               </tbody>
                             </table>
 

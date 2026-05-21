@@ -2,6 +2,21 @@ import nextCoreWebVitals from 'eslint-config-next/core-web-vitals'
 import nextTypeScript from 'eslint-config-next/typescript'
 
 const eslintConfig = [
+  {
+    ignores: [
+      '.claude/**',
+      '.next/**',
+      '.vercel/**',
+      'media/**',
+      'node_modules/**',
+      'public/media/**',
+      'public/three-draco/**',
+      'public/ui-lab/**',
+      'tmp/**',
+      '*.log',
+      '*.tsbuildinfo',
+    ],
+  },
   ...nextCoreWebVitals,
   ...nextTypeScript,
   {
@@ -25,6 +40,12 @@ const eslintConfig = [
   },
   {
     ignores: ['src/payload-types.ts', 'src/payload-generated-schema.ts'],
+  },
+  {
+    files: ['scripts/**/*.cjs'],
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
+    },
   },
 ]
 

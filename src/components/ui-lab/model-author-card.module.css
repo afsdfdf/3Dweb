@@ -43,6 +43,19 @@
   width: 100%;
 }
 
+.avatarFallback {
+  align-items: center;
+  background: radial-gradient(circle at 30% 20%, #4a5f61 0%, #1a2021 58%, #070809 100%);
+  color: #f0c16f;
+  display: flex;
+  font-size: 20px;
+  font-weight: 700;
+  height: 100%;
+  justify-content: center;
+  line-height: 1;
+  width: 100%;
+}
+
 .name {
   font-size: 16px;
   line-height: 20px;

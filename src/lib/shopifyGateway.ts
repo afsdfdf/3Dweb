@@ -35,7 +35,7 @@ class MockShopifyGateway implements ShopifyGateway {
 }
 
 class RealShopifyGateway implements ShopifyGateway {
-  async createCheckout(input: ShopifyCreateCheckoutInput): Promise<ShopifyCheckoutResult> {
+  async createCheckout(_input: ShopifyCreateCheckoutInput): Promise<ShopifyCheckoutResult> {
     const storefrontDomain = process.env.SHOPIFY_STORE_DOMAIN
 
     if (!storefrontDomain) {

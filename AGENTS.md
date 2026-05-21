@@ -14,12 +14,12 @@ You are an expert Payload CMS developer. When working with this project, follow 
 
 ## Validation Commands
 
-- TypeScript check: `pnpm exec tsc --noEmit`
-- Generate Payload types: `pnpm generate:types`
-- Generate Payload import map: `pnpm generate:importmap`
-- Generate database schema snapshot: `pnpm payload generate:db-schema`
-- Unit tests: `pnpm test:unit`
-- Smoke tests: `pnpm test:smoke`
+- TypeScript check: `corepack pnpm exec tsc --noEmit`
+- Generate Payload types: `corepack pnpm generate:types`
+- Generate Payload import map: `corepack pnpm generate:importmap`
+- Generate database schema snapshot: `corepack pnpm payload generate:db-schema`
+- Unit tests: `corepack pnpm test:unit`
+- Smoke tests: `corepack pnpm test:smoke`
 
 ## Project Structure
 
@@ -545,11 +545,7 @@ Start with these files:
 
 - `docs/AI_PROJECT_MEMORY.md`
 - `docs/DOCS_INDEX.md`
-- `docs/DEVELOPMENT_GUIDE.md`
-- `docs/ARCHITECTURE_BLUEPRINT.md`
-- `docs/COLLECTIONS_REFERENCE.md`
-- `docs/BACKEND_UI_DEVELOPMENT_MEMO.md`
-- `docs/PROJECT_AUDIT_MEMO.md`
+- `docs/PROJECT_CURRENT.md`
 
 ## Payload Resources
 

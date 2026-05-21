@@ -37,8 +37,14 @@ type RunImageGenerationTaskArgs = {
   taskId: number
 }
 
+type GenerateProviderImageArgs = Parameters<typeof generateProviderImage>[0]
+type GeneratedProviderImage = Awaited<ReturnType<typeof generateProviderImage>>
+
 const imageGenerationTaskLocks = new Set<number>()
 const INTERNAL_ACCESS = true
+const IMAGE_GENERATION_PROVIDER_MAX_ATTEMPTS = 2
+const DEFAULT_IMAGE_GENERATION_PROVIDER_RETRY_DELAY_MS = 15_000
+const DEFAULT_IMAGE_GENERATION_DISPATCH_STALE_MS = 900_000
 
 const accessOptions = (req: PayloadRequest) => {
   return req.user ? { overrideAccess: false as const } : {}
@@ -55,6 +61,45 @@ const readString = (value: unknown) => {
 const readNumber = (value: unknown) => {
   const numberValue = typeof value === 'number' ? value : Number(value)
   return Number.isFinite(numberValue) && numberValue > 0 ? numberValue : 0
+}
+
+const readErrorMessage = (error: unknown) => {
+  return error instanceof Error ? error.message : String(error || 'Image generation failed.')
+}
+
+const getImageGenerationRetryDelayMs = () => {
+  const configuredValue = Number(
+    process.env.IMAGE_GENERATION_PROVIDER_RETRY_DELAY_MS || DEFAULT_IMAGE_GENERATION_PROVIDER_RETRY_DELAY_MS,
+  )
+  return Number.isFinite(configuredValue) ? Math.max(0, configuredValue) : DEFAULT_IMAGE_GENERATION_PROVIDER_RETRY_DELAY_MS
+}
+
+const sleep = (delayMs: number) => {
+  if (delayMs <= 0) return Promise.resolve()
+  return new Promise((resolve) => setTimeout(resolve, delayMs))
+}
+
+const isRetryableImageGenerationError = (error: unknown) => {
+  const name = error instanceof Error ? error.name : ''
+  const message = readErrorMessage(error)
+  const errorText = `${name} ${message}`.toLowerCase()
+
+  if (
+    /api key is not configured|base url is not configured|model is not configured/.test(errorText) ||
+    /prompt is required|requires a source image|source image fetch|accessible url/.test(errorText) ||
+    /unauthorized|forbidden|permission denied|invalid api key|authentication/.test(errorText) ||
+    /\b(?:400|401|403|404)\b/.test(errorText)
+  ) {
+    return false
+  }
+
+  return (
+    /timeout|timed out|abort|temporarily unavailable|try again later|overloaded|server error|server_error|internal_server_error/.test(errorText) ||
+    /stream.*(?:disconnect|closed|ended|aborted)|disconnect(?:ed)? before completion|connection.*(?:reset|closed)|terminated/.test(errorText) ||
+    /rate limit|rate_limit|too many requests|concurrent|concurrency/.test(errorText) ||
+    /\b(?:408|429|500|502|503|504)\b/.test(errorText) ||
+    /econnreset|etimedout|eai_again|socket hang up|network error|fetch failed/.test(errorText)
+  )
 }
 
 const readTaskUserId = (task: { user?: unknown }) => {
@@ -76,8 +121,10 @@ const readImageGenerationEffectivePrompt = (parameterSnapshot: unknown) => {
 }
 
 const getImageGenerationDispatchStaleMs = () => {
-  const configuredValue = Number(process.env.IMAGE_GENERATION_DISPATCH_STALE_MS || 300_000)
-  return Number.isFinite(configuredValue) ? Math.max(60_000, configuredValue) : 300_000
+  const configuredValue = Number(process.env.IMAGE_GENERATION_DISPATCH_STALE_MS || DEFAULT_IMAGE_GENERATION_DISPATCH_STALE_MS)
+  return Number.isFinite(configuredValue)
+    ? Math.max(60_000, configuredValue)
+    : DEFAULT_IMAGE_GENERATION_DISPATCH_STALE_MS
 }
 
 const hasRecentImageGenerationDispatch = (task: Record<string, unknown>) => {
@@ -93,11 +140,17 @@ const hasRecentImageGenerationDispatch = (task: Record<string, unknown>) => {
   return Date.now() - dispatchStartedAtMs < getImageGenerationDispatchStaleMs()
 }
 
+const USER_PROMPT_PLACEHOLDER = '{user_prompt}'
+const EMPTY_IMAGE_PROMPT_SUBJECT = 'the provided reference image'
+
 const buildEffectiveImagePrompt = (args: { defaultPrompt: string; prompt: string }) => {
   const defaultPrompt = args.defaultPrompt.trim()
   const prompt = args.prompt.trim()
 
   if (!defaultPrompt) return prompt
+  if (defaultPrompt.includes(USER_PROMPT_PLACEHOLDER)) {
+    return defaultPrompt.replaceAll(USER_PROMPT_PLACEHOLDER, prompt || EMPTY_IMAGE_PROMPT_SUBJECT)
+  }
   if (!prompt) return defaultPrompt
 
   return `${defaultPrompt}\n\nUser prompt:\n${prompt}`
@@ -164,6 +217,83 @@ async function createTaskEvent(args: {
       })
     })
   }
+}
+
+async function generateProviderImageWithRetry(args: {
+  dispatchStartedAt: string
+  generationArgs: GenerateProviderImageArgs
+  imageGenerationSnapshot: Record<string, unknown>
+  provider: string
+  req: PayloadRequest
+  snapshot: Record<string, unknown>
+  task: { id: number; progress?: unknown }
+  userId: number
+}): Promise<GeneratedProviderImage> {
+  const retryDelayMs = getImageGenerationRetryDelayMs()
+  let lastError: unknown
+
+  for (let attempt = 1; attempt <= IMAGE_GENERATION_PROVIDER_MAX_ATTEMPTS; attempt += 1) {
+    try {
+      return await generateProviderImage(args.generationArgs)
+    } catch (error) {
+      lastError = error
+      const canRetry = attempt < IMAGE_GENERATION_PROVIDER_MAX_ATTEMPTS && isRetryableImageGenerationError(error)
+
+      if (!canRetry) {
+        throw error
+      }
+
+      const retryReason = readErrorMessage(error)
+      const retryAt = new Date().toISOString()
+
+      args.req.payload.logger?.warn?.({
+        err: error,
+        msg: `Image generation provider attempt ${attempt} failed; retrying task ${args.task.id}.`,
+        taskId: args.task.id,
+      })
+
+      await args.req.payload.update({
+        collection: 'generation-tasks',
+        data: {
+          parameterSnapshot: {
+            ...args.snapshot,
+            imageGeneration: {
+              ...args.imageGenerationSnapshot,
+              dispatchStartedAt: args.dispatchStartedAt,
+              lastRetryAt: retryAt,
+              lastRetryReason: retryReason,
+              retryCount: attempt,
+              taskType: 'image-generation',
+            },
+          },
+          progress: Math.max(readNumber(args.task.progress), 35),
+          status: 'processing',
+        },
+        id: args.task.id,
+        req: args.req,
+        overrideAccess: INTERNAL_ACCESS,
+      })
+
+      await createTaskEvent({
+        eventType: 'submitted',
+        message: 'Image generation provider failed transiently; retrying once.',
+        payload: {
+          attempt,
+          maxAttempts: IMAGE_GENERATION_PROVIDER_MAX_ATTEMPTS,
+          retryDelayMs,
+          retryReason,
+        },
+        provider: args.provider,
+        req: args.req,
+        taskId: args.task.id,
+        userId: args.userId,
+      })
+
+      await sleep(retryDelayMs)
+    }
+  }
+
+  throw lastError instanceof Error ? lastError : new Error(readErrorMessage(lastError))
 }
 
 async function readImageGenerationDefaultPrompt(req: PayloadRequest) {
@@ -235,6 +365,9 @@ export async function createImageGenerationTask(args: SubmitImageGenerationArgs)
   const trimmedPrompt = prompt.trim()
   if (inputMode === 'image' && !sourceImage && !sourceImageAsset) {
     throw new Error('Image-to-image generation requires a source image.')
+  }
+  if (inputMode === 'text' && !trimmedPrompt) {
+    throw new Error('Prompt is required.')
   }
 
   const taskCode = randomCode('IMG')
@@ -499,13 +632,23 @@ export async function runImageGenerationTask(args: RunImageGenerationTaskArgs) {
       userId,
     })
 
-    const generated = await generateProviderImage({
-      inputMode,
-      prompt: effectivePrompt,
-      provider: selectedProvider,
+    const providerLabel = selectedProvider || String(taskRecord.provider || 'image')
+    const generated = await generateProviderImageWithRetry({
+      dispatchStartedAt,
+      generationArgs: {
+        inputMode,
+        prompt: effectivePrompt,
+        provider: selectedProvider,
+        req,
+        sourceImage: readNumber(taskRecord.sourceImage),
+        sourceImageAsset,
+      },
+      imageGenerationSnapshot,
+      provider: providerLabel,
       req,
-      sourceImage: readNumber(taskRecord.sourceImage),
-      sourceImageAsset,
+      snapshot,
+      task,
+      userId,
     })
 
     const buffer = Buffer.from(generated.image.data, 'base64')

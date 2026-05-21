@@ -16,6 +16,8 @@ const modelDetailCssPath = path.join(rootDir, 'src', 'app', '(frontend)', 'model
 const modelDetailDataPath = path.join(rootDir, 'src', 'app', '(frontend)', 'model-detail', '_lib', 'modelDetailData.ts')
 const modelDetailPagePath = path.join(rootDir, 'src', 'app', '(frontend)', 'model-detail', 'page.tsx')
 const topNavigationPath = path.join(rootDir, 'src', 'components', 'ui-lab', 'top-navigation', 'top-navigation.tsx')
+const modelDetailHeaderPath = path.join(rootDir, 'src', 'app', '(frontend)', 'model-detail', 'ModelDetailHeader.tsx')
+const workbenchClientPath = path.join(rootDir, 'src', 'app', '(frontend)', 'workbench', 'WorkbenchClient.tsx')
 const workbenchCssPath = path.join(rootDir, 'src', 'app', '(frontend)', 'workbench', 'page.module.css')
 
 test('AuthModalStage uses the canonical provider import to avoid duplicate auth modal contexts', () => {
@@ -75,6 +77,15 @@ test('AuthFlowCard keeps the forgot password success state in the auth modal flo
   assert.match(source, /setMode\('forgot-success'\)/)
   assert.match(source, /Check Your Email/)
   assert.match(source, /password reset link/)
+})
+
+test('AuthFlowCard requires terms agreement before login or registration', () => {
+  const source = readFileSync(authFlowCardPath, 'utf8')
+
+  assert.match(source, /const termsAgreementMessage = /)
+  assert.equal([...source.matchAll(/throw new Error\(termsAgreementMessage\)/g)].length, 2)
+  assert.match(source, /if \(isLogin\) \{[\s\S]*if \(!agreed\) \{[\s\S]*throw new Error\(termsAgreementMessage\)/)
+  assert.match(source, /styles\.termsError/)
 })
 
 test('auth redirects reject protocol-relative external paths', () => {
@@ -148,6 +159,17 @@ test('Page-level top navigation positioning wins over shared TopNavigation base 
   const modelDetailSource = readFileSync(modelDetailCssPath, 'utf8')
 
   assert.match(homeSource, /\.stage\s*>\s*\.boundTopNavigation\s*\{[\s\S]*position:\s*absolute;/)
-  assert.match(workbenchSource, /\.stage\s*>\s*\.boundTopNavigation\s*\{[\s\S]*position:\s*absolute;/)
-  assert.match(modelDetailSource, /\.scaleStage\s*>\s*\.boundTopNavigation\s*\{[\s\S]*position:\s*absolute;/)
+  assert.match(workbenchSource, /\.stageViewport\s*>\s*\.boundTopNavigation\s*\{[\s\S]*position:\s*absolute;/)
+  assert.match(modelDetailSource, /\.scaleViewport\s*>\s*\.boundTopNavigation\s*\{[\s\S]*position:\s*absolute;/)
+})
+
+test('height-scaled desktop stages keep top navigation on the viewport scale', () => {
+  const workbenchSource = readFileSync(workbenchClientPath, 'utf8')
+  const modelDetailNativeSource = readFileSync(modelDetailNativePath, 'utf8')
+  const modelDetailHeaderSource = readFileSync(modelDetailHeaderPath, 'utf8')
+
+  assert.match(workbenchSource, /<div className=\{styles\.stageViewport\}>\s*<TopNavigation[\s\S]*fitViewport[\s\S]*<section className=\{styles\.stage\}/)
+  assert.doesNotMatch(workbenchSource, /<section className=\{styles\.stage\}[\s\S]*<TopNavigation/)
+  assert.match(modelDetailNativeSource, /<div className=\{styles\.scaleViewport\}>\s*<ModelDetailHeader navUser=\{navUser\} \/>[\s\S]*<div className=\{styles\.scaleStage\}>/)
+  assert.match(modelDetailHeaderSource, /<TopNavigation[\s\S]*fitViewport/)
 })

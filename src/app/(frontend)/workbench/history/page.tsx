@@ -19,7 +19,7 @@ export default async function WorkbenchHistoryPage() {
       user={user}
     >
       <section className="min-h-[calc(100vh-76px)] bg-[radial-gradient(circle_at_50%_18%,rgba(118,75,31,0.18),transparent_26%),linear-gradient(180deg,#09090b_0%,#141416_52%,#0c0c0e_100%)] px-5 py-4 text-[#e9e2d6] sm:px-6">
-        <div className="mx-auto grid max-w-[1600px] gap-4 xl:grid-cols-[minmax(0,1fr)_312px]">
+        <div className="mx-auto grid max-w-[var(--content-page-max-width)] gap-4 xl:grid-cols-[minmax(0,1fr)_312px]">
           <PanelFrame className="min-h-[720px]">
             <div className="flex items-center justify-between gap-4 border-b border-[#2f2d34] pb-4">
               <div>

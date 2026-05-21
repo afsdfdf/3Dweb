@@ -46,6 +46,7 @@ export function MediumActionButton({
     "--hover-image": `url("${imageSet.hover}")`,
     "--pressed-image": `url("${imageSet.pressed}")`,
     ...style,
+    backgroundImage: `url("${imageSet[state]}")`,
   };
 
   return (

@@ -8,6 +8,8 @@ import type { getCurrentUser } from "../../_lib/session";
 type CurrentUser = NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>;
 
 type ImageLike = {
+  publicAccess?: null | boolean;
+  purpose?: null | string;
   thumbnailURL?: null | string;
   url?: null | string;
 };
@@ -19,6 +21,7 @@ type OwnerLike = {
     | (ImageLike & { publicAccess?: null | boolean; purpose?: null | string });
   bio?: null | string;
   displayName?: null | string;
+  email?: null | string;
   followersCount?: null | number;
   followingCount?: null | number;
   fullName?: null | string;
@@ -30,6 +33,7 @@ type OwnerLike = {
   profileBannerFocalX?: null | number;
   profileBannerFocalY?: null | number;
   profileVisibility?: null | string;
+  profileViewCount?: null | number;
 };
 
 type ModelLike = {
@@ -86,14 +90,31 @@ export type ModelDetailSideModel = {
   viewerURL: string;
 };
 
+export type ModelDetailSideModelsPagination = {
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+  limit: number;
+  page: number;
+  totalDocs: number;
+  totalPages: number;
+};
+
+export type ModelDetailSideModelsPage = ModelDetailSideModelsPagination & {
+  docs: ModelDetailSideModel[];
+};
+
 export type ModelDetailData = {
   ageLabel: string;
   authorAvatarSrc: null | string;
   authorDescription: string;
   authorName: string;
+  authorModelCount: number;
+  authorModelCountLabel: string;
   authorProfileBannerFocalX: number;
   authorProfileBannerFocalY: number;
   authorProfileBannerSrc: null | string;
+  authorProfileViewCount: number;
+  authorProfileViewCountLabel: string;
   chargeDownloadCredits: boolean;
   commentsCount: number;
   commentsEnabled: boolean;
@@ -105,22 +126,144 @@ export type ModelDetailData = {
   id: number;
   inputPreviewSrc: null | string;
   isOwnedByCurrentUser: boolean;
+  favoritesCount: number;
   likesLabel: string;
+  likesCount: number;
   previewImages: string[];
   printReady: boolean;
   printReadyLabel: string;
   sideModels: ModelDetailSideModel[];
+  sideModelsPage: ModelDetailSideModelsPagination;
   tags: string[];
   title: string;
   topologyLabel: string;
   updatedLabel: string;
   vertexLabel: string;
+  viewCount: number;
   viewLabel: string;
   viewerURL: null | string;
   visibilityLabel: string;
 };
 
-const sideModelLimit = 24;
+const sideModelLimit = 12;
+const detailCacheTTLMS = 60_000;
+const modelDetailDataCacheTTLMS = 120_000;
+const sideModelsCacheTTLMS = 60_000;
+const detailCacheMaxEntries = 128;
+
+type TimedCacheEntry<T> =
+  | {
+      expiresAt: number;
+      promise: Promise<T>;
+      state: "pending";
+    }
+  | {
+      expiresAt: number;
+      state: "ready";
+      value: T;
+    };
+
+type ModelDetailCacheStore = {
+  downloadPolicy: Map<string, TimedCacheEntry<DownloadPolicy>>;
+  modelDetailData: Map<string, TimedCacheEntry<ModelDetailData | null>>;
+  ownerModelCount: Map<string, TimedCacheEntry<number>>;
+  ownerProfile: Map<string, TimedCacheEntry<OwnerLike | null>>;
+  sideModels: Map<string, TimedCacheEntry<ModelDetailSideModelsPage>>;
+};
+
+const modelDetailCacheGlobal = globalThis as typeof globalThis & {
+  __thornstavernModelDetailCache?: ModelDetailCacheStore;
+};
+
+const modelDetailCacheStore =
+  modelDetailCacheGlobal.__thornstavernModelDetailCache ??
+  (modelDetailCacheGlobal.__thornstavernModelDetailCache = {
+    downloadPolicy: new Map<string, TimedCacheEntry<DownloadPolicy>>(),
+    modelDetailData: new Map<string, TimedCacheEntry<ModelDetailData | null>>(),
+    ownerModelCount: new Map<string, TimedCacheEntry<number>>(),
+    ownerProfile: new Map<string, TimedCacheEntry<OwnerLike | null>>(),
+    sideModels: new Map<string, TimedCacheEntry<ModelDetailSideModelsPage>>(),
+  });
+
+const downloadPolicyCache = modelDetailCacheStore.downloadPolicy;
+const modelDetailDataCache = modelDetailCacheStore.modelDetailData;
+const ownerProfileCache = modelDetailCacheStore.ownerProfile;
+const ownerModelCountCache = modelDetailCacheStore.ownerModelCount;
+const sideModelsCache = modelDetailCacheStore.sideModels;
+
+const normalizePositiveInteger = (
+  value: null | number | string | undefined,
+  fallback: number,
+) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  return Math.floor(parsed);
+};
+
+const normalizeSideModelLimit = (
+  value: null | number | string | undefined,
+) => {
+  return Math.min(24, Math.max(6, normalizePositiveInteger(value, sideModelLimit)));
+};
+
+const pruneTimedCache = <T>(cache: Map<string, TimedCacheEntry<T>>) => {
+  if (cache.size <= detailCacheMaxEntries) return;
+
+  const now = Date.now();
+  for (const [key, entry] of cache) {
+    if (entry.expiresAt <= now) {
+      cache.delete(key);
+    }
+  }
+
+  if (cache.size <= detailCacheMaxEntries) return;
+
+  const overflow = cache.size - detailCacheMaxEntries;
+  let removed = 0;
+  for (const key of cache.keys()) {
+    cache.delete(key);
+    removed += 1;
+    if (removed >= overflow) break;
+  }
+};
+
+const getCachedAsync = async <T>(
+  cache: Map<string, TimedCacheEntry<T>>,
+  key: string,
+  ttlMS: number,
+  loader: () => Promise<T>,
+): Promise<T> => {
+  const now = Date.now();
+  const cached = cache.get(key);
+  if (cached && cached.expiresAt > now) {
+    if (cached.state === "ready") return cached.value;
+    return cached.promise;
+  }
+
+  const promise = loader().then(
+    (value) => {
+      cache.set(key, {
+        expiresAt: Date.now() + ttlMS,
+        state: "ready",
+        value,
+      });
+      pruneTimedCache(cache);
+      return value;
+    },
+    (error) => {
+      cache.delete(key);
+      throw error;
+    },
+  );
+
+  cache.set(key, {
+    expiresAt: now + ttlMS,
+    promise,
+    state: "pending",
+  });
+  pruneTimedCache(cache);
+  return promise;
+};
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -182,12 +325,79 @@ async function resolveMediaAccessURL(
   );
 }
 
+export async function getModelDetailSideModelsPage(args: {
+  currentUser?: CurrentUser | null;
+  id?: null | number | string;
+  limit?: null | number | string;
+  page?: null | number | string;
+}): Promise<ModelDetailSideModelsPage | null> {
+  const modelId = Number(args.id);
+  if (!Number.isFinite(modelId) || modelId <= 0) return null;
+
+  const payload = await getCachedPayload();
+  const currentUser = args.currentUser ?? null;
+  const result = await payload.find({
+    collection: "models",
+    depth: 0,
+    limit: 1,
+    overrideAccess: false,
+    pagination: false,
+    select: {
+      id: true,
+      owner: true,
+      visibility: true,
+    },
+    where: {
+      id: {
+        equals: modelId,
+      },
+    },
+    ...(currentUser ? { user: currentUser } : {}),
+  });
+
+  const model = result.docs[0] as ModelLike | undefined;
+  if (!model) return null;
+
+  const policy = await getDownloadPolicy(payload);
+  return getSideModels(
+    payload,
+    getRelationId(model.owner),
+    policy,
+    normalizePositiveInteger(args.page, 1),
+    normalizeSideModelLimit(args.limit),
+  );
+}
+
+async function resolveModelPreviewAccessURL(
+  payload: Awaited<ReturnType<typeof getCachedPayload>>,
+  model: ModelLike,
+) {
+  const previewImage = isRecord(model.previewImage) ? model.previewImage : null;
+  const directPreviewURL = previewImage ? getImageURL(previewImage) : null;
+
+  if (
+    directPreviewURL &&
+    isGuestReadableMedia(
+      previewImage as Parameters<typeof isGuestReadableMedia>[0],
+    )
+  ) {
+    return normalizeBrowserMediaURL(directPreviewURL);
+  }
+
+  return resolveMediaAccessURL(payload, getModelPreviewURL(model));
+}
+
 const compactCount = (value: unknown, fallback = "0") => {
   const count = Number(value ?? 0);
   if (!Number.isFinite(count) || count <= 0) return fallback;
   if (count >= 1000)
     return `${(count / 1000).toFixed(count >= 10000 ? 0 : 1)}k`;
   return String(count);
+};
+
+const normalizeCount = (value: unknown) => {
+  const count = Number(value ?? 0);
+  return Number.isFinite(count) && count > 0 ? count : 0;
 };
 
 const readPositiveNumber = (value: unknown) => {
@@ -198,7 +408,7 @@ const readPositiveNumber = (value: unknown) => {
 
 const formatCredits = (value: number) => value.toFixed(2);
 
-async function getDownloadPolicy(
+async function readDownloadPolicy(
   payload: Awaited<ReturnType<typeof getCachedPayload>>,
 ): Promise<DownloadPolicy> {
   try {
@@ -221,6 +431,17 @@ async function getDownloadPolicy(
       downloadCredits: 0,
     };
   }
+}
+
+async function getDownloadPolicy(
+  payload: Awaited<ReturnType<typeof getCachedPayload>>,
+): Promise<DownloadPolicy> {
+  return getCachedAsync(
+    downloadPolicyCache,
+    "site-settings:modelAccessPolicy",
+    detailCacheTTLMS,
+    () => readDownloadPolicy(payload),
+  );
 }
 
 const getAgeLabel = (value: null | string | undefined) => {
@@ -256,35 +477,54 @@ const getOwnerName = (owner: null | OwnerLike | undefined) => {
 
   const displayName = normalizeText(owner.displayName);
   const fullName = normalizeText(owner.fullName);
+  const email = normalizeText(owner.email);
   const ownerId = getRelationId(owner.id);
 
-  return displayName || fullName || (ownerId ? `Creator ${ownerId}` : "Creator");
+  return (
+    displayName ||
+    fullName ||
+    email?.split("@")[0] ||
+    (ownerId ? `Creator ${ownerId}` : "Creator")
+  );
 };
 
 const isStaffUser = (user: CurrentUser | null | undefined) => {
   return ["admin", "operator"].includes(String(user?.role || "customer"));
 };
 
-const getOwnerAvatarURL = (
+const getOwnerAvatarURL = async (
+  payload: Awaited<ReturnType<typeof getCachedPayload>>,
   owner: null | OwnerLike | undefined,
   allowPrivateProfileMedia: boolean,
 ) => {
   const avatar = owner?.avatar;
   if (!isRecord(avatar)) return null;
-  if (!allowPrivateProfileMedia && !isGuestReadableMedia(avatar)) return null;
 
-  return getImageURL(avatar);
+  const imageURL = getImageURL(avatar);
+  if (!imageURL) return null;
+
+  if (isGuestReadableMedia(avatar)) {
+    return normalizeBrowserMediaURL(imageURL);
+  }
+
+  if (!allowPrivateProfileMedia) return null;
+
+  return resolveMediaAccessURL(payload, imageURL);
 };
 
-const getOwnerProfileBannerURL = (
+const getOwnerProfileBannerAccessURL = async (
+  payload: Awaited<ReturnType<typeof getCachedPayload>>,
   owner: null | OwnerLike | undefined,
   allowPrivateProfileMedia: boolean,
 ) => {
   const banner = owner?.profileBackground;
   if (!isRecord(banner)) return null;
-  if (!allowPrivateProfileMedia && !isGuestReadableMedia(banner)) return null;
+  const imageURL = getImageURL(banner);
+  if (!imageURL) return null;
+  if (isGuestReadableMedia(banner)) return normalizeBrowserMediaURL(imageURL);
+  if (!allowPrivateProfileMedia) return null;
 
-  return getImageURL(banner);
+  return resolveMediaAccessURL(payload, imageURL);
 };
 
 const normalizeFocalPoint = (value: unknown) => {
@@ -300,39 +540,25 @@ async function getPublicOwner(
   const ownerId = getRelationId(owner);
   if (!ownerId) return null;
 
-  try {
-    const ownerDoc = isRecord(owner) ? (owner as OwnerLike) : null;
-    const ownerDocHasProfileMedia =
-      ownerDoc?.profileVisibility !== undefined &&
-      ownerDoc?.profileBackground !== undefined &&
-      ownerDoc?.profileBannerFocalX !== undefined &&
-      ownerDoc?.profileBannerFocalY !== undefined;
-    const resolvedOwner =
-      ownerDocHasProfileMedia
-        ? ownerDoc
-        : ((await payload.findByID({
-            collection: "users",
-            depth: 1,
-            id: ownerId,
-            overrideAccess: true,
-            select: {
-              avatar: true,
-              bio: true,
-              displayName: true,
-              followersCount: true,
-              followingCount: true,
-              fullName: true,
-              profileBackground: true,
-              profileBannerFocalX: true,
-              profileBannerFocalY: true,
-              profileVisibility: true,
-            },
-          })) as OwnerLike);
+  return getCachedAsync(
+    ownerProfileCache,
+    String(ownerId),
+    detailCacheTTLMS,
+    async () => {
+      try {
+        const resolvedOwner = (await payload.findByID({
+          collection: "users",
+          depth: 1,
+          id: ownerId,
+          overrideAccess: true,
+        })) as OwnerLike;
 
-    return resolvedOwner;
-  } catch {
-    return null;
-  }
+        return resolvedOwner;
+      } catch {
+        return null;
+      }
+    },
+  );
 }
 
 const getFormatLabel = (model: ModelLike) => {
@@ -375,12 +601,97 @@ const getTags = (model: ModelLike) => {
   return tags.length > 0 ? tags.slice(0, 4) : [getFormatLabel(model)];
 };
 
+function getModelCounts(
+  model: ModelLike,
+  commentsEnabled: boolean,
+) {
+  return {
+    commentsCount: commentsEnabled ? normalizeCount(model.commentsCount) : 0,
+    favoritesCount: normalizeCount(model.favoritesCount),
+    likesCount: normalizeCount(model.likesCount),
+    viewCount: normalizeCount(model.viewCount),
+  };
+}
+
+async function getOwnerModelCount(
+  payload: Awaited<ReturnType<typeof getCachedPayload>>,
+  ownerId: null | number,
+  includePrivate: boolean,
+) {
+  if (!ownerId) return 0;
+
+  return getCachedAsync(
+    ownerModelCountCache,
+    `${ownerId}:${includePrivate ? "all" : "public"}`,
+    detailCacheTTLMS,
+    async () => {
+      const result = await payload.count({
+        collection: "models",
+        overrideAccess: true,
+        where: {
+          and: [
+            {
+              owner: {
+                equals: ownerId,
+              },
+            },
+            ...(includePrivate
+              ? []
+              : [
+                  {
+                    visibility: {
+                      equals: "public",
+                    },
+                  },
+                ]),
+          ],
+        },
+      });
+
+      return result.totalDocs;
+    },
+  );
+}
+
 async function getSideModels(
   payload: Awaited<ReturnType<typeof getCachedPayload>>,
-  model: ModelLike,
   ownerId: null | number,
   policy: DownloadPolicy,
+  page = 1,
+  limit = sideModelLimit,
 ) {
+  const normalizedPage = normalizePositiveInteger(page, 1);
+  const normalizedLimit = normalizeSideModelLimit(limit);
+  const cacheKey = [
+    ownerId ?? "all",
+    normalizedPage,
+    normalizedLimit,
+    policy.chargeDownloadCredits ? "charged" : "free",
+    policy.downloadCredits,
+  ].join(":");
+
+  return getCachedAsync(
+    sideModelsCache,
+    cacheKey,
+    sideModelsCacheTTLMS,
+    () =>
+      loadSideModels(
+        payload,
+        ownerId,
+        policy,
+        normalizedPage,
+        normalizedLimit,
+      ),
+  );
+}
+
+async function loadSideModels(
+  payload: Awaited<ReturnType<typeof getCachedPayload>>,
+  ownerId: null | number,
+  policy: DownloadPolicy,
+  page: number,
+  limit: number,
+): Promise<ModelDetailSideModelsPage> {
   const where: Where = ownerId
     ? {
         and: [
@@ -395,9 +706,10 @@ async function getSideModels(
   const result = await payload.find({
     collection: "models",
     depth: 1,
-    limit: sideModelLimit,
+    limit,
     overrideAccess: false,
-    pagination: false,
+    page,
+    pagination: true,
     select: {
       commentsCount: true,
       createdAt: true,
@@ -413,14 +725,11 @@ async function getSideModels(
     where,
   });
 
-  const docs = result.docs as ModelLike[];
+  const modelDocs = result.docs as ModelLike[];
   const mappedModels = await Promise.all(
-    docs.map(async (item) => {
+    modelDocs.map(async (item) => {
       const downloadCredits = getDownloadCredits(item, policy);
-      const imageSrc = await resolveMediaAccessURL(
-        payload,
-        getModelPreviewURL(item),
-      );
+      const imageSrc = await resolveModelPreviewAccessURL(payload, item);
 
       if (!imageSrc) return null;
 
@@ -441,12 +750,22 @@ async function getSideModels(
     }),
   );
 
-  return mappedModels.filter(
+  const docs = mappedModels.filter(
     (item): item is ModelDetailSideModel => Boolean(item),
   );
+
+  return {
+    docs,
+    hasNextPage: result.hasNextPage ?? page < Number(result.totalPages || 1),
+    hasPrevPage: result.hasPrevPage ?? page > 1,
+    limit,
+    page: Number(result.page || page),
+    totalDocs: Number(result.totalDocs || docs.length),
+    totalPages: Math.max(1, Number(result.totalPages || 1)),
+  };
 }
 
-export async function getModelDetailData(args: {
+async function loadModelDetailData(args: {
   currentUser?: CurrentUser | null;
   currentUserId?: null | number | string;
   id?: null | number | string;
@@ -456,6 +775,7 @@ export async function getModelDetailData(args: {
 
   const payload = await getCachedPayload();
   const currentUser = args.currentUser ?? null;
+  const policyPromise = getDownloadPolicy(payload);
   const result = await payload.find({
     collection: "models",
     depth: 1,
@@ -499,11 +819,27 @@ export async function getModelDetailData(args: {
   const allowPrivateProfileMedia =
     isOwnedByCurrentUser || isStaffUser(currentUser);
   const commentsEnabled = model.visibility === "public";
-  const policy = await getDownloadPolicy(payload);
-  const [owner, previewURL, sideModels] = await Promise.all([
+  const [policy, owner] = await Promise.all([
+    policyPromise,
     getPublicOwner(payload, model.owner),
-    resolveMediaAccessURL(payload, getModelPreviewURL(model)),
-    getSideModels(payload, model, ownerId, policy),
+  ]);
+  const liveCounts = getModelCounts(model, commentsEnabled);
+  const [
+    previewURL,
+    sideModelsPage,
+    authorModelCount,
+    authorAvatarSrc,
+    authorProfileBannerSrc,
+  ] = await Promise.all([
+    resolveModelPreviewAccessURL(payload, model),
+    getSideModels(payload, ownerId, policy),
+    getOwnerModelCount(payload, ownerId, allowPrivateProfileMedia),
+    getOwnerAvatarURL(payload, owner, allowPrivateProfileMedia),
+    getOwnerProfileBannerAccessURL(
+      payload,
+      owner,
+      allowPrivateProfileMedia,
+    ),
   ]);
   const title = normalizeText(model.title) || `Model ${model.id}`;
   const downloadCredits = getDownloadCredits(model, policy);
@@ -526,46 +862,81 @@ export async function getModelDetailData(args: {
 
   return {
     ageLabel: getAgeLabel(model.updatedAt || model.createdAt),
-    authorAvatarSrc: await resolveMediaAccessURL(
-      payload,
-      getOwnerAvatarURL(owner, allowPrivateProfileMedia),
-    ),
+    authorAvatarSrc,
     authorDescription:
       normalizeText(owner?.bio) ||
       normalizeText(model.description) ||
       (commentsEnabled
         ? "Public creator model available for preview and reference."
         : "Private model available to its owner and staff."),
+    authorModelCount,
+    authorModelCountLabel: compactCount(authorModelCount),
     authorName: getOwnerName(owner),
     authorProfileBannerFocalX: normalizeFocalPoint(owner?.profileBannerFocalX),
     authorProfileBannerFocalY: normalizeFocalPoint(owner?.profileBannerFocalY),
-    authorProfileBannerSrc: await resolveMediaAccessURL(
-      payload,
-      getOwnerProfileBannerURL(owner, allowPrivateProfileMedia),
-    ),
+    authorProfileBannerSrc,
+    authorProfileViewCount: normalizeCount(owner?.profileViewCount),
+    authorProfileViewCountLabel: compactCount(owner?.profileViewCount),
     chargeDownloadCredits: policy.chargeDownloadCredits,
-    commentsCount: commentsEnabled ? Number(model.commentsCount || 0) : 0,
+    commentsCount: commentsEnabled ? liveCounts.commentsCount : 0,
     commentsEnabled,
-    commentsLabel: commentsEnabled ? compactCount(model.commentsCount) : "0",
+    commentsLabel: commentsEnabled ? compactCount(liveCounts.commentsCount) : "0",
     downloadCredits,
     downloadCreditsLabel: formatCredits(downloadCredits),
-    favoritesLabel: compactCount(model.favoritesCount),
+    favoritesCount: liveCounts.favoritesCount,
+    favoritesLabel: compactCount(liveCounts.favoritesCount),
     formatsLabel: getFormatLabel(model),
     id: Number(model.id),
     inputPreviewSrc: previewURL,
     isOwnedByCurrentUser,
-    likesLabel: compactCount(model.likesCount),
+    likesCount: liveCounts.likesCount,
+    likesLabel: compactCount(liveCounts.likesCount),
     previewImages: [previewURL],
     printReady: model.printReady === true,
     printReadyLabel: model.printReady ? "Print Ready" : "Preview Only",
-    sideModels,
+    sideModels: sideModelsPage.docs,
+    sideModelsPage: {
+      hasNextPage: sideModelsPage.hasNextPage,
+      hasPrevPage: sideModelsPage.hasPrevPage,
+      limit: sideModelsPage.limit,
+      page: sideModelsPage.page,
+      totalDocs: sideModelsPage.totalDocs,
+      totalPages: sideModelsPage.totalPages,
+    },
     tags: getTags(model),
     title,
     topologyLabel: "Triangle",
     updatedLabel: formatDateLabel(model.updatedAt || model.createdAt),
     vertexLabel,
-    viewLabel: compactCount(model.viewCount),
+    viewCount: liveCounts.viewCount,
+    viewLabel: compactCount(liveCounts.viewCount),
     viewerURL: buildModelViewerURL({ modelId: Number(model.id) }),
     visibilityLabel: normalizeText(model.visibility) || "public",
   };
+}
+
+export async function getModelDetailData(args: {
+  currentUser?: CurrentUser | null;
+  currentUserId?: null | number | string;
+  id?: null | number | string;
+}): Promise<ModelDetailData | null> {
+  const modelId = Number(args.id);
+  if (!Number.isFinite(modelId) || modelId <= 0) return null;
+
+  const isAnonymousRequest = !args.currentUser && args.currentUserId == null;
+  if (!isAnonymousRequest) {
+    return loadModelDetailData(args);
+  }
+
+  return getCachedAsync(
+    modelDetailDataCache,
+    String(modelId),
+    modelDetailDataCacheTTLMS,
+    () =>
+      loadModelDetailData({
+        currentUser: null,
+        currentUserId: null,
+        id: modelId,
+      }),
+  );
 }

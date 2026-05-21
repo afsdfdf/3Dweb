@@ -5,6 +5,12 @@
   width: 100%;
 }
 
+.stageUnclipped {
+  height: auto;
+  min-height: 100%;
+  overflow: visible;
+}
+
 .content {
   height: 100%;
   transition:
@@ -13,6 +19,11 @@
     transform 220ms ease;
   transform-origin: 50% 42%;
   width: 100%;
+}
+
+.contentUnclipped {
+  height: auto;
+  min-height: 100%;
 }
 
 .contentMuted {

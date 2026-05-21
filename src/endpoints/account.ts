@@ -5,6 +5,7 @@ import {
   getAccountDashboard,
   getAccountProfile,
   getPublicCreatorProfile,
+  updateAccountModelVisibility,
   updateAccountProfile,
 } from '@/lib/accountService'
 import { rejectRateLimitedEndpoint } from '@/lib/endpointRateLimit'
@@ -127,6 +128,41 @@ export const changeAccountPasswordEndpoint = {
       })
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to update password.'
+      return Response.json({ message }, { status: 400 })
+    }
+  },
+}
+
+export const updateAccountModelVisibilityEndpoint = {
+  path: '/account/models/:modelId/visibility',
+  method: 'patch' as const,
+  handler: async (req: PayloadRequest) => {
+    const blocked = await rejectDisallowedMutationOrigin(req)
+    if (blocked) return blocked
+
+    const rateLimited = await rejectRateLimitedEndpoint({
+      req,
+      scope: 'account-model-write',
+    })
+    if (rateLimited) return rateLimited
+
+    await ensurePayloadRequestUser(req)
+    if (!req.user) return unauthorized()
+
+    try {
+      const body = req.json ? await req.json() : {}
+      const model = await updateAccountModelVisibility({
+        modelId: String(req.routeParams?.modelId || ''),
+        req,
+        visibility: body.visibility,
+      })
+
+      return Response.json({
+        message: 'Model visibility updated successfully.',
+        model,
+      })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to update model visibility.'
       return Response.json({ message }, { status: 400 })
     }
   },

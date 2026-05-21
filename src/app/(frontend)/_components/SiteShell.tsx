@@ -15,6 +15,7 @@ type SiteShellProps = {
   children: ReactNode
   currentPath?: string
   footer?: FooterContent | null
+  layoutMode?: 'document' | 'fixed'
   mobileChildren?: ReactNode
   navigation?: NavigationItem[] | null
   siteDescription?: null | string
@@ -34,6 +35,7 @@ export async function SiteShell({
   children,
   currentPath,
   footer,
+  layoutMode = 'fixed',
   mobileChildren,
   navigation,
   showAuthEntry = true,
@@ -60,10 +62,38 @@ export async function SiteShell({
       : null
 
   const fixedStageStyle = {
-    '--app-stage-scale': 'max(calc(100vw / 1920px), calc((100vh - 60px) / 1020px))',
+    '--app-nav-scale': 'calc(100vw / 1920px)',
+    '--app-nav-height': 'calc(60px * var(--app-nav-scale))',
+    '--app-stage-scale': 'clamp(1, calc(100vw / 2240px), 1.15)',
   } as React.CSSProperties
   void announcement
   void showLocaleSwitcher
+
+  if (layoutMode === 'document') {
+    return (
+      <div className="min-h-screen overflow-x-hidden bg-[#181818] text-[#ededee]" style={fixedStageStyle}>
+        <TopNavigation
+          active={getPublicNavigationActiveID(currentPath, navigationItems)}
+          className="z-[60]"
+          fitViewport
+          items={navigationItems}
+          showAuthEntry={showAuthEntry}
+          user={navigationUser}
+        />
+        <main className="min-h-[calc(100vh-var(--app-nav-height))] bg-[#181818]">
+          <AuthModalStage clipContent={false}>{children}</AuthModalStage>
+        </main>
+
+        {showFooter ? (
+          <FooterBar
+            footerContent={footerContent}
+            siteDescription={siteDescription || defaultSiteSettings.siteDescription}
+            supportEmail={supportEmail || defaultSiteSettings.supportEmail}
+          />
+        ) : null}
+      </div>
+    )
+  }
 
   return (
     <>
@@ -71,14 +101,16 @@ export async function SiteShell({
       <div className={`${mobileChildren ? 'hidden md:block' : ''} relative h-screen w-screen overflow-hidden bg-[#181818] text-[#ededee]`} style={fixedStageStyle}>
         <TopNavigation
           active={getPublicNavigationActiveID(currentPath, navigationItems)}
-          className="absolute left-0 right-0 top-0 z-[60]"
+          className="z-[60]"
+          fitViewport
           items={navigationItems}
           showAuthEntry={showAuthEntry}
           user={navigationUser}
         />
       <div
-        className="absolute left-1/2 top-[60px] h-[1020px] w-[1920px] origin-top bg-[#181818]"
+        className="absolute left-1/2 h-[1020px] w-[1920px] origin-top bg-[#181818]"
         style={{
+          top: 'var(--app-nav-height)',
           transform: 'translateX(-50%) scale(var(--app-stage-scale))',
         }}
       >

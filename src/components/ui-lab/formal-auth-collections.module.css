@@ -408,6 +408,15 @@
   width: 300px;
 }
 
+.termsError {
+  color: #ffb5b5;
+}
+
+.termsError .checkbox,
+.termsError .checkbox::before {
+  border-color: #ffb5b5;
+}
+
 .loginTerms {
   height: 36px;
   top: 306px;

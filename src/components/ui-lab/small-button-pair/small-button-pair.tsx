@@ -18,10 +18,12 @@ type ButtonConfig = {
 };
 
 type SmallButtonPairProps = {
+  className?: string;
   darkLabel?: string;
   onChange?: (button: ButtonId) => void;
   purpleLabel?: string;
   selected?: ButtonId;
+  tone?: "default" | "purple";
 };
 
 const assetBase = "/ui-lab/formal-components/assets/small-button-pair";
@@ -47,20 +49,17 @@ const buttons: ButtonConfig[] = [
   },
 ];
 
-function getOppositeButton(button: ButtonId): ButtonId {
-  return button === "purple" ? "dark" : "purple";
-}
-
-function getButtonPosition(button: ButtonId, pressedButton: ButtonId) {
-  const isPressed = pressedButton === button;
-  return button === "purple" ? (isPressed ? styles.left : styles.right) : isPressed ? styles.right : styles.left;
+function getButtonPosition(button: ButtonId) {
+  return button === "purple" ? styles.left : styles.right;
 }
 
 export function SmallButtonPair({
+  className,
   darkLabel = "DARK",
   onChange,
   purpleLabel = "PURPLE",
   selected,
+  tone = "default",
 }: SmallButtonPairProps) {
   const [internalPressedButton, setInternalPressedButton] = useState<ButtonId>("purple");
   const pressedButton = selected ?? internalPressedButton;
@@ -71,7 +70,7 @@ export function SmallButtonPair({
   };
 
   return (
-    <div className={styles.shell}>
+    <div className={[styles.shell, className].filter(Boolean).join(" ")} data-tone={tone}>
       <img
         alt="Toggle dark alt"
         className={styles.frame}
@@ -80,11 +79,16 @@ export function SmallButtonPair({
       <div className={styles.buttons}>
         {buttons.map((button) => {
           const isPressed = pressedButton === button.id;
+          const imageSet = tone === "purple"
+            ? isPressed
+              ? buttons[1]
+              : buttons[0]
+            : button;
 
           return (
             <button
               aria-pressed={isPressed}
-              className={[styles.control, getButtonPosition(button.id, pressedButton)].join(" ")}
+              className={[styles.control, getButtonPosition(button.id)].join(" ")}
               key={button.id}
               onClick={() => handleButtonClick(button.id)}
               type="button"
@@ -92,17 +96,17 @@ export function SmallButtonPair({
               <img
                 alt={button.normalAlt}
                 className={[styles.buttonImage, styles.normal].join(" ")}
-                src={button.normalSrc}
+                src={imageSet.normalSrc}
               />
               <img
                 alt={button.hoverAlt}
                 className={[styles.buttonImage, styles.hover].join(" ")}
-                src={button.hoverSrc}
+                src={imageSet.hoverSrc}
               />
               <img
                 alt={button.pushedAlt}
                 className={[styles.buttonImage, styles.pushed].join(" ")}
-                src={button.pushedSrc}
+                src={imageSet.pushedSrc}
               />
             </button>
           );

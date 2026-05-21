@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState, type CSSProperties } from 'react'
+import { useMemo, useState, type CSSProperties } from 'react'
 
 export type HomeCollectionShelfItem = {
   count: string
@@ -153,16 +153,18 @@ export function HomeCollectionShelf({ copy, items }: { copy?: HomeCollectionShel
     return mode === 'hot' ? imageItems : [...imageItems].reverse()
   }, [items, mode])
   const totalPages = Math.max(1, Math.ceil(orderedImageItems.length / Math.max(1, IMAGE_SLOTS_PER_PAGE)))
-
-  useEffect(() => {
-    setPageIndex(0)
-  }, [items, mode])
+  const currentPageIndex = Math.min(pageIndex, totalPages - 1)
 
   const visibleItems = useMemo(() => {
-    const start = pageIndex * IMAGE_SLOTS_PER_PAGE
+    const start = currentPageIndex * IMAGE_SLOTS_PER_PAGE
     const nextItems = orderedImageItems.slice(start, start + IMAGE_SLOTS_PER_PAGE)
     return moreItem ? [...nextItems, moreItem] : nextItems.slice(0, ITEMS_PER_PAGE)
-  }, [moreItem, orderedImageItems, pageIndex])
+  }, [currentPageIndex, moreItem, orderedImageItems])
+
+  const selectMode = (nextMode: ShelfMode) => {
+    setMode(nextMode)
+    setPageIndex(0)
+  }
 
   const movePage = (direction: 'left' | 'right') => {
     setPageIndex((current) => {
@@ -173,7 +175,7 @@ export function HomeCollectionShelf({ copy, items }: { copy?: HomeCollectionShel
   }
 
   return (
-    <section className="mx-auto max-w-[1600px] px-4 pt-6 sm:px-6">
+    <section className="mx-auto max-w-[var(--public-page-max-width)] px-4 pt-6 sm:px-[var(--public-page-gutter)]">
       <div className="relative aspect-[3715/872] rounded-[10px]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -198,7 +200,7 @@ export function HomeCollectionShelf({ copy, items }: { copy?: HomeCollectionShel
             alt={copy?.hotLabel || 'Hot'}
             className="absolute"
             idleSrc={HOT_IDLE}
-            onClick={() => setMode('hot')}
+            onClick={() => selectMode('hot')}
             style={{
               left: `${TOP_SLOT.hot.left * 100}%`,
               top: `${TOP_SLOT.hot.top * 100}%`,
@@ -212,7 +214,7 @@ export function HomeCollectionShelf({ copy, items }: { copy?: HomeCollectionShel
             alt={copy?.newLabel || 'New'}
             className="absolute"
             idleSrc={NEW_IDLE}
-            onClick={() => setMode('new')}
+            onClick={() => selectMode('new')}
             style={{
               right: `calc(${TOP_SLOT.newTab.right * 100}% - 5px)`,
               top: `${TOP_SLOT.newTab.top * 100}%`,
@@ -253,7 +255,7 @@ export function HomeCollectionShelf({ copy, items }: { copy?: HomeCollectionShel
               <CollectionCard
                 count={item.count}
                 isMore={item.isMore}
-                key={`${mode}-${pageIndex}-${item.title}-${index}`}
+                key={`${mode}-${currentPageIndex}-${item.title}-${index}`}
                 previewSrc={item.previewSrc}
                 title={item.isMore ? copy?.moreLabel || item.title : item.title}
               />

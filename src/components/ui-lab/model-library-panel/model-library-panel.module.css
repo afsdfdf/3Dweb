@@ -127,9 +127,15 @@
   cursor: pointer;
 }
 
+.pagination button:disabled {
+  cursor: not-allowed;
+  opacity: 0.38;
+}
+
 .pagination .pageActive {
   background: #1d1d20;
   border-color: #5b5b62;
+  cursor: default;
 }
 
 .emptyState {

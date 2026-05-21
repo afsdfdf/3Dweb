@@ -54,10 +54,10 @@ function getStatusTone(status?: null | string) {
   return 'working'
 }
 
-function getStatusIcon(status?: null | string) {
-  if (status === 'succeeded') return CheckCircle2
-  if (status === 'failed' || status === 'timeout') return TriangleAlert
-  return Clock3
+function TaskStatusIcon({ status }: { status?: null | string }) {
+  if (status === 'succeeded') return <CheckCircle2 aria-hidden="true" size={28} />
+  if (status === 'failed' || status === 'timeout') return <TriangleAlert aria-hidden="true" size={28} />
+  return <Clock3 aria-hidden="true" size={28} />
 }
 
 function ResultNotFound({ taskCode }: { taskCode: string }) {
@@ -95,7 +95,6 @@ function ResultReceipt({ task }: { task: NonNullable<Awaited<ReturnType<typeof g
   const progressValue = getProgressValue(task.progress)
   const progressWidth = Math.max(8, progressValue)
   const statusTone = getStatusTone(task.status)
-  const StatusIcon = getStatusIcon(task.status)
   const publicDetailHref = model && model.visibility === 'public' ? `/model-detail?id=${encodeURIComponent(String(model.id))}` : null
   const workbenchHref = model ? `/workbench?model=${encodeURIComponent(String(model.id))}` : '/workbench'
 
@@ -115,7 +114,7 @@ function ResultReceipt({ task }: { task: NonNullable<Awaited<ReturnType<typeof g
           </div>
 
           <div className={`${styles.statusCard} ${styles[statusTone]}`}>
-            <StatusIcon aria-hidden="true" size={28} />
+            <TaskStatusIcon status={task.status} />
             <div>
               <span>Status</span>
               <strong>{formatTaskStatus(task.status)}</strong>
@@ -265,7 +264,7 @@ export default async function ResultDetailPage({ params }: { params: Promise<{ t
   const content = task ? <ResultReceipt task={task} /> : <ResultNotFound taskCode={taskCode} />
 
   return (
-    <SiteShell currentPath="/workbench" mobileChildren={content} showFooter={false} user={user}>
+    <SiteShell currentPath="/workbench" layoutMode="document" showFooter={false} user={user}>
       {content}
     </SiteShell>
   )

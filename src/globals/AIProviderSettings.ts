@@ -242,8 +242,12 @@ export const AIProviderSettings: GlobalConfig = {
         {
           name: 'timeoutSeconds',
           type: 'number',
-          defaultValue: 60,
+          defaultValue: 600,
           label: 'Provider timeout seconds',
+          admin: {
+            description:
+              'Long-running image providers can queue for several minutes under concurrency. Runtime raises values below 600 seconds to the stability floor.',
+          },
         },
         {
           name: 'maxConcurrentTasks',

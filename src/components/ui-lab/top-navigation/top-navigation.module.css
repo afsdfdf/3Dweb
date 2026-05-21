@@ -4,6 +4,28 @@
   height: 60px;
 }
 
+.scaledTopNav {
+  --top-navigation-scale: calc(100vw / 1920px);
+  position: relative;
+  width: 100%;
+  height: calc(60px * var(--top-navigation-scale));
+  overflow: visible;
+}
+
+.scaledTopNavStage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1920px;
+  height: 60px;
+  transform: scale(var(--top-navigation-scale));
+  transform-origin: top left;
+}
+
+.scaledTopNavStage > .topNav {
+  width: 1920px;
+}
+
 .navBg,
 .navCenter,
 .logo,
@@ -534,18 +556,23 @@
 .userName {
   position: absolute;
   right: 24px;
-  top: 21px;
-  display: block;
-  width: 72px;
+  top: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 104px;
+  height: 24px;
   appearance: none;
   border: 0;
   background: transparent;
   color: rgba(255, 255, 255, 0.86);
   cursor: pointer;
-  font-size: 12px;
-  line-height: 18px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 24px;
   overflow: hidden;
   padding: 0;
+  text-align: left;
   text-decoration: none;
   text-overflow: ellipsis;
   white-space: nowrap;

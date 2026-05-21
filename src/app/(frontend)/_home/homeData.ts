@@ -76,11 +76,12 @@ export type HomeFeatureItem = {
 }
 
 export type HomeShelfItem = {
+  alt?: string
   count?: string
   href?: null | string
   id: string
   imageSrc: string
-  title: string
+  title?: string
 }
 
 export type HomeInspirationFilter = 'image-tools' | 'image3d' | 'text3d'
@@ -365,16 +366,21 @@ function getShelfCount(item: HomepageItemLike) {
 }
 
 const moreBundlesItem: HomeShelfItem = {
-  count: 'View all',
+  alt: 'More bundles',
   href: '/bundles',
   id: 'all-bundles',
   imageSrc: '/ui/frames/allfollowed.png',
-  title: 'All Bundles',
 }
 
 const withBundleMoreItem = (items: HomeShelfItem[]) => {
-  const primaryItems = items.filter((item) => item.id !== moreBundlesItem.id).slice(0, 3)
+  const primaryItems = items.filter((item) => item.id !== moreBundlesItem.id)
   return [...primaryItems, moreBundlesItem]
+}
+
+export const getFirstBundleShelfItems = (items: HomeShelfItem[]) => {
+  const moreItem = items.find((item) => item.id === moreBundlesItem.id)
+  const contentItems = items.filter((item) => item.id !== moreBundlesItem.id).slice(0, 3)
+  return moreItem ? [...contentItems, moreItem] : contentItems
 }
 
 const getBundleFeatureItems = (bundles: PublicBundleCard[]) => {
@@ -394,7 +400,6 @@ const getBundleFeatureItems = (bundles: PublicBundleCard[]) => {
 const getBundleShelfItems = (bundles: PublicBundleCard[]) => {
   return bundles
     .filter((bundle) => Boolean(bundle.coverSrc))
-    .slice(0, 3)
     .map((bundle) => ({
       count: bundle.modelCountLabel,
       href: bundle.href,

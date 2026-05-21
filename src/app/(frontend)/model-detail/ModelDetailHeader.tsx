@@ -9,8 +9,9 @@ type ModelDetailHeaderProps = {
 export function ModelDetailHeader({ navUser = null }: ModelDetailHeaderProps) {
   return (
     <TopNavigation
-      active="DETAIL"
+      active="SHOWCASE"
       className={styles.boundTopNavigation}
+      fitViewport
       items={migrationTestNavItems}
       user={navUser}
     />

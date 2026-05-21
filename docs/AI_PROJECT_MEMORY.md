@@ -4,7 +4,7 @@
 
 This is the compact AI-readable memory for `thornstavern`.
 
-Use it first to understand stable project boundaries, active entry points, and recurring pitfalls. For detailed collection fields, hooks, and frontend mapping, use `docs/COLLECTIONS_REFERENCE.md`.
+Use it first to understand stable project boundaries, active entry points, and recurring pitfalls. For the current human-readable project guide, route list, validation policy, and cleanup policy, use `docs/PROJECT_CURRENT.md`.
 
 ## Update Rule
 
@@ -152,6 +152,15 @@ Rules:
 - Ledger flows still update both `credits.balance` and `users.creditsBalance` atomically.
 - Do not treat a stale `users.creditsBalance` value as proof that a manual backend credit adjustment failed; check `credits.balance` first.
 
+## Account Center Performance
+
+Rules:
+
+- `/account` should not load every account table at full size on first render. Resolve the active `section` first, fetch the active table with `accountRecordLimit`, and keep inactive tables to light summary queries.
+- Account table queries should pass `depth: 0` and explicit `select` fields through the current-user helpers so large task payload fields and relationship expansions are not fetched for list rows.
+- Use filtered lightweight status queries for active task/order metrics instead of counting active rows from the current table page.
+- Account pages only need header navigation, so use `getMarketingSiteSettings()` rather than `getMarketingSiteData()` to avoid fetching homepage content for the account shell.
+
 ## Core Guardrails
 
 ### Local API
@@ -178,6 +187,18 @@ Guests can read `media` only when:
 - or `publicAccess = true`
 
 Public `models.visibility = public` does not make linked private media public.
+
+### Workbench Source Images
+
+Workbench generation endpoints must not trust client-supplied source image storage references.
+
+Rules:
+
+- Validate `sourceImageAsset` and `sourceImageAssets` through `src/lib/workbenchSourceAssets.ts` before calling AI task flows.
+- Supabase `bucket/path` references must match the configured runtime bucket and the current user's `input/user-<id>/` prefix.
+- `mediaId` references must be checked with Payload Local API using `overrideAccess: false` and the current `user`.
+- Do not use a raw client-provided `publicUrl` as authorization for source images or provider signing.
+- Source image signed upload helpers must remain rate limited and default to the same `NEXT_PUBLIC_MAX_UPLOAD_BYTES` upload size limit as the Workbench browser helper.
 
 Generated image results should default to:
 
@@ -260,7 +281,8 @@ The frontend should submit neutral task intent to `POST /api/studio/ai/tasks`:
 
 Payload decides the Meshy route:
 
-- no source images: Meshy Text to 3D preview/refine
+- explicit Text to 3D mode with no source images: Meshy Text to 3D preview/refine
+- explicit Image to 3D mode must include at least one source image and should be rejected before task creation when no image is provided
 - one source image: Meshy Image to 3D
 - two to four source images: Meshy Multi Image to 3D when enabled in `ai-provider-settings`
 
@@ -314,8 +336,7 @@ Rules:
 - Do not add new hardcoded homepage rails if Payload can manage the data.
 - Do not add new hardcoded formal page body copy for pages already represented in `formal-pages`; source content in `formal-pages.ts` and `marketing-content.ts` is fallback/seeding content only.
 - Public homepage rendering should use public models and guest-readable preview media only.
-- For detailed collection mappings, see `docs/COLLECTIONS_REFERENCE.md`.
-- Backend-owned UI slot notes for the migrated formal frontend are tracked in `docs/BACKEND_UI_DEVELOPMENT_MEMO.md`.
+- For the current human-readable project guide, route list, validation policy, and cleanup policy, see `docs/PROJECT_CURRENT.md`.
 
 ## Known Drift And Cleanup Items
 
@@ -368,12 +389,8 @@ Watch for:
 
 Current evergreen references:
 
-- `docs/COLLECTIONS_REFERENCE.md`: active collection and frontend mapping reference.
-- `docs/ARCHITECTURE_BLUEPRINT.md`: architecture map.
-- `docs/AI_PRODUCT_FRAMEWORK_GUIDE.md`: product/backend integration guide.
-- `docs/DEVELOPMENT_GUIDE.md`: engineering workflow.
-- `docs/DATABASE_TABLE_REFERENCE.md`: table/domain reference.
-- `docs/DATABASE_MIGRATION_STANDARD.md`: migration policy.
+- `docs/PROJECT_CURRENT.md`: current human-readable project guide, route list, validation policy, cleanup policy, and operational boundaries.
+- `docs/AI_PROJECT_MEMORY.md`: compact AI-readable architecture memory and recurring guardrails.
 
 ## Recent Decisions
 
@@ -393,7 +410,7 @@ Current evergreen references:
 
 - Root docs were consolidated into evergreen documents plus `docs/archive/`.
 - AI memory was compacted into guardrails and active registration facts.
-- Detailed collection documentation moved to `docs/COLLECTIONS_REFERENCE.md`.
+- Detailed collection, route, validation, and cleanup documentation is consolidated in `docs/PROJECT_CURRENT.md`.
 - Account, notifications, social, model detail, model viewer, image generation, engagement, and admin repair endpoint modules are registered. Frontend integration can use their public `/api/...` paths while preserving the documented security contracts.
 - Workbench model viewing is currently stabilized through the controlled `/api/platform/models/:modelId/viewer` path plus frontend/service-worker caching. After the formal frontend flow is complete, plan a production delivery refactor around a manifest/signing layer, Supabase Storage delivery for public hot assets, short-lived signed access for private assets, and durable cache keys for models and images.
 - Public model discovery/detail and Workbench ownership are separate. `/model-detail?id=<modelId>` is the formal public detail route; Workbench library panels should keep showing only the current user's own models, with other users' public models used only as read-only references.
@@ -440,7 +457,7 @@ Current evergreen references:
 
 - Backend architecture audit cleanup formalized model downloads at `GET /api/platform/models/:modelId/download`; do not use the old mock download namespace in production UI.
 - Sensitive account auth mutations, follow/unfollow mutations, and engagement view writes now use endpoint-level rate limiting in addition to existing origin/auth checks.
-- `/test` and `/formal-components` remain available for local development but return `notFound()` in production builds. The old `/test-auth-preview` route was removed after auth moved to the shared modal flow.
+- `/test`, `/test-bundles`, and `/formal-components` were removed during the 2026-05-11 cleanup because they were local-only validation/design-review routes, not formal product delivery routes. Do not recreate them unless a new formal design-review workflow is explicitly requested.
 - Obsolete admin service tests for removed `src/lib/admin*.ts` modules were retired. The active unit test suite is 99/99 passing, and `pnpm exec tsc --noEmit` plus `pnpm run build` passed after the cleanup.
 - Public model preview latency is optimized in two layers: `/model-detail` should keep Payload reads narrow with `depth`, `select`, and parallel data preparation, while `/api/platform/models/:modelId/viewer` may use a read-only public fast path against `models -> models_formats -> media.url` before falling back to Payload access for non-public/authenticated cases. The fast path must still require `models.visibility = public`, keep endpoint rate limiting, and only bypass remote-asset global reads for configured Supabase public storage URLs.
 - Model preview performance work should use the shared measurement command `pnpm measure:model-preview -- --ids 1,20,42`. It records page HTML time, viewer endpoint 302 time, Supabase range probe time, browser GLB start/finish, final ready/error, and related thumbnail count so Model Detail and Workbench preview changes can be compared against the same baseline.
@@ -460,7 +477,7 @@ Current evergreen references:
 
 ### 2026-05-01 Full-Stack Audit
 
-- `docs/PROJECT_AUDIT_MEMO.md` is refreshed as the current full-stack audit source. It supersedes older notes that said TypeScript was failing or that social collections were dormant.
+- `docs/PROJECT_CURRENT.md` is the current human-readable guide and supersedes older split docs and audit memos. Social collections are active and should not be described as dormant.
 - Fresh validation during the audit and remediation: `pnpm exec tsc --noEmit` passed, `pnpm test:unit` passed with `112/112` tests after the latest remediation tests were added, and `pnpm run build` passed. Build still logged SMTP `EAUTH` verification noise from configured SMTP credentials, so SMTP config remains a deployment hygiene item even though it is not a compile blocker.
 - Read-only Supabase/Postgres probe found `70` public tables. Current imported public resource set is internally consistent: `42` public `models`, `42` `models_formats`, `123` `media` rows, all media URLs are Supabase public object URLs, and all 42 public models have guest-readable preview media plus Supabase-backed GLB format rows.
 - Highest-priority backend risk: `src/endpoints/modelDownloads.ts` must stop returning mock download content when no real asset exists. It should return a controlled error and refund any charged credits.
@@ -490,9 +507,10 @@ Current evergreen references:
 - Source language cleanup added `scripts/audit-source-language.mjs` and `npm`/package script `audit:source-language`. The audit fails on Chinese characters outside explicit `src/i18n/**` resources and on common mojibake markers, while excluding generated files, migrations, and local test routes.
 - Production UI and backend/service copy should default to English. The corrupted admin `zh` resource was replaced with a clean `src/i18n/admin/zh.ts` translation overlay that deep-merges onto `adminEn`, so backend/admin Chinese stays in the explicit I18N resource while missing keys safely fall back to English. Do not scatter Chinese fallback strings back into collection configs, globals, admin components, or service code.
 - Backend admin UI field labels, field descriptions, option labels, tabs, collection labels, and global labels are localized through `src/lib/payloadAdminI18n.ts` plus the phrase table in `src/i18n/admin/phrases.ts`. Keep future Payload config UI copy as English in config files and add Chinese only to the explicit I18N phrase table. Custom admin components should read the current Payload admin language and resolve phrases through `src/lib/adminPhrase.ts`.
-- `/bundles/[slug]` is the formal public model-bundle detail route. It reads published/visible `model-bundles`, shows the bundle title, cover, summary, tags, and included public models, and links each model to `/model-detail?id=...`. Homepage `homepage-items.linkedBundle` cards should link to `/bundles/:slug`; keep `/test-bundles` as a local test/demo page rather than a contract-delivery route.
+- `/bundles/[slug]` is the formal public model-bundle detail route. It reads published/visible `model-bundles`, shows the bundle title, cover, summary, tags, and included public models, and links each model to `/model-detail?id=...`. Homepage `homepage-items.linkedBundle` cards should link to `/bundles/:slug`; the old `/test-bundles` local demo page has been removed.
 - Workbench 3D generation stays on `/workbench`: create an immediate pending model card/loading viewer state, poll `POST /api/studio/ai/tasks/:taskId/sync`, replace the pending card with `/api/platform/models/:modelId/viewer?format=glb` when `resultModel` is available, and only use `/results/:taskCode` as a separate result route rather than the primary submission redirect.
 - Workbench pending progress must distinguish provider progress from final asset readiness. Meshy preview/refine/image stages are mapped into capped progress ranges, frontend may optimistically advance within the current stage, and the UI must show `failureReason` for failed tasks such as insufficient credits instead of leaving a silent 100% pending state.
+- Workbench task sync polling should be client-batched. Keep the active pending task prioritized, rotate through background pending tasks, and avoid syncing every pending task on every interval; this protects the per-user `ai-sync` endpoint rate limit without reducing backend generation worker concurrency.
 - Workbench generation must preflight task credits before creating `generation-tasks` rows for both 3D model and image-generation submissions. Insufficient credits should return `402` without creating a task row, and the Workbench client should remove any transient pending card so the user sees an unsubmitted request rather than a failed generated work.
 - Workbench generation defaults to a 20-credit charge. Backend billing settings must always reserve generation credits before provider dispatch; `ai-provider-settings.creditRules.reserveOnSubmit` is retained only for legacy snapshots and must not make new generation free. Admins may change positive generation prices through Site Settings and AI Provider Settings, and non-positive generation prices fall back to the 20-credit default.
 - `ModelViewer` should detect WebGL availability before mounting `@react-three/fiber` Canvas. Some embedded/local browser surfaces can reject WebGL context creation; in that case show the existing model preview unavailable overlay instead of mounting Canvas and leaving an unhandled rejection/blank viewer.
@@ -503,12 +521,17 @@ Current evergreen references:
 ### 2026-05-05
 
 - Image generation now supports an `openai-compatible` provider in addition to Gemini official and Gemini third-party. Admin settings live under `ai-provider-settings.imageGeneration.openAICompatible` with `baseURL`, `model`, `apiKey`, and `size`; environment fallback order is `OPENAI_IMAGE_COMPATIBLE_*` first, then generic `OPENAI_*` where applicable.
-- OpenAI-compatible text image generation posts JSON to `/images/generations`; image-to-image posts multipart data to `/images/edits`. Keep this separate from Gemini-compatible gateways, which use `x-goog-api-key` and `generateContent`.
+- OpenAI-compatible text image generation posts JSON to `/images/generations`; image-to-image posts to `/images/edits`, preferring JSON `images: [{ image_url }]` and falling back to multipart only for providers that reject that JSON shape. Keep this separate from Gemini-compatible gateways, which use `x-goog-api-key` and `generateContent`.
+- OpenAI-compatible image-to-image should prefer `/images/edits` JSON with `images: [{ image_url }]` when a Workbench source image has a Supabase/public/signed URL. Current tested GPT Image compatible gateways can succeed through JSON image URLs while multipart `image` or `image[]` uploads may fail with `502 stream disconnected before completion`. Keep multipart only as a compatibility fallback when the provider rejects the JSON edit request format.
+- Workbench image-reference generation has two OpenAI-compatible image-to-image prompt routes: uploaded image plus configured default prompt, or uploaded image plus configured default prompt plus user prompt. Both routes must dispatch as JSON `/images/edits` with `images: [{ image_url }]` and a non-empty effective `prompt`; do not treat a raw image upload without an effective prompt as provider-ready.
 - OpenAI-compatible image providers can return classic Images JSON (`data[].b64_json` or `data[].url`), Responses-style JSON (`image_generation_call.result`), or SSE `data:` events containing those payloads. Keep the parser tolerant of all three shapes and redact large `result`, `b64_json`, or `partial_image_b64` values from failure reasons before storing them on generation tasks.
 - `/api/studio/ai/images` must not force `gemini-official` when no provider is supplied. Let the image-generation global default provider select Gemini official, Gemini third-party, or OpenAI-compatible so backend admin configuration is the source of truth.
 - `media.upload.disableLocalStorage` must stay enabled. Runtime assets are uploaded to Supabase Storage first, then represented by Payload media rows with external URLs. Leaving Payload local upload storage enabled can make generated Meshy/image assets fail during finalization with local `media` directory filesystem errors.
 - Workbench image generation is asynchronous. `POST /api/studio/ai/images` creates a queued `generation-tasks` row and returns immediately with `/api/studio/ai/images/:taskId/sync`; provider work runs after the response and the Workbench polls until the private generated media asset is ready. Image-generation tasks use `taskType = image-generation`, while 3D/model tasks use `taskType = model-generation`; do not infer the product task type from `inputMode` labels. Admins can set `ai-provider-settings.imageGeneration.defaultPrompt`, which is prepended to the user prompt and stored in the task snapshot for provider dispatch.
-- Image-generation sync polling must be able to recover unfinished provider dispatch. The image sync endpoint should reschedule runnable `queued`/`processing` tasks when no result media exists, while `runImageGenerationTask` records `parameterSnapshot.imageGeneration.dispatchStartedAt` and treats recent processing tasks as already dispatched. Dispatch scheduling should not depend only on Next `after()`; keep a non-blocking same-process fallback and an in-process work queue. Image-generation dispatch concurrency is backend-editable at `ai-provider-settings.imageGeneration.maxConcurrentTasks`, defaults to `20`, and falls back to `IMAGE_GENERATION_MAX_CONCURRENT_TASKS` when the global cannot be read; duplicate sync calls for the same task must not enqueue duplicate workers. Tune `IMAGE_GENERATION_DISPATCH_STALE_MS` only when provider timeouts exceed the default recovery window.
+- Workbench image-generation defaults are templates, not user input. Keep the prompt state empty until the user types or restores a real draft, show the backend default prompt only as placeholder/context, and reject text-mode image generation before reading the default prompt when no user prompt is provided. Image-to-image may use the configured default template with the uploaded reference image, but a no-prompt/no-image submission must not create a task.
+- Image-generation sync polling must be able to recover unfinished provider dispatch. The image sync endpoint should reschedule runnable `queued`/`processing` tasks when no result media exists, while `runImageGenerationTask` records `parameterSnapshot.imageGeneration.dispatchStartedAt` and treats recent processing tasks as already dispatched. Dispatch scheduling should not depend only on Next `after()`; keep a non-blocking same-process fallback and an in-process work queue. Image-generation dispatch concurrency is backend-editable at `ai-provider-settings.imageGeneration.maxConcurrentTasks`, defaults to `20`, and falls back to `IMAGE_GENERATION_MAX_CONCURRENT_TASKS` when the global cannot be read; duplicate sync calls for the same task must not enqueue duplicate workers. The image provider timeout has a `600` second runtime floor and the stale-dispatch recovery window is `900000` ms so slow but successful OpenAI-compatible image queues are not prematurely timed out or duplicated, even when a saved admin global still contains the old `60` second default. Keep `ai-image-submit` rate limits high enough for more than 20 accepted submissions, because overload should queue in the backend instead of failing before the queue.
+- Image-generation worker scheduling must not block the submit response on reading `ai-provider-settings`. Keep global concurrency refresh fire-and-forget, queue stale task locks expirable, and avoid starting every worker in the same millisecond. Local stress testing on 2026-05-21 showed the root failure was backend Postgres pressure (`POSTGRES_POOL_MAX=3` plus 5s connection timeout), not the OpenAI-compatible `images: [{ image_url }] + prompt` provider payload. Local defaults now use `POSTGRES_POOL_CONNECTION_TIMEOUT_MS=60000`; local `.env` can use `POSTGRES_POOL_MAX=10` with image worker concurrency capped at 20 so excess work queues instead of starving Payload/Postgres.
+- Image-generation provider retry belongs inside `runImageGenerationTask`, not the Workbench client. A transient provider failure such as timeout, 429, 5xx, network reset, or concurrency overload should retry once inside the same `generation-tasks` row and credit reservation, record retry metadata under `parameterSnapshot.imageGeneration`, and stay bounded by the backend image-generation concurrency queue. Do not retry configuration/auth/source-image validation failures.
 - Image-generation provider credentials entered in `ai-provider-settings.imageGeneration.*.apiKey` are admin overrides. Runtime should use the saved admin key when it is non-empty, then fall back to provider-specific environment variables. For OpenAI-compatible third-party providers, non-default admin `baseURL`, `model`, and `size` values should also win over generic environment fallbacks.
 - Meshy 3D model generation concurrency is backend-editable at `ai-provider-settings.meshy.maxConcurrentTasks`, defaults to `20`, and falls back to `MESHY_MAX_CONCURRENT_TASKS` when backend settings are unavailable. Keep provider dispatch capacity checks backend-owned; Workbench must not decide model-generation concurrency.
 
@@ -523,7 +546,8 @@ Current evergreen references:
 - `getCachedPayload` lazy-loads `@payload-config`, shares successful initialization, clears failed initialization so later requests can recover, and applies a short failure backoff so bursts after a first Postgres connection failure do not repeatedly open new connection attempts. Keep `tests/getCachedPayload.test.ts` and the test loader's `@payload-config` alias support when changing this helper.
 - Workbench image generation (`imageTools`) supports only one reference image. The client should cap image-mode references at one and submit only that asset; the image-generation endpoint should still tolerate stale clients that send multiple `sourceImageAssets` by using the first source image and normalizing the task snapshot.
 - `/model-detail` must not mount both desktop and mobile `ModelViewer` instances at the same time. Hidden zero-size responsive branches can keep a stale loading overlay and a second WebGL canvas alive, which breaks `measure:model-preview` and wastes browser resources. Gate viewer mounting by the active media query, and keep `scripts/measure-model-preview.mjs` checking only visible canvas/error/loading overlay nodes. The 2026-05-10 baseline for ids `1,20,42` returned page `200`, viewer `302`, Supabase range `206`, one visible canvas, no visible error, empty final loading text, and 9 related real images.
-- `pnpm test:smoke` now includes browser checks in addition to HTTP route checks. The browser smoke verifies anonymous `/model-detail?id=<SMOKE_MODEL_ID>` renders one visible model canvas without a visible loading/error overlay, and anonymous `/workbench` Generate opens the login dialog without posting to `/api/studio/ai/tasks` or `/api/studio/ai/images`.
+- `pnpm test:smoke` includes HTTP route checks, a model viewer endpoint/range probe, and browser checks. The browser smoke verifies anonymous `/model-detail?id=<SMOKE_MODEL_ID>` mounts one visible model canvas without a visible error overlay, while readiness is reported separately because remote Supabase GLB downloads can legitimately outlive the smoke timeout in headless Edge. Anonymous `/workbench` Generate must open the login dialog without posting to `/api/studio/ai/tasks` or `/api/studio/ai/images`.
+- `ModelViewer` GLB fetch timeouts are stall-based, not absolute wall-clock timers. Refresh the timeout after response headers and each received chunk so a large model on a slow but progressing connection does not abort before falling back to proxy delivery; still abort stalled requests that make no progress.
 
 ### 2026-05-03
 
@@ -547,7 +571,7 @@ Current evergreen references:
 
 ### 2026-05-07
 
-- `/test` is now a local-only route inventory page. It lists formal frontend routes, local-only routes, dynamic routes, and Payload routes with one-line descriptions, and still returns `notFound()` in production.
+- 2026-05-11 cleanup removed the local-only route inventory and design validation pages: `/test`, `/test-bundles`, and `/formal-components`.
 - `/api/locale` only accepts same-origin relative redirect paths. Empty, absolute, and protocol-relative redirect values fall back to `/`.
 - The frontend route layout no longer wraps all pages in an extra `<main>`, so pages can own their own primary landmark without nested main elements.
 - Public `/pricing` and `/showcase` list queries should fail soft to empty states when local database reads fail; this is page resilience only and does not replace fixing database connectivity.

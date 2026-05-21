@@ -143,7 +143,13 @@ export async function createModelComment(args: {
     req: args.req,
   })
 
-  return comment
+  return args.req.payload.findByID({
+    collection: 'model-comments',
+    depth: 1,
+    id: comment.id,
+    overrideAccess: true,
+    req: args.req,
+  })
 }
 
 export async function deleteModelComment(args: {

@@ -20,7 +20,7 @@ type ModeTabsProps = {
 const ModeTabs = ({ showTextState, onImageMode, onTextMode }: ModeTabsProps) => (
     <div
         id="1_3098"
-        className={`Pixso-group-1_3098${showTextState ? "" : " Pixso-text-mode-tabs-1_3098"}`}
+        className={`Pixso-group-1_3098${showTextState ? " Pixso-text-mode-tabs-1_3098" : ""}`}
         role="tablist"
         aria-label="Generation mode"
         onClick={(event) => {
@@ -56,7 +56,7 @@ const ModeTabs = ({ showTextState, onImageMode, onTextMode }: ModeTabsProps) => 
                 <div id="1_3106" className="Pixso-vector-1_3106"></div>
             </div>
             <span id="1_3113" className="Pixso-paragraph-1_3113">
-                {"IMageto 3D"}
+                {"Image to 3D"}
             </span>
         </button>
         <button
@@ -88,6 +88,7 @@ const Frame12877 = () => {
     const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const promptTextareaRef = useRef<HTMLTextAreaElement>(null);
+    const isTextMode = showTextState || showPromptState || showInputState;
 
     useEffect(() => {
         if (promptEditing) {
@@ -202,7 +203,7 @@ const Frame12877 = () => {
                     />
                 </div>
                 <ModeTabs
-                    showTextState={showTextState || showPromptState || showInputState}
+                    showTextState={isTextMode}
                     onImageMode={() => {
                         setShowTextState(false);
                         setShowPromptState(false);
@@ -720,7 +721,31 @@ const Frame12877 = () => {
                         </div>
                     </div>
                 )}
-                <div id="1_3287" className="Pixso-group-1_3287">
+                {isTextMode && (
+                    <>
+                        <div
+                            className="Pixso-text-mode-guide Pixso-text-mode-get-model-guide"
+                            aria-hidden="true"
+                        >
+                            <img
+                                alt=""
+                                decoding="async"
+                                src="/home-test-assets/images/text-mode-get-model-guide.png"
+                            />
+                        </div>
+                        <div
+                            className="Pixso-text-mode-guide Pixso-text-mode-upload-text-guide"
+                            aria-hidden="true"
+                        >
+                            <img
+                                alt=""
+                                decoding="async"
+                                src="/home-test-assets/images/text-mode-upload-text-guide.png"
+                            />
+                        </div>
+                    </>
+                )}
+                <div id="1_3287" className={`Pixso-group-1_3287${isTextMode ? " Pixso-state-hidden" : ""}`}>
                     <div id="1_3288" className="Pixso-text-1_3288">
                         <p id="1_3288_0" className="Pixso-paragraph-1_3288_0">
                             <span
@@ -742,7 +767,7 @@ const Frame12877 = () => {
                     <div id="1_3289" className="Pixso-vector-1_3289"></div>
                     <div id="1_3290" className="Pixso-vector-1_3290"></div>
                 </div>
-                <div id="1_3292" className="Pixso-group-1_3292">
+                <div id="1_3292" className={`Pixso-group-1_3292${isTextMode ? " Pixso-state-hidden" : ""}`}>
                     <div id="1_3293" className="Pixso-text-1_3293">
                         <p id="1_3293_0" className="Pixso-paragraph-1_3293_0">
                             <span

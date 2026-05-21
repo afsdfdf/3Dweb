@@ -44,7 +44,7 @@ function CornerCut({ position }: { position: 'tl' | 'tr' | 'bl' | 'br' }) {
 
 export function SectionFrame({ bodyClassName, children, eyebrow, title, toolbar }: SectionFrameProps) {
   return (
-    <section className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6">
+    <section className="mx-auto max-w-[var(--public-page-max-width)] px-4 py-6 sm:px-[var(--public-page-gutter)]">
       <div className="relative overflow-hidden rounded-[10px] border border-[#403f46] bg-[#000000] p-5 shadow-[0_20px_52px_rgba(0,0,0,0.36)]">
         <span className="pointer-events-none absolute inset-x-0 top-0 h-[7px] bg-[#000000]" />
         <span className="pointer-events-none absolute inset-x-0 bottom-0 h-[7px] bg-[#000000]" />

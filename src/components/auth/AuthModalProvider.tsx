@@ -63,17 +63,21 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
 
     const params = new URLSearchParams(search)
     const authMode = params.get('auth')
-    if (authMode === 'login' || authMode === 'register' || authMode === 'forgot') {
-      const nextRedirect = params.get('redirect')
-      openAuthModal(authMode, {
-        redirectTo: isSafeInternalRedirect(nextRedirect) ? nextRedirect : null,
-      })
-      return
-    }
+    const animationFrame = window.requestAnimationFrame(() => {
+      if (authMode === 'login' || authMode === 'register' || authMode === 'forgot') {
+        const nextRedirect = params.get('redirect')
+        openAuthModal(authMode, {
+          redirectTo: isSafeInternalRedirect(nextRedirect) ? nextRedirect : null,
+        })
+        return
+      }
 
-    if (previousLocationKey !== null && previousLocationKey !== locationKey) {
-      closeAuthModal()
-    }
+      if (previousLocationKey !== null && previousLocationKey !== locationKey) {
+        closeAuthModal()
+      }
+    })
+
+    return () => window.cancelAnimationFrame(animationFrame)
   }, [closeAuthModal, openAuthModal, pathname])
 
   const value = useMemo(
@@ -92,12 +96,14 @@ export function AuthModalProvider({ children }: { children: ReactNode }) {
 
 export function useAuthModal() {
   const context = useContext(AuthModalContext)
-  if (!context) {
-    if (process.env.NODE_ENV !== 'production' && !didWarnMissingAuthModalProvider) {
-      didWarnMissingAuthModalProvider = true
-      console.warn('useAuthModal was used outside AuthModalProvider. Falling back to auth routes.')
-    }
+  useEffect(() => {
+    if (context || process.env.NODE_ENV === 'production' || didWarnMissingAuthModalProvider) return
 
+    didWarnMissingAuthModalProvider = true
+    console.warn('useAuthModal was used outside AuthModalProvider. Falling back to auth routes.')
+  }, [context])
+
+  if (!context) {
     return {
       closeAuthModal: () => {},
       isAuthModalOpen: false,

@@ -7,7 +7,7 @@ import { ModelThumbnailCard } from '../cards/ModelThumbnailCard'
 
 export function HomeInspirationSection({ items }: { items: PublicModelThumbnailCardVM[] }) {
   return (
-    <section className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6 sm:pb-12">
+    <section className="mx-auto max-w-[var(--public-page-max-width)] px-4 py-6 sm:px-[var(--public-page-gutter)] sm:pb-12">
       <div className="relative overflow-hidden rounded-[10px]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img

@@ -1,5 +1,6 @@
 .frame {
   --frame-border-width: 34px;
+  --frame-seam-overlap: 2px;
   box-sizing: border-box;
   min-height: calc(var(--frame-border-width) * 2);
   min-width: calc(var(--frame-border-width) * 2);
@@ -53,8 +54,8 @@
   background-repeat: repeat-x;
   background-size: auto 100%;
   height: var(--frame-border-width);
-  left: var(--frame-border-width);
-  right: var(--frame-border-width);
+  left: calc(var(--frame-border-width) - var(--frame-seam-overlap));
+  right: calc(var(--frame-border-width) - var(--frame-seam-overlap));
 }
 
 .edgeTop {
@@ -71,8 +72,8 @@
 .edgeRight {
   background-repeat: repeat-y;
   background-size: 100% auto;
-  bottom: var(--frame-border-width);
-  top: var(--frame-border-width);
+  bottom: calc(var(--frame-border-width) - var(--frame-seam-overlap));
+  top: calc(var(--frame-border-width) - var(--frame-seam-overlap));
   width: var(--frame-border-width);
 }
 

@@ -38,6 +38,7 @@
   cursor: pointer;
   display: block;
   height: 38px;
+  overflow: hidden;
   padding: 0;
   position: absolute;
   top: 0;
@@ -62,6 +63,16 @@
 .control[aria-pressed="true"] {
   filter: brightness(0.94);
   transform: translateY(1px) scale(0.98);
+}
+
+.shell[data-tone="purple"] .control[aria-pressed="true"] {
+  filter: brightness(0.96) saturate(1.08);
+  transform: translateY(1px) scale(0.985);
+}
+
+.shell[data-tone="purple"] .control:active {
+  filter: brightness(0.9);
+  transform: translateY(2px) scale(0.97);
 }
 
 .buttonImage {
@@ -92,6 +103,14 @@
 
 .control:hover .hover,
 .control[aria-pressed="true"] .pushed {
+  opacity: 1;
+}
+
+.shell[data-tone="purple"] .control[aria-pressed="true"] .normal {
+  opacity: 0;
+}
+
+.shell[data-tone="purple"] .control[aria-pressed="true"] .pushed {
   opacity: 1;
 }
 

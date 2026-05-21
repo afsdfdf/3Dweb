@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { unstable_noStore as noStore } from "next/cache";
 import { redirect } from "next/navigation";
+import type { Where } from "payload";
 import { cache } from "react";
 import { getCachedPayload } from "@/lib/getCachedPayload";
 import { resolvePayloadUserFromHeaders } from "@/lib/payloadAuthFallback";
@@ -23,10 +24,37 @@ const getPayloadWithUser = cache(async () => {
 });
 
 type CurrentUserListOptions = {
+  depth?: number;
   limit?: number;
+  select?: Record<string, true>;
+  status?: string | string[];
 };
 
 const defaultCurrentUserListLimit = 20;
+
+function getCurrentUserScopedWhere(
+  relationField: "owner" | "user",
+  userId: string | number,
+  options: CurrentUserListOptions,
+): Where {
+  const filters: Where[] = [
+    {
+      [relationField]: {
+        equals: userId,
+      },
+    },
+  ];
+
+  if (options.status) {
+    filters.push(
+      Array.isArray(options.status)
+        ? { status: { in: options.status } }
+        : { status: { equals: options.status } },
+    );
+  }
+
+  return filters.length === 1 ? filters[0] : { and: filters };
+}
 
 const getCurrentUserDocument = cache(async () => {
   const { payload, user } = await getPayloadWithUser();
@@ -171,16 +199,13 @@ export async function getCurrentUserTasks(options: CurrentUserListOptions = {}) 
 
   return payload.find({
     collection: "generation-tasks",
-    depth: 1,
+    depth: options.depth ?? 1,
     limit,
     overrideAccess: false,
+    select: options.select,
     sort: "-updatedAt",
     user,
-    where: {
-      user: {
-        equals: user.id,
-      },
-    },
+    where: getCurrentUserScopedWhere("user", user.id, options),
   });
 }
 
@@ -192,16 +217,13 @@ export async function getCurrentUserModels(options: CurrentUserListOptions = {})
 
   return payload.find({
     collection: "models",
-    depth: 1,
+    depth: options.depth ?? 1,
     limit,
     overrideAccess: false,
+    select: options.select,
     sort: "-updatedAt",
     user,
-    where: {
-      owner: {
-        equals: user.id,
-      },
-    },
+    where: getCurrentUserScopedWhere("owner", user.id, options),
   });
 }
 
@@ -213,16 +235,13 @@ export async function getCurrentUserOrders(options: CurrentUserListOptions = {})
 
   return payload.find({
     collection: "print-orders",
-    depth: 1,
+    depth: options.depth ?? 1,
     limit,
     overrideAccess: false,
+    select: options.select,
     sort: "-updatedAt",
     user,
-    where: {
-      user: {
-        equals: user.id,
-      },
-    },
+    where: getCurrentUserScopedWhere("user", user.id, options),
   });
 }
 
@@ -257,16 +276,13 @@ export async function getCurrentUserCreditTransactions(
 
   return payload.find({
     collection: "credit-transactions",
-    depth: 1,
+    depth: options.depth ?? 1,
     limit,
     overrideAccess: false,
+    select: options.select,
     sort: "-createdAt",
     user,
-    where: {
-      user: {
-        equals: user.id,
-      },
-    },
+    where: getCurrentUserScopedWhere("user", user.id, options),
   });
 }
 

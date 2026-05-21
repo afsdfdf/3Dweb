@@ -21,6 +21,8 @@ type AuthFlowCardProps = {
 
 type RegistrationVerificationMode = 'email-code' | 'email-link'
 
+const termsAgreementMessage = 'Please agree to the Terms and Privacy Policy.'
+
 const safeRedirect = (value?: null | string) => {
   return getSafeInternalRedirect(value, '/generate')
 }
@@ -195,6 +197,14 @@ export function AuthFlowCard({ initialMode = 'login', initialResetToken = '', on
     setLoading(false)
   }
 
+  const handleAgreementChange = (value: boolean) => {
+    setAgreed(value)
+    if (value && message === termsAgreementMessage) {
+      setMessage('')
+      setMessageTone(null)
+    }
+  }
+
   const completeLogin = async () => {
     const loginResp = await fetch('/api/account/auth/login', {
       body: JSON.stringify({
@@ -273,7 +283,7 @@ export function AuthFlowCard({ initialMode = 'login', initialResetToken = '', on
         }
 
         if (!agreed) {
-          throw new Error('I have read and agreed to the Terms of Use and Privacy Policy.')
+          throw new Error(termsAgreementMessage)
         }
 
         const registerResp = await fetch('/api/account/auth/register', {
@@ -355,6 +365,10 @@ export function AuthFlowCard({ initialMode = 'login', initialResetToken = '', on
       }
 
       if (isLogin) {
+        if (!agreed) {
+          throw new Error(termsAgreementMessage)
+        }
+
         await completeLogin()
         return
       }
@@ -495,12 +509,13 @@ export function AuthFlowCard({ initialMode = 'login', initialResetToken = '', on
                     styles.terms,
                     styles.registerTerms,
                     requiresVerificationCode ? '' : styles.registerTermsLinkMode,
+                    message === termsAgreementMessage ? styles.termsError : '',
                   ].join(' ')}
                 >
                   <input
                     checked={agreed}
                     className={styles.checkbox}
-                    onChange={(event) => setAgreed(event.target.checked)}
+                    onChange={(event) => handleAgreementChange(event.target.checked)}
                     type="checkbox"
                   />
                   <span className={styles.registerTermsText}>
@@ -650,11 +665,17 @@ export function AuthFlowCard({ initialMode = 'login', initialResetToken = '', on
                   <EyeButton visible={passwordVisible} onClick={() => setPasswordVisible((value) => !value)} />
                 </AuthField>
 
-                <label className={[styles.terms, styles.loginTerms].join(' ')}>
+                <label
+                  className={[
+                    styles.terms,
+                    styles.loginTerms,
+                    message === termsAgreementMessage ? styles.termsError : '',
+                  ].join(' ')}
+                >
                   <input
                     checked={agreed}
                     className={styles.checkbox}
-                    onChange={(event) => setAgreed(event.target.checked)}
+                    onChange={(event) => handleAgreementChange(event.target.checked)}
                     type="checkbox"
                   />
                   <span>
