@@ -27,6 +27,7 @@ import {
   retrieveMeshyTextTask,
 } from '@/lib/meshyGateway'
 import { getModelOptimizationConfig } from '@/lib/modelOptimization/config'
+import { dispatchModelOptimizationJob } from '@/lib/modelOptimization/dispatch'
 import { enqueueModelOptimizationJob } from '@/lib/modelOptimization/queue'
 import { resolveOriginalGLBAsset } from '@/lib/modelOptimization/source'
 import { isAllowedRemoteAssetURL } from '@/lib/remoteAssetSecurity'
@@ -76,9 +77,11 @@ type AITaskFlowStorageTestHooks = {
 }
 
 type AITaskFlowOptimizationTestHooks = {
+  dispatchModelOptimizationJob?: typeof dispatchModelOptimizationJob
   enqueueModelOptimizationJob?: typeof enqueueModelOptimizationJob
   getModelOptimizationConfig?: typeof getModelOptimizationConfig
   resolveOriginalGLBAsset?: typeof resolveOriginalGLBAsset
+  scheduleAfterResponse?: (task: () => Promise<void>) => void
 }
 
 let aiTaskFlowStorageTestHooks: AITaskFlowStorageTestHooks | null = null
@@ -196,6 +199,53 @@ const readRuntimeStorageSettings = () => (aiTaskFlowStorageTestHooks?.getRuntime
 const uploadRuntimeAsset = (args: Parameters<typeof uploadToSupabaseStorage>[0]) =>
   (aiTaskFlowStorageTestHooks?.uploadToSupabaseStorage || uploadToSupabaseStorage)(args)
 
+const scheduleModelOptimizationDispatch = (args: {
+  jobId: number
+  modelId: number
+  req: PayloadRequest
+}) => {
+  const run = async () => {
+    try {
+      await (aiTaskFlowOptimizationTestHooks?.dispatchModelOptimizationJob || dispatchModelOptimizationJob)({
+        jobId: args.jobId,
+        req: args.req,
+      })
+    } catch (error) {
+      args.req.payload.logger.warn({
+        err: error,
+        jobId: args.jobId,
+        modelId: args.modelId,
+        msg: 'Model preview optimization immediate dispatch failed; cron dispatch will retry.',
+      })
+    }
+  }
+
+  if (aiTaskFlowOptimizationTestHooks?.scheduleAfterResponse) {
+    aiTaskFlowOptimizationTestHooks.scheduleAfterResponse(run)
+    return
+  }
+
+  let started = false
+  const runOnce = () => {
+    if (started) return
+    started = true
+    void run()
+  }
+  const fallbackTimer = setTimeout(runOnce, 0)
+
+  void import('next/server')
+    .then(({ after }) => {
+      after(() => {
+        clearTimeout(fallbackTimer)
+        runOnce()
+      })
+    })
+    .catch(() => {
+      clearTimeout(fallbackTimer)
+      runOnce()
+    })
+}
+
 async function enqueueResultModelOptimization(args: {
   modelId: number
   req: PayloadRequest
@@ -244,6 +294,14 @@ async function enqueueResultModelOptimization(args: {
       req,
       overrideAccess: INTERNAL_ACCESS,
     })
+
+    if ((job as { status?: string }).status === 'pending') {
+      scheduleModelOptimizationDispatch({
+        jobId: Number(job.id),
+        modelId,
+        req,
+      })
+    }
   } catch (error) {
     req.payload.logger.warn({
       err: error,
