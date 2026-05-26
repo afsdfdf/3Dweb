@@ -4,6 +4,7 @@
 import { useState } from "react";
 
 import { HeroProductRibbon } from "@/components/ui-lab/hero-product-ribbon";
+import { getSupabasePreviewImageURL } from "@/lib/supabase/imageTransform";
 
 import styles from "./hero-image-frame-strip.module.css";
 
@@ -79,7 +80,7 @@ export function HeroImageFrameStrip({ items = [] }: HeroImageFrameStripProps) {
               decoding="async"
               fetchPriority={index === 0 ? "high" : "auto"}
               loading={index === 0 ? "eager" : "lazy"}
-              src={frame.imageSrc}
+              src={getSupabasePreviewImageURL(frame.imageSrc, "home-feature")}
             />
           ) : null}
           <HeroProductRibbon className={styles.frameRibbon} label={frame.ribbonLabel} />

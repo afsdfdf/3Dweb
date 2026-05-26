@@ -13,6 +13,7 @@ import { ModelAuthorCard } from "@/components/ui-lab/model-author-card";
 import { ModelDetailAdBanner } from "@/components/ui-lab/model-detail-ad-banner";
 import { ModelDownloadConfirmation } from "@/components/ui-lab/model-download-confirmation";
 import type { TopNavigationUser } from "@/components/ui-lab/top-navigation";
+import { getSupabasePreviewImageURL } from "@/lib/supabase/imageTransform";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ModelViewer } from "../_components/ModelViewer";
 import { PrintOrderDialog } from "../_components/PrintOrderDialog";
@@ -707,7 +708,9 @@ export default function ModelDetailNative({
                     }
                   }}
                 >
-                  {item.imageSrc ? <img alt={item.title} src={item.imageSrc} /> : null}
+                  {item.imageSrc ? (
+                    <img alt={item.title} src={getSupabasePreviewImageURL(item.imageSrc, "model-card")} />
+                  ) : null}
                   <span>{item.title}</span>
                 </a>
               ))}
@@ -1029,7 +1032,7 @@ export default function ModelDetailNative({
                                   }}
                                 >
                                   <img
-                                    src={item.imageSrc}
+                                    src={getSupabasePreviewImageURL(item.imageSrc, "model-card")}
                                     alt={item.title}
                                     decoding="async"
                                     fetchPriority="low"

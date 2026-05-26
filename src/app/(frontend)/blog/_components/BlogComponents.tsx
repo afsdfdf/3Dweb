@@ -6,6 +6,7 @@ import { ArrowRight, BookOpen, ExternalLink, Play, Search, Sparkles } from 'luci
 import { AuthModalStage } from '@/components/auth/AuthModalStage'
 import { TopNavigation } from '@/components/ui-lab/top-navigation'
 import { getPublicNavigationActiveID, resolvePublicNavigationItems } from '@/lib/publicNavigation'
+import { getSupabasePreviewImageURL } from '@/lib/supabase/imageTransform'
 
 import { FooterBar } from '../../_components/shell/FooterBar'
 import type { getMarketingSiteData } from '../../_lib/marketing'
@@ -37,7 +38,7 @@ function buildPageHref(args: { category?: BlogCategory | null; page?: number; qu
 
 function PostImage({ className, post }: { className?: string; post: BlogPostCardData }) {
   if (post.coverSrc) {
-    return <img alt={post.coverAlt} className={className} decoding="async" src={post.coverSrc} />
+    return <img alt={post.coverAlt} className={className} decoding="async" src={getSupabasePreviewImageURL(post.coverSrc, 'home-feature')} />
   }
 
   return (

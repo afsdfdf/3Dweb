@@ -10,6 +10,7 @@ import { useAuthModal } from "@/components/auth/AuthModalProvider";
 import { ModelLibraryPanel, type ModelLibraryPanelCard } from "@/components/ui-lab/model-library-panel";
 import { TopNavigation, migrationTestNavItems } from "@/components/ui-lab/top-navigation";
 import type { TopNavigationUser } from "@/components/ui-lab/top-navigation";
+import { getSupabasePreviewImageURL } from "@/lib/supabase/imageTransform";
 
 import { ModelViewer } from "../_components/ModelViewer";
 import {
@@ -1170,7 +1171,14 @@ export function WorkbenchClient({
                 }}
                 type="button"
               >
-                {card.previewSrc ? <img alt={card.previewAlt || card.name} src={card.previewSrc} /> : <span />}
+                {card.previewSrc ? (
+                  <img
+                    alt={card.previewAlt || card.name}
+                    src={getSupabasePreviewImageURL(card.previewSrc, "library-card")}
+                  />
+                ) : (
+                  <span />
+                )}
                 <strong>{card.name}</strong>
                 <em>{card.license}</em>
               </button>

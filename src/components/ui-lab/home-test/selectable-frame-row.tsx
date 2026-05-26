@@ -4,6 +4,8 @@
 import type { CSSProperties } from "react";
 import { useState } from "react";
 
+import { getSupabasePreviewImageURL } from "@/lib/supabase/imageTransform";
+
 import styles from "./selectable-frame-row.module.css";
 
 export type SelectableFrameRowItem = {
@@ -70,7 +72,7 @@ export function SelectableFrameRow({ items = [] }: SelectableFrameRowProps) {
               className={styles.frameImage}
               decoding="async"
               loading="lazy"
-              src={frame.imageSrc}
+              src={getSupabasePreviewImageURL(frame.imageSrc, "home-feature")}
             />
           ) : null}
           {frame.title || frame.count ? (

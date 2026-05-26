@@ -9,6 +9,7 @@ import { HeroImageFrameStrip } from "@/components/ui-lab/home-test/hero-image-fr
 import { InspirationSearchBox, InspirationPager } from "@/components/ui-lab/home-test/inspiration-search-box";
 import { InspirationGrid } from "@/components/ui-lab/home-test/inspiration-grid";
 import { BundleShelfControls } from "@/components/ui-lab/home-test/bundle-shelf-controls";
+import { getSupabasePreviewImageURL } from "@/lib/supabase/imageTransform";
 import { FooterBar } from "./_components/shell/FooterBar";
 import { getFirstBundleShelfItems, getHomeData } from "./_home/homeData";
 import styles from "./_home/homePage.module.css";
@@ -92,7 +93,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             <div className={styles.mobileFeatureGrid}>
               {mobileFeatureItems.map((item) => (
                 <Link href={item.href || "/showcase"} key={item.id}>
-                  <img alt={item.alt} src={item.imageSrc} />
+                  <img alt={item.alt} src={getSupabasePreviewImageURL(item.imageSrc, "home-card")} />
                   <span>{item.ribbonLabel || "Featured"}</span>
                   <strong>{item.alt}</strong>
                 </Link>
@@ -110,7 +111,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             <div className={styles.mobileShelfList}>
               {mobileShelfItems.map((item) => (
                 <Link href={item.href || "/bundles"} key={item.id}>
-                  <img alt={item.alt || item.title || "Bundle"} src={item.imageSrc} />
+                  <img alt={item.alt || item.title || "Bundle"} src={getSupabasePreviewImageURL(item.imageSrc, "home-feature")} />
                   <span>
                     {item.title ? <strong>{item.title}</strong> : null}
                     {item.count ? <em>{item.count}</em> : null}
@@ -130,7 +131,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             <div className={styles.mobileInspirationGrid}>
               {mobileInspirationItems.map((item) => (
                 <Link href={item.href || "/showcase"} key={item.id}>
-                  {item.imageSrc ? <img alt={item.alt} src={item.imageSrc} /> : <span className={styles.mobileImagePlaceholder} />}
+                  {item.imageSrc ? (
+                    <img alt={item.alt} src={getSupabasePreviewImageURL(item.imageSrc, "home-card")} />
+                  ) : (
+                    <span className={styles.mobileImagePlaceholder} />
+                  )}
                   <strong>{item.title}</strong>
                   <em>{item.filter}</em>
                 </Link>

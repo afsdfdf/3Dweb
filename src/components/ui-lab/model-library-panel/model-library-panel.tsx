@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { ModelLibraryCard } from "@/components/ui-lab/model-library-card";
 import { ModuleCommonFrame } from "@/components/ui-lab/module-common-frame";
+import { getSupabasePreviewImageURL } from "@/lib/supabase/imageTransform";
 
 import styles from "./model-library-panel.module.css";
 
@@ -76,9 +77,10 @@ export function ModelLibraryPanel({
     });
   }, [cards, searchQuery]);
   const totalPages = Math.max(1, Math.ceil(filteredCards.length / libraryPageSize));
+  const currentPage = Math.min(activePage, totalPages);
   const pageCards = filteredCards.slice(
-    (activePage - 1) * libraryPageSize,
-    activePage * libraryPageSize,
+    (currentPage - 1) * libraryPageSize,
+    currentPage * libraryPageSize,
   );
   const isFilteredEmpty = !isEmpty && filteredCards.length === 0;
   const selectedCardId = filteredCards.some((card) => card.id === selectedCard)
@@ -107,14 +109,6 @@ export function ModelLibraryPanel({
   }, []);
 
   useEffect(() => {
-    setActivePage((current) => Math.min(current, totalPages));
-  }, [totalPages]);
-
-  useEffect(() => {
-    setActivePage(1);
-  }, [searchQuery]);
-
-  useEffect(() => {
     window.requestAnimationFrame(updateVisiblePreviews);
   }, [pageCards, updateVisiblePreviews]);
 
@@ -134,7 +128,10 @@ export function ModelLibraryPanel({
           <label>
             <span>Search</span>
             <input
-              onChange={(event) => setSearchQuery(event.target.value)}
+              onChange={(event) => {
+                setSearchQuery(event.target.value);
+                setActivePage(1);
+              }}
               placeholder="Search Keywords"
               type="search"
               value={searchQuery}
@@ -147,18 +144,18 @@ export function ModelLibraryPanel({
       <div className={styles.pagination}>
         <button
           aria-label="Previous page"
-          disabled={activePage <= 1}
+          disabled={currentPage <= 1}
           onClick={() => setActivePage((current) => Math.max(1, current - 1))}
           type="button"
         >
           &lt;
         </button>
         <button className={styles.pageActive} type="button">
-          {activePage}
+          {currentPage}
         </button>
         <button
           aria-label="Next page"
-          disabled={activePage >= totalPages}
+          disabled={currentPage >= totalPages}
           onClick={() => setActivePage((current) => Math.min(totalPages, current + 1))}
           type="button"
         >
@@ -194,7 +191,8 @@ export function ModelLibraryPanel({
                 previewAlt={card.previewAlt}
                 previewSrc={
                   index < visiblePreviewCount || index === selectedCardIndex
-                    ? card.previewSrc || (card.generationState ? transparentImageSrc : undefined)
+                    ? getSupabasePreviewImageURL(card.previewSrc, "library-card") ||
+                      (card.generationState ? transparentImageSrc : undefined)
                     : transparentImageSrc
                 }
                 selected={selectedCardId === card.id}

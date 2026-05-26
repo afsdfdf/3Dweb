@@ -1,5 +1,7 @@
 'use client'
 
+import { getSupabasePreviewImageURL } from '@/lib/supabase/imageTransform'
+
 import { useMemo, useState, type CSSProperties } from 'react'
 
 export type HomeCollectionShelfItem = {
@@ -136,7 +138,11 @@ function CollectionCard(item: HomeCollectionShelfItem) {
   return item.previewSrc ? (
     <article className="h-full min-w-0 shrink-0 aspect-[4/3] transition-transform duration-150 ease-out hover:-translate-y-[3px] active:translate-y-[1px] active:scale-[0.985]">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img alt={item.title} className="block h-full w-full object-contain" src={item.previewSrc} />
+      <img
+        alt={item.title}
+        className="block h-full w-full object-contain"
+        src={getSupabasePreviewImageURL(item.previewSrc, 'home-feature')}
+      />
     </article>
   ) : (
     <article className="h-full min-w-0 shrink-0 aspect-[4/3] bg-[#14151a] transition-transform duration-150 ease-out hover:-translate-y-[3px] active:translate-y-[1px] active:scale-[0.985]" />

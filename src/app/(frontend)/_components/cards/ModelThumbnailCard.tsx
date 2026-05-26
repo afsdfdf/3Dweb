@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { Eye, Heart, Star } from 'lucide-react'
 
 import { FixedSliceFrame } from '@/components/ui/fixed-slice-frame'
+import { getSupabasePreviewImageURL } from '@/lib/supabase/imageTransform'
 
 type ModelThumbnailCardProps = {
   authorAvatarUrl?: null | string
@@ -102,6 +103,7 @@ export function ModelThumbnailCard({
         width: 420,
       }
   const frameSize = compact ? 64 : 96
+  const previewSrc = getSupabasePreviewImageURL(thumbnailUrl, compact ? 'home-card' : 'model-card-large')
 
   return (
     <Link
@@ -130,12 +132,12 @@ export function ModelThumbnailCard({
           className="relative overflow-hidden rounded-[4px] bg-[linear-gradient(180deg,#1a1b20_0%,#101114_100%)]"
           style={cardSize}
         >
-          {thumbnailUrl ? (
+          {previewSrc ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               alt={title}
               className="absolute inset-0 h-full w-full object-cover"
-              src={thumbnailUrl}
+              src={previewSrc}
             />
           ) : (
             <div className="absolute inset-0 bg-[linear-gradient(180deg,#141519_0%,#0d0e11_100%)]" />

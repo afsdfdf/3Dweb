@@ -6,6 +6,7 @@ import { HeroProductRibbon } from '@/components/ui-lab/hero-product-ribbon'
 import { TopNavigation, migrationTestNavItems } from '@/components/ui-lab/top-navigation'
 import { getPublicBundleBySlug, getPublicBundleList, type PublicBundleCard, type PublicBundleListResult } from '@/lib/bundleService'
 import { getCachedPayload } from '@/lib/getCachedPayload'
+import { getSupabasePreviewImageURL } from '@/lib/supabase/imageTransform'
 
 import { getCurrentNavUser } from '../_lib/session'
 import styles from './page.module.css'
@@ -86,7 +87,13 @@ function SpotlightCard({ bundle }: { bundle: SpotlightBundle }) {
     <article className={styles.spotlightCard}>
       <Link className={styles.spotlightImageLink} href={bundle.href}>
         {bundle.imageSrc ? (
-          <img alt={bundle.title} className={styles.spotlightImage} decoding="async" fetchPriority="high" src={bundle.imageSrc} />
+          <img
+            alt={bundle.title}
+            className={styles.spotlightImage}
+            decoding="async"
+            fetchPriority="high"
+            src={getSupabasePreviewImageURL(bundle.imageSrc, 'home-feature')}
+          />
         ) : (
           <div className={styles.emptyImage}>No cover image</div>
         )}
@@ -121,7 +128,13 @@ function ResultCard({ bundle }: { bundle: PublicBundleCard }) {
     <article className={styles.resultCard}>
       <Link className={styles.resultImageLink} href={bundle.href}>
         {bundle.coverSrc ? (
-          <img alt={bundle.title} className={styles.resultImage} decoding="async" loading="lazy" src={bundle.coverSrc} />
+          <img
+            alt={bundle.title}
+            className={styles.resultImage}
+            decoding="async"
+            loading="lazy"
+            src={getSupabasePreviewImageURL(bundle.coverSrc, 'model-card')}
+          />
         ) : (
           <div className={styles.emptyImage}>No cover image</div>
         )}

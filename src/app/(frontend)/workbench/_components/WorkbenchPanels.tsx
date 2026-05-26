@@ -4,6 +4,7 @@ import { Box, ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { LineFrame } from '@/components/ui/line-frame'
+import { getSupabasePreviewImageURL } from '@/lib/supabase/imageTransform'
 import { cn } from '@/lib/utils'
 
 import { ModelViewer } from '../../_components/ModelViewer'
@@ -107,7 +108,11 @@ function LibraryGridCard({
             <div className="overflow-hidden rounded-[2px] border border-[#2b2c31] bg-[radial-gradient(circle_at_50%_22%,rgba(255,255,255,0.18),transparent_22%),linear-gradient(180deg,#202127_0%,#111216_100%)]">
               {model.previewURL ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img alt={model.title} className="aspect-[0.82] w-full object-cover" src={model.previewURL} />
+                <img
+                  alt={model.title}
+                  className="aspect-[0.82] w-full object-cover"
+                  src={getSupabasePreviewImageURL(model.previewURL, 'library-card')}
+                />
               ) : (
                 <div className="flex aspect-[0.82] items-center justify-center text-[#69646f]">
                   <Box className="size-8" />

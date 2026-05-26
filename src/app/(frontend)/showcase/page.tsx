@@ -8,6 +8,7 @@ import { TopNavigation } from '@/components/ui-lab/top-navigation'
 import { getCachedPayload } from '@/lib/getCachedPayload'
 import { getMediaAccessURL } from '@/lib/mediaAccessURL'
 import { getPublicNavigationActiveID, resolvePublicNavigationItems } from '@/lib/publicNavigation'
+import { getSupabasePreviewImageURL } from '@/lib/supabase/imageTransform'
 
 import { getMarketingPageContent } from '../_lib/formal-page-content'
 import { getMarketingSiteData } from '../_lib/marketing'
@@ -369,7 +370,13 @@ export default async function ShowcasePage({ searchParams }: ShowcasePageProps) 
                   <article className={styles.modelCard} key={model.id}>
                     <Link className={styles.modelImageLink} href={model.href}>
                       {model.previewURL ? (
-                        <img alt={model.title} className={styles.modelImage} decoding="async" loading="lazy" src={model.previewURL} />
+                        <img
+                          alt={model.title}
+                          className={styles.modelImage}
+                          decoding="async"
+                          loading="lazy"
+                          src={getSupabasePreviewImageURL(model.previewURL, 'model-card')}
+                        />
                       ) : (
                         <div className={styles.emptyImage}>No preview image</div>
                       )}

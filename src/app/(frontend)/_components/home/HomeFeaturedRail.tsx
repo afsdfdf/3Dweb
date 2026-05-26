@@ -1,3 +1,5 @@
+import { getSupabasePreviewImageURL } from '@/lib/supabase/imageTransform'
+
 export type FeaturedItem = {
   alt: string
   fallbackSrc: string
@@ -37,11 +39,12 @@ export function HomeFeaturedRail({ copy, items }: { copy?: HomeFeaturedRailCopy;
         <div className="absolute inset-x-[1.4%] bottom-[8.8%] top-[7.7%] grid grid-cols-[1.75fr_1fr_1fr_1fr] gap-[1.1%]">
           {items.map((item) => {
             const resolvedSrc = item.imageSrc || item.fallbackSrc
+            const previewSrc = getSupabasePreviewImageURL(resolvedSrc, 'home-feature')
 
             return (
               <article className={SLOT_CLASS_BY_VARIANT[item.variant]} key={item.id}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img alt={item.alt} className="block h-full w-full object-contain" src={resolvedSrc} />
+                <img alt={item.alt} className="block h-full w-full object-contain" src={previewSrc} />
               </article>
             )
           })}

@@ -6,6 +6,7 @@ import { useState } from "react";
 import { ButtonBoxFrame } from "@/components/ui-lab/button-box-frame";
 import { SmallButtonTriple } from "@/components/ui-lab/small-button-pair/small-button-pair";
 import type { HomeInspirationFilter } from "@/app/(frontend)/_home/homeData";
+import { getSupabasePreviewImageURL } from "@/lib/supabase/imageTransform";
 
 import styles from "./inspiration-grid.module.css";
 
@@ -140,7 +141,7 @@ export function InspirationGrid({ filterMountClassName, items: backendItems = []
                     className={styles.previewImage}
                     decoding="async"
                     loading="lazy"
-                    src={item.imageSrc}
+                    src={getSupabasePreviewImageURL(item.imageSrc, "model-card")}
                   />
                 ) : null}
               </div>

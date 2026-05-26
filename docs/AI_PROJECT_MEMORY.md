@@ -266,6 +266,8 @@ Frontend asset caching is layered:
 - Model viewer redirect responses must include `Vary: Cookie, Authorization` so browser persistent caches do not mix authenticated model access across different login states.
 - Browser persistent cache size is best-effort and subject to browser quota and eviction; do not treat it as the only production hot-model cache.
 
+Public image preview delivery should use Supabase Storage Image Transformations only at display call sites. `src/lib/supabase/imageTransform.ts` converts default Supabase `/storage/v1/object/public/...` URLs to `/storage/v1/render/image/public/...` with page-appropriate width/height/quality presets for homepage, showcase, bundle, blog, model-detail related-card, Workbench library, and account-style thumbnail display. Keep provider inputs, Workbench `sourceAsset` metadata, Meshy signed URLs, downloads, printer payloads, and full inspection views on original URLs; signed URLs and non-Supabase URLs must pass through unchanged.
+
 ### Meshy 3D Generation Flow
 
 Workbench 3D generation is backend-owned and provider-agnostic from the browser's perspective.

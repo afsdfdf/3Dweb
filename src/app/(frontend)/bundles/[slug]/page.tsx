@@ -6,6 +6,7 @@ import { AuthModalStage } from '@/components/auth/AuthModalStage'
 import { TopNavigation, migrationTestNavItems } from '@/components/ui-lab/top-navigation'
 import { getPublicBundleBySlug } from '@/lib/bundleService'
 import { getCachedPayload } from '@/lib/getCachedPayload'
+import { getSupabasePreviewImageURL } from '@/lib/supabase/imageTransform'
 
 import { FooterBar } from '../../_components/shell/FooterBar'
 import { getMarketingSiteData } from '../../_lib/marketing'
@@ -129,7 +130,13 @@ export default async function BundleDetailPage({ params }: { params: Promise<{ s
                 <article className={styles.modelCard} key={model.id}>
                   <Link className={styles.modelImageLink} href={model.href}>
                     {model.imageSrc ? (
-                      <img alt={model.title} className={styles.modelImage} decoding="async" loading="lazy" src={model.imageSrc} />
+                      <img
+                        alt={model.title}
+                        className={styles.modelImage}
+                        decoding="async"
+                        loading="lazy"
+                        src={getSupabasePreviewImageURL(model.imageSrc, 'model-card')}
+                      />
                     ) : (
                       <div className={styles.emptyImage}>No preview image</div>
                     )}
