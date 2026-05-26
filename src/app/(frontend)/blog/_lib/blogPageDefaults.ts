@@ -23,7 +23,7 @@ export type BlogPageContent = {
   seoTitle: string
 }
 
-export const defaultBlogHeroImageSrc = '/ui/workbench/model-detail/sketch-assets/rail-banner-bg.png'
+export const defaultBlogHeroImageSrc = '/ui/workbench/model-detail/sketch-assets/rail-banner-bg.webp'
 
 export const defaultBlogPageContent: BlogPageContent = {
   categoryLabels: {

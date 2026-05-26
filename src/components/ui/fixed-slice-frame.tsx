@@ -28,6 +28,7 @@ export type FixedSliceFrameProps = {
   contentClassName?: string
   contentPadding?: number
   edgeOverlap?: number
+  frameLayerClassName?: string
   fill?: string
   frameSize: number
   slices: SlicePaths
@@ -40,6 +41,7 @@ export function FixedSliceFrame({
   contentClassName,
   contentPadding = 0,
   edgeOverlap = 0,
+  frameLayerClassName,
   fill,
   frameSize,
   slices,
@@ -64,7 +66,7 @@ export function FixedSliceFrame({
     <div className={cn(styles.frame, className)} style={containerStyle}>
       {centerFill ? <div aria-hidden="true" className={styles.centerFill} style={centerStyle} /> : null}
 
-      <div aria-hidden="true" className={styles.frameLayer}>
+      <div aria-hidden="true" className={cn(styles.frameLayer, frameLayerClassName)}>
         <span className={cn(styles.slice, styles.cornerTopLeft)} style={{ backgroundImage: `url('${slices.topLeft}')` }} />
         <span className={cn(styles.slice, styles.cornerTopRight)} style={{ backgroundImage: `url('${slices.topRight}')` }} />
         <span className={cn(styles.slice, styles.cornerBottomLeft)} style={{ backgroundImage: `url('${slices.bottomLeft}')` }} />

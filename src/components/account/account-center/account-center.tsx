@@ -205,7 +205,7 @@ export function AccountCenter({
   );
   const backgroundUrl =
     profileData.backgroundUrl ||
-    "/ui-lab/model-detail-uicut/images/detail-side-banner.png";
+    "/ui-lab/model-detail-uicut/images/detail-side-banner.webp";
   const creditsBalance =
     profileData.creditsBalance ??
     navUser?.creditsBalance ??

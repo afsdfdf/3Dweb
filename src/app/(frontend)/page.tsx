@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
+import { preload } from "react-dom";
 import { AuthModalStage } from "@/components/auth/AuthModalStage";
 import { BorderComboFrame2, BorderComboFrame2Variant } from "@/components/ui-lab/border-combo-frame-2";
 import { LinkedSourcePurpleMediumButton } from "@/components/ui-lab/action-buttons";
@@ -22,6 +23,11 @@ type HomePageProps = {
 };
 
 export default async function HomePage({ searchParams }: HomePageProps) {
+  preload("/home-test-assets/images/Rectangle_2_background.webp", {
+    as: "image",
+    fetchPriority: "high",
+  });
+
   const query = (await searchParams) ?? {};
   const data = await getHomeData({
     inspirationPage: query.page ? Number(query.page) : 1,

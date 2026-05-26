@@ -50,8 +50,8 @@
 
 .edgeTop,
 .edgeBottom {
-  background-repeat: repeat-x;
-  background-size: auto 100%;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
   height: var(--frame-border-width);
   left: var(--frame-border-width);
   right: var(--frame-border-width);
@@ -69,8 +69,8 @@
 
 .edgeLeft,
 .edgeRight {
-  background-repeat: repeat-y;
-  background-size: 100% auto;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
   bottom: var(--frame-border-width);
   top: var(--frame-border-width);
   width: var(--frame-border-width);

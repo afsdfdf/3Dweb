@@ -102,7 +102,7 @@ export function ModelThumbnailCard({
         height: 670,
         width: 420,
       }
-  const frameSize = compact ? 64 : 96
+  const frameSize = compact ? 40 : 96
   const previewSrc = getSupabasePreviewImageURL(thumbnailUrl, compact ? 'home-card' : 'model-card-large')
 
   return (
@@ -116,6 +116,7 @@ export function ModelThumbnailCard({
       <FixedSliceFrame
         className="overflow-hidden rounded-[4px] bg-[linear-gradient(180deg,#1a1b20_0%,#101114_100%)] shadow-[0_18px_44px_rgba(0,0,0,0.45)] transition-transform duration-200 group-hover:-translate-y-1"
         fill="#101114"
+        frameLayerClassName={compact ? 'opacity-70' : undefined}
         frameSize={frameSize}
         slices={{
           bottom: '/ui/frames/workbench-panel-9slice/images/model-card-frame_08.png',

@@ -62,7 +62,7 @@ export async function MarketingPage({ page }: MarketingPageProps) {
                 className={styles.heroImage}
                 decoding="async"
                 fetchPriority="high"
-                src="/ui/workbench/model-detail/sketch-assets/rail-banner-bg.png"
+                src="/ui/workbench/model-detail/sketch-assets/rail-banner-bg.webp"
               />
             </div>
 

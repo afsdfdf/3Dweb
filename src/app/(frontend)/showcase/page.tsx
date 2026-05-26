@@ -277,7 +277,7 @@ export default async function ShowcasePage({ searchParams }: ShowcasePageProps) 
                 className={styles.heroImage}
                 decoding="async"
                 fetchPriority="high"
-                src="/ui/workbench/model-detail/sketch-assets/rail-banner-bg.png"
+                src="/ui/workbench/model-detail/sketch-assets/rail-banner-bg.webp"
               />
             </div>
 
