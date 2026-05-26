@@ -102,6 +102,24 @@ export async function createSupabaseStorageSignedUrl(args: {
   return data.signedUrl
 }
 
+export async function createSupabaseStorageSignedUploadUrl(args: {
+  bucket: string
+  path: string
+}) {
+  const supabase = getSupabaseAdminClient()
+  const { data, error } = await supabase.storage.from(args.bucket).createSignedUploadUrl(args.path)
+
+  if (error || !data?.token) {
+    throw new Error(error?.message || 'Failed to create signed upload URL.')
+  }
+
+  return {
+    path: args.path,
+    publicUrl: supabase.storage.from(args.bucket).getPublicUrl(args.path).data.publicUrl,
+    token: data.token,
+  }
+}
+
 export function getSupabaseStoragePublicUrl(args: {
   bucket: string
   path: string

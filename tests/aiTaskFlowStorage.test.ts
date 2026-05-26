@@ -389,6 +389,89 @@ test('handleAIWebhook rejects production model formats that only fall back to re
   }
 })
 
+test('handleAIWebhook keeps succeeded tasks when preview optimization enqueue fails', async () => {
+  const previousFetch = globalThis.fetch
+  const previousEnabled = process.env.MODEL_OPTIMIZATION_ENABLED
+  const previousMode = process.env.MODEL_OPTIMIZATION_MODE
+  const {
+    __setAITaskFlowOptimizationTestHooks,
+    __setAITaskFlowStorageTestHooks,
+    handleAIWebhook,
+  } = await import('../src/lib/aiTaskFlow.ts')
+  const harness = createWebhookRequestMock({
+    providerTaskId: 'provider-optimize-1',
+    taskCode: 'TASK-OPTIMIZE',
+  })
+
+  process.env.MODEL_OPTIMIZATION_ENABLED = 'true'
+  process.env.MODEL_OPTIMIZATION_MODE = 'small'
+  __setAITaskFlowStorageTestHooks({
+    getRuntimeStorageSettings: async () => ({
+      baseUrl: null,
+      bucket: 'demo-bucket',
+      enabled: true,
+      prefix: 'media',
+      provider: 'supabase-storage',
+      signedDownloads: true,
+    }),
+    uploadToSupabaseStorage: async ({ path }) => ({
+      path,
+      publicUrl: `https://supabase.example/storage/v1/object/public/demo-bucket/${path}`,
+    }),
+  })
+  __setAITaskFlowOptimizationTestHooks({
+    enqueueModelOptimizationJob: async () => {
+      throw new Error('queue unavailable')
+    },
+    resolveOriginalGLBAsset: async (modelId) => ({
+      mediaId: 101,
+      mimeType: 'model/gltf-binary',
+      modelId,
+      ownerId: 7,
+      sourceURL: 'https://supabase.example/storage/v1/object/public/demo-bucket/media/generated/task.glb',
+    }),
+  })
+  globalThis.fetch = async () =>
+    new Response(new Uint8Array([1, 2, 3, 4]), {
+      headers: {
+        'content-type': 'model/gltf-binary',
+      },
+      status: 200,
+    })
+
+  try {
+    const result = await handleAIWebhook({
+      payloadData: {
+        modelUrls: {
+          glb: 'https://cdn.example-assets.com/models/demo.glb',
+        },
+        provider: 'custom',
+        providerTaskId: 'provider-optimize-1',
+        status: 'succeeded',
+      },
+      req: harness.req as never,
+    })
+
+    assert.equal(result.status, 'succeeded')
+    assert.equal(harness.currentTask.status, 'succeeded')
+    assert.equal(harness.createdCollections.includes('models'), true)
+  } finally {
+    globalThis.fetch = previousFetch
+    if (previousEnabled === undefined) {
+      delete process.env.MODEL_OPTIMIZATION_ENABLED
+    } else {
+      process.env.MODEL_OPTIMIZATION_ENABLED = previousEnabled
+    }
+    if (previousMode === undefined) {
+      delete process.env.MODEL_OPTIMIZATION_MODE
+    } else {
+      process.env.MODEL_OPTIMIZATION_MODE = previousMode
+    }
+    __setAITaskFlowStorageTestHooks(null)
+    __setAITaskFlowOptimizationTestHooks(null)
+  }
+})
+
 test('Media upload collection does not write generated assets to local disk', async () => {
   const { Media } = await import('../src/collections/Media.ts')
 

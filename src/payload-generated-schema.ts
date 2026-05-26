@@ -118,6 +118,22 @@ export const enum_models_visibility = pgEnum("enum_models_visibility", [
   "team",
   "public",
 ]);
+export const enum_models_viewer_optimization_status = pgEnum(
+  "enum_models_viewer_optimization_status",
+  ["none", "pending", "running", "succeeded", "failed", "skipped"],
+);
+export const enum_models_viewer_optimization_mode = pgEnum(
+  "enum_models_viewer_optimization_mode",
+  ["conservative", "small"],
+);
+export const enum_model_optimization_jobs_status = pgEnum(
+  "enum_model_optimization_jobs_status",
+  ["pending", "running", "succeeded", "failed", "skipped"],
+);
+export const enum_model_optimization_jobs_mode = pgEnum(
+  "enum_model_optimization_jobs_mode",
+  ["conservative", "small"],
+);
 export const enum_model_comments_status = pgEnum("enum_model_comments_status", [
   "visible",
   "hidden",
@@ -920,6 +936,47 @@ export const models = pgTable(
       onDelete: "set null",
     }),
     viewerUrl: varchar("viewer_url"),
+    viewerOptimization_status: enum_models_viewer_optimization_status(
+      "viewer_optimization_status",
+    ).default("none"),
+    viewerOptimization_mode: enum_models_viewer_optimization_mode(
+      "viewer_optimization_mode",
+    ),
+    viewerOptimization_sourceFile: integer(
+      "viewer_optimization_source_file_id",
+    ).references(() => media.id, {
+      onDelete: "set null",
+    }),
+    viewerOptimization_previewFile: integer(
+      "viewer_optimization_preview_file_id",
+    ).references(() => media.id, {
+      onDelete: "set null",
+    }),
+    viewerOptimization_sourceSizeMb: numeric(
+      "viewer_optimization_source_size_mb",
+      { mode: "number" },
+    ),
+    viewerOptimization_outputSizeMb: numeric(
+      "viewer_optimization_output_size_mb",
+      { mode: "number" },
+    ),
+    viewerOptimization_reductionPercent: numeric(
+      "viewer_optimization_reduction_percent",
+      { mode: "number" },
+    ),
+    viewerOptimization_attempts: numeric("viewer_optimization_attempts", {
+      mode: "number",
+    }).default(0),
+    viewerOptimization_lastError: varchar("viewer_optimization_last_error"),
+    viewerOptimization_startedAt: timestamp("viewer_optimization_started_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    viewerOptimization_completedAt: timestamp(
+      "viewer_optimization_completed_at",
+      { mode: "string", withTimezone: true, precision: 3 },
+    ),
     printReady: boolean("print_ready").default(false),
     viewCount: numeric("view_count", { mode: "number" }).default(0),
     commentsCount: numeric("comments_count", { mode: "number" }).default(0),
@@ -948,8 +1005,94 @@ export const models = pgTable(
     index("models_owner_idx").on(columns.owner),
     index("models_source_task_idx").on(columns.sourceTask),
     index("models_preview_image_idx").on(columns.previewImage),
+    index("models_viewer_optimization_viewer_optimization_source_fi_idx").on(
+      columns.viewerOptimization_sourceFile,
+    ),
+    index("models_viewer_optimization_viewer_optimization_preview_f_idx").on(
+      columns.viewerOptimization_previewFile,
+    ),
     index("models_updated_at_idx").on(columns.updatedAt),
     index("models_created_at_idx").on(columns.createdAt),
+  ],
+);
+
+export const model_optimization_jobs = pgTable(
+  "model_optimization_jobs",
+  {
+    id: serial("id").primaryKey(),
+    jobKey: varchar("job_key").notNull(),
+    model: integer("model_id")
+      .notNull()
+      .references(() => models.id, {
+        onDelete: "set null",
+      }),
+    sourceFile: integer("source_file_id")
+      .notNull()
+      .references(() => media.id, {
+        onDelete: "set null",
+      }),
+    outputFile: integer("output_file_id").references(() => media.id, {
+      onDelete: "set null",
+    }),
+    status: enum_model_optimization_jobs_status("status")
+      .notNull()
+      .default("pending"),
+    mode: enum_model_optimization_jobs_mode("mode")
+      .notNull()
+      .default("conservative"),
+    attempts: numeric("attempts", { mode: "number" }).default(0),
+    sourceUrl: varchar("source_url"),
+    outputPath: varchar("output_path"),
+    outputUrl: varchar("output_url"),
+    sourceSizeMb: numeric("source_size_mb", { mode: "number" }),
+    outputSizeMb: numeric("output_size_mb", { mode: "number" }),
+    reductionPercent: numeric("reduction_percent", { mode: "number" }),
+    workerRunId: varchar("worker_run_id"),
+    leaseOwner: varchar("lease_owner"),
+    leaseExpiresAt: timestamp("lease_expires_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    startedAt: timestamp("started_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    completedAt: timestamp("completed_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    lastError: varchar("last_error"),
+    metrics: jsonb("metrics"),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+  },
+  (columns) => [
+    uniqueIndex("model_optimization_jobs_job_key_idx").on(columns.jobKey),
+    index("model_optimization_jobs_model_idx").on(columns.model),
+    index("model_optimization_jobs_source_file_idx").on(columns.sourceFile),
+    index("model_optimization_jobs_output_file_idx").on(columns.outputFile),
+    index("model_optimization_jobs_status_idx").on(columns.status),
+    index("model_optimization_jobs_worker_run_id_idx").on(columns.workerRunId),
+    index("model_optimization_jobs_lease_expires_at_idx").on(
+      columns.leaseExpiresAt,
+    ),
+    index("model_optimization_jobs_updated_at_idx").on(columns.updatedAt),
+    index("model_optimization_jobs_created_at_idx").on(columns.createdAt),
   ],
 );
 
@@ -2549,6 +2692,7 @@ export const payload_locked_documents_rels = pgTable(
     "generation-tasksID": integer("generation_tasks_id"),
     "task-eventsID": integer("task_events_id"),
     modelsID: integer("models_id"),
+    "model-optimization-jobsID": integer("model_optimization_jobs_id"),
     "model-commentsID": integer("model_comments_id"),
     "model-likesID": integer("model_likes_id"),
     "model-favoritesID": integer("model_favorites_id"),
@@ -2590,6 +2734,9 @@ export const payload_locked_documents_rels = pgTable(
       columns["task-eventsID"],
     ),
     index("payload_locked_documents_rels_models_id_idx").on(columns.modelsID),
+    index("payload_locked_documents_rels_model_optimization_jobs_id_idx").on(
+      columns["model-optimization-jobsID"],
+    ),
     index("payload_locked_documents_rels_model_comments_id_idx").on(
       columns["model-commentsID"],
     ),
@@ -2680,6 +2827,11 @@ export const payload_locked_documents_rels = pgTable(
       columns: [columns["modelsID"]],
       foreignColumns: [models.id],
       name: "payload_locked_documents_rels_models_fk",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["model-optimization-jobsID"]],
+      foreignColumns: [model_optimization_jobs.id],
+      name: "payload_locked_documents_rels_model_optimization_jobs_fk",
     }).onDelete("cascade"),
     foreignKey({
       columns: [columns["model-commentsID"]],
@@ -3833,7 +3985,7 @@ export const ai_provider_settings = pgTable("ai_provider_settings", {
     ).default("gemini-official"),
   imageGeneration_timeoutSeconds: numeric("image_generation_timeout_seconds", {
     mode: "number",
-  }).default(60),
+  }).default(600),
   imageGeneration_maxConcurrentTasks: numeric(
     "image_generation_max_concurrent_tasks",
     { mode: "number" },
@@ -4185,10 +4337,40 @@ export const relations_models = relations(models, ({ one, many }) => ({
   formats: many(models_formats, {
     relationName: "formats",
   }),
+  viewerOptimization_sourceFile: one(media, {
+    fields: [models.viewerOptimization_sourceFile],
+    references: [media.id],
+    relationName: "viewerOptimization_sourceFile",
+  }),
+  viewerOptimization_previewFile: one(media, {
+    fields: [models.viewerOptimization_previewFile],
+    references: [media.id],
+    relationName: "viewerOptimization_previewFile",
+  }),
   tags: many(models_tags, {
     relationName: "tags",
   }),
 }));
+export const relations_model_optimization_jobs = relations(
+  model_optimization_jobs,
+  ({ one }) => ({
+    model: one(models, {
+      fields: [model_optimization_jobs.model],
+      references: [models.id],
+      relationName: "model",
+    }),
+    sourceFile: one(media, {
+      fields: [model_optimization_jobs.sourceFile],
+      references: [media.id],
+      relationName: "sourceFile",
+    }),
+    outputFile: one(media, {
+      fields: [model_optimization_jobs.outputFile],
+      references: [media.id],
+      relationName: "outputFile",
+    }),
+  }),
+);
 export const relations_model_comments = relations(
   model_comments,
   ({ one }) => ({
@@ -4750,6 +4932,11 @@ export const relations_payload_locked_documents_rels = relations(
       references: [models.id],
       relationName: "models",
     }),
+    "model-optimization-jobsID": one(model_optimization_jobs, {
+      fields: [payload_locked_documents_rels["model-optimization-jobsID"]],
+      references: [model_optimization_jobs.id],
+      relationName: "model-optimization-jobs",
+    }),
     "model-commentsID": one(model_comments, {
       fields: [payload_locked_documents_rels["model-commentsID"]],
       references: [model_comments.id],
@@ -5245,6 +5432,10 @@ type DatabaseSchema = {
   enum_models_formats_format: typeof enum_models_formats_format;
   enum_models_status: typeof enum_models_status;
   enum_models_visibility: typeof enum_models_visibility;
+  enum_models_viewer_optimization_status: typeof enum_models_viewer_optimization_status;
+  enum_models_viewer_optimization_mode: typeof enum_models_viewer_optimization_mode;
+  enum_model_optimization_jobs_status: typeof enum_model_optimization_jobs_status;
+  enum_model_optimization_jobs_mode: typeof enum_model_optimization_jobs_mode;
   enum_model_comments_status: typeof enum_model_comments_status;
   enum_homepage_items_placement: typeof enum_homepage_items_placement;
   enum_homepage_items_content_type: typeof enum_homepage_items_content_type;
@@ -5311,6 +5502,7 @@ type DatabaseSchema = {
   models_formats: typeof models_formats;
   models_tags: typeof models_tags;
   models: typeof models;
+  model_optimization_jobs: typeof model_optimization_jobs;
   model_comments: typeof model_comments;
   model_likes: typeof model_likes;
   model_favorites: typeof model_favorites;
@@ -5395,6 +5587,7 @@ type DatabaseSchema = {
   relations_models_formats: typeof relations_models_formats;
   relations_models_tags: typeof relations_models_tags;
   relations_models: typeof relations_models;
+  relations_model_optimization_jobs: typeof relations_model_optimization_jobs;
   relations_model_comments: typeof relations_model_comments;
   relations_model_likes: typeof relations_model_likes;
   relations_model_favorites: typeof relations_model_favorites;

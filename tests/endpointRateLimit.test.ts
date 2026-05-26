@@ -247,6 +247,33 @@ test("media upload URL scope is rate limited independently", async () => {
   }
 });
 
+test("model optimization scope is rate limited independently", async () => {
+  const previousLimit = process.env.MODEL_OPTIMIZATION_RATE_LIMIT_MAX;
+  const previousWindow = process.env.MODEL_OPTIMIZATION_RATE_LIMIT_WINDOW_MS;
+
+  process.env.MODEL_OPTIMIZATION_RATE_LIMIT_MAX = "1";
+  process.env.MODEL_OPTIMIZATION_RATE_LIMIT_WINDOW_MS = "60000";
+
+  try {
+    const req = createRequest({ user: { id: 108 } });
+
+    const first = await rejectRateLimitedEndpoint({
+      req,
+      scope: "model-optimization",
+    });
+    const second = await rejectRateLimitedEndpoint({
+      req,
+      scope: "model-optimization",
+    });
+
+    assert.equal(first, null);
+    assert.equal(second?.status, 429);
+  } finally {
+    process.env.MODEL_OPTIMIZATION_RATE_LIMIT_MAX = previousLimit;
+    process.env.MODEL_OPTIMIZATION_RATE_LIMIT_WINDOW_MS = previousWindow;
+  }
+});
+
 test("rejectRateLimitedEndpoint supports social write scopes", async () => {
   const previousLimit = process.env.SOCIAL_REACTION_WRITE_RATE_LIMIT_MAX;
   const previousWindow = process.env.SOCIAL_REACTION_WRITE_RATE_LIMIT_WINDOW_MS;

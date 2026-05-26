@@ -20,6 +20,8 @@ type WorkbenchModelFormat = {
   format: string;
 };
 
+type WorkbenchViewerOptimizationStatus = "failed" | "none" | "pending" | "running" | "skipped" | "succeeded";
+
 const isWorkbenchModelFormat = (value: WorkbenchModelFormat | null): value is WorkbenchModelFormat => {
   return Boolean(value);
 };
@@ -62,6 +64,7 @@ export type WorkbenchModel = {
   updatedAt: null | string;
   viewCount: number;
   viewerURL: null | string;
+  viewerOptimizationStatus: WorkbenchViewerOptimizationStatus;
   visibility: string;
 };
 
@@ -98,6 +101,20 @@ const isRecord = (value: unknown): value is Record<string, unknown> => {
 
 const normalizeText = (value: unknown) => {
   return typeof value === "string" && value.trim() ? value.trim() : null;
+};
+
+const normalizeViewerOptimizationStatus = (value: unknown): WorkbenchViewerOptimizationStatus => {
+  if (
+    value === "pending" ||
+    value === "running" ||
+    value === "succeeded" ||
+    value === "failed" ||
+    value === "skipped"
+  ) {
+    return value;
+  }
+
+  return "none";
 };
 
 const hasGLBFormat = (value: unknown) => {
@@ -170,6 +187,13 @@ export function formatStatusBadge(status: string) {
   return "Draft";
 }
 
+export function formatViewerOptimizationBadge(status: WorkbenchViewerOptimizationStatus) {
+  if (status === "pending" || status === "running") return "Optimizing preview";
+  if (status === "succeeded") return "Preview optimized";
+  if (status === "failed") return "Preview optimization failed";
+  return null;
+}
+
 export function formatWorkbenchDate(value: null | string) {
   if (!value) return "--";
 
@@ -221,6 +245,7 @@ export async function getWorkbenchModels(
           ? model.sourceTask
           : null;
       const ownerId = Number(owner?.id ?? model.owner) || null;
+      const isOwnedByCurrentUser = ownerId === Number(user?.id);
       const ownerName =
         normalizeText(owner?.displayName) ||
         normalizeText(owner?.fullName) ||
@@ -269,7 +294,7 @@ export async function getWorkbenchModels(
         favoritesCount: Number(model.favoritesCount || 0),
         formats,
         id: Number(model.id),
-        isOwnedByCurrentUser: ownerId === Number(user?.id),
+        isOwnedByCurrentUser,
         likesCount: Number(model.likesCount || 0),
         ownerId,
         ownerName,
@@ -304,6 +329,7 @@ export async function getWorkbenchModels(
         updatedAt: typeof model.updatedAt === "string" ? model.updatedAt : null,
         viewCount: Number(model.viewCount || 0),
         viewerURL,
+        viewerOptimizationStatus: isOwnedByCurrentUser ? normalizeViewerOptimizationStatus(model.viewerOptimization?.status) : "none",
         visibility:
           typeof model.visibility === "string" ? model.visibility : "private",
       };

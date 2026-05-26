@@ -67,8 +67,13 @@ type ModelLike = {
   title?: null | string;
   updatedAt?: null | string;
   viewCount?: null | number;
+  viewerOptimization?: null | {
+    status?: null | string;
+  };
   visibility?: null | string;
 };
+
+type ModelDetailOptimizationStatus = "failed" | "none" | "pending" | "running" | "skipped" | "succeeded";
 
 type DownloadPolicy = {
   chargeDownloadCredits: boolean;
@@ -142,6 +147,7 @@ export type ModelDetailData = {
   viewCount: number;
   viewLabel: string;
   viewerURL: null | string;
+  viewerOptimizationStatus: ModelDetailOptimizationStatus;
   visibilityLabel: string;
 };
 
@@ -271,6 +277,20 @@ const isRecord = (value: unknown): value is Record<string, unknown> => {
 
 const normalizeText = (value: unknown) => {
   return typeof value === "string" && value.trim() ? value.trim() : null;
+};
+
+const normalizeModelDetailOptimizationStatus = (value: unknown): ModelDetailOptimizationStatus => {
+  if (
+    value === "pending" ||
+    value === "running" ||
+    value === "succeeded" ||
+    value === "failed" ||
+    value === "skipped"
+  ) {
+    return value;
+  }
+
+  return "none";
 };
 
 const getRelationId = (value: unknown) => {
@@ -799,6 +819,7 @@ async function loadModelDetailData(args: {
       title: true,
       updatedAt: true,
       viewCount: true,
+      viewerOptimization: true,
       visibility: true,
     },
     where: {
@@ -817,6 +838,8 @@ async function loadModelDetailData(args: {
   const isOwnedByCurrentUser =
     ownerId !== null && String(ownerId) === String(currentUserId ?? "");
   const allowPrivateProfileMedia =
+    isOwnedByCurrentUser || isStaffUser(currentUser);
+  const canViewOptimizationStatus =
     isOwnedByCurrentUser || isStaffUser(currentUser);
   const commentsEnabled = model.visibility === "public";
   const [policy, owner] = await Promise.all([
@@ -911,6 +934,7 @@ async function loadModelDetailData(args: {
     viewCount: liveCounts.viewCount,
     viewLabel: compactCount(liveCounts.viewCount),
     viewerURL: buildModelViewerURL({ modelId: Number(model.id) }),
+    viewerOptimizationStatus: canViewOptimizationStatus ? normalizeModelDetailOptimizationStatus(model.viewerOptimization?.status) : "none",
     visibilityLabel: normalizeText(model.visibility) || "public",
   };
 }

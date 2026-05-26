@@ -21,6 +21,15 @@ Update this file in the same task when work changes durable architecture:
 
 Do not leave durable project decisions only in chat history.
 
+## 2026-05-27 GLB Preview Optimization
+
+- Generated/imported GLB preview compression is asynchronous. The main Payload app owns queue state, auth, media records, Supabase signed upload targets, dispatch capacity, callback validation, and viewer selection; the separate Vercel worker only downloads a signed source URL, runs `gltf-transform`, uploads through a signed Supabase upload token, and calls back.
+- The optimization queue lives in `model-optimization-jobs`, and `models.viewerOptimization` stores fast lookup/status fields. Run `generate:types`, `payload generate:db-schema`, and the migration when changing those schemas.
+- Shared secrets for model optimization travel only in `x-model-optimization-secret` headers. Do not put the secret in worker request or callback JSON bodies.
+- The browser viewer URL remains `/api/platform/models/:modelId/viewer?format=glb`. It prefers `viewerOptimization.previewFile` only when status is `succeeded`, supports `quality=original`, and falls back to the original GLB when optimized preview delivery is missing or blocked.
+- `/api/platform/models/:modelId/download` remains the original-quality download path. Do not switch downloads to optimized preview files unless a separate product decision adds a preview-download concept.
+- Production compression capacity should start from the Vercel pressure-test result: worker memory `4096 MB`, timeout `300s`, app `MODEL_OPTIMIZATION_MAX_ACTIVE=24`, and dispatch batch `6`. Higher levels may work in tests, but website generation concurrency and Postgres capacity still need headroom.
+
 ## Current Architecture
 
 Product surfaces:
