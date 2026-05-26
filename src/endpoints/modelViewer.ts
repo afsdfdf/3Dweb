@@ -141,6 +141,9 @@ async function fetchModelAsset(
 type ResolvedModelFormatAsset = {
   fileId: number | null;
   mimeType: null | string;
+  optimizedFileId?: number | null;
+  optimizedMimeType?: null | string;
+  optimizedUrl?: null | string;
   url: null | string;
 };
 
@@ -151,16 +154,25 @@ async function resolvePublicModelFormatAsset(
   const result = await queryPostgres<{
     fileId: number | null;
     mimeType: string | null;
+    optimizedFileId: number | null;
+    optimizedMimeType: string | null;
+    optimizedUrl: string | null;
     url: string | null;
   }>(
     `
       select
         mf.file_id as "fileId",
         media.mime_type as "mimeType",
+        preview_media.id as "optimizedFileId",
+        preview_media.mime_type as "optimizedMimeType",
+        preview_media.url as "optimizedUrl",
         media.url
       from models
       inner join models_formats mf on mf._parent_id = models.id
       left join media on media.id = mf.file_id
+      left join media preview_media
+        on preview_media.id = models.viewer_optimization_preview_file_id
+        and models.viewer_optimization_status = 'succeeded'
       where models.id = $1
         and models.visibility = 'public'
         and lower(mf.format::text) = $2
@@ -215,8 +227,20 @@ const getMediaURLFromFormatFile = async (
   req: PayloadRequest,
   file: unknown,
 ) => {
+  const asset = await getMediaAssetFromRelation(req, file);
+
+  return asset?.url || null;
+};
+
+const getMediaAssetFromRelation = async (
+  req: PayloadRequest,
+  file: unknown,
+) => {
   if (isRecord(file)) {
-    return normalizeText(file.url);
+    return {
+      mimeType: normalizeText(file.mimeType),
+      url: normalizeText(file.url),
+    };
   }
 
   const mediaId =
@@ -232,10 +256,23 @@ const getMediaURLFromFormatFile = async (
       req,
     });
 
-    return normalizeText(media.url);
+    return {
+      mimeType: normalizeText(media.mimeType),
+      url: normalizeText(media.url),
+    };
   } catch {
     return null;
   }
+};
+
+const getOptimizedPreviewAsset = async (
+  req: PayloadRequest,
+  model: unknown,
+) => {
+  if (!isRecord(model) || !isRecord(model.viewerOptimization)) return null;
+  if (model.viewerOptimization.status !== "succeeded") return null;
+
+  return getMediaAssetFromRelation(req, model.viewerOptimization.previewFile);
 };
 
 type ModelViewerEndpointTestHooks = {
@@ -261,6 +298,8 @@ export const modelViewerEndpoint = {
     const deliveryMode = String(
       req.query?.delivery ?? "redirect",
     ).toLowerCase();
+    const forceOriginalQuality =
+      String(req.query?.quality ?? "auto").toLowerCase() === "original";
 
     if (!Number.isFinite(modelId) || modelId <= 0) {
       return Response.json({ message: "Invalid model id." }, { status: 400 });
@@ -298,8 +337,35 @@ export const modelViewerEndpoint = {
         });
       }
 
-      const publicSourceURL = normalizeText(publicFormatAsset?.url);
-      if (publicSourceURL) {
+      const optimizedSourceURL = forceOriginalQuality
+        ? null
+        : normalizeText(publicFormatAsset?.optimizedUrl);
+      const originalSourceURL = normalizeText(publicFormatAsset?.url);
+      const publicCandidates = [
+        optimizedSourceURL
+          ? {
+              kind: "optimized",
+              mimeType: publicFormatAsset?.optimizedMimeType,
+              sourceURL: optimizedSourceURL,
+            }
+          : null,
+        originalSourceURL
+          ? {
+              kind: "original",
+              mimeType: publicFormatAsset?.mimeType,
+              sourceURL: originalSourceURL,
+            }
+          : null,
+      ].filter(Boolean) as Array<{
+        kind: "optimized" | "original";
+        mimeType?: null | string;
+        sourceURL: string;
+      }>;
+      let blockedPublicCandidate = false;
+
+      for (const publicCandidate of publicCandidates) {
+        const publicSourceURL = publicCandidate.sourceURL;
+        const publicMimeType = publicCandidate.mimeType;
         const allowedPublicSource =
           publicSourceURL.startsWith("/") ||
           isConfiguredPublicSupabaseStorageURL(publicSourceURL) ||
@@ -312,16 +378,15 @@ export const modelViewerEndpoint = {
           }));
 
         if (!allowedPublicSource) {
+          blockedPublicCandidate = true;
           req.payload.logger.warn({
+            assetKind: publicCandidate.kind,
             modelId,
             msg: "Blocked model viewer public fast path because host is not on the allowlist.",
             sourceURL: publicSourceURL,
           });
 
-          return Response.json(
-            { message: "The model asset source is not allowed for viewing." },
-            { status: 403 },
-          );
+          continue;
         }
 
         const accessURL = isPublicSupabaseStorageURL(publicSourceURL)
@@ -348,10 +413,15 @@ export const modelViewerEndpoint = {
           }));
 
         if (!allowedFetchTarget) {
-          return Response.json(
-            { message: "The model asset source is not allowed for viewing." },
-            { status: 403 },
-          );
+          blockedPublicCandidate = true;
+          req.payload.logger.warn({
+            assetKind: publicCandidate.kind,
+            fetchURL,
+            modelId,
+            msg: "Blocked model viewer public fast path fetch target because host is not on the allowlist.",
+          });
+
+          continue;
         }
 
         if (deliveryMode === "proxy") {
@@ -364,6 +434,10 @@ export const modelViewerEndpoint = {
               modelId,
               msg: "Model viewer public fast-path proxy fetch failed before a response was available.",
             });
+
+            if (publicCandidate.kind === "optimized") {
+              continue;
+            }
 
             return Response.json(
               { message: "The model asset is temporarily unavailable." },
@@ -382,7 +456,7 @@ export const modelViewerEndpoint = {
                   }
                 : {}),
               "Content-Type":
-                publicFormatAsset?.mimeType ||
+                publicMimeType ||
                 defaultMimeTypeByFormat[format] ||
                 "application/octet-stream",
             },
@@ -399,6 +473,13 @@ export const modelViewerEndpoint = {
           },
           status: 302,
         });
+      }
+
+      if (blockedPublicCandidate) {
+        return Response.json(
+          { message: "The model asset source is not allowed for viewing." },
+          { status: 403 },
+        );
       }
     }
 
@@ -428,6 +509,7 @@ export const modelViewerEndpoint = {
     > | null = null;
     let selectedFormat: unknown = null;
     let sourceURL: null | string = null;
+    let sourceMimeType: null | string = null;
 
     try {
       model = await req.payload.findByID({
@@ -442,14 +524,21 @@ export const modelViewerEndpoint = {
     }
 
     selectedFormat = getSelectedFormat(model, format);
+    const optimizedPreviewAsset = forceOriginalQuality
+      ? null
+      : await getOptimizedPreviewAsset(req, model);
     const payloadFormatFileURL = await getMediaURLFromFormatFile(
       req,
       isRecord(selectedFormat) ? selectedFormat.file : null,
     );
     sourceURL =
+      optimizedPreviewAsset?.url ||
       payloadFormatFileURL ||
       getModelGLBSourceURL({ model }) ||
       getModelGLBSourceURL({ model: accessCheckedModel });
+    sourceMimeType = optimizedPreviewAsset?.url
+      ? optimizedPreviewAsset.mimeType
+      : null;
 
     if (!sourceURL) {
       try {
@@ -542,6 +631,7 @@ export const modelViewerEndpoint = {
       }
 
       const mimeType =
+        sourceMimeType ||
         resolvedFormatAsset?.mimeType ||
         getMimeType(
           isRecord(selectedFormat) ? selectedFormat.file : null,

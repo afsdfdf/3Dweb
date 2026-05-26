@@ -24,6 +24,7 @@ import { ModelComments } from './collections/ModelComments'
 import { ModelFavorites } from './collections/ModelFavorites'
 import { ModelLikes } from './collections/ModelLikes'
 import { ModelBundles } from './collections/ModelBundles'
+import { ModelOptimizationJobs } from './collections/ModelOptimizationJobs'
 import { Models } from './collections/Models'
 import { PrintOrders } from './collections/PrintOrders'
 import { Posts } from './collections/Posts'
@@ -69,6 +70,12 @@ import {
   syncImageGenerationEndpoint,
 } from './endpoints/imageGeneration'
 import { modelDownloadEndpoint } from './endpoints/modelDownloads'
+import {
+  dispatchModelOptimizationEndpoint,
+  manualModelOptimizationEndpoint,
+  modelOptimizationCallbackEndpoint,
+  modelOptimizationStatusEndpoint,
+} from './endpoints/modelOptimization'
 import {
   createModelCommentEndpoint,
   deleteModelCommentEndpoint,
@@ -183,6 +190,7 @@ export default buildConfig({
     GenerationTasks,
     TaskEvents,
     Models,
+    ModelOptimizationJobs,
     ModelComments,
     ModelLikes,
     ModelFavorites,
@@ -263,6 +271,10 @@ export default buildConfig({
     meshyWebhookEndpoint,
     aiWebhookEndpoint,
     modelViewerEndpoint,
+    modelOptimizationCallbackEndpoint,
+    dispatchModelOptimizationEndpoint,
+    manualModelOptimizationEndpoint,
+    modelOptimizationStatusEndpoint,
     modelDownloadEndpoint,
     createPrintOrderEndpoint,
     syncPrintOrderEndpoint,

@@ -26,6 +26,9 @@ import {
   retrieveMeshyMultiImageTask,
   retrieveMeshyTextTask,
 } from '@/lib/meshyGateway'
+import { getModelOptimizationConfig } from '@/lib/modelOptimization/config'
+import { enqueueModelOptimizationJob } from '@/lib/modelOptimization/queue'
+import { resolveOriginalGLBAsset } from '@/lib/modelOptimization/source'
 import { isAllowedRemoteAssetURL } from '@/lib/remoteAssetSecurity'
 import { getRuntimeStorageSettings, uploadToSupabaseStorage } from '@/lib/supabase/storage'
 import {
@@ -72,13 +75,24 @@ type AITaskFlowStorageTestHooks = {
   uploadToSupabaseStorage?: typeof uploadToSupabaseStorage
 }
 
+type AITaskFlowOptimizationTestHooks = {
+  enqueueModelOptimizationJob?: typeof enqueueModelOptimizationJob
+  getModelOptimizationConfig?: typeof getModelOptimizationConfig
+  resolveOriginalGLBAsset?: typeof resolveOriginalGLBAsset
+}
+
 let aiTaskFlowStorageTestHooks: AITaskFlowStorageTestHooks | null = null
+let aiTaskFlowOptimizationTestHooks: AITaskFlowOptimizationTestHooks | null = null
 const meshyDispatchLocks = new Set<number>()
 const taskFinalizationLocks = new Set<number>()
 const INTERNAL_ACCESS = true
 
 export function __setAITaskFlowStorageTestHooks(hooks: AITaskFlowStorageTestHooks | null) {
   aiTaskFlowStorageTestHooks = hooks
+}
+
+export function __setAITaskFlowOptimizationTestHooks(hooks: AITaskFlowOptimizationTestHooks | null) {
+  aiTaskFlowOptimizationTestHooks = hooks
 }
 
 const isProductionRuntime = () => process.env.NODE_ENV === 'production'
@@ -181,6 +195,63 @@ const readRuntimeStorageSettings = () => (aiTaskFlowStorageTestHooks?.getRuntime
 
 const uploadRuntimeAsset = (args: Parameters<typeof uploadToSupabaseStorage>[0]) =>
   (aiTaskFlowStorageTestHooks?.uploadToSupabaseStorage || uploadToSupabaseStorage)(args)
+
+async function enqueueResultModelOptimization(args: {
+  modelId: number
+  req: PayloadRequest
+}) {
+  const { modelId, req } = args
+  const config = (aiTaskFlowOptimizationTestHooks?.getModelOptimizationConfig || getModelOptimizationConfig)()
+
+  if (!config.enabled) {
+    return
+  }
+
+  try {
+    const sourceAsset = await (aiTaskFlowOptimizationTestHooks?.resolveOriginalGLBAsset || resolveOriginalGLBAsset)(modelId)
+
+    if (!sourceAsset) {
+      req.payload.logger.warn({
+        modelId,
+        msg: 'Skipped model preview optimization because no original GLB asset is available.',
+      })
+      return
+    }
+
+    const job = await (aiTaskFlowOptimizationTestHooks?.enqueueModelOptimizationJob || enqueueModelOptimizationJob)({
+      mode: config.mode,
+      modelId,
+      req,
+      sourceMediaId: sourceAsset.mediaId,
+      sourceURL: sourceAsset.sourceURL,
+    })
+
+    if ((job as { status?: string }).status === 'succeeded') {
+      return
+    }
+
+    await req.payload.update({
+      collection: 'models',
+      data: {
+        viewerOptimization: {
+          attempts: Number((job as { attempts?: number | null }).attempts || 0),
+          mode: config.mode,
+          sourceFile: sourceAsset.mediaId,
+          status: 'pending',
+        },
+      },
+      id: modelId,
+      req,
+      overrideAccess: INTERNAL_ACCESS,
+    })
+  } catch (error) {
+    req.payload.logger.warn({
+      err: error,
+      modelId,
+      msg: 'Model preview optimization enqueue failed after generation.',
+    })
+  }
+}
 
 const sanitizeFilenamePart = (value: string) => {
   return value
@@ -914,6 +985,11 @@ async function createResultModel(args: {
     id: task.id,
     req,
     overrideAccess: INTERNAL_ACCESS,
+  })
+
+  await enqueueResultModelOptimization({
+    modelId: Number(modelId),
+    req,
   })
 
   return modelId

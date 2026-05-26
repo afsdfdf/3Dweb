@@ -11,6 +11,7 @@ import { ModelViewer } from '../../_components/ModelViewer'
 import {
   formatStatusBadge,
   formatVisibilityBadge,
+  formatViewerOptimizationBadge,
   formatWorkbenchDate,
   type WorkbenchModel,
 } from '../_lib/workbenchData'
@@ -69,6 +70,7 @@ function LibraryGridCard({
 }) {
   const cardBorderClass = isSelected ? 'border-[#d9b67b]' : 'border-[#5a5661]'
   const cornerClass = isSelected ? 'bg-[#d9b67b]' : 'bg-[#7e7a87]'
+  const optimizationLabel = model.isOwnedByCurrentUser ? formatViewerOptimizationBadge(model.viewerOptimizationStatus) : null
 
   return (
     <Link className="group block" href={href}>
@@ -99,6 +101,11 @@ function LibraryGridCard({
                 <span className="rounded-[2px] border border-[#4a454d] bg-[#17171a] px-1.5 py-0.5 text-[8px] uppercase tracking-[0.08em] text-[#ddd5c7]">
                   {formatVisibilityBadge(model.visibility)}
                 </span>
+                {optimizationLabel ? (
+                  <span className="rounded-[2px] border border-[#4d4230] bg-[#171412] px-1.5 py-0.5 text-[8px] uppercase tracking-[0.08em] text-[#d9b67b]">
+                    {optimizationLabel}
+                  </span>
+                ) : null}
                 <span className="relative flex size-4 items-center justify-center rounded-[2px] border border-[#4a454d] bg-[#151519] text-[#d9d1c3]">
                   <MoreHorizontal className="size-2.5" />
                 </span>
@@ -184,6 +191,11 @@ export function WorkbenchActions({
   initialMode: 'image' | 'text'
   selectedModel: WorkbenchModel | null
 }) {
+  const optimizationLabel =
+    selectedModel?.isOwnedByCurrentUser && selectedModel.viewerOptimizationStatus
+      ? formatViewerOptimizationBadge(selectedModel.viewerOptimizationStatus)
+      : null
+
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_290px]">
       <div className="rounded-[4px] border border-[#2f2d34] bg-[#0a0a0d] p-4">
@@ -191,6 +203,11 @@ export function WorkbenchActions({
           <span className="rounded-[3px] border border-[#4d474f] bg-[#17171a] px-2 py-1 text-[10px] uppercase tracking-[0.12em] text-[#efe7da]">
             {selectedModel ? formatStatusBadge(selectedModel.status) : 'Empty'}
           </span>
+          {optimizationLabel ? (
+            <span className="rounded-[3px] border border-[#4d4230] bg-[#171412] px-2 py-1 text-[10px] uppercase tracking-[0.12em] text-[#d9b67b]">
+              {optimizationLabel}
+            </span>
+          ) : null}
           {selectedModel?.tags.slice(0, 4).map((tag) => (
             <span
               className="rounded-[3px] border border-[#3d3941] px-2 py-1 text-[10px] uppercase tracking-[0.12em] text-[#bdb4a8]"

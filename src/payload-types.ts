@@ -76,6 +76,7 @@ export interface Config {
     'generation-tasks': GenerationTask;
     'task-events': TaskEvent;
     models: Model;
+    'model-optimization-jobs': ModelOptimizationJob;
     'model-comments': ModelComment;
     'model-likes': ModelLike;
     'model-favorites': ModelFavorite;
@@ -107,6 +108,7 @@ export interface Config {
     'generation-tasks': GenerationTasksSelect<false> | GenerationTasksSelect<true>;
     'task-events': TaskEventsSelect<false> | TaskEventsSelect<true>;
     models: ModelsSelect<false> | ModelsSelect<true>;
+    'model-optimization-jobs': ModelOptimizationJobsSelect<false> | ModelOptimizationJobsSelect<true>;
     'model-comments': ModelCommentsSelect<false> | ModelCommentsSelect<true>;
     'model-likes': ModelLikesSelect<false> | ModelLikesSelect<true>;
     'model-favorites': ModelFavoritesSelect<false> | ModelFavoritesSelect<true>;
@@ -389,6 +391,19 @@ export interface Model {
       }[]
     | null;
   viewerUrl?: string | null;
+  viewerOptimization?: {
+    status?: ('none' | 'pending' | 'running' | 'succeeded' | 'failed' | 'skipped') | null;
+    mode?: ('conservative' | 'small') | null;
+    sourceFile?: (number | null) | Media;
+    previewFile?: (number | null) | Media;
+    sourceSizeMb?: number | null;
+    outputSizeMb?: number | null;
+    reductionPercent?: number | null;
+    attempts?: number | null;
+    lastError?: string | null;
+    startedAt?: string | null;
+    completedAt?: string | null;
+  };
   printReady?: boolean | null;
   viewCount?: number | null;
   commentsCount?: number | null;
@@ -496,6 +511,43 @@ export interface TaskEvent {
   provider?: string | null;
   message?: string | null;
   payload?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "model-optimization-jobs".
+ */
+export interface ModelOptimizationJob {
+  id: number;
+  jobKey: string;
+  model: number | Model;
+  sourceFile: number | Media;
+  outputFile?: (number | null) | Media;
+  status: 'pending' | 'running' | 'succeeded' | 'failed' | 'skipped';
+  mode: 'conservative' | 'small';
+  attempts?: number | null;
+  sourceUrl?: string | null;
+  outputPath?: string | null;
+  outputUrl?: string | null;
+  sourceSizeMb?: number | null;
+  outputSizeMb?: number | null;
+  reductionPercent?: number | null;
+  workerRunId?: string | null;
+  leaseOwner?: string | null;
+  leaseExpiresAt?: string | null;
+  startedAt?: string | null;
+  completedAt?: string | null;
+  lastError?: string | null;
+  metrics?:
     | {
         [k: string]: unknown;
       }
@@ -1042,6 +1094,10 @@ export interface PayloadLockedDocument {
         value: number | Model;
       } | null)
     | ({
+        relationTo: 'model-optimization-jobs';
+        value: number | ModelOptimizationJob;
+      } | null)
+    | ({
         relationTo: 'model-comments';
         value: number | ModelComment;
       } | null)
@@ -1328,6 +1384,21 @@ export interface ModelsSelect<T extends boolean = true> {
         id?: T;
       };
   viewerUrl?: T;
+  viewerOptimization?:
+    | T
+    | {
+        status?: T;
+        mode?: T;
+        sourceFile?: T;
+        previewFile?: T;
+        sourceSizeMb?: T;
+        outputSizeMb?: T;
+        reductionPercent?: T;
+        attempts?: T;
+        lastError?: T;
+        startedAt?: T;
+        completedAt?: T;
+      };
   printReady?: T;
   viewCount?: T;
   commentsCount?: T;
@@ -1347,6 +1418,34 @@ export interface ModelsSelect<T extends boolean = true> {
         id?: T;
       };
   description?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "model-optimization-jobs_select".
+ */
+export interface ModelOptimizationJobsSelect<T extends boolean = true> {
+  jobKey?: T;
+  model?: T;
+  sourceFile?: T;
+  outputFile?: T;
+  status?: T;
+  mode?: T;
+  attempts?: T;
+  sourceUrl?: T;
+  outputPath?: T;
+  outputUrl?: T;
+  sourceSizeMb?: T;
+  outputSizeMb?: T;
+  reductionPercent?: T;
+  workerRunId?: T;
+  leaseOwner?: T;
+  leaseExpiresAt?: T;
+  startedAt?: T;
+  completedAt?: T;
+  lastError?: T;
+  metrics?: T;
   updatedAt?: T;
   createdAt?: T;
 }

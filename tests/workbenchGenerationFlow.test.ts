@@ -97,6 +97,18 @@ test('Workbench displays the active backend generation credit cost', () => {
   assert.match(source, /generationCreditCost=\{activeGenerationCreditCost\}/)
 })
 
+test('Workbench surfaces owned model preview optimization status without file URLs', () => {
+  const dataSource = readFileSync(workbenchDataPath, 'utf8')
+  const panelsSource = readFileSync(path.join(rootDir, 'src', 'app', '(frontend)', 'workbench', '_components', 'WorkbenchPanels.tsx'), 'utf8')
+
+  assert.match(dataSource, /viewerOptimizationStatus/)
+  assert.match(dataSource, /formatViewerOptimizationBadge/)
+  assert.match(dataSource, /Optimizing preview/)
+  assert.match(dataSource, /isOwnedByCurrentUser \? normalizeViewerOptimizationStatus/)
+  assert.doesNotMatch(dataSource, /previewFile.*url/i)
+  assert.match(panelsSource, /formatViewerOptimizationBadge/)
+})
+
 test('Workbench restores unfinished backend generation tasks after refresh', () => {
   const clientSource = readFileSync(workbenchClientPath, 'utf8')
   const dataSource = readFileSync(workbenchDataPath, 'utf8')

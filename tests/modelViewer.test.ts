@@ -194,6 +194,143 @@ test("model viewer endpoint redirects relative media URLs against the current lo
   }
 });
 
+test("public model viewer endpoint prefers optimized preview assets", async () => {
+  _resetKVStore();
+
+  __setModelViewerEndpointTestHooks({
+    getMediaAccessURL: async ({ url }) => String(url),
+    isAllowedRemoteAssetURL: async () => true,
+    resolvePublicModelFormatAsset: async () => ({
+      fileId: 10,
+      mimeType: "model/gltf-binary",
+      optimizedFileId: 20,
+      optimizedMimeType: "model/gltf-binary",
+      optimizedUrl: "https://assets.example.com/model.preview.glb",
+      url: "https://assets.example.com/model.original.glb",
+    }),
+  });
+
+  const payload = {
+    logger: createLogger(),
+  };
+
+  try {
+    const response = await modelViewerEndpoint.handler({
+      headers: new Headers({
+        "user-agent": "viewer-test/1.0",
+      }),
+      payload,
+      query: {
+        format: "glb",
+      },
+      routeParams: {
+        modelId: "5",
+      },
+    } as never);
+
+    assert.equal(response.status, 302);
+    assert.equal(
+      response.headers.get("Location"),
+      "https://assets.example.com/model.preview.glb",
+    );
+  } finally {
+    __setModelViewerEndpointTestHooks(null);
+    _resetKVStore();
+  }
+});
+
+test("public model viewer endpoint supports original quality override", async () => {
+  _resetKVStore();
+
+  __setModelViewerEndpointTestHooks({
+    getMediaAccessURL: async ({ url }) => String(url),
+    isAllowedRemoteAssetURL: async () => true,
+    resolvePublicModelFormatAsset: async () => ({
+      fileId: 10,
+      mimeType: "model/gltf-binary",
+      optimizedFileId: 20,
+      optimizedMimeType: "model/gltf-binary",
+      optimizedUrl: "https://assets.example.com/model.preview.glb",
+      url: "https://assets.example.com/model.original.glb",
+    }),
+  });
+
+  const payload = {
+    logger: createLogger(),
+  };
+
+  try {
+    const response = await modelViewerEndpoint.handler({
+      headers: new Headers({
+        "user-agent": "viewer-test/1.0",
+      }),
+      payload,
+      query: {
+        format: "glb",
+        quality: "original",
+      },
+      routeParams: {
+        modelId: "5",
+      },
+    } as never);
+
+    assert.equal(response.status, 302);
+    assert.equal(
+      response.headers.get("Location"),
+      "https://assets.example.com/model.original.glb",
+    );
+  } finally {
+    __setModelViewerEndpointTestHooks(null);
+    _resetKVStore();
+  }
+});
+
+test("public model viewer endpoint falls back when optimized preview is blocked", async () => {
+  _resetKVStore();
+
+  __setModelViewerEndpointTestHooks({
+    getMediaAccessURL: async ({ url }) => String(url),
+    isAllowedRemoteAssetURL: async ({ url }) =>
+      String(url) === "https://assets.example.com/model.original.glb",
+    resolvePublicModelFormatAsset: async () => ({
+      fileId: 10,
+      mimeType: "model/gltf-binary",
+      optimizedFileId: 20,
+      optimizedMimeType: "model/gltf-binary",
+      optimizedUrl: "https://blocked.example.com/model.preview.glb",
+      url: "https://assets.example.com/model.original.glb",
+    }),
+  });
+
+  const payload = {
+    logger: createLogger(),
+  };
+
+  try {
+    const response = await modelViewerEndpoint.handler({
+      headers: new Headers({
+        "user-agent": "viewer-test/1.0",
+      }),
+      payload,
+      query: {
+        format: "glb",
+      },
+      routeParams: {
+        modelId: "5",
+      },
+    } as never);
+
+    assert.equal(response.status, 302);
+    assert.equal(
+      response.headers.get("Location"),
+      "https://assets.example.com/model.original.glb",
+    );
+  } finally {
+    __setModelViewerEndpointTestHooks(null);
+    _resetKVStore();
+  }
+});
+
 test("model viewer endpoint supports explicit proxy fallback delivery", async () => {
   _resetKVStore();
 
@@ -254,6 +391,80 @@ test("model viewer endpoint supports explicit proxy fallback delivery", async ()
     assert.equal(response.status, 200);
     assert.equal(response.headers.get("Content-Length"), "3");
     assert.equal(response.headers.get("Content-Type"), "model/gltf-binary");
+  } finally {
+    __setModelViewerEndpointTestHooks(null);
+    _resetKVStore();
+  }
+});
+
+test("authenticated model viewer endpoint prefers optimized preview assets", async () => {
+  _resetKVStore();
+
+  __setModelViewerEndpointTestHooks({
+    getMediaAccessURL: async ({ url }) => String(url),
+    isAllowedRemoteAssetURL: async () => true,
+  });
+
+  const payload = {
+    findByID: async ({ depth, overrideAccess }: { depth?: number; overrideAccess?: boolean }) => {
+      if (overrideAccess && depth === 2) {
+        return {
+          formats: [
+            {
+              file: {
+                mimeType: "model/gltf-binary",
+                url: "https://assets.example.com/model.original.glb",
+              },
+              format: "glb",
+            },
+          ],
+          id: 5,
+          viewerOptimization: {
+            previewFile: {
+              mimeType: "model/gltf-binary",
+              url: "https://assets.example.com/model.preview.glb",
+            },
+            status: "succeeded",
+          },
+          visibility: "private",
+        };
+      }
+
+      return {
+        formats: [
+          {
+            format: "glb",
+          },
+        ],
+        id: 5,
+        visibility: "private",
+      };
+    },
+    logger: createLogger(),
+  };
+
+  try {
+    const response = await modelViewerEndpoint.handler({
+      headers: new Headers({
+        "user-agent": "viewer-test/1.0",
+      }),
+      payload,
+      query: {
+        format: "glb",
+      },
+      routeParams: {
+        modelId: "5",
+      },
+      user: {
+        id: 7,
+      },
+    } as never);
+
+    assert.equal(response.status, 302);
+    assert.equal(
+      response.headers.get("Location"),
+      "https://assets.example.com/model.preview.glb",
+    );
   } finally {
     __setModelViewerEndpointTestHooks(null);
     _resetKVStore();
