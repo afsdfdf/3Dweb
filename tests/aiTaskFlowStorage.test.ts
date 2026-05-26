@@ -52,10 +52,12 @@ const createWebhookRequestMock = (taskOverrides: Record<string, unknown> = {}) =
   }
   const createdCollections: string[] = []
   const generationTaskUpdates: Array<Record<string, unknown>> = []
+  const modelUpdates: Array<Record<string, unknown>> = []
 
   return {
     createdCollections,
     generationTaskUpdates,
+    modelUpdates,
     get currentTask() {
       return currentTask
     },
@@ -96,6 +98,14 @@ const createWebhookRequestMock = (taskOverrides: Record<string, unknown> = {}) =
               ...data,
             }
             return currentTask
+          }
+
+          if (collection === 'models') {
+            modelUpdates.push(data)
+            return {
+              id: 100,
+              ...data,
+            }
           }
 
           throw new Error(`Unexpected update collection: ${collection}`)
@@ -455,6 +465,106 @@ test('handleAIWebhook keeps succeeded tasks when preview optimization enqueue fa
     assert.equal(result.status, 'succeeded')
     assert.equal(harness.currentTask.status, 'succeeded')
     assert.equal(harness.createdCollections.includes('models'), true)
+  } finally {
+    globalThis.fetch = previousFetch
+    if (previousEnabled === undefined) {
+      delete process.env.MODEL_OPTIMIZATION_ENABLED
+    } else {
+      process.env.MODEL_OPTIMIZATION_ENABLED = previousEnabled
+    }
+    if (previousMode === undefined) {
+      delete process.env.MODEL_OPTIMIZATION_MODE
+    } else {
+      process.env.MODEL_OPTIMIZATION_MODE = previousMode
+    }
+    __setAITaskFlowStorageTestHooks(null)
+    __setAITaskFlowOptimizationTestHooks(null)
+  }
+})
+
+test('handleAIWebhook schedules preview optimization dispatch after enqueue without blocking success', async () => {
+  const previousFetch = globalThis.fetch
+  const previousEnabled = process.env.MODEL_OPTIMIZATION_ENABLED
+  const previousMode = process.env.MODEL_OPTIMIZATION_MODE
+  const {
+    __setAITaskFlowOptimizationTestHooks,
+    __setAITaskFlowStorageTestHooks,
+    handleAIWebhook,
+  } = await import('../src/lib/aiTaskFlow.ts')
+  const harness = createWebhookRequestMock({
+    providerTaskId: 'provider-optimize-dispatch-1',
+    taskCode: 'TASK-OPTIMIZE-DISPATCH',
+  })
+  const scheduledDispatches: Array<() => Promise<void> | void> = []
+  const dispatchedJobIds: number[] = []
+
+  process.env.MODEL_OPTIMIZATION_ENABLED = 'true'
+  process.env.MODEL_OPTIMIZATION_MODE = 'conservative'
+  __setAITaskFlowStorageTestHooks({
+    getRuntimeStorageSettings: async () => ({
+      baseUrl: null,
+      bucket: 'demo-bucket',
+      enabled: true,
+      prefix: 'media',
+      provider: 'supabase-storage',
+      signedDownloads: true,
+    }),
+    uploadToSupabaseStorage: async ({ path }) => ({
+      path,
+      publicUrl: `https://supabase.example/storage/v1/object/public/demo-bucket/${path}`,
+    }),
+  })
+  __setAITaskFlowOptimizationTestHooks({
+    dispatchModelOptimizationJob: async ({ jobId }) => {
+      dispatchedJobIds.push(jobId)
+      throw new Error('worker unavailable')
+    },
+    enqueueModelOptimizationJob: async () => ({
+      attempts: 0,
+      id: 456,
+      status: 'pending',
+    } as never),
+    resolveOriginalGLBAsset: async (modelId) => ({
+      mediaId: 101,
+      mimeType: 'model/gltf-binary',
+      modelId,
+      ownerId: 7,
+      sourceURL: 'https://supabase.example/storage/v1/object/public/demo-bucket/media/generated/task.glb',
+    }),
+    scheduleAfterResponse: (task) => {
+      scheduledDispatches.push(task)
+    },
+  })
+  globalThis.fetch = async () =>
+    new Response(new Uint8Array([1, 2, 3, 4]), {
+      headers: {
+        'content-type': 'model/gltf-binary',
+      },
+      status: 200,
+    })
+
+  try {
+    const result = await handleAIWebhook({
+      payloadData: {
+        modelUrls: {
+          glb: 'https://cdn.example-assets.com/models/demo.glb',
+        },
+        provider: 'custom',
+        providerTaskId: 'provider-optimize-dispatch-1',
+        status: 'succeeded',
+      },
+      req: harness.req as never,
+    })
+
+    assert.equal(result.status, 'succeeded')
+    assert.equal(harness.currentTask.status, 'succeeded')
+    assert.equal(scheduledDispatches.length, 1)
+    assert.deepEqual(dispatchedJobIds, [])
+
+    await scheduledDispatches[0]?.()
+
+    assert.deepEqual(dispatchedJobIds, [456])
+    assert.equal(harness.modelUpdates.length, 1)
   } finally {
     globalThis.fetch = previousFetch
     if (previousEnabled === undefined) {

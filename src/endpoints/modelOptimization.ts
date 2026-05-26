@@ -64,6 +64,80 @@ const readOptimizationView = (value: unknown) => {
   }
 }
 
+const verifyCronAuthorization = (req: PayloadRequest) => {
+  const expected = process.env.CRON_SECRET
+  const header = req.headers.get('authorization') || ''
+
+  return Boolean(expected) && header === `Bearer ${expected}`
+}
+
+const runModelOptimizationDispatch = async (req: PayloadRequest) => {
+  const config = getModelOptimizationConfig()
+  if (!config.enabled) {
+    return {
+      claimed: 0,
+      message: 'Model optimization is disabled.',
+    }
+  }
+
+  const active = await req.payload.count({
+    collection: 'model-optimization-jobs',
+    overrideAccess: true,
+    req,
+    where: {
+      and: [
+        { status: { equals: 'running' } },
+        { leaseExpiresAt: { greater_than: new Date().toISOString() } },
+      ],
+    },
+  })
+  const availableSlots = Math.max(0, config.maxActive - Number(active.totalDocs || 0))
+  const limit = Math.min(config.dispatchBatchSize, availableSlots)
+
+  if (limit <= 0) {
+    return {
+      activeLimit: config.maxActive,
+      claimed: 0,
+      message: 'No optimization capacity is available.',
+    }
+  }
+
+  const jobs = await req.payload.find({
+    collection: 'model-optimization-jobs',
+    depth: 0,
+    limit,
+    overrideAccess: true,
+    pagination: false,
+    req,
+    sort: 'createdAt',
+    where: {
+      status: {
+        equals: 'pending',
+      },
+    },
+  })
+  const results = []
+
+  for (const job of jobs.docs) {
+    const jobId = readPositiveId(job.id)
+    if (!jobId) continue
+
+    results.push(
+      await (modelOptimizationEndpointTestHooks?.dispatchModelOptimizationJob || dispatchModelOptimizationJob)({
+        jobId,
+        req,
+      }),
+    )
+  }
+
+  return {
+    activeLimit: config.maxActive,
+    claimed: results.length,
+    message: 'Optimization dispatch completed.',
+    results,
+  }
+}
+
 export const modelOptimizationCallbackEndpoint = {
   path: '/platform/model-optimization/callback',
   method: 'post' as const,
@@ -133,63 +207,19 @@ export const dispatchModelOptimizationEndpoint = {
       return Response.json({ message: 'Model optimization dispatch verification failed.' }, { status: 401 })
     }
 
-    const config = getModelOptimizationConfig()
-    if (!config.enabled) {
-      return Response.json({ message: 'Model optimization is disabled.', claimed: 0 })
+    return Response.json(await runModelOptimizationDispatch(req))
+  },
+}
+
+export const cronModelOptimizationDispatchEndpoint = {
+  path: '/platform/model-optimization/cron-dispatch',
+  method: 'get' as const,
+  handler: async (req: PayloadRequest) => {
+    if (!verifyCronAuthorization(req)) {
+      return Response.json({ message: 'Model optimization cron verification failed.' }, { status: 401 })
     }
 
-    const active = await req.payload.count({
-      collection: 'model-optimization-jobs',
-      overrideAccess: true,
-      req,
-      where: {
-        and: [
-          { status: { equals: 'running' } },
-          { leaseExpiresAt: { greater_than: new Date().toISOString() } },
-        ],
-      },
-    })
-    const availableSlots = Math.max(0, config.maxActive - Number(active.totalDocs || 0))
-    const limit = Math.min(config.dispatchBatchSize, availableSlots)
-
-    if (limit <= 0) {
-      return Response.json({ message: 'No optimization capacity is available.', activeLimit: config.maxActive, claimed: 0 })
-    }
-
-    const jobs = await req.payload.find({
-      collection: 'model-optimization-jobs',
-      depth: 0,
-      limit,
-      overrideAccess: true,
-      pagination: false,
-      req,
-      sort: 'createdAt',
-      where: {
-        status: {
-          equals: 'pending',
-        },
-      },
-    })
-    const results = []
-
-    for (const job of jobs.docs) {
-      const jobId = readPositiveId(job.id)
-      if (!jobId) continue
-
-      results.push(
-        await (modelOptimizationEndpointTestHooks?.dispatchModelOptimizationJob || dispatchModelOptimizationJob)({
-          jobId,
-          req,
-        }),
-      )
-    }
-
-    return Response.json({
-      activeLimit: config.maxActive,
-      claimed: results.length,
-      message: 'Optimization dispatch completed.',
-      results,
-    })
+    return Response.json(await runModelOptimizationDispatch(req))
   },
 }
 

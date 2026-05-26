@@ -153,7 +153,7 @@ Do not add Next route handlers that shadow Payload REST roots such as `/api/medi
 - `/api/platform/models/:modelId/viewer?format=glb` is the controlled browser viewer entry.
 - After access is decided, the viewer endpoint should redirect to Supabase Storage when possible and use proxy delivery only as a fallback.
 - Optimized GLB previews are served transparently by the viewer endpoint when `models.viewerOptimization.status = succeeded`; use `quality=original` to force the original GLB.
-- Preview compression is queued in `model-optimization-jobs` and executed by the separate `glb-compress` worker using signed source/upload URLs. The shared secret belongs in `x-model-optimization-secret` headers only.
+- Preview compression is queued in `model-optimization-jobs` and executed by the separate `glb-compress` worker using signed source/upload URLs. Generation success schedules an immediate non-blocking dispatch attempt, while Vercel Cron calls `/api/platform/model-optimization/cron-dispatch` every minute as a recovery path. The shared worker secret belongs in `x-model-optimization-secret` headers only; the cron route requires `Authorization: Bearer ${CRON_SECRET}`.
 - Downloads must keep using original model format files through `/api/platform/models/:modelId/download`.
 - `ModelViewer` must keep Draco decoder support through `public/three-draco/gltf/`.
 - Public downloads use `/api/platform/models/:modelId/download`.

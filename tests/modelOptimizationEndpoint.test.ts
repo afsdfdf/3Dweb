@@ -1,18 +1,28 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import path from 'node:path'
 import test from 'node:test'
 
 import {
   __setModelOptimizationEndpointTestHooks,
+  cronModelOptimizationDispatchEndpoint,
   modelOptimizationCallbackEndpoint,
 } from '../src/endpoints/modelOptimization.ts'
 
-const originalSecret = process.env.MODEL_OPTIMIZATION_CALLBACK_SECRET
+const originalEnv = {
+  CRON_SECRET: process.env.CRON_SECRET,
+  MODEL_OPTIMIZATION_CALLBACK_SECRET: process.env.MODEL_OPTIMIZATION_CALLBACK_SECRET,
+  MODEL_OPTIMIZATION_ENABLED: process.env.MODEL_OPTIMIZATION_ENABLED,
+  MODEL_OPTIMIZATION_WORKER_URL: process.env.MODEL_OPTIMIZATION_WORKER_URL,
+}
 
-function restoreSecret() {
-  if (originalSecret === undefined) {
-    delete process.env.MODEL_OPTIMIZATION_CALLBACK_SECRET
-  } else {
-    process.env.MODEL_OPTIMIZATION_CALLBACK_SECRET = originalSecret
+function restoreEnv() {
+  for (const [key, value] of Object.entries(originalEnv)) {
+    if (value === undefined) {
+      delete process.env[key]
+    } else {
+      process.env[key] = value
+    }
   }
 }
 
@@ -27,7 +37,7 @@ test('model optimization callback rejects invalid secret', async () => {
 
     assert.equal(response.status, 401)
   } finally {
-    restoreSecret()
+    restoreEnv()
   }
 })
 
@@ -73,6 +83,68 @@ test('model optimization callback completes successful worker result', async () 
     assert.equal(completedJobId, 123)
   } finally {
     __setModelOptimizationEndpointTestHooks(null)
-    restoreSecret()
+    restoreEnv()
   }
+})
+
+test('model optimization cron dispatch requires Vercel cron authorization', async () => {
+  process.env.CRON_SECRET = 'cron-secret'
+
+  try {
+    const response = await cronModelOptimizationDispatchEndpoint.handler({
+      headers: new Headers({ authorization: 'Bearer wrong' }),
+    } as never)
+
+    assert.equal(response.status, 401)
+  } finally {
+    restoreEnv()
+  }
+})
+
+test('model optimization cron dispatch claims pending jobs with valid Vercel cron authorization', async () => {
+  process.env.CRON_SECRET = 'cron-secret'
+  process.env.MODEL_OPTIMIZATION_CALLBACK_SECRET = 'callback-secret'
+  process.env.MODEL_OPTIMIZATION_ENABLED = 'true'
+  process.env.MODEL_OPTIMIZATION_WORKER_URL = 'https://worker.example/api/compress'
+  const dispatchedJobIds: number[] = []
+
+  __setModelOptimizationEndpointTestHooks({
+    dispatchModelOptimizationJob: async ({ jobId }) => {
+      dispatchedJobIds.push(jobId)
+      return {
+        dispatched: true,
+      } as never
+    },
+  })
+
+  try {
+    const response = await cronModelOptimizationDispatchEndpoint.handler({
+      headers: new Headers({ authorization: 'Bearer cron-secret' }),
+      payload: {
+        count: async () => ({ totalDocs: 0 }),
+        find: async () => ({
+          docs: [{ id: 201 }, { id: 202 }],
+        }),
+      },
+    } as never)
+    const body = await response.json()
+
+    assert.equal(response.status, 200)
+    assert.equal(body.claimed, 2)
+    assert.deepEqual(dispatchedJobIds, [201, 202])
+  } finally {
+    __setModelOptimizationEndpointTestHooks(null)
+    restoreEnv()
+  }
+})
+
+test('Vercel cron invokes model optimization dispatch every minute', () => {
+  const config = JSON.parse(readFileSync(path.join(process.cwd(), 'vercel.json'), 'utf8'))
+
+  assert.deepEqual(config.crons, [
+    {
+      path: '/api/platform/model-optimization/cron-dispatch',
+      schedule: '* * * * *',
+    },
+  ])
 })

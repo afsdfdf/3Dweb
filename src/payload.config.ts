@@ -71,6 +71,7 @@ import {
 } from './endpoints/imageGeneration'
 import { modelDownloadEndpoint } from './endpoints/modelDownloads'
 import {
+  cronModelOptimizationDispatchEndpoint,
   dispatchModelOptimizationEndpoint,
   manualModelOptimizationEndpoint,
   modelOptimizationCallbackEndpoint,
@@ -273,6 +274,7 @@ export default buildConfig({
     modelViewerEndpoint,
     modelOptimizationCallbackEndpoint,
     dispatchModelOptimizationEndpoint,
+    cronModelOptimizationDispatchEndpoint,
     manualModelOptimizationEndpoint,
     modelOptimizationStatusEndpoint,
     modelDownloadEndpoint,
