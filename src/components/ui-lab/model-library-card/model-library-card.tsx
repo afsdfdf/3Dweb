@@ -32,7 +32,7 @@ export function ModelLibraryCard({
   name = "Monk",
   onClick,
   previewAlt = "Monk library preview",
-  previewSrc = "/ui-lab/workbench-assets/monk-large.png",
+  previewSrc = "/ui-lab/workbench-assets/monk-large.webp",
   selected = false,
   style,
 }: ModelLibraryCardProps) {

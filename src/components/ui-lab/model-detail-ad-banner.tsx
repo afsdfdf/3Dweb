@@ -14,7 +14,7 @@ export function ModelDetailAdBanner({
   href = "#",
   imageAlt = "",
   imagePosition,
-  imageSrc = "/ui-lab/model-detail-uicut/images/detail-side-banner.png",
+  imageSrc = "/ui-lab/model-detail-uicut/images/detail-side-banner.webp",
   ...anchorProps
 }: ModelDetailAdBannerProps) {
   return (

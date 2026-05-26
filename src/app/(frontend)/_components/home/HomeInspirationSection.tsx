@@ -14,7 +14,7 @@ export function HomeInspirationSection({ items }: { items: PublicModelThumbnailC
           alt=""
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 z-[1] h-full w-full select-none"
-          src="/ui/frames/kuang.png"
+          src="/ui/frames/kuang.webp"
         />
 
         <div className="relative z-[2] px-[3.35%] pb-[4.3%] pt-[8.1%]">
@@ -61,7 +61,7 @@ export function HomeInspirationSection({ items }: { items: PublicModelThumbnailC
 
           <div className="mt-3 h-px bg-[linear-gradient(90deg,#403f46_0%,#2b2a32_45%,#424149_100%)]" />
 
-          <div className="mt-5 grid justify-between gap-y-8 [grid-template-columns:repeat(2,228px)] md:[grid-template-columns:repeat(3,228px)] xl:[grid-template-columns:repeat(4,228px)] 2xl:[grid-template-columns:repeat(6,228px)]">
+          <div className="mt-5 grid justify-between gap-y-12 [grid-template-columns:repeat(2,228px)] md:[grid-template-columns:repeat(3,228px)] xl:[grid-template-columns:repeat(4,228px)] 2xl:[grid-template-columns:repeat(6,228px)]">
             {items.map((item) => (
               <ModelThumbnailCard
                 authorAvatarUrl={item.authorAvatarUrl}

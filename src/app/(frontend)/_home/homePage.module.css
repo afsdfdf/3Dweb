@@ -312,7 +312,7 @@
     border-bottom: 1px solid #403f46;
     background:
       linear-gradient(180deg, rgba(18, 18, 19, 0.1) 0%, rgba(18, 18, 19, 0.52) 42%, rgba(18, 18, 19, 0.98) 100%),
-      url("/home-test-assets/images/Rectangle_2_background.png");
+      url("/home-test-assets/images/Rectangle_2_background.webp");
     background-position: center top;
     background-size: auto 100%, cover;
     padding: 86px 16px 18px;
@@ -334,7 +334,7 @@
     left: -72px;
     width: 210px;
     height: 184px;
-    background-image: url("/home-test-assets/images/b33fa85807bb1a43d4505741bf24b171543730a0.png");
+    background-image: url("/home-test-assets/images/b33fa85807bb1a43d4505741bf24b171543730a0.webp");
     transform: rotate(-16deg);
   }
 
@@ -343,7 +343,7 @@
     right: -88px;
     width: 238px;
     height: 288px;
-    background-image: url("/home-test-assets/images/0fcb32fe705e94048a3f0d16dd7e713de54896f5.png");
+    background-image: url("/home-test-assets/images/0fcb32fe705e94048a3f0d16dd7e713de54896f5.webp");
     transform: rotate(12deg);
   }
 

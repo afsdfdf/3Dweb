@@ -46,7 +46,7 @@ export default async function AboutPage() {
                 className={styles.heroImage}
                 decoding="async"
                 fetchPriority="high"
-                src="/ui/workbench/model-detail/sketch-assets/rail-banner-bg.png"
+                src="/ui/workbench/model-detail/sketch-assets/rail-banner-bg.webp"
               />
               <div className={styles.heroOverlay}>
                 <span className={styles.eyebrow}>{about.heroEyebrow}</span>
