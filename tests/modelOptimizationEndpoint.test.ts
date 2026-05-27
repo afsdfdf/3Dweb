@@ -195,6 +195,55 @@ test('model optimization cron dispatch claims pending jobs with valid Vercel cro
   }
 })
 
+test('model optimization cron dispatch claims retryable failed and expired running jobs', async () => {
+  process.env.CRON_SECRET = 'cron-secret'
+  process.env.MODEL_OPTIMIZATION_CALLBACK_SECRET = 'callback-secret'
+  process.env.MODEL_OPTIMIZATION_ENABLED = 'true'
+  process.env.MODEL_OPTIMIZATION_WORKER_URL = 'https://worker.example/api/compress'
+  const dispatchedJobIds: number[] = []
+  let capturedWhere: unknown = null
+
+  __setModelOptimizationEndpointTestHooks({
+    dispatchModelOptimizationJob: async ({ jobId }) => {
+      dispatchedJobIds.push(jobId)
+      return {
+        dispatched: true,
+      } as never
+    },
+  })
+
+  try {
+    const response = await cronModelOptimizationDispatchEndpoint.handler({
+      headers: new Headers({ authorization: 'Bearer cron-secret' }),
+      payload: {
+        count: async () => ({ totalDocs: 0 }),
+        find: async (args: { where?: unknown }) => {
+          capturedWhere = args.where
+          const whereText = JSON.stringify(args.where)
+          return {
+            docs: whereText.includes('"failed"') && whereText.includes('"running"')
+              ? [{ id: 301 }, { id: 302 }]
+              : [],
+          }
+        },
+      },
+    } as never)
+    const body = await response.json()
+    const whereText = JSON.stringify(capturedWhere)
+
+    assert.equal(response.status, 200)
+    assert.equal(body.claimed, 2)
+    assert.deepEqual(dispatchedJobIds, [301, 302])
+    assert.match(whereText, /"failed"/)
+    assert.match(whereText, /"running"/)
+    assert.match(whereText, /"attempts"/)
+    assert.match(whereText, /"leaseExpiresAt"/)
+  } finally {
+    __setModelOptimizationEndpointTestHooks(null)
+    restoreEnv()
+  }
+})
+
 test('Vercel cron invokes model optimization dispatch every minute', () => {
   const config = JSON.parse(readFileSync(path.join(process.cwd(), 'vercel.json'), 'utf8'))
 
