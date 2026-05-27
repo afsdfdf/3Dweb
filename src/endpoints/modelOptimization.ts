@@ -3,6 +3,7 @@ import type { PayloadRequest } from 'payload'
 import { rejectRateLimitedEndpoint } from '@/lib/endpointRateLimit'
 import { dispatchModelOptimizationJob } from '@/lib/modelOptimization/dispatch'
 import { getModelOptimizationConfig } from '@/lib/modelOptimization/config'
+import { backfillModelOptimizationJobs } from '@/lib/modelOptimization/backfill'
 import { completeModelOptimizationJob, failModelOptimizationJob, verifyModelOptimizationCallback } from '@/lib/modelOptimization/callback'
 import { enqueueModelOptimizationJob } from '@/lib/modelOptimization/queue'
 import { resolveOriginalGLBAsset } from '@/lib/modelOptimization/source'
@@ -10,6 +11,7 @@ import { ensurePayloadRequestUser } from '@/lib/payloadAuthFallback'
 import { rejectDisallowedMutationOrigin } from '@/lib/requestSecurity'
 
 type ModelOptimizationEndpointTestHooks = {
+  backfillModelOptimizationJobs?: typeof backfillModelOptimizationJobs
   completeModelOptimizationJob?: typeof completeModelOptimizationJob
   dispatchModelOptimizationJob?: typeof dispatchModelOptimizationJob
   enqueueModelOptimizationJob?: typeof enqueueModelOptimizationJob
@@ -34,6 +36,11 @@ const readBody = async (req: PayloadRequest) => {
 const readPositiveId = (value: unknown) => {
   const parsed = Number(value)
   return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : null
+}
+
+const readPositiveLimit = (value: unknown, fallback: number) => {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback
 }
 
 const readOptimizationView = (value: unknown) => {
@@ -220,6 +227,32 @@ export const cronModelOptimizationDispatchEndpoint = {
     }
 
     return Response.json(await runModelOptimizationDispatch(req))
+  },
+}
+
+export const backfillModelOptimizationEndpoint = {
+  path: '/platform/model-optimization/backfill',
+  method: 'post' as const,
+  handler: async (req: PayloadRequest) => {
+    if (!verifyCronAuthorization(req)) {
+      return Response.json({ message: 'Model optimization backfill verification failed.' }, { status: 401 })
+    }
+
+    const body = await readBody(req)
+    const modelId = readPositiveId(body.modelId)
+    const afterId = readPositiveId(body.afterId)
+    const limit = readPositiveLimit(body.limit, modelId ? 1 : 10)
+    const dryRun = body.dryRun !== false
+
+    return Response.json(
+      await (modelOptimizationEndpointTestHooks?.backfillModelOptimizationJobs || backfillModelOptimizationJobs)({
+        afterId,
+        dryRun,
+        limit,
+        modelId,
+        req,
+      }),
+    )
   },
 }
 

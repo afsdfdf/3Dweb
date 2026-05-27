@@ -5,6 +5,7 @@ import test from 'node:test'
 
 import {
   __setModelOptimizationEndpointTestHooks,
+  backfillModelOptimizationEndpoint,
   cronModelOptimizationDispatchEndpoint,
   modelOptimizationCallbackEndpoint,
 } from '../src/endpoints/modelOptimization.ts'
@@ -97,6 +98,62 @@ test('model optimization cron dispatch requires Vercel cron authorization', asyn
 
     assert.equal(response.status, 401)
   } finally {
+    restoreEnv()
+  }
+})
+
+test('model optimization backfill requires Vercel cron authorization', async () => {
+  process.env.CRON_SECRET = 'cron-secret'
+
+  try {
+    const response = await backfillModelOptimizationEndpoint.handler({
+      headers: new Headers({ authorization: 'Bearer wrong' }),
+      json: async () => ({}),
+    } as never)
+
+    assert.equal(response.status, 401)
+  } finally {
+    restoreEnv()
+  }
+})
+
+test('model optimization backfill accepts dry-run and bounded enqueue options', async () => {
+  process.env.CRON_SECRET = 'cron-secret'
+  const calls: Array<Record<string, unknown>> = []
+
+  __setModelOptimizationEndpointTestHooks({
+    backfillModelOptimizationJobs: async (args) => {
+      calls.push(args as unknown as Record<string, unknown>)
+      return {
+        candidateCount: 2,
+        candidates: [],
+        dryRun: true,
+        enqueuedCount: 0,
+        jobs: [],
+        limit: 2,
+      } as never
+    },
+  })
+
+  try {
+    const response = await backfillModelOptimizationEndpoint.handler({
+      headers: new Headers({ authorization: 'Bearer cron-secret' }),
+      json: async () => ({
+        dryRun: true,
+        limit: 2,
+        modelId: 61,
+      }),
+    } as never)
+    const body = await response.json()
+
+    assert.equal(response.status, 200)
+    assert.equal(body.dryRun, true)
+    assert.equal(body.candidateCount, 2)
+    assert.equal(calls[0]?.dryRun, true)
+    assert.equal(calls[0]?.limit, 2)
+    assert.equal(calls[0]?.modelId, 61)
+  } finally {
+    __setModelOptimizationEndpointTestHooks(null)
     restoreEnv()
   }
 })
