@@ -39,6 +39,7 @@ test('findModelOptimizationBackfillCandidates selects unhandled GLB models only'
     assert.deepEqual(calls[0]?.params, ['conservative', 5, null, null])
     assert.match(calls[0]?.sql || '', /model_optimization_jobs/)
     assert.match(calls[0]?.sql || '', /viewer_optimization_status/)
+    assert.match(calls[0]?.sql || '', /\$1::text/)
     assert.match(calls[0]?.sql || '', /existing\.id is null/i)
   } finally {
     __setModelOptimizationBackfillTestHooks(null)
