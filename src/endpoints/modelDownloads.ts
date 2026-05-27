@@ -4,6 +4,7 @@ import { InsufficientCreditsError, refundDownloadCredits, spendDownloadCredits }
 import { queryPostgres } from '@/lib/postgres'
 import { isAllowedRemoteAssetURL } from '@/lib/remoteAssetSecurity'
 import { getMediaAccessURL } from '@/lib/mediaAccessURL'
+import { ensurePayloadRequestUser } from '@/lib/payloadAuthFallback'
 
 type ModelDownloadEndpointTestHooks = {
   getMediaAccessURL?: typeof getMediaAccessURL
@@ -139,6 +140,8 @@ export const modelDownloadEndpoint = {
     const format = String(req.query?.format ?? 'glb').toLowerCase()
     const inline = String(req.query?.inline ?? '') === '1'
     const downloadPolicy = await getDownloadAccessPolicy(req)
+
+    await ensurePayloadRequestUser(req)
 
     if (!Number.isFinite(modelIdNumber) || modelIdNumber <= 0) {
       return Response.json({ message: 'Invalid model ID.' }, { status: 400 })

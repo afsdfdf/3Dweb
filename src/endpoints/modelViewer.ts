@@ -5,6 +5,7 @@ import { getModelGLBSourceURL } from "@/lib/modelAssetURL";
 import { queryPostgres } from "@/lib/postgres";
 import { isAllowedRemoteAssetURL } from "@/lib/remoteAssetSecurity";
 import { getMediaAccessURL } from "@/lib/mediaAccessURL";
+import { ensurePayloadRequestUser } from "@/lib/payloadAuthFallback";
 
 const defaultMimeTypeByFormat: Record<string, string> = {
   glb: "model/gltf-binary",
@@ -300,6 +301,8 @@ export const modelViewerEndpoint = {
     ).toLowerCase();
     const forceOriginalQuality =
       String(req.query?.quality ?? "auto").toLowerCase() === "original";
+
+    await ensurePayloadRequestUser(req);
 
     if (!Number.isFinite(modelId) || modelId <= 0) {
       return Response.json({ message: "Invalid model id." }, { status: 400 });
