@@ -8,6 +8,7 @@ const sanitizePathPart = (value: string) =>
     .replace(/^-|-$/g, '')
 
 export function buildOptimizedModelPath(args: {
+  attempt?: number
   mode: ModelOptimizationMode
   modelId: number
   prefix: string
@@ -16,6 +17,8 @@ export function buildOptimizedModelPath(args: {
 }) {
   const prefix = args.prefix.replace(/^\/+|\/+$/g, '') || 'media'
   const userPart = sanitizePathPart(`user-${args.userId}`) || 'user'
+  const attempt = Number.isFinite(args.attempt) ? Math.max(1, Math.floor(Number(args.attempt))) : 1
+  const filenameSuffix = attempt > 1 ? `-${args.mode}-attempt-${attempt}` : `-${args.mode}`
 
-  return `${prefix}/model-previews/${userPart}/model-${args.modelId}/source-${args.sourceMediaId}/model-${args.modelId}-preview-${args.mode}.glb`
+  return `${prefix}/model-previews/${userPart}/model-${args.modelId}/source-${args.sourceMediaId}/model-${args.modelId}-preview${filenameSuffix}.glb`
 }

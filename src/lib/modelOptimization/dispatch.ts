@@ -9,6 +9,7 @@ import {
 
 import { getModelOptimizationConfig } from './config'
 import { buildOptimizedModelPath } from './paths'
+import { shouldRetryOptimizationJob } from './queue'
 
 const INTERNAL_ACCESS = true
 
@@ -49,6 +50,14 @@ const getJobMode = (job: unknown) => {
   return isRecord(job) && job.mode === 'small' ? 'small' : 'conservative'
 }
 
+const getJobAttempts = (job: unknown) => {
+  const attempts = Number(isRecord(job) ? job.attempts || 0 : 0)
+  return Number.isFinite(attempts) && attempts > 0 ? attempts : 0
+}
+
+const getJobStatus = (job: unknown) => (isRecord(job) && typeof job.status === 'string' ? job.status : null)
+const getJobLeaseExpiresAt = (job: unknown) =>
+  isRecord(job) && typeof job.leaseExpiresAt === 'string' ? job.leaseExpiresAt : null
 const getJobModel = (job: unknown) => (isRecord(job) && isRecord(job.model) ? job.model : null)
 const getJobSourceFile = (job: unknown) => (isRecord(job) && isRecord(job.sourceFile) ? job.sourceFile : null)
 
@@ -77,6 +86,23 @@ export async function dispatchModelOptimizationJob(args: {
     overrideAccess: INTERNAL_ACCESS,
     req: args.req,
   })
+  const attempts = getJobAttempts(job)
+  const status = getJobStatus(job)
+  const dispatchable =
+    status === 'pending' ||
+    shouldRetryOptimizationJob({
+      attempts,
+      leaseExpiresAt: getJobLeaseExpiresAt(job),
+      status,
+    })
+
+  if (!dispatchable) {
+    return {
+      dispatched: false,
+      reason: 'not-dispatchable',
+    }
+  }
+
   const model = getJobModel(job)
   const sourceFile = getJobSourceFile(job)
   const modelId = getRelationId(model || (isRecord(job) ? job.model : null))
@@ -94,6 +120,7 @@ export async function dispatchModelOptimizationJob(args: {
   }
 
   const mode = getJobMode(job)
+  const nextAttempt = attempts + 1
   const accessURL =
     (await (modelOptimizationDispatchTestHooks?.getMediaAccessURL || getMediaAccessURL)({
       payload: args.req.payload,
@@ -101,6 +128,7 @@ export async function dispatchModelOptimizationJob(args: {
       url: sourceURL,
     })) || sourceURL
   const outputPath = buildOptimizedModelPath({
+    attempt: nextAttempt,
     mode,
     modelId,
     prefix: storage.prefix,
@@ -120,7 +148,9 @@ export async function dispatchModelOptimizationJob(args: {
   await args.req.payload.update({
     collection: 'model-optimization-jobs',
     data: {
-      attempts: Number(isRecord(job) ? job.attempts || 0 : 0) + 1,
+      attempts: nextAttempt,
+      completedAt: null,
+      lastError: null,
       leaseExpiresAt,
       leaseOwner: 'model-optimization-dispatch',
       outputPath,
@@ -137,7 +167,7 @@ export async function dispatchModelOptimizationJob(args: {
     collection: 'models',
     data: {
       viewerOptimization: {
-        attempts: Number(isRecord(job) ? job.attempts || 0 : 0) + 1,
+        attempts: nextAttempt,
         lastError: null,
         mode,
         previewFile: undefined,
@@ -181,6 +211,22 @@ export async function dispatchModelOptimizationJob(args: {
 
   if (!response.ok) {
     const message = `Model optimization worker dispatch failed with ${response.status}.`
+    await args.req.payload.update({
+      collection: 'models',
+      data: {
+        viewerOptimization: {
+          attempts: nextAttempt,
+          lastError: message,
+          mode,
+          sourceFile: sourceMediaId,
+          status: 'failed',
+        },
+      },
+      id: modelId,
+      overrideAccess: INTERNAL_ACCESS,
+      req: args.req,
+    })
+
     await args.req.payload.update({
       collection: 'model-optimization-jobs',
       data: {

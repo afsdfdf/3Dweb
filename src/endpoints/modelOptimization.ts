@@ -5,7 +5,7 @@ import { dispatchModelOptimizationJob } from '@/lib/modelOptimization/dispatch'
 import { getModelOptimizationConfig } from '@/lib/modelOptimization/config'
 import { backfillModelOptimizationJobs } from '@/lib/modelOptimization/backfill'
 import { completeModelOptimizationJob, failModelOptimizationJob, verifyModelOptimizationCallback } from '@/lib/modelOptimization/callback'
-import { enqueueModelOptimizationJob } from '@/lib/modelOptimization/queue'
+import { buildModelOptimizationDispatchWhere, enqueueModelOptimizationJob } from '@/lib/modelOptimization/queue'
 import { resolveOriginalGLBAsset } from '@/lib/modelOptimization/source'
 import { ensurePayloadRequestUser } from '@/lib/payloadAuthFallback'
 import { rejectDisallowedMutationOrigin } from '@/lib/requestSecurity'
@@ -87,6 +87,7 @@ const runModelOptimizationDispatch = async (req: PayloadRequest) => {
     }
   }
 
+  const now = new Date().toISOString()
   const active = await req.payload.count({
     collection: 'model-optimization-jobs',
     overrideAccess: true,
@@ -94,7 +95,7 @@ const runModelOptimizationDispatch = async (req: PayloadRequest) => {
     where: {
       and: [
         { status: { equals: 'running' } },
-        { leaseExpiresAt: { greater_than: new Date().toISOString() } },
+        { leaseExpiresAt: { greater_than: now } },
       ],
     },
   })
@@ -117,11 +118,7 @@ const runModelOptimizationDispatch = async (req: PayloadRequest) => {
     pagination: false,
     req,
     sort: 'createdAt',
-    where: {
-      status: {
-        equals: 'pending',
-      },
-    },
+    where: buildModelOptimizationDispatchWhere(now),
   })
   const results = []
 

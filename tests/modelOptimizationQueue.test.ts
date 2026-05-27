@@ -23,3 +23,35 @@ test('retries failed optimization jobs up to three attempts', () => {
   assert.equal(shouldRetryOptimizationJob({ attempts: 3, status: 'failed' }), false)
   assert.equal(shouldRetryOptimizationJob({ attempts: 1, status: 'succeeded' }), false)
 })
+
+test('retries running optimization jobs only after the lease expires', () => {
+  const now = '2026-05-27T12:00:00.000Z'
+
+  assert.equal(
+    shouldRetryOptimizationJob({
+      attempts: 1,
+      leaseExpiresAt: '2026-05-27T11:59:59.000Z',
+      now,
+      status: 'running',
+    }),
+    true,
+  )
+  assert.equal(
+    shouldRetryOptimizationJob({
+      attempts: 1,
+      leaseExpiresAt: '2026-05-27T12:00:01.000Z',
+      now,
+      status: 'running',
+    }),
+    false,
+  )
+  assert.equal(
+    shouldRetryOptimizationJob({
+      attempts: 3,
+      leaseExpiresAt: '2026-05-27T11:59:59.000Z',
+      now,
+      status: 'running',
+    }),
+    false,
+  )
+})
