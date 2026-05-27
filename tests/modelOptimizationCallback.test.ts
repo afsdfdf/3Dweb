@@ -85,3 +85,52 @@ test('completion creates media and marks job and model succeeded', async () => {
   assert.equal(updates.some((item) => item.collection === 'models'), true)
   assert.equal(updates.some((item) => item.collection === 'model-optimization-jobs'), true)
 })
+
+test('completion uses the output path basename as the media filename', async () => {
+  const created: Record<string, unknown>[] = []
+  const payload = {
+    create: async (args: Record<string, unknown>) => {
+      created.push(args)
+      return { id: 501 }
+    },
+    findByID: async () => ({
+      attempts: 3,
+      id: 123,
+      mode: 'conservative',
+      model: {
+        id: 2,
+        owner: 6,
+        visibility: 'public',
+      },
+      sourceFile: {
+        id: 5,
+      },
+    }),
+    update: async (args: Record<string, unknown>) => ({ id: args.id }),
+  }
+
+  await completeModelOptimizationJob({
+    jobId: 123,
+    output: {
+      bytes: 2_916_352,
+      mb: 2.78,
+      path: 'media/model-previews/user-6/model-2/source-5/model-2-preview-conservative-attempt-3.glb',
+      publicUrl: 'https://storage.example/model-2-preview-conservative-attempt-3.glb',
+    },
+    reductionPercent: 70.7,
+    req: { payload } as never,
+    source: {
+      bytes: 9_961_472,
+      mb: 9.5,
+    },
+    timingsMs: {
+      total: 10_000,
+    },
+    workerRunId: 'run-3',
+  })
+
+  assert.equal(
+    (created[0]?.data as Record<string, unknown>).filename,
+    'model-2-preview-conservative-attempt-3.glb',
+  )
+})

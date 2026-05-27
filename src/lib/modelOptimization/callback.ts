@@ -25,6 +25,11 @@ const getJobMode = (job: unknown) => {
   return job.mode === 'small' ? 'small' : 'conservative'
 }
 
+const getOutputFilename = (args: { mode: string; modelId: number; outputPath: string }) => {
+  const filename = args.outputPath.split('/').pop()?.trim()
+  return filename?.toLowerCase().endsWith('.glb') ? filename : `model-${args.modelId}-preview-${args.mode}.glb`
+}
+
 const getJobAttempts = (job: unknown) => {
   if (!isRecord(job)) return 0
   const attempts = Number(job.attempts || 0)
@@ -92,7 +97,7 @@ export async function completeModelOptimizationJob(args: {
     },
     data: {
       alt: `Model ${modelId} optimized GLB preview`,
-      filename: `model-${modelId}-preview-${mode}.glb`,
+      filename: getOutputFilename({ mode, modelId, outputPath: args.output.path }),
       filesize: args.output.bytes,
       mimeType: 'model/gltf-binary',
       owner: getModelOwnerId(model) || undefined,
