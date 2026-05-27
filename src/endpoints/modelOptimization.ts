@@ -263,6 +263,8 @@ export const modelOptimizationStatusEndpoint = {
   path: '/platform/models/:modelId/optimization',
   method: 'get' as const,
   handler: async (req: PayloadRequest) => {
+    await ensurePayloadRequestUser(req)
+
     const modelId = readPositiveId(req.routeParams?.modelId)
     if (!modelId) {
       return Response.json({ message: 'Invalid model id.' }, { status: 400 })

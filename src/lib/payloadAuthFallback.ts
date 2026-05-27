@@ -115,6 +115,10 @@ export async function ensurePayloadRequestUser(req: PayloadRequest) {
     return req.user
   }
 
+  if (!req.headers) {
+    return null
+  }
+
   const user = await resolvePayloadUserFromHeaders({
     headers: req.headers,
     payload: req.payload,
