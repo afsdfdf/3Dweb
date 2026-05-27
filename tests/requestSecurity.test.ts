@@ -142,6 +142,22 @@ test('applySecurityHeaders adds baseline security headers', () => {
   assert.ok(headers.get('Content-Security-Policy'))
 })
 
+test('applySecurityHeaders allows WebAssembly without enabling general eval in production', () => {
+  const previousNodeEnv = process.env.NODE_ENV
+  ;(process.env as Record<string, string | undefined>).NODE_ENV = 'production'
+
+  try {
+    const headers = new Headers()
+    applySecurityHeaders(headers)
+
+    const csp = headers.get('Content-Security-Policy') || ''
+    assert.match(csp, /script-src[^;]*'wasm-unsafe-eval'/)
+    assert.doesNotMatch(csp, /script-src[^;]*'unsafe-eval'/)
+  } finally {
+    ;(process.env as Record<string, string | undefined>).NODE_ENV = previousNodeEnv
+  }
+})
+
 test('getRequestRateLimitKey prefers trusted proxy ip when available', () => {
   const previousTrustProxy = process.env.TRUST_PROXY_HEADERS
   process.env.TRUST_PROXY_HEADERS = 'true'
