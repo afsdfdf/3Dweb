@@ -95,7 +95,7 @@ export async function findModelOptimizationBackfillCandidates(args: {
       inner join models_formats mf on mf._parent_id = models.id
       inner join media on media.id = mf.file_id
       left join model_optimization_jobs existing
-        on existing.job_key = concat('model:', models.id, ':source:', media.id, ':mode:', $1)
+        on existing.job_key = concat('model:', models.id, ':source:', media.id, ':mode:', $1::text)
       where lower(mf.format::text) = 'glb'
         and media.url is not null
         and coalesce(models.viewer_optimization_status::text, 'none') <> 'succeeded'
