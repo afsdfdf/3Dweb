@@ -3,6 +3,7 @@
 import { isStaff } from '@/access'
 import { assignCurrentUser } from '@/hooks/assignCurrentUser'
 import { fillPublishAtOnPublish } from '@/hooks/fillPublishAtOnPublish'
+import { normalizePostSlugBeforeValidate, validatePostSlug } from '@/hooks/normalizePostSlug'
 import { revalidateBlogPostCacheAfterChange, revalidateBlogPostCacheAfterDelete } from '@/hooks/revalidateBlogPostCache'
 import { validatePostCoverImage } from '@/hooks/validatePostCoverImage'
 import { adminLabelsKey, adminTextKey } from '@/lib/adminText'
@@ -61,6 +62,7 @@ export const Posts: CollectionConfig = {
     afterChange: [revalidateBlogPostCacheAfterChange],
     afterDelete: [revalidateBlogPostCacheAfterDelete],
     beforeChange: [assignCurrentUser('createdBy'), fillPublishAtOnPublish('publishedAt'), validatePostCoverImage],
+    beforeValidate: [normalizePostSlugBeforeValidate],
   },
   defaultSort: ['-isPinned', 'sortOrder', '-publishedAt'],
   fields: [
@@ -78,8 +80,9 @@ export const Posts: CollectionConfig = {
       required: true,
       unique: true,
       label: 'Slug',
+      validate: validatePostSlug,
       admin: {
-        description: 'Stable URL-friendly identifier used by content detail pages.',
+        description: 'Stable URL-friendly identifier used by content detail pages. Spaces and punctuation are normalized on save.',
       },
     },
     {

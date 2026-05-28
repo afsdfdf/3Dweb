@@ -666,7 +666,7 @@ export interface Post {
   id: number;
   title: string;
   /**
-   * Stable URL-friendly identifier used by content detail pages.
+   * Stable URL-friendly identifier used by content detail pages. Spaces and punctuation are normalized on save.
    */
   slug: string;
   category: 'article' | 'event' | 'announcement';

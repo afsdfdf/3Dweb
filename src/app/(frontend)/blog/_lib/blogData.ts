@@ -128,6 +128,10 @@ function collectLexicalText(value: unknown): string {
   return [currentText, childText].filter(Boolean).join(' ')
 }
 
+function hasPublicLocalizedPostContent(post: Post): post is Post & { content: NonNullable<Post['content']>; title: string } {
+  return typeof post.title === 'string' && post.title.trim().length > 0 && Boolean(post.content)
+}
+
 export function estimateReadingTime(content: unknown, suffix = defaultBlogPageContent.listingLabels.readingTimeSuffix) {
   const wordCount = collectLexicalText(content).split(/\s+/).filter(Boolean).length
   const minutes = Math.max(1, Math.ceil(wordCount / 220))
@@ -148,6 +152,16 @@ function buildPublicPostsWhere(args: { category?: BlogCategory | null; excludeId
     },
     {
       title: {
+        exists: true,
+      },
+    },
+    {
+      title: {
+        not_equals: '',
+      },
+    },
+    {
+      content: {
         exists: true,
       },
     },
@@ -214,7 +228,7 @@ function buildPublicPostsWhere(args: { category?: BlogCategory | null; excludeId
 function normalizePostCard(post: Post, labelOptions?: BlogPostLabelOptions): BlogPostCardData {
   const labels = getLabels(labelOptions)
   const category = normalizeBlogCategory(post.category) || 'article'
-  const title = post.title || 'Untitled journal note'
+  const title = typeof post.title === 'string' && post.title.trim() ? post.title.trim() : 'Untitled journal note'
   const excerpt = post.excerpt?.trim() || labels.defaultExcerpt
   const coverImage = post.coverImage
 
@@ -278,7 +292,7 @@ export async function getBlogListData(args: {
       }),
     })
 
-    const posts = result.docs.map((post) => normalizePostCard(post as Post, labelOptions))
+    const posts = result.docs.filter((post): post is Post => hasPublicLocalizedPostContent(post as Post)).map((post) => normalizePostCard(post, labelOptions))
     const featuredPost = posts.find((post) => post.isPinned) || posts[0] || null
 
     return {
@@ -324,7 +338,7 @@ export async function getRelatedBlogPosts(post: BlogPostCardData, labelOptions?:
       }),
     })
 
-    return result.docs.map((item) => normalizePostCard(item as Post, labelOptions))
+    return result.docs.filter((post): post is Post => hasPublicLocalizedPostContent(post as Post)).map((item) => normalizePostCard(item, labelOptions))
   } catch {
     return []
   }
@@ -350,7 +364,7 @@ export async function getBlogPostBySlug(slug: string, labelOptions?: BlogPostLab
     })
 
     const post = result.docs[0] as Post | undefined
-    if (!post) return null
+    if (!post || !hasPublicLocalizedPostContent(post)) return null
 
     const labels = getLabels(labelOptions)
     const card = normalizePostCard(post, labels)
