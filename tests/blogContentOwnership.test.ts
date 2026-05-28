@@ -25,10 +25,14 @@ test('blog page auxiliary UI copy is owned by formal-pages.blogPage', () => {
   }
 
   assert.match(formalPagesSource, /name:\s*['"]all['"]/)
+  assert.match(formalPagesSource, /label:\s*['"]Blog hero banner and CTAs['"]/)
+  assert.match(formalPagesSource, /label:\s*['"]Hero banner image['"]/)
+  assert.match(formalPagesSource, /recommended banner ratio/i)
   assert.match(defaultsSource, /all:\s*['"]All['"]/)
   assert.match(contentSource, /resolveBlogListingLabels/)
   assert.match(contentSource, /resolveBlogArticleLabels/)
   assert.match(contentSource, /resolveBlogArticleCTA/)
+  assert.match(contentSource, /getGuestReadableBlogImageURL\(value\.heroImage\)/)
 })
 
 test('blog list and detail render configurable blog page copy instead of local literals', () => {
@@ -114,7 +118,7 @@ test('blog admin content group describes whole-page ownership and validates oper
   assert.match(formalPagesSource, /label:\s*['"]Blog page content['"]/)
   assert.match(formalPagesSource, /validateBlogHref/)
   assert.match(formalPagesSource, /Use internal paths like/)
-  assert.match(formalPagesSource, /label:\s*['"]Homepage hero and CTAs['"]/)
+  assert.match(formalPagesSource, /label:\s*['"]Blog hero banner and CTAs['"]/)
   assert.match(formalPagesSource, /label:\s*['"]Listing, search, and empty states['"]/)
   assert.match(formalPagesSource, /label:\s*['"]Article detail page['"]/)
   assert.match(formalPagesSource, /label:\s*['"]SEO['"]/)

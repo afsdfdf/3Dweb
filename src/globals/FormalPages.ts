@@ -212,7 +212,7 @@ const marketingPageFields: Field[] = [
 const blogPageFields: Field[] = [
   {
     type: 'collapsible',
-    label: 'Homepage hero and CTAs',
+    label: 'Blog hero banner and CTAs',
     fields: [
       { name: 'heroEyebrow', type: 'text', required: true, defaultValue: defaultBlogPageContent.heroEyebrow, label: 'Hero eyebrow' },
       { name: 'heroTitle', type: 'textarea', required: true, defaultValue: defaultBlogPageContent.heroTitle, label: 'Hero title' },
@@ -221,10 +221,10 @@ const blogPageFields: Field[] = [
         name: 'heroImage',
         type: 'upload',
         relationTo: 'media',
-        label: 'Hero image',
+        label: 'Hero banner image',
         filterOptions: () => buildGuestReadableMediaWhere(),
         admin: {
-          description: 'Public rendering requires media with publicAccess enabled or purpose set to preview.',
+          description: 'Controls the wide banner at the top of /blog. Public rendering requires media with publicAccess enabled or purpose set to preview. The recommended banner ratio is about 5:1.',
         },
       },
       { name: 'heroImageAlt', type: 'text', required: true, defaultValue: defaultBlogPageContent.heroImageAlt, label: 'Hero image alt text' },

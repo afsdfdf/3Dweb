@@ -2169,7 +2169,7 @@ export interface FormalPage {
     heroTitle: string;
     heroText: string;
     /**
-     * Public rendering requires media with publicAccess enabled or purpose set to preview.
+     * Controls the wide banner at the top of /blog. Public rendering requires media with publicAccess enabled or purpose set to preview. The recommended banner ratio is about 5:1.
      */
     heroImage?: (number | null) | Media;
     heroImageAlt: string;
