@@ -3,7 +3,7 @@ import type { Where } from 'payload'
 import { getCachedPayload } from '@/lib/getCachedPayload'
 import type { Post } from '@/payload-types'
 
-import type { Locale } from '../../_lib/locale'
+import { locales, type Locale } from '../../_lib/locale'
 import { defaultBlogPageContent, type BlogPageCategoryLabels } from './blogPageDefaults'
 import { getGuestReadableBlogImageURL } from './blogSafety'
 import { blogCategories, type BlogCategory, type BlogListData, type BlogPostCardData, type BlogPostDetailData } from './blogTypes'
@@ -32,6 +32,10 @@ type ResolvedBlogPostLabelOptions = Required<Omit<BlogPostLabelOptions, 'locale'
 
 const defaultCategoryLabels = defaultBlogPageContent.categoryLabels
 const defaultLocale: Locale = 'en'
+
+export function getPostLocaleFallbackOrder(locale: Locale = defaultLocale): Locale[] {
+  return [locale, ...locales.filter((item) => item !== locale)]
+}
 
 const getLabels = (labels?: BlogPostLabelOptions): ResolvedBlogPostLabelOptions => {
   return {
@@ -276,23 +280,38 @@ export async function getBlogListData(args: {
 
   try {
     const payload = await getCachedPayload()
-    const result = await payload.find({
-      collection: 'posts',
-      depth: 1,
-      fallbackLocale: false,
-      limit: BLOG_PAGE_LIMIT,
-      locale: labelOptions.locale,
-      overrideAccess: false,
-      page,
-      pagination: true,
-      sort: ['-isPinned', 'sortOrder', '-publishedAt'],
-      where: buildPublicPostsWhere({
-        category: activeCategory,
-        query,
-      }),
-    })
+    let result: Awaited<ReturnType<typeof payload.find>> | null = null
+    let posts: BlogPostCardData[] = []
 
-    const posts = result.docs.filter((post): post is Post => hasPublicLocalizedPostContent(post as Post)).map((post) => normalizePostCard(post, labelOptions))
+    for (const postLocale of getPostLocaleFallbackOrder(labelOptions.locale)) {
+      const currentResult = await payload.find({
+        collection: 'posts',
+        depth: 1,
+        fallbackLocale: false,
+        limit: BLOG_PAGE_LIMIT,
+        locale: postLocale,
+        overrideAccess: false,
+        page,
+        pagination: true,
+        sort: ['-isPinned', 'sortOrder', '-publishedAt'],
+        where: buildPublicPostsWhere({
+          category: activeCategory,
+          query,
+        }),
+      })
+
+      const currentPosts = currentResult.docs.filter((post): post is Post => hasPublicLocalizedPostContent(post as Post)).map((post) => normalizePostCard(post, labelOptions))
+
+      if (!result || currentPosts.length > 0) {
+        result = currentResult
+        posts = currentPosts
+      }
+
+      if (currentPosts.length > 0) break
+    }
+
+    if (!result) throw new Error('No blog posts query result')
+
     const featuredPost = posts.find((post) => post.isPinned) || posts[0] || null
 
     return {
@@ -323,22 +342,29 @@ export async function getBlogListData(args: {
 export async function getRelatedBlogPosts(post: BlogPostCardData, labelOptions?: BlogPostLabelOptions): Promise<BlogPostCardData[]> {
   try {
     const payload = await getCachedPayload()
-    const result = await payload.find({
-      collection: 'posts',
-      depth: 1,
-      fallbackLocale: false,
-      limit: RELATED_POST_LIMIT,
-      locale: getLabels(labelOptions).locale,
-      overrideAccess: false,
-      pagination: false,
-      sort: ['-isPinned', 'sortOrder', '-publishedAt'],
-      where: buildPublicPostsWhere({
-        category: post.category,
-        excludeId: post.id,
-      }),
-    })
+    const labels = getLabels(labelOptions)
 
-    return result.docs.filter((post): post is Post => hasPublicLocalizedPostContent(post as Post)).map((item) => normalizePostCard(item, labelOptions))
+    for (const postLocale of getPostLocaleFallbackOrder(labels.locale)) {
+      const result = await payload.find({
+        collection: 'posts',
+        depth: 1,
+        fallbackLocale: false,
+        limit: RELATED_POST_LIMIT,
+        locale: postLocale,
+        overrideAccess: false,
+        pagination: false,
+        sort: ['-isPinned', 'sortOrder', '-publishedAt'],
+        where: buildPublicPostsWhere({
+          category: post.category,
+          excludeId: post.id,
+        }),
+      })
+
+      const relatedPosts = result.docs.filter((post): post is Post => hasPublicLocalizedPostContent(post as Post)).map((item) => normalizePostCard(item, labels))
+      if (relatedPosts.length > 0) return relatedPosts
+    }
+
+    return []
   } catch {
     return []
   }
@@ -350,51 +376,56 @@ export async function getBlogPostBySlug(slug: string, labelOptions?: BlogPostLab
 
   try {
     const payload = await getCachedPayload()
-    const result = await payload.find({
-      collection: 'posts',
-      depth: 1,
-      fallbackLocale: false,
-      limit: 1,
-      locale: getLabels(labelOptions).locale,
-      overrideAccess: false,
-      pagination: false,
-      where: buildPublicPostsWhere({
-        slug: normalizedSlug,
-      }),
-    })
-
-    const post = result.docs[0] as Post | undefined
-    if (!post || !hasPublicLocalizedPostContent(post)) return null
-
     const labels = getLabels(labelOptions)
-    const card = normalizePostCard(post, labels)
-    const relatedPosts = await getRelatedBlogPosts(card, labels)
-    const publisherName = labels.siteName
 
-    return {
-      ...card,
-      content: post.content,
-      jsonLd: {
-        '@context': 'https://schema.org',
-        '@type': 'Article',
-        author: {
-          '@type': 'Organization',
-          name: publisherName,
+    for (const postLocale of getPostLocaleFallbackOrder(labels.locale)) {
+      const result = await payload.find({
+        collection: 'posts',
+        depth: 1,
+        fallbackLocale: false,
+        limit: 1,
+        locale: postLocale,
+        overrideAccess: false,
+        pagination: false,
+        where: buildPublicPostsWhere({
+          slug: normalizedSlug,
+        }),
+      })
+
+      const post = result.docs[0] as Post | undefined
+      if (!post || !hasPublicLocalizedPostContent(post)) continue
+
+      const card = normalizePostCard(post, labels)
+      const relatedPosts = await getRelatedBlogPosts(card, labels)
+      const publisherName = labels.siteName
+
+      return {
+        ...card,
+        content: post.content,
+        jsonLd: {
+          '@context': 'https://schema.org',
+          '@type': 'Article',
+          author: {
+            '@type': 'Organization',
+            name: publisherName,
+          },
+          dateModified: post.updatedAt,
+          datePublished: getPublishedTime(post),
+          description: card.excerpt,
+          headline: card.title,
+          image: card.coverSrc || undefined,
+          publisher: {
+            '@type': 'Organization',
+            name: publisherName,
+          },
         },
-        dateModified: post.updatedAt,
-        datePublished: getPublishedTime(post),
-        description: card.excerpt,
-        headline: card.title,
-        image: card.coverSrc || undefined,
-        publisher: {
-          '@type': 'Organization',
-          name: publisherName,
-        },
-      },
-      relatedPosts,
-      updatedAt: post.updatedAt,
-      videoUrl: typeof post.videoUrl === 'string' && post.videoUrl.trim() ? post.videoUrl.trim() : null,
+        relatedPosts,
+        updatedAt: post.updatedAt,
+        videoUrl: typeof post.videoUrl === 'string' && post.videoUrl.trim() ? post.videoUrl.trim() : null,
+      }
     }
+
+    return null
   } catch {
     return null
   }
