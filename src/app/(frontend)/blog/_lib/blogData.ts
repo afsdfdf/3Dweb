@@ -3,6 +3,7 @@ import type { Where } from 'payload'
 import { getCachedPayload } from '@/lib/getCachedPayload'
 import type { Post } from '@/payload-types'
 
+import type { Locale } from '../../_lib/locale'
 import { defaultBlogPageContent, type BlogPageCategoryLabels } from './blogPageDefaults'
 import { getGuestReadableBlogImageURL } from './blogSafety'
 import { blogCategories, type BlogCategory, type BlogListData, type BlogPostCardData, type BlogPostDetailData } from './blogTypes'
@@ -20,17 +21,24 @@ type BlogPostLabelOptions = {
   categoryLabels?: BlogPageCategoryLabels
   dateFallbackLabel?: string
   defaultExcerpt?: string
+  locale?: Locale
   readingTimeSuffix?: string
   siteName?: string
 }
 
-const defaultCategoryLabels = defaultBlogPageContent.categoryLabels
+type ResolvedBlogPostLabelOptions = Required<Omit<BlogPostLabelOptions, 'locale'>> & {
+  locale: Locale
+}
 
-const getLabels = (labels?: BlogPostLabelOptions): Required<BlogPostLabelOptions> => {
+const defaultCategoryLabels = defaultBlogPageContent.categoryLabels
+const defaultLocale: Locale = 'en'
+
+const getLabels = (labels?: BlogPostLabelOptions): ResolvedBlogPostLabelOptions => {
   return {
     categoryLabels: labels?.categoryLabels || defaultCategoryLabels,
     dateFallbackLabel: labels?.dateFallbackLabel || defaultBlogPageContent.listingLabels.dateFallbackLabel,
     defaultExcerpt: labels?.defaultExcerpt || defaultBlogPageContent.listingLabels.defaultExcerpt,
+    locale: labels?.locale || defaultLocale,
     readingTimeSuffix: labels?.readingTimeSuffix || defaultBlogPageContent.listingLabels.readingTimeSuffix,
     siteName: labels?.siteName?.trim() || 'Thorns Tavern',
   }
@@ -53,6 +61,19 @@ export function normalizeBlogQuery(value: unknown) {
   return typeof value === 'string' && value.trim() ? value.trim().slice(0, 80) : ''
 }
 
+export function normalizeBlogSlug(value: unknown) {
+  if (typeof value !== 'string') return ''
+
+  const slug = value.trim()
+  if (!slug) return ''
+
+  try {
+    return decodeURIComponent(slug).trim()
+  } catch {
+    return slug
+  }
+}
+
 export function getBlogCategoryLabel(category: BlogCategory, categoryLabels: BlogPageCategoryLabels = defaultCategoryLabels) {
   const labels: Record<BlogCategory, string> = {
     announcement: categoryLabels.announcements,
@@ -72,13 +93,13 @@ function getPublishedTime(post: Post) {
   return post.publishedAt || post.createdAt || post.updatedAt
 }
 
-function formatPostDate(value: null | string | undefined, fallbackLabel: string) {
+function formatPostDate(value: null | string | undefined, fallbackLabel: string, locale: Locale) {
   if (!value) return fallbackLabel
 
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return fallbackLabel
 
-  return new Intl.DateTimeFormat('en', {
+  return new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
@@ -123,6 +144,11 @@ function buildPublicPostsWhere(args: { category?: BlogCategory | null; excludeId
     {
       isVisible: {
         equals: true,
+      },
+    },
+    {
+      title: {
+        exists: true,
       },
     },
     {
@@ -201,7 +227,7 @@ function normalizePostCard(post: Post, labelOptions?: BlogPostLabelOptions): Blo
     href: `/blog/${encodeURIComponent(post.slug)}`,
     id: Number(post.id),
     isPinned: post.isPinned === true,
-    publishedLabel: formatPostDate(getPublishedTime(post), labels.dateFallbackLabel),
+    publishedLabel: formatPostDate(getPublishedTime(post), labels.dateFallbackLabel, labels.locale),
     readingTimeLabel: estimateReadingTime(post.content, labels.readingTimeSuffix),
     slug: post.slug,
     title,
@@ -224,6 +250,7 @@ export async function getBlogListData(args: {
   categoryLabels?: BlogPageCategoryLabels
   dateFallbackLabel?: string
   defaultExcerpt?: string
+  locale?: Locale
   page?: number
   query?: string
   readingTimeSuffix?: string
@@ -238,9 +265,9 @@ export async function getBlogListData(args: {
     const result = await payload.find({
       collection: 'posts',
       depth: 1,
-      fallbackLocale: 'en' as never,
+      fallbackLocale: false,
       limit: BLOG_PAGE_LIMIT,
-      locale: 'en' as never,
+      locale: labelOptions.locale,
       overrideAccess: false,
       page,
       pagination: true,
@@ -285,9 +312,9 @@ export async function getRelatedBlogPosts(post: BlogPostCardData, labelOptions?:
     const result = await payload.find({
       collection: 'posts',
       depth: 1,
-      fallbackLocale: 'en' as never,
+      fallbackLocale: false,
       limit: RELATED_POST_LIMIT,
-      locale: 'en' as never,
+      locale: getLabels(labelOptions).locale,
       overrideAccess: false,
       pagination: false,
       sort: ['-isPinned', 'sortOrder', '-publishedAt'],
@@ -304,7 +331,7 @@ export async function getRelatedBlogPosts(post: BlogPostCardData, labelOptions?:
 }
 
 export async function getBlogPostBySlug(slug: string, labelOptions?: BlogPostLabelOptions): Promise<BlogPostDetailData | null> {
-  const normalizedSlug = typeof slug === 'string' ? slug.trim() : ''
+  const normalizedSlug = normalizeBlogSlug(slug)
   if (!normalizedSlug) return null
 
   try {
@@ -312,9 +339,9 @@ export async function getBlogPostBySlug(slug: string, labelOptions?: BlogPostLab
     const result = await payload.find({
       collection: 'posts',
       depth: 1,
-      fallbackLocale: 'en' as never,
+      fallbackLocale: false,
       limit: 1,
-      locale: 'en' as never,
+      locale: getLabels(labelOptions).locale,
       overrideAccess: false,
       pagination: false,
       where: buildPublicPostsWhere({

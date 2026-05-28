@@ -88,6 +88,22 @@ test('blog shell fetches only site settings and avoids homepage overfetch', () =
   assert.doesNotMatch(detailPageSource, /getMarketingSiteData/)
 })
 
+test('blog post queries follow the current frontend locale without localized fallback', () => {
+  const dataSource = readFileSync(blogDataPath, 'utf8')
+  const listPageSource = readFileSync(blogListPagePath, 'utf8')
+  const detailPageSource = readFileSync(blogDetailPagePath, 'utf8')
+
+  assert.match(dataSource, /locale\?:\s*Locale/)
+  assert.match(dataSource, /fallbackLocale:\s*false/)
+  assert.match(dataSource, /title:\s*\{\s*exists:\s*true/)
+  assert.match(dataSource, /decodeURIComponent/)
+  assert.doesNotMatch(dataSource, /locale:\s*['"]en['"]/)
+  assert.match(listPageSource, /getCurrentLocale/)
+  assert.match(listPageSource, /locale,\s*\n/)
+  assert.match(detailPageSource, /getCurrentLocale/)
+  assert.match(detailPageSource, /locale,/)
+})
+
 test('blog admin content group describes whole-page ownership and validates operator links', () => {
   const formalPagesSource = readFileSync(formalPagesPath, 'utf8')
 

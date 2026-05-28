@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import { Posts } from '../src/collections/Posts.ts'
+import { revalidateBlogPostCacheAfterChange, revalidateBlogPostCacheAfterDelete } from '../src/hooks/revalidateBlogPostCache.ts'
 import { validatePostCoverImage } from '../src/hooks/validatePostCoverImage.ts'
 
 test('Posts public read access requires published visible non-future posts', async () => {
@@ -54,6 +55,11 @@ test('Posts staff read access can read all posts', async () => {
   } as never)
 
   assert.equal(result, true)
+})
+
+test('Posts content changes revalidate public blog pages', () => {
+  assert.ok(Posts.hooks?.afterChange?.includes(revalidateBlogPostCacheAfterChange))
+  assert.ok(Posts.hooks?.afterDelete?.includes(revalidateBlogPostCacheAfterDelete))
 })
 
 test('validatePostCoverImage accepts guest-readable published cover media', async () => {

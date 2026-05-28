@@ -694,6 +694,9 @@ export interface Post {
   createdBy?: (number | null) | User;
   publishedAt?: string | null;
   isPinned?: boolean | null;
+  /**
+   * Turn this off to immediately remove the post from public blog list and detail pages without deleting the record.
+   */
   isVisible?: boolean | null;
   sortOrder?: number | null;
   updatedAt: string;

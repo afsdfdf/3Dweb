@@ -6,6 +6,7 @@ import { BlogArticleBody } from '../_components/BlogArticleBody'
 import { getBlogPostBySlug } from '../_lib/blogData'
 import { getBlogPageContent } from '../_lib/blogPageContent'
 import { getBlogPostMetadata } from '../_lib/blogSeo'
+import { getCurrentLocale } from '../../_lib/locale-server'
 import { getMarketingSiteSettings } from '../../_lib/marketing'
 import { getCurrentNavUser } from '../../_lib/session'
 import styles from '../page.module.css'
@@ -14,11 +15,12 @@ export const revalidate = 60
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
-  const blogPage = await getBlogPageContent()
+  const [blogPage, locale] = await Promise.all([getBlogPageContent(), getCurrentLocale()])
   const post = await getBlogPostBySlug(slug, {
     categoryLabels: blogPage.categoryLabels,
     dateFallbackLabel: blogPage.listingLabels.dateFallbackLabel,
     defaultExcerpt: blogPage.listingLabels.defaultExcerpt,
+    locale,
     readingTimeSuffix: blogPage.listingLabels.readingTimeSuffix,
   })
 
@@ -34,9 +36,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const blogPagePromise = getBlogPageContent()
+  const localePromise = getCurrentLocale()
   const navUserPromise = getCurrentNavUser()
   const siteSettingsPromise = getMarketingSiteSettings()
-  const [blogPage, siteSettings] = await Promise.all([blogPagePromise, siteSettingsPromise])
+  const [blogPage, locale, siteSettings] = await Promise.all([blogPagePromise, localePromise, siteSettingsPromise])
   const siteName = siteSettings.siteName || 'Thorns Tavern'
   const [navUser, post] = await Promise.all([
     navUserPromise,
@@ -44,6 +47,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
       categoryLabels: blogPage.categoryLabels,
       dateFallbackLabel: blogPage.listingLabels.dateFallbackLabel,
       defaultExcerpt: blogPage.listingLabels.defaultExcerpt,
+      locale,
       readingTimeSuffix: blogPage.listingLabels.readingTimeSuffix,
       siteName,
     }),

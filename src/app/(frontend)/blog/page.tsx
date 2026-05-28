@@ -1,6 +1,7 @@
 import { BlogCategoryTabs, BlogEmptyState, BlogHero, BlogPagination, BlogPostCard, BlogSearchForm, BlogShell, BlogSidebar, FeaturedPostCard } from './_components/BlogComponents'
 import { getBlogPageContent } from './_lib/blogPageContent'
 import { getBlogListData, normalizeBlogCategory, normalizeBlogPage, normalizeBlogQuery } from './_lib/blogData'
+import { getCurrentLocale } from '../_lib/locale-server'
 import { getMarketingSiteSettings } from '../_lib/marketing'
 import { getCurrentNavUser } from '../_lib/session'
 import styles from './page.module.css'
@@ -31,9 +32,10 @@ export default async function BlogPage({
   const page = normalizeBlogPage(params.page)
   const query = normalizeBlogQuery(params.q)
   const blogPagePromise = getBlogPageContent()
+  const localePromise = getCurrentLocale()
   const navUserPromise = getCurrentNavUser()
   const siteSettingsPromise = getMarketingSiteSettings()
-  const blogPage = await blogPagePromise
+  const [blogPage, locale] = await Promise.all([blogPagePromise, localePromise])
   const [navUser, siteSettings, blog] = await Promise.all([
     navUserPromise,
     siteSettingsPromise,
@@ -42,6 +44,7 @@ export default async function BlogPage({
       categoryLabels: blogPage.categoryLabels,
       dateFallbackLabel: blogPage.listingLabels.dateFallbackLabel,
       defaultExcerpt: blogPage.listingLabels.defaultExcerpt,
+      locale,
       page,
       query,
       readingTimeSuffix: blogPage.listingLabels.readingTimeSuffix,

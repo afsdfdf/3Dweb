@@ -3,6 +3,7 @@
 import { isStaff } from '@/access'
 import { assignCurrentUser } from '@/hooks/assignCurrentUser'
 import { fillPublishAtOnPublish } from '@/hooks/fillPublishAtOnPublish'
+import { revalidateBlogPostCacheAfterChange, revalidateBlogPostCacheAfterDelete } from '@/hooks/revalidateBlogPostCache'
 import { validatePostCoverImage } from '@/hooks/validatePostCoverImage'
 import { adminLabelsKey, adminTextKey } from '@/lib/adminText'
 
@@ -45,7 +46,7 @@ export const Posts: CollectionConfig = {
   slug: 'posts',
   labels: adminLabelsKey('collections.posts'),
   admin: {
-    defaultColumns: ['title', 'category', '_status', 'createdBy', 'publishedAt', 'isPinned', 'sortOrder', 'updatedAt'],
+    defaultColumns: ['title', 'slug', 'category', '_status', 'isVisible', 'publishedAt', 'isPinned', 'sortOrder', 'updatedAt'],
     description: adminTextKey('collections.posts.description'),
     group: adminTextKey('groups.content'),
     useAsTitle: 'title',
@@ -57,6 +58,8 @@ export const Posts: CollectionConfig = {
     update: isStaff,
   },
   hooks: {
+    afterChange: [revalidateBlogPostCacheAfterChange],
+    afterDelete: [revalidateBlogPostCacheAfterDelete],
     beforeChange: [assignCurrentUser('createdBy'), fillPublishAtOnPublish('publishedAt'), validatePostCoverImage],
   },
   defaultSort: ['-isPinned', 'sortOrder', '-publishedAt'],
@@ -147,6 +150,9 @@ export const Posts: CollectionConfig = {
       type: 'checkbox',
       defaultValue: true,
       label: 'Visible on frontend',
+      admin: {
+        description: 'Turn this off to immediately remove the post from public blog list and detail pages without deleting the record.',
+      },
     },
     {
       name: 'sortOrder',
