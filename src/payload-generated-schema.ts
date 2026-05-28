@@ -3813,6 +3813,9 @@ export const formal_pages = pgTable(
     blogPage_dispatchesLabel: varchar("blog_page_dispatches_label")
       .notNull()
       .default("Dispatches"),
+    blogPage_categoryLabels_all: varchar("blog_page_category_labels_all")
+      .notNull()
+      .default("All"),
     blogPage_categoryLabels_articles: varchar(
       "blog_page_category_labels_articles",
     )
@@ -3826,6 +3829,171 @@ export const formal_pages = pgTable(
     )
       .notNull()
       .default("Announcements"),
+    blogPage_listingLabels_readArticleLabel: varchar(
+      "blog_page_listing_labels_read_article_label",
+    )
+      .notNull()
+      .default("Read dispatch"),
+    blogPage_listingLabels_searchAriaLabel: varchar(
+      "blog_page_listing_labels_search_aria_label",
+    )
+      .notNull()
+      .default("Search Tavern Journal"),
+    blogPage_listingLabels_searchPlaceholder: varchar(
+      "blog_page_listing_labels_search_placeholder",
+    )
+      .notNull()
+      .default("Search notes, guides, and releases"),
+    blogPage_listingLabels_searchButtonLabel: varchar(
+      "blog_page_listing_labels_search_button_label",
+    )
+      .notNull()
+      .default("Search"),
+    blogPage_listingLabels_emptyTitle: varchar(
+      "blog_page_listing_labels_empty_title",
+    )
+      .notNull()
+      .default("The tavern board is being prepared."),
+    blogPage_listingLabels_emptyText: varchar(
+      "blog_page_listing_labels_empty_text",
+    )
+      .notNull()
+      .default(
+        "New creator notes and production dispatches will appear here soon.",
+      ),
+    blogPage_listingLabels_emptyCTALabel: varchar(
+      "blog_page_listing_labels_empty_c_t_a_label",
+    )
+      .notNull()
+      .default("Explore models"),
+    blogPage_listingLabels_emptyCTAHref: varchar(
+      "blog_page_listing_labels_empty_c_t_a_href",
+    )
+      .notNull()
+      .default("/showcase"),
+    blogPage_listingLabels_pinnedTitle: varchar(
+      "blog_page_listing_labels_pinned_title",
+    )
+      .notNull()
+      .default("Pinned notes"),
+    blogPage_listingLabels_pinnedEmptyText: varchar(
+      "blog_page_listing_labels_pinned_empty_text",
+    )
+      .notNull()
+      .default(
+        "Published journal notes will appear here after the first dispatch goes live.",
+      ),
+    blogPage_listingLabels_dateFallbackLabel: varchar(
+      "blog_page_listing_labels_date_fallback_label",
+    )
+      .notNull()
+      .default("Recently"),
+    blogPage_listingLabels_readingTimeSuffix: varchar(
+      "blog_page_listing_labels_reading_time_suffix",
+    )
+      .notNull()
+      .default("min read"),
+    blogPage_listingLabels_defaultExcerpt: varchar(
+      "blog_page_listing_labels_default_excerpt",
+    )
+      .notNull()
+      .default("A production note from the Thorns Tavern team."),
+    blogPage_paginationLabels_previousLabel: varchar(
+      "blog_page_pagination_labels_previous_label",
+    )
+      .notNull()
+      .default("Previous"),
+    blogPage_paginationLabels_nextLabel: varchar(
+      "blog_page_pagination_labels_next_label",
+    )
+      .notNull()
+      .default("Next"),
+    blogPage_paginationLabels_pageLabel: varchar(
+      "blog_page_pagination_labels_page_label",
+    )
+      .notNull()
+      .default("Page"),
+    blogPage_paginationLabels_ofLabel: varchar(
+      "blog_page_pagination_labels_of_label",
+    )
+      .notNull()
+      .default("of"),
+    blogPage_articleLabels_breadcrumbRootLabel: varchar(
+      "blog_page_article_labels_breadcrumb_root_label",
+    )
+      .notNull()
+      .default("Tavern Journal"),
+    blogPage_articleLabels_videoEyebrow: varchar(
+      "blog_page_article_labels_video_eyebrow",
+    )
+      .notNull()
+      .default("Field footage"),
+    blogPage_articleLabels_videoOpenLabel: varchar(
+      "blog_page_article_labels_video_open_label",
+    )
+      .notNull()
+      .default("Open video"),
+    blogPage_articleLabels_videoIframeTitle: varchar(
+      "blog_page_article_labels_video_iframe_title",
+    )
+      .notNull()
+      .default("Article video"),
+    blogPage_articleLabels_videoFallbackLabel: varchar(
+      "blog_page_article_labels_video_fallback_label",
+    )
+      .notNull()
+      .default("Watch the linked video"),
+    blogPage_articleLabels_articleImageFallbackAlt: varchar(
+      "blog_page_article_labels_article_image_fallback_alt",
+    )
+      .notNull()
+      .default("Article image"),
+    blogPage_articleLabels_emptyBodyText: varchar(
+      "blog_page_article_labels_empty_body_text",
+    )
+      .notNull()
+      .default("This dispatch is being prepared by the tavern team."),
+    blogPage_articleLabels_relatedEyebrow: varchar(
+      "blog_page_article_labels_related_eyebrow",
+    )
+      .notNull()
+      .default("More from the board"),
+    blogPage_articleLabels_relatedTitle: varchar(
+      "blog_page_article_labels_related_title",
+    )
+      .notNull()
+      .default("Related dispatches"),
+    blogPage_articleCTA_eyebrow: varchar("blog_page_article_c_t_a_eyebrow")
+      .notNull()
+      .default("Create next"),
+    blogPage_articleCTA_title: varchar("blog_page_article_c_t_a_title")
+      .notNull()
+      .default("Ready to build your own artifact?"),
+    blogPage_articleCTA_text: varchar("blog_page_article_c_t_a_text")
+      .notNull()
+      .default(
+        "Start in the Workbench, browse public models, or collect a themed bundle for your next scene.",
+      ),
+    blogPage_articleCTA_primaryCTA_label: varchar(
+      "blog_page_article_c_t_a_primary_c_t_a_label",
+    )
+      .notNull()
+      .default("Open Studio"),
+    blogPage_articleCTA_primaryCTA_href: varchar(
+      "blog_page_article_c_t_a_primary_c_t_a_href",
+    )
+      .notNull()
+      .default("/workbench"),
+    blogPage_articleCTA_secondaryCTA_label: varchar(
+      "blog_page_article_c_t_a_secondary_c_t_a_label",
+    )
+      .notNull()
+      .default("Browse Bundles"),
+    blogPage_articleCTA_secondaryCTA_href: varchar(
+      "blog_page_article_c_t_a_secondary_c_t_a_href",
+    )
+      .notNull()
+      .default("/bundles"),
     blogPage_seoTitle: varchar("blog_page_seo_title")
       .notNull()
       .default("Tavern Journal | Thorns Tavern"),

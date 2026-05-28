@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 
+import type { BlogPageContent } from '../_lib/blogPageDefaults'
+import { getGuestReadableBlogImageURL, isInternalBlogHref, normalizeBlogHref } from '../_lib/blogSafety'
 import styles from '../page.module.css'
 
 type LexicalNode = {
@@ -23,24 +25,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
 }
 
-function isSafeHref(value: unknown) {
-  if (typeof value !== 'string' || !value.trim()) return false
-  if (value.startsWith('/')) return true
-
-  try {
-    const parsed = new URL(value)
-    return parsed.protocol === 'https:' || parsed.protocol === 'http:' || parsed.protocol === 'mailto:'
-  } catch {
-    return false
-  }
-}
-
-function renderChildren(children: LexicalNode[] | undefined, keyPrefix: string): ReactNode {
-  if (!Array.isArray(children)) return null
-
-  return children.map((child, index) => renderNode(child, `${keyPrefix}-${index}`))
-}
-
 function renderTextNode(node: LexicalNode, key: string) {
   let content: ReactNode = node.text || ''
   const format = typeof node.format === 'number' ? node.format : 0
@@ -53,15 +37,15 @@ function renderTextNode(node: LexicalNode, key: string) {
   return <span key={key}>{content}</span>
 }
 
-function getUploadImage(node: LexicalNode) {
+function getUploadImage(node: LexicalNode, fallbackAlt: string) {
   const value = isRecord(node.value) ? node.value : isRecord(node.fields) ? node.fields : null
   if (!value) return null
 
-  const src = typeof value.thumbnailURL === 'string' && value.thumbnailURL ? value.thumbnailURL : typeof value.url === 'string' && value.url ? value.url : null
-  if (!src || !isSafeHref(src)) return null
+  const src = getGuestReadableBlogImageURL(value)
+  if (!src) return null
 
   return {
-    alt: typeof value.alt === 'string' && value.alt.trim() ? value.alt.trim() : 'Article image',
+    alt: typeof value.alt === 'string' && value.alt.trim() ? value.alt.trim() : fallbackAlt,
     src,
   }
 }
@@ -72,7 +56,7 @@ function getCodeText(node: LexicalNode) {
   return node.children.map((child) => child.text || '').join('\n')
 }
 
-function renderNode(node: LexicalNode, key: string): ReactNode {
+function renderNode(node: LexicalNode, key: string, labels: BlogPageContent['articleLabels']): ReactNode {
   if (!node || typeof node !== 'object') return null
 
   if (node.type === 'text') return renderTextNode(node, key)
@@ -80,7 +64,7 @@ function renderNode(node: LexicalNode, key: string): ReactNode {
 
   if (node.type === 'heading') {
     const Tag = node.tag === 'h4' ? 'h4' : node.tag === 'h3' ? 'h3' : 'h2'
-    return <Tag key={key}>{renderChildren(node.children, key)}</Tag>
+    return <Tag key={key}>{renderChildren(node.children, key, labels)}</Tag>
   }
 
   if (node.type === 'horizontalrule' || node.type === 'horizontal-rule') {
@@ -96,67 +80,88 @@ function renderNode(node: LexicalNode, key: string): ReactNode {
   }
 
   if (node.type === 'upload') {
-    const image = getUploadImage(node)
+    const image = getUploadImage(node, labels.articleImageFallbackAlt)
     if (!image) return null
 
     return (
       <figure key={key}>
         <img alt={image.alt} loading="lazy" src={image.src} />
-        {image.alt !== 'Article image' ? <figcaption>{image.alt}</figcaption> : null}
+        {image.alt !== labels.articleImageFallbackAlt ? <figcaption>{image.alt}</figcaption> : null}
       </figure>
     )
   }
 
   if (node.type === 'quote') {
-    return <blockquote key={key}>{renderChildren(node.children, key)}</blockquote>
+    return <blockquote key={key}>{renderChildren(node.children, key, labels)}</blockquote>
   }
 
   if (node.type === 'list') {
     const ordered = node.listType === 'number'
     const Tag = ordered ? 'ol' : 'ul'
-    return <Tag key={key}>{renderChildren(node.children, key)}</Tag>
+    return <Tag key={key}>{renderChildren(node.children, key, labels)}</Tag>
   }
 
   if (node.type === 'listitem') {
-    return <li key={key}>{renderChildren(node.children, key)}</li>
+    return <li key={key}>{renderChildren(node.children, key, labels)}</li>
   }
 
-  if (node.type === 'link' && isSafeHref(node.url)) {
-    const href = String(node.url)
+  if (node.type === 'link') {
+    const href = normalizeBlogHref(node.url, null, { allowHash: true, allowMailto: true })
+    if (!href) return <span key={key}>{renderChildren(node.children, key, labels)}</span>
 
-    if (href.startsWith('/')) {
+    if (isInternalBlogHref(href)) {
       return (
         <Link href={href} key={key}>
-          {renderChildren(node.children, key)}
+          {renderChildren(node.children, key, labels)}
         </Link>
+      )
+    }
+
+    if (href.startsWith('#') || href.startsWith('mailto:')) {
+      return (
+        <a href={href} key={key}>
+          {renderChildren(node.children, key, labels)}
+        </a>
       )
     }
 
     return (
       <a href={href} key={key} rel="noreferrer" target="_blank">
-        {renderChildren(node.children, key)}
+        {renderChildren(node.children, key, labels)}
       </a>
     )
   }
 
   if (node.type === 'paragraph') {
-    return <p key={key}>{renderChildren(node.children, key)}</p>
+    return <p key={key}>{renderChildren(node.children, key, labels)}</p>
   }
 
-  return <div key={key}>{renderChildren(node.children, key)}</div>
+  return <div key={key}>{renderChildren(node.children, key, labels)}</div>
 }
 
-export function BlogArticleBody({ content }: { content: unknown }) {
+function renderChildren(children: LexicalNode[] | undefined, keyPrefix: string, labels: BlogPageContent['articleLabels']): ReactNode {
+  if (!Array.isArray(children)) return null
+
+  return children.map((child, index) => renderNode(child, `${keyPrefix}-${index}`, labels))
+}
+
+export function BlogArticleBody({
+  content,
+  labels,
+}: {
+  content: unknown
+  labels: BlogPageContent['articleLabels']
+}) {
   const root = content && typeof content === 'object' && 'root' in content ? (content as { root?: LexicalNode }).root : null
   const children = root?.children
 
   if (!Array.isArray(children) || children.length === 0) {
     return (
       <div className={styles.articleBody}>
-        <p>This dispatch is being prepared by the tavern team.</p>
+        <p>{labels.emptyBodyText}</p>
       </div>
     )
   }
 
-  return <div className={styles.articleBody}>{children.map((node, index) => renderNode(node, `node-${index}`))}</div>
+  return <div className={styles.articleBody}>{children.map((node, index) => renderNode(node, `node-${index}`, labels))}</div>
 }

@@ -21,6 +21,15 @@ Update this file in the same task when work changes durable architecture:
 
 Do not leave durable project decisions only in chat history.
 
+## 2026-05-28 Blog Content Ownership
+
+- `/blog` and `/blog/[slug]` now route nearly all blog-specific visible UI copy through `formal-pages.blogPage`, including category labels, search labels, empty states, pinned-sidebar copy, pagination labels, detail-page video/related labels, rich-text empty body copy, default article excerpt/date/reading-time labels, and the article CTA block.
+- Article records remain owned by the `posts` collection. Frontend blog list/detail reads pass `blogPage.categoryLabels` and listing labels into `blogData.ts` so card labels and article metadata stay aligned with the CMS-managed blog page content.
+- The supporting database rollout is `20260528_160500_formal_pages_blog_auxiliary_content`, which adds the flattened `formal_pages.blog_page_*` columns for these blog UI labels and backfills defaults.
+- Blog rendering must use `blogSafety.ts` for CMS-entered CTA hrefs, rich-text links, and blog image URLs. Protocol-relative URLs, `javascript:`, `data:`, and private Supabase object URLs must not be rendered on public blog pages; rich-text upload images should render only when their media record is guest-readable.
+- Blog list/detail shells should fetch `getMarketingSiteSettings()` instead of `getMarketingSiteData()` so the journal does not pull homepage content just to render navigation and footer chrome.
+- Do not reintroduce new hardcoded blog UI copy in `BlogComponents.tsx` or `BlogArticleBody.tsx`; add new operator-editable page-level labels under `formal-pages.blogPage` unless the copy is purely structural or inaccessible implementation text.
+
 ## 2026-05-27 GLB Preview Optimization
 
 - Generated/imported GLB preview compression is asynchronous. The main Payload app owns queue state, auth, media records, Supabase signed upload targets, dispatch capacity, callback validation, and viewer selection; the separate Vercel worker only downloads a signed source URL, runs `gltf-transform`, uploads through a signed Supabase upload token, and calls back.

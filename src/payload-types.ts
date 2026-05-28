@@ -2172,17 +2172,78 @@ export interface FormalPage {
     heroImageAlt: string;
     heroPrimaryCTA: {
       label: string;
+      /**
+       * Use internal paths like /workbench or full https:// URLs. Protocol-relative, javascript:, and data: URLs are blocked.
+       */
       href: string;
     };
     heroSecondaryCTA: {
       label: string;
+      /**
+       * Use internal paths like /workbench or full https:// URLs. Protocol-relative, javascript:, and data: URLs are blocked.
+       */
       href: string;
     };
     dispatchesLabel: string;
     categoryLabels: {
+      all: string;
       articles: string;
       events: string;
       announcements: string;
+    };
+    listingLabels: {
+      readArticleLabel: string;
+      searchAriaLabel: string;
+      searchPlaceholder: string;
+      searchButtonLabel: string;
+      emptyTitle: string;
+      emptyText: string;
+      emptyCTALabel: string;
+      /**
+       * Use internal paths like /workbench or full https:// URLs. Protocol-relative, javascript:, and data: URLs are blocked.
+       */
+      emptyCTAHref: string;
+      pinnedTitle: string;
+      pinnedEmptyText: string;
+      dateFallbackLabel: string;
+      readingTimeSuffix: string;
+      defaultExcerpt: string;
+    };
+    paginationLabels: {
+      previousLabel: string;
+      nextLabel: string;
+      pageLabel: string;
+      ofLabel: string;
+    };
+    articleLabels: {
+      breadcrumbRootLabel: string;
+      videoEyebrow: string;
+      videoOpenLabel: string;
+      videoIframeTitle: string;
+      videoFallbackLabel: string;
+      articleImageFallbackAlt: string;
+      emptyBodyText: string;
+      relatedEyebrow: string;
+      relatedTitle: string;
+    };
+    articleCTA: {
+      eyebrow: string;
+      title: string;
+      text: string;
+      primaryCTA: {
+        label: string;
+        /**
+         * Use internal paths like /workbench or full https:// URLs. Protocol-relative, javascript:, and data: URLs are blocked.
+         */
+        href: string;
+      };
+      secondaryCTA: {
+        label: string;
+        /**
+         * Use internal paths like /workbench or full https:// URLs. Protocol-relative, javascript:, and data: URLs are blocked.
+         */
+        href: string;
+      };
     };
     seoTitle: string;
     seoDescription: string;
@@ -2849,9 +2910,67 @@ export interface FormalPagesSelect<T extends boolean = true> {
         categoryLabels?:
           | T
           | {
+              all?: T;
               articles?: T;
               events?: T;
               announcements?: T;
+            };
+        listingLabels?:
+          | T
+          | {
+              readArticleLabel?: T;
+              searchAriaLabel?: T;
+              searchPlaceholder?: T;
+              searchButtonLabel?: T;
+              emptyTitle?: T;
+              emptyText?: T;
+              emptyCTALabel?: T;
+              emptyCTAHref?: T;
+              pinnedTitle?: T;
+              pinnedEmptyText?: T;
+              dateFallbackLabel?: T;
+              readingTimeSuffix?: T;
+              defaultExcerpt?: T;
+            };
+        paginationLabels?:
+          | T
+          | {
+              previousLabel?: T;
+              nextLabel?: T;
+              pageLabel?: T;
+              ofLabel?: T;
+            };
+        articleLabels?:
+          | T
+          | {
+              breadcrumbRootLabel?: T;
+              videoEyebrow?: T;
+              videoOpenLabel?: T;
+              videoIframeTitle?: T;
+              videoFallbackLabel?: T;
+              articleImageFallbackAlt?: T;
+              emptyBodyText?: T;
+              relatedEyebrow?: T;
+              relatedTitle?: T;
+            };
+        articleCTA?:
+          | T
+          | {
+              eyebrow?: T;
+              title?: T;
+              text?: T;
+              primaryCTA?:
+                | T
+                | {
+                    label?: T;
+                    href?: T;
+                  };
+              secondaryCTA?:
+                | T
+                | {
+                    label?: T;
+                    href?: T;
+                  };
             };
         seoTitle?: T;
         seoDescription?: T;

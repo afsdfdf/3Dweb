@@ -1,23 +1,31 @@
 import { getCachedPayload } from '@/lib/getCachedPayload'
-import { isGuestReadableMedia } from '@/lib/mediaVisibility'
 
 import { getCurrentLocale } from '../../_lib/locale-server'
-import { defaultBlogPageContent, type BlogPageCTA, type BlogPageCategoryLabels, type BlogPageContent } from './blogPageDefaults'
-
-type ImageLike = {
-  alt?: null | string
-  publicAccess?: null | boolean
-  purpose?: null | string
-  thumbnailURL?: null | string
-  url?: null | string
-}
+import {
+  defaultBlogPageContent,
+  type BlogPageArticleCTA,
+  type BlogPageArticleLabels,
+  type BlogPageCTA,
+  type BlogPageCategoryLabels,
+  type BlogPageContent,
+  type BlogPageListingLabels,
+  type BlogPagePaginationLabels,
+} from './blogPageDefaults'
+import { getGuestReadableBlogImageURL, normalizeBlogHref } from './blogSafety'
 
 type CMSBlogPage = Partial<Omit<BlogPageContent, 'categoryLabels' | 'heroImageAlt' | 'heroImageSrc' | 'heroPrimaryCTA' | 'heroSecondaryCTA'>> & {
+  articleCTA?: null | Partial<Omit<BlogPageArticleCTA, 'primaryCTA' | 'secondaryCTA'>> & {
+    primaryCTA?: null | Partial<BlogPageCTA>
+    secondaryCTA?: null | Partial<BlogPageCTA>
+  }
+  articleLabels?: null | Partial<BlogPageArticleLabels>
   categoryLabels?: null | Partial<BlogPageCategoryLabels>
   heroImage?: null | unknown
   heroImageAlt?: null | string
   heroPrimaryCTA?: null | Partial<BlogPageCTA>
   heroSecondaryCTA?: null | Partial<BlogPageCTA>
+  listingLabels?: null | Partial<BlogPageListingLabels>
+  paginationLabels?: null | Partial<BlogPagePaginationLabels>
 }
 
 type FormalPagesGlobalContent = {
@@ -39,8 +47,10 @@ function pickOptionalText(value: unknown) {
 }
 
 function resolveCTA(fallback: BlogPageCTA, value?: null | Partial<BlogPageCTA>): BlogPageCTA {
+  const fallbackHref = normalizeBlogHref(fallback.href, '/') || '/'
+
   return {
-    href: pickText(value?.href, fallback.href),
+    href: normalizeBlogHref(value?.href, fallbackHref) || fallbackHref,
     label: pickText(value?.label, fallback.label),
   }
 }
@@ -51,44 +61,7 @@ function resolveOptionalCTA(fallback?: BlogPageCTA, value?: null | Partial<BlogP
 
   if (!fallback && (!sourceHref || !sourceLabel)) return undefined
 
-  return resolveCTA(fallback || { href: sourceHref || '#', label: sourceLabel || 'Learn more' }, value)
-}
-
-function normalizeBrowserMediaURL(value: null | string | undefined) {
-  if (!value) return null
-
-  const trimmed = value.trim()
-  if (!trimmed) return null
-  if (trimmed.startsWith('/')) return trimmed
-
-  try {
-    const parsed = new URL(trimmed)
-
-    if ((parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') && parsed.pathname.startsWith('/api/media/file/')) {
-      return `${parsed.pathname}${parsed.search}`
-    }
-
-    if (parsed.hostname.endsWith('.supabase.co') && parsed.pathname.startsWith('/storage/v1/object/') && !parsed.pathname.startsWith('/storage/v1/object/public/')) {
-      return null
-    }
-
-    return parsed.toString()
-  } catch {
-    return null
-  }
-}
-
-function getImageURL(value: unknown) {
-  if (!isRecord(value)) return null
-
-  if ('publicAccess' in value || 'purpose' in value) {
-    if (!isGuestReadableMedia(value as ImageLike)) return null
-  }
-
-  const thumbnailURL = typeof value.thumbnailURL === 'string' && value.thumbnailURL ? value.thumbnailURL : null
-  const url = typeof value.url === 'string' && value.url ? value.url : null
-
-  return normalizeBrowserMediaURL(thumbnailURL || url)
+  return resolveCTA(fallback || { href: sourceHref || '/', label: sourceLabel || 'Learn more' }, value)
 }
 
 function getImageAlt(value: unknown, fallback: string) {
@@ -99,17 +72,71 @@ function getImageAlt(value: unknown, fallback: string) {
 function resolveCategoryLabels(fallback: BlogPageCategoryLabels, value?: null | Partial<BlogPageCategoryLabels>): BlogPageCategoryLabels {
   return {
     announcements: pickText(value?.announcements, fallback.announcements),
+    all: pickText(value?.all, fallback.all),
     articles: pickText(value?.articles, fallback.articles),
     events: pickText(value?.events, fallback.events),
+  }
+}
+
+function resolveBlogListingLabels(fallback: BlogPageListingLabels, value?: null | Partial<BlogPageListingLabels>): BlogPageListingLabels {
+  return {
+    dateFallbackLabel: pickText(value?.dateFallbackLabel, fallback.dateFallbackLabel),
+    defaultExcerpt: pickText(value?.defaultExcerpt, fallback.defaultExcerpt),
+    emptyCTAHref: pickText(value?.emptyCTAHref, fallback.emptyCTAHref),
+    emptyCTALabel: pickText(value?.emptyCTALabel, fallback.emptyCTALabel),
+    emptyText: pickText(value?.emptyText, fallback.emptyText),
+    emptyTitle: pickText(value?.emptyTitle, fallback.emptyTitle),
+    pinnedEmptyText: pickText(value?.pinnedEmptyText, fallback.pinnedEmptyText),
+    pinnedTitle: pickText(value?.pinnedTitle, fallback.pinnedTitle),
+    readArticleLabel: pickText(value?.readArticleLabel, fallback.readArticleLabel),
+    readingTimeSuffix: pickText(value?.readingTimeSuffix, fallback.readingTimeSuffix),
+    searchAriaLabel: pickText(value?.searchAriaLabel, fallback.searchAriaLabel),
+    searchButtonLabel: pickText(value?.searchButtonLabel, fallback.searchButtonLabel),
+    searchPlaceholder: pickText(value?.searchPlaceholder, fallback.searchPlaceholder),
+  }
+}
+
+function resolveBlogPaginationLabels(fallback: BlogPagePaginationLabels, value?: null | Partial<BlogPagePaginationLabels>): BlogPagePaginationLabels {
+  return {
+    nextLabel: pickText(value?.nextLabel, fallback.nextLabel),
+    ofLabel: pickText(value?.ofLabel, fallback.ofLabel),
+    pageLabel: pickText(value?.pageLabel, fallback.pageLabel),
+    previousLabel: pickText(value?.previousLabel, fallback.previousLabel),
+  }
+}
+
+function resolveBlogArticleLabels(fallback: BlogPageArticleLabels, value?: null | Partial<BlogPageArticleLabels>): BlogPageArticleLabels {
+  return {
+    articleImageFallbackAlt: pickText(value?.articleImageFallbackAlt, fallback.articleImageFallbackAlt),
+    breadcrumbRootLabel: pickText(value?.breadcrumbRootLabel, fallback.breadcrumbRootLabel),
+    emptyBodyText: pickText(value?.emptyBodyText, fallback.emptyBodyText),
+    relatedEyebrow: pickText(value?.relatedEyebrow, fallback.relatedEyebrow),
+    relatedTitle: pickText(value?.relatedTitle, fallback.relatedTitle),
+    videoEyebrow: pickText(value?.videoEyebrow, fallback.videoEyebrow),
+    videoFallbackLabel: pickText(value?.videoFallbackLabel, fallback.videoFallbackLabel),
+    videoIframeTitle: pickText(value?.videoIframeTitle, fallback.videoIframeTitle),
+    videoOpenLabel: pickText(value?.videoOpenLabel, fallback.videoOpenLabel),
+  }
+}
+
+function resolveBlogArticleCTA(fallback: BlogPageArticleCTA, value?: null | CMSBlogPage['articleCTA']): BlogPageArticleCTA {
+  return {
+    eyebrow: pickText(value?.eyebrow, fallback.eyebrow),
+    primaryCTA: resolveCTA(fallback.primaryCTA, value?.primaryCTA),
+    secondaryCTA: resolveCTA(fallback.secondaryCTA, value?.secondaryCTA),
+    text: pickText(value?.text, fallback.text),
+    title: pickText(value?.title, fallback.title),
   }
 }
 
 function resolveBlogPage(fallback: BlogPageContent, value?: null | CMSBlogPage): BlogPageContent {
   if (!value) return fallback
 
-  const heroImageSrc = getImageURL(value.heroImage) || fallback.heroImageSrc
+  const heroImageSrc = getGuestReadableBlogImageURL(value.heroImage) || fallback.heroImageSrc
 
   return {
+    articleCTA: resolveBlogArticleCTA(fallback.articleCTA, value.articleCTA),
+    articleLabels: resolveBlogArticleLabels(fallback.articleLabels, value.articleLabels),
     categoryLabels: resolveCategoryLabels(fallback.categoryLabels, value.categoryLabels),
     dispatchesLabel: pickText(value.dispatchesLabel, fallback.dispatchesLabel),
     heroEyebrow: pickText(value.heroEyebrow, fallback.heroEyebrow),
@@ -119,6 +146,8 @@ function resolveBlogPage(fallback: BlogPageContent, value?: null | CMSBlogPage):
     heroSecondaryCTA: resolveOptionalCTA(fallback.heroSecondaryCTA, value.heroSecondaryCTA),
     heroText: pickText(value.heroText, fallback.heroText),
     heroTitle: pickText(value.heroTitle, fallback.heroTitle),
+    listingLabels: resolveBlogListingLabels(fallback.listingLabels, value.listingLabels),
+    paginationLabels: resolveBlogPaginationLabels(fallback.paginationLabels, value.paginationLabels),
     seoDescription: pickText(value.seoDescription, fallback.seoDescription),
     seoTitle: pickText(value.seoTitle, fallback.seoTitle),
   }

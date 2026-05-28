@@ -9,20 +9,21 @@ import { getPublicNavigationActiveID, resolvePublicNavigationItems } from '@/lib
 import { getSupabasePreviewImageURL } from '@/lib/supabase/imageTransform'
 
 import { FooterBar } from '../../_components/shell/FooterBar'
-import type { getMarketingSiteData } from '../../_lib/marketing'
+import type { getMarketingSiteSettings } from '../../_lib/marketing'
 import type { getCurrentNavUser } from '../../_lib/session'
 import type { BlogPageContent } from '../_lib/blogPageDefaults'
+import { isInternalBlogHref, normalizeBlogHref } from '../_lib/blogSafety'
 import type { BlogCategory, BlogListData, BlogPagination as BlogPaginationData, BlogPostCardData, BlogPostDetailData } from '../_lib/blogTypes'
 import styles from '../page.module.css'
 
-type SiteSettings = Awaited<ReturnType<typeof getMarketingSiteData>>['siteSettings']
+type SiteSettings = Awaited<ReturnType<typeof getMarketingSiteSettings>>
 type NavUser = Awaited<ReturnType<typeof getCurrentNavUser>>
 
-const categoryTabs: { href: string; label: string; value: BlogCategory | null }[] = [
-  { href: '/blog', label: 'All', value: null },
-  { href: '/blog?category=article', label: 'Articles', value: 'article' },
-  { href: '/blog?category=event', label: 'Events', value: 'event' },
-  { href: '/blog?category=announcement', label: 'Announcements', value: 'announcement' },
+const categoryTabs: { href: string; labelKey: keyof BlogPageContent['categoryLabels']; value: BlogCategory | null }[] = [
+  { href: '/blog', labelKey: 'all', value: null },
+  { href: '/blog?category=article', labelKey: 'articles', value: 'article' },
+  { href: '/blog?category=event', labelKey: 'events', value: 'event' },
+  { href: '/blog?category=announcement', labelKey: 'announcements', value: 'announcement' },
 ]
 
 function buildPageHref(args: { category?: BlogCategory | null; page?: number; query?: string }) {
@@ -36,14 +37,50 @@ function buildPageHref(args: { category?: BlogCategory | null; page?: number; qu
   return suffix ? `/blog?${suffix}` : '/blog'
 }
 
-function PostImage({ className, post }: { className?: string; post: BlogPostCardData }) {
+function SafeBlogLink({
+  children,
+  className,
+  fallbackHref = '/',
+  href,
+}: {
+  children: ReactNode
+  className?: string
+  fallbackHref?: string
+  href: string
+}) {
+  const safeHref = normalizeBlogHref(href, fallbackHref) || fallbackHref
+
+  if (isInternalBlogHref(safeHref)) {
+    return (
+      <Link className={className} href={safeHref}>
+        {children}
+      </Link>
+    )
+  }
+
+  return (
+    <a className={className} href={safeHref} rel="noreferrer" target="_blank">
+      {children}
+    </a>
+  )
+}
+
+function PostImage({
+  className,
+  post,
+  siteName,
+}: {
+  className?: string
+  post: BlogPostCardData
+  siteName: string
+}) {
   if (post.coverSrc) {
     return <img alt={post.coverAlt} className={className} decoding="async" src={getSupabasePreviewImageURL(post.coverSrc, 'home-feature')} />
   }
 
   return (
     <div className={[styles.placeholderImage, className].filter(Boolean).join(' ')} aria-label={post.coverAlt} role="img">
-      <span>Thorns Tavern</span>
+      <span>{siteName}</span>
     </div>
   )
 }
@@ -93,6 +130,7 @@ export function BlogShell({
   siteSettings: SiteSettings
 }) {
   const siteDescription = siteSettings.siteDescription || 'An AI 3D product platform for character creation, asset management, and print fulfillment.'
+  const siteName = siteSettings.siteName || 'Thorns Tavern'
   const supportEmail = siteSettings.supportEmail || 'support@example.com'
   const navigationItems = resolvePublicNavigationItems(siteSettings.headerNav)
   const mobileNavigationItems = navigationItems.filter((item) => item.href !== '/').slice(0, 3)
@@ -102,8 +140,8 @@ export function BlogShell({
       <AuthModalStage>
         <TopNavigation active={getPublicNavigationActiveID('/blog', navigationItems)} className={styles.topNavigation} fitViewport items={navigationItems} user={navUser} />
         <header className={styles.mobileHeader}>
-          <Link href="/" aria-label="Thorns Tavern home">
-            <img alt="Thorns Tavern" src="/ui-lab/top-navigation/logo-wordmark.png" />
+          <Link href="/" aria-label={`${siteName} home`}>
+            <img alt={siteName} src="/ui-lab/top-navigation/logo-wordmark.png" />
           </Link>
           <nav aria-label="Mobile navigation">
             {mobileNavigationItems.map((item) => (
@@ -146,15 +184,15 @@ export function BlogHero({ content, totalPosts }: { content: BlogPageContent; to
           </div>
         </div>
         <div className={styles.heroActions}>
-          <Link className={[styles.actionButton, styles.primaryAction].join(' ')} href={content.heroPrimaryCTA.href}>
+          <SafeBlogLink className={[styles.actionButton, styles.primaryAction].join(' ')} href={content.heroPrimaryCTA.href}>
             {content.heroPrimaryCTA.label}
             <ArrowRight aria-hidden="true" size={18} />
-          </Link>
+          </SafeBlogLink>
           {content.heroSecondaryCTA ? (
-            <Link className={styles.actionButton} href={content.heroSecondaryCTA.href}>
+            <SafeBlogLink className={styles.actionButton} href={content.heroSecondaryCTA.href}>
               {content.heroSecondaryCTA.label}
               <ArrowRight aria-hidden="true" size={18} />
-            </Link>
+            </SafeBlogLink>
           ) : null}
         </div>
       </div>
@@ -162,11 +200,19 @@ export function BlogHero({ content, totalPosts }: { content: BlogPageContent; to
   )
 }
 
-export function FeaturedPostCard({ post }: { post: BlogPostCardData }) {
+export function FeaturedPostCard({
+  post,
+  readArticleLabel,
+  siteName,
+}: {
+  post: BlogPostCardData
+  readArticleLabel: string
+  siteName: string
+}) {
   return (
     <article className={styles.featuredCard}>
       <Link className={styles.featuredImageLink} href={post.href}>
-        <PostImage className={styles.featuredImage} post={post} />
+        <PostImage className={styles.featuredImage} post={post} siteName={siteName} />
       </Link>
       <div className={styles.featuredCopy}>
         <span className={styles.eyebrow}>{post.categoryLabel}</span>
@@ -179,7 +225,7 @@ export function FeaturedPostCard({ post }: { post: BlogPostCardData }) {
           <span>{post.readingTimeLabel}</span>
         </div>
         <Link className={styles.inlineLink} href={post.href}>
-          Read dispatch
+          {readArticleLabel}
           <ArrowRight aria-hidden="true" size={16} />
         </Link>
       </div>
@@ -187,34 +233,48 @@ export function FeaturedPostCard({ post }: { post: BlogPostCardData }) {
   )
 }
 
-export function BlogCategoryTabs({ activeCategory }: { activeCategory: BlogCategory | null }) {
+export function BlogCategoryTabs({
+  activeCategory,
+  labels,
+}: {
+  activeCategory: BlogCategory | null
+  labels: BlogPageContent['categoryLabels']
+}) {
   return (
     <nav aria-label="Journal categories" className={styles.categoryTabs}>
       {categoryTabs.map((tab) => (
-        <Link className={tab.value === activeCategory ? styles.activeTab : ''} href={tab.href} key={tab.label}>
-          {tab.label}
+        <Link className={tab.value === activeCategory ? styles.activeTab : ''} href={tab.href} key={tab.labelKey}>
+          {labels[tab.labelKey]}
         </Link>
       ))}
     </nav>
   )
 }
 
-export function BlogSearchForm({ activeCategory, query }: { activeCategory: BlogCategory | null; query: string }) {
+export function BlogSearchForm({
+  activeCategory,
+  labels,
+  query,
+}: {
+  activeCategory: BlogCategory | null
+  labels: BlogPageContent['listingLabels']
+  query: string
+}) {
   return (
     <form action="/blog" className={styles.searchForm}>
       {activeCategory ? <input name="category" type="hidden" value={activeCategory} /> : null}
       <Search aria-hidden="true" size={18} />
-      <input aria-label="Search Tavern Journal" defaultValue={query} maxLength={80} name="q" placeholder="Search notes, guides, and releases" />
-      <button type="submit">Search</button>
+      <input aria-label={labels.searchAriaLabel} defaultValue={query} maxLength={80} name="q" placeholder={labels.searchPlaceholder} />
+      <button type="submit">{labels.searchButtonLabel}</button>
     </form>
   )
 }
 
-export function BlogPostCard({ post }: { post: BlogPostCardData }) {
+export function BlogPostCard({ post, siteName }: { post: BlogPostCardData; siteName: string }) {
   return (
     <article className={styles.postCard}>
       <Link className={styles.cardImageLink} href={post.href}>
-        <PostImage className={styles.cardImage} post={post} />
+        <PostImage className={styles.cardImage} post={post} siteName={siteName} />
       </Link>
       <div className={styles.cardBody}>
         <span className={styles.cardCategory}>{post.categoryLabel}</span>
@@ -231,26 +291,28 @@ export function BlogPostCard({ post }: { post: BlogPostCardData }) {
   )
 }
 
-export function BlogEmptyState() {
+export function BlogEmptyState({ labels }: { labels: BlogPageContent['listingLabels'] }) {
   return (
     <section className={styles.emptyState}>
       <Sparkles aria-hidden="true" size={26} />
-      <h2>The tavern board is being prepared.</h2>
-      <p>New creator notes and production dispatches will appear here soon.</p>
-      <Link className={[styles.actionButton, styles.primaryAction].join(' ')} href="/showcase">
-        Explore models
+      <h2>{labels.emptyTitle}</h2>
+      <p>{labels.emptyText}</p>
+      <SafeBlogLink className={[styles.actionButton, styles.primaryAction].join(' ')} href={labels.emptyCTAHref}>
+        {labels.emptyCTALabel}
         <ArrowRight aria-hidden="true" size={18} />
-      </Link>
+      </SafeBlogLink>
     </section>
   )
 }
 
 export function BlogPagination({
   activeCategory,
+  labels,
   pagination,
   query,
 }: {
   activeCategory: BlogCategory | null
+  labels: BlogPageContent['paginationLabels']
   pagination: BlogPaginationData
   query: string
 }) {
@@ -259,30 +321,38 @@ export function BlogPagination({
   return (
     <nav aria-label="Journal pagination" className={styles.pagination}>
       {pagination.hasPrevPage ? (
-        <Link href={buildPageHref({ category: activeCategory, page: Math.max(1, pagination.page - 1), query })}>Previous</Link>
+        <Link href={buildPageHref({ category: activeCategory, page: Math.max(1, pagination.page - 1), query })}>{labels.previousLabel}</Link>
       ) : (
-        <span>Previous</span>
+        <span>{labels.previousLabel}</span>
       )}
       <strong>
-        Page {pagination.page} of {pagination.totalPages}
+        {labels.pageLabel} {pagination.page} {labels.ofLabel} {pagination.totalPages}
       </strong>
       {pagination.hasNextPage ? (
-        <Link href={buildPageHref({ category: activeCategory, page: pagination.page + 1, query })}>Next</Link>
+        <Link href={buildPageHref({ category: activeCategory, page: pagination.page + 1, query })}>{labels.nextLabel}</Link>
       ) : (
-        <span>Next</span>
+        <span>{labels.nextLabel}</span>
       )}
     </nav>
   )
 }
 
-export function BlogSidebar({ featuredPost, posts }: Pick<BlogListData, 'featuredPost' | 'posts'>) {
+export function BlogSidebar({
+  cta,
+  featuredPost,
+  labels,
+  posts,
+}: Pick<BlogListData, 'featuredPost' | 'posts'> & {
+  cta: BlogPageContent['articleCTA']
+  labels: BlogPageContent['listingLabels']
+}) {
   const sidebarPosts = [featuredPost, ...posts].filter(Boolean).slice(0, 4) as BlogPostCardData[]
 
   return (
     <aside className={styles.sidebar}>
       <section className={styles.sidebarPanel}>
         <BookOpen aria-hidden="true" size={22} />
-        <h2>Pinned notes</h2>
+        <h2>{labels.pinnedTitle}</h2>
         <div className={styles.sidebarList}>
           {sidebarPosts.length > 0 ? (
             sidebarPosts.map((post) => (
@@ -292,40 +362,54 @@ export function BlogSidebar({ featuredPost, posts }: Pick<BlogListData, 'feature
               </Link>
             ))
           ) : (
-            <p>Published journal notes will appear here after the first dispatch goes live.</p>
+            <p>{labels.pinnedEmptyText}</p>
           )}
         </div>
       </section>
-      <BlogCTA compact />
+      <BlogCTA compact cta={cta} />
     </aside>
   )
 }
 
-export function BlogCTA({ compact = false }: { compact?: boolean }) {
+export function BlogCTA({
+  compact = false,
+  cta,
+}: {
+  compact?: boolean
+  cta: BlogPageContent['articleCTA']
+}) {
   return (
     <section className={compact ? styles.sidebarCta : styles.articleCta}>
-      <span className={styles.eyebrow}>Create next</span>
-      <h2>Ready to build your own artifact?</h2>
-      <p>Start in the Workbench, browse public models, or collect a themed bundle for your next scene.</p>
+      <span className={styles.eyebrow}>{cta.eyebrow}</span>
+      <h2>{cta.title}</h2>
+      <p>{cta.text}</p>
       <div className={styles.ctaActions}>
-        <Link className={[styles.actionButton, styles.primaryAction].join(' ')} href="/workbench">
-          Open Studio
+        <SafeBlogLink className={[styles.actionButton, styles.primaryAction].join(' ')} href={cta.primaryCTA.href}>
+          {cta.primaryCTA.label}
           <ArrowRight aria-hidden="true" size={18} />
-        </Link>
-        <Link className={styles.actionButton} href="/bundles">
-          Browse Bundles
+        </SafeBlogLink>
+        <SafeBlogLink className={styles.actionButton} href={cta.secondaryCTA.href}>
+          {cta.secondaryCTA.label}
           <ArrowRight aria-hidden="true" size={18} />
-        </Link>
+        </SafeBlogLink>
       </div>
     </section>
   )
 }
 
-export function ArticleHero({ post }: { post: BlogPostDetailData }) {
+export function ArticleHero({
+  labels,
+  post,
+  siteName,
+}: {
+  labels: BlogPageContent['articleLabels']
+  post: BlogPostDetailData
+  siteName: string
+}) {
   return (
     <header className={styles.articleHero}>
       <nav aria-label="Breadcrumb" className={styles.breadcrumb}>
-        <Link href="/blog">Tavern Journal</Link>
+        <Link href="/blog">{labels.breadcrumbRootLabel}</Link>
         <span>/</span>
         <Link href={`/blog?category=${post.category}`}>{post.categoryLabel}</Link>
       </nav>
@@ -336,12 +420,18 @@ export function ArticleHero({ post }: { post: BlogPostDetailData }) {
         <span>{post.publishedLabel}</span>
         <span>{post.readingTimeLabel}</span>
       </div>
-      <PostImage className={styles.articleCover} post={post} />
+      <PostImage className={styles.articleCover} post={post} siteName={siteName} />
     </header>
   )
 }
 
-export function BlogVideoBlock({ videoUrl }: { videoUrl: null | string }) {
+export function BlogVideoBlock({
+  labels,
+  videoUrl,
+}: {
+  labels: BlogPageContent['articleLabels']
+  videoUrl: null | string
+}) {
   const safeURL = getSafeVideoURL(videoUrl)
   if (!safeURL) return null
 
@@ -350,9 +440,9 @@ export function BlogVideoBlock({ videoUrl }: { videoUrl: null | string }) {
   return (
     <section className={styles.videoBlock} aria-label="Article video">
       <div className={styles.videoHeader}>
-        <span className={styles.eyebrow}>Field footage</span>
+        <span className={styles.eyebrow}>{labels.videoEyebrow}</span>
         <a href={safeURL.toString()} rel="noreferrer" target="_blank">
-          Open video
+          {labels.videoOpenLabel}
           <ExternalLink aria-hidden="true" size={15} />
         </a>
       </div>
@@ -363,12 +453,12 @@ export function BlogVideoBlock({ videoUrl }: { videoUrl: null | string }) {
           loading="lazy"
           referrerPolicy="strict-origin-when-cross-origin"
           src={embedURL}
-          title="Article video"
+          title={labels.videoIframeTitle}
         />
       ) : (
         <a className={styles.videoLinkCard} href={safeURL.toString()} rel="noreferrer" target="_blank">
           <Play aria-hidden="true" size={22} />
-          <span>Watch the linked video</span>
+          <span>{labels.videoFallbackLabel}</span>
           <ExternalLink aria-hidden="true" size={16} />
         </a>
       )}
@@ -376,18 +466,26 @@ export function BlogVideoBlock({ videoUrl }: { videoUrl: null | string }) {
   )
 }
 
-export function RelatedPosts({ posts }: { posts: BlogPostCardData[] }) {
+export function RelatedPosts({
+  labels,
+  posts,
+  siteName,
+}: {
+  labels: BlogPageContent['articleLabels']
+  posts: BlogPostCardData[]
+  siteName: string
+}) {
   if (posts.length === 0) return null
 
   return (
     <section className={styles.relatedSection}>
       <div className={styles.sectionHeader}>
-        <span className={styles.eyebrow}>More from the board</span>
-        <h2>Related dispatches</h2>
+        <span className={styles.eyebrow}>{labels.relatedEyebrow}</span>
+        <h2>{labels.relatedTitle}</h2>
       </div>
       <div className={styles.relatedGrid}>
         {posts.map((post) => (
-          <BlogPostCard key={post.id} post={post} />
+          <BlogPostCard key={post.id} post={post} siteName={siteName} />
         ))}
       </div>
     </section>

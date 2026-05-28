@@ -1,21 +1,14 @@
 import type { Where } from 'payload'
 
 import { getCachedPayload } from '@/lib/getCachedPayload'
-import { isGuestReadableMedia } from '@/lib/mediaVisibility'
 import type { Post } from '@/payload-types'
 
+import { defaultBlogPageContent, type BlogPageCategoryLabels } from './blogPageDefaults'
+import { getGuestReadableBlogImageURL } from './blogSafety'
 import { blogCategories, type BlogCategory, type BlogListData, type BlogPostCardData, type BlogPostDetailData } from './blogTypes'
 
 const BLOG_PAGE_LIMIT = 12
 const RELATED_POST_LIMIT = 3
-
-type ImageLike = {
-  alt?: null | string
-  publicAccess?: null | boolean
-  purpose?: null | string
-  thumbnailURL?: null | string
-  url?: null | string
-}
 
 type LexicalNode = {
   children?: unknown[]
@@ -23,10 +16,24 @@ type LexicalNode = {
   type?: unknown
 }
 
-const categoryLabels: Record<BlogCategory, string> = {
-  announcement: 'Announcements',
-  article: 'Articles',
-  event: 'Events',
+type BlogPostLabelOptions = {
+  categoryLabels?: BlogPageCategoryLabels
+  dateFallbackLabel?: string
+  defaultExcerpt?: string
+  readingTimeSuffix?: string
+  siteName?: string
+}
+
+const defaultCategoryLabels = defaultBlogPageContent.categoryLabels
+
+const getLabels = (labels?: BlogPostLabelOptions): Required<BlogPostLabelOptions> => {
+  return {
+    categoryLabels: labels?.categoryLabels || defaultCategoryLabels,
+    dateFallbackLabel: labels?.dateFallbackLabel || defaultBlogPageContent.listingLabels.dateFallbackLabel,
+    defaultExcerpt: labels?.defaultExcerpt || defaultBlogPageContent.listingLabels.defaultExcerpt,
+    readingTimeSuffix: labels?.readingTimeSuffix || defaultBlogPageContent.listingLabels.readingTimeSuffix,
+    siteName: labels?.siteName?.trim() || 'Thorns Tavern',
+  }
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
@@ -46,45 +53,14 @@ export function normalizeBlogQuery(value: unknown) {
   return typeof value === 'string' && value.trim() ? value.trim().slice(0, 80) : ''
 }
 
-export function getBlogCategoryLabel(category: BlogCategory) {
-  return categoryLabels[category]
-}
-
-function normalizeBrowserMediaURL(value: null | string | undefined) {
-  if (!value) return null
-
-  const trimmed = value.trim()
-  if (!trimmed) return null
-  if (trimmed.startsWith('/')) return trimmed
-
-  try {
-    const parsed = new URL(trimmed)
-
-    if ((parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') && parsed.pathname.startsWith('/api/media/file/')) {
-      return `${parsed.pathname}${parsed.search}`
-    }
-
-    if (parsed.hostname.endsWith('.supabase.co') && parsed.pathname.startsWith('/storage/v1/object/') && !parsed.pathname.startsWith('/storage/v1/object/public/')) {
-      return null
-    }
-
-    return parsed.toString()
-  } catch {
-    return null
-  }
-}
-
-function getImageURL(value: unknown) {
-  if (!isRecord(value)) return null
-
-  if ('publicAccess' in value || 'purpose' in value) {
-    if (!isGuestReadableMedia(value as ImageLike)) return null
+export function getBlogCategoryLabel(category: BlogCategory, categoryLabels: BlogPageCategoryLabels = defaultCategoryLabels) {
+  const labels: Record<BlogCategory, string> = {
+    announcement: categoryLabels.announcements,
+    article: categoryLabels.articles,
+    event: categoryLabels.events,
   }
 
-  const thumbnailURL = typeof value.thumbnailURL === 'string' && value.thumbnailURL ? value.thumbnailURL : null
-  const url = typeof value.url === 'string' && value.url ? value.url : null
-
-  return normalizeBrowserMediaURL(thumbnailURL || url)
+  return labels[category]
 }
 
 function getImageAlt(value: unknown, fallback: string) {
@@ -96,11 +72,11 @@ function getPublishedTime(post: Post) {
   return post.publishedAt || post.createdAt || post.updatedAt
 }
 
-function formatPostDate(value: null | string | undefined) {
-  if (!value) return 'Recently'
+function formatPostDate(value: null | string | undefined, fallbackLabel: string) {
+  if (!value) return fallbackLabel
 
   const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return 'Recently'
+  if (Number.isNaN(date.getTime())) return fallbackLabel
 
   return new Intl.DateTimeFormat('en', {
     day: 'numeric',
@@ -131,10 +107,10 @@ function collectLexicalText(value: unknown): string {
   return [currentText, childText].filter(Boolean).join(' ')
 }
 
-export function estimateReadingTime(content: unknown) {
+export function estimateReadingTime(content: unknown, suffix = defaultBlogPageContent.listingLabels.readingTimeSuffix) {
   const wordCount = collectLexicalText(content).split(/\s+/).filter(Boolean).length
   const minutes = Math.max(1, Math.ceil(wordCount / 220))
-  return `${minutes} min read`
+  return `${minutes} ${suffix}`
 }
 
 function buildPublicPostsWhere(args: { category?: BlogCategory | null; excludeId?: number; query?: string; slug?: string }): Where {
@@ -209,23 +185,24 @@ function buildPublicPostsWhere(args: { category?: BlogCategory | null; excludeId
   return { and: clauses }
 }
 
-function normalizePostCard(post: Post): BlogPostCardData {
+function normalizePostCard(post: Post, labelOptions?: BlogPostLabelOptions): BlogPostCardData {
+  const labels = getLabels(labelOptions)
   const category = normalizeBlogCategory(post.category) || 'article'
   const title = post.title || 'Untitled journal note'
-  const excerpt = post.excerpt?.trim() || 'A production note from the Thorns Tavern team.'
+  const excerpt = post.excerpt?.trim() || labels.defaultExcerpt
   const coverImage = post.coverImage
 
   return {
     category,
-    categoryLabel: getBlogCategoryLabel(category),
+    categoryLabel: getBlogCategoryLabel(category, labels.categoryLabels),
     coverAlt: getImageAlt(coverImage, title),
-    coverSrc: getImageURL(coverImage),
+    coverSrc: getGuestReadableBlogImageURL(coverImage),
     excerpt,
     href: `/blog/${encodeURIComponent(post.slug)}`,
     id: Number(post.id),
     isPinned: post.isPinned === true,
-    publishedLabel: formatPostDate(getPublishedTime(post)),
-    readingTimeLabel: estimateReadingTime(post.content),
+    publishedLabel: formatPostDate(getPublishedTime(post), labels.dateFallbackLabel),
+    readingTimeLabel: estimateReadingTime(post.content, labels.readingTimeSuffix),
     slug: post.slug,
     title,
   }
@@ -242,10 +219,19 @@ function getEmptyPagination(page: number): BlogListData['pagination'] {
   }
 }
 
-export async function getBlogListData(args: { category?: BlogCategory | null; page?: number; query?: string }): Promise<BlogListData> {
+export async function getBlogListData(args: {
+  category?: BlogCategory | null
+  categoryLabels?: BlogPageCategoryLabels
+  dateFallbackLabel?: string
+  defaultExcerpt?: string
+  page?: number
+  query?: string
+  readingTimeSuffix?: string
+}): Promise<BlogListData> {
   const page = normalizeBlogPage(args.page)
   const query = normalizeBlogQuery(args.query)
   const activeCategory = args.category || null
+  const labelOptions = getLabels(args)
 
   try {
     const payload = await getCachedPayload()
@@ -265,7 +251,7 @@ export async function getBlogListData(args: { category?: BlogCategory | null; pa
       }),
     })
 
-    const posts = result.docs.map((post) => normalizePostCard(post as Post))
+    const posts = result.docs.map((post) => normalizePostCard(post as Post, labelOptions))
     const featuredPost = posts.find((post) => post.isPinned) || posts[0] || null
 
     return {
@@ -293,7 +279,7 @@ export async function getBlogListData(args: { category?: BlogCategory | null; pa
   }
 }
 
-export async function getRelatedBlogPosts(post: BlogPostCardData): Promise<BlogPostCardData[]> {
+export async function getRelatedBlogPosts(post: BlogPostCardData, labelOptions?: BlogPostLabelOptions): Promise<BlogPostCardData[]> {
   try {
     const payload = await getCachedPayload()
     const result = await payload.find({
@@ -311,13 +297,13 @@ export async function getRelatedBlogPosts(post: BlogPostCardData): Promise<BlogP
       }),
     })
 
-    return result.docs.map((item) => normalizePostCard(item as Post))
+    return result.docs.map((item) => normalizePostCard(item as Post, labelOptions))
   } catch {
     return []
   }
 }
 
-export async function getBlogPostBySlug(slug: string): Promise<BlogPostDetailData | null> {
+export async function getBlogPostBySlug(slug: string, labelOptions?: BlogPostLabelOptions): Promise<BlogPostDetailData | null> {
   const normalizedSlug = typeof slug === 'string' ? slug.trim() : ''
   if (!normalizedSlug) return null
 
@@ -339,8 +325,10 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPostDetailDat
     const post = result.docs[0] as Post | undefined
     if (!post) return null
 
-    const card = normalizePostCard(post)
-    const relatedPosts = await getRelatedBlogPosts(card)
+    const labels = getLabels(labelOptions)
+    const card = normalizePostCard(post, labels)
+    const relatedPosts = await getRelatedBlogPosts(card, labels)
+    const publisherName = labels.siteName
 
     return {
       ...card,
@@ -350,7 +338,7 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPostDetailDat
         '@type': 'Article',
         author: {
           '@type': 'Organization',
-          name: 'Thorns Tavern',
+          name: publisherName,
         },
         dateModified: post.updatedAt,
         datePublished: getPublishedTime(post),
@@ -359,7 +347,7 @@ export async function getBlogPostBySlug(slug: string): Promise<BlogPostDetailDat
         image: card.coverSrc || undefined,
         publisher: {
           '@type': 'Organization',
-          name: 'Thorns Tavern',
+          name: publisherName,
         },
       },
       relatedPosts,

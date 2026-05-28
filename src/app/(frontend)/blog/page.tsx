@@ -1,7 +1,7 @@
 import { BlogCategoryTabs, BlogEmptyState, BlogHero, BlogPagination, BlogPostCard, BlogSearchForm, BlogShell, BlogSidebar, FeaturedPostCard } from './_components/BlogComponents'
 import { getBlogPageContent } from './_lib/blogPageContent'
 import { getBlogListData, normalizeBlogCategory, normalizeBlogPage, normalizeBlogQuery } from './_lib/blogData'
-import { getMarketingSiteData } from '../_lib/marketing'
+import { getMarketingSiteSettings } from '../_lib/marketing'
 import { getCurrentNavUser } from '../_lib/session'
 import styles from './page.module.css'
 import type { Metadata } from 'next'
@@ -30,40 +30,48 @@ export default async function BlogPage({
   const activeCategory = normalizeBlogCategory(params.category)
   const page = normalizeBlogPage(params.page)
   const query = normalizeBlogQuery(params.q)
-  const [navUser, marketing, blog, blogPage] = await Promise.all([
-    getCurrentNavUser(),
-    getMarketingSiteData(),
+  const blogPagePromise = getBlogPageContent()
+  const navUserPromise = getCurrentNavUser()
+  const siteSettingsPromise = getMarketingSiteSettings()
+  const blogPage = await blogPagePromise
+  const [navUser, siteSettings, blog] = await Promise.all([
+    navUserPromise,
+    siteSettingsPromise,
     getBlogListData({
       category: activeCategory,
+      categoryLabels: blogPage.categoryLabels,
+      dateFallbackLabel: blogPage.listingLabels.dateFallbackLabel,
+      defaultExcerpt: blogPage.listingLabels.defaultExcerpt,
       page,
       query,
+      readingTimeSuffix: blogPage.listingLabels.readingTimeSuffix,
     }),
-    getBlogPageContent(),
   ])
+  const siteName = siteSettings.siteName || 'Thorns Tavern'
 
   return (
-    <BlogShell navUser={navUser} siteSettings={marketing.siteSettings}>
+    <BlogShell navUser={navUser} siteSettings={siteSettings}>
       <div className={styles.shell}>
         <BlogHero content={blogPage} totalPosts={blog.pagination.totalDocs} />
-        {blog.featuredPost ? <FeaturedPostCard post={blog.featuredPost} /> : null}
+        {blog.featuredPost ? <FeaturedPostCard post={blog.featuredPost} readArticleLabel={blogPage.listingLabels.readArticleLabel} siteName={siteName} /> : null}
         <section className={styles.toolbar} aria-label="Journal filters">
-          <BlogCategoryTabs activeCategory={blog.activeCategory} />
-          <BlogSearchForm activeCategory={blog.activeCategory} query={blog.query} />
+          <BlogCategoryTabs activeCategory={blog.activeCategory} labels={blogPage.categoryLabels} />
+          <BlogSearchForm activeCategory={blog.activeCategory} labels={blogPage.listingLabels} query={blog.query} />
         </section>
         <section className={styles.contentGrid}>
           <div className={styles.postGridWrap}>
             {blog.posts.length > 0 ? (
               <div className={styles.postGrid}>
                 {blog.posts.map((post) => (
-                  <BlogPostCard key={post.id} post={post} />
+                  <BlogPostCard key={post.id} post={post} siteName={siteName} />
                 ))}
               </div>
             ) : blog.featuredPost ? null : (
-              <BlogEmptyState />
+              <BlogEmptyState labels={blogPage.listingLabels} />
             )}
-            <BlogPagination activeCategory={blog.activeCategory} pagination={blog.pagination} query={blog.query} />
+            <BlogPagination activeCategory={blog.activeCategory} labels={blogPage.paginationLabels} pagination={blog.pagination} query={blog.query} />
           </div>
-          <BlogSidebar featuredPost={blog.featuredPost} posts={blog.posts} />
+          <BlogSidebar cta={blogPage.articleCTA} featuredPost={blog.featuredPost} labels={blogPage.listingLabels} posts={blog.posts} />
         </section>
       </div>
     </BlogShell>

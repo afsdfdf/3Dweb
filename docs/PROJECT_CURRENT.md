@@ -1,6 +1,6 @@
 # Thorns Tavern Current Project Guide
 
-Updated: 2026-05-11
+Updated: 2026-05-28
 
 This is the current human-readable source of truth for `D:\web\payload-local-demo`. Older root docs, dated reports, rollout plans, and local test-route notes were removed or superseded by this file. For compact machine-readable guardrails, use `docs/AI_PROJECT_MEMORY.md`.
 
@@ -164,7 +164,7 @@ Do not add Next route handlers that shadow Payload REST roots such as `/api/medi
 
 - `homepage-content`: homepage singleton copy and section-level settings.
 - `homepage-items`: repeated homepage cards, curated promos, rails, and placements.
-- `formal-pages`: editable copy for formal information and marketing pages.
+- `formal-pages`: editable copy for formal information, marketing pages, and blog page-level UI labels/CTAs.
 - `posts`: public blog and Tavern Journal content.
 - `model-bundles`: public curated bundle merchandising and bundle detail content.
 - `site-settings.headerNav`: backend-managed public navigation labels/order.
@@ -191,6 +191,13 @@ Avoid adding new hardcoded page copy when the page is already backed by Payload-
 ## Code Quality And Validation
 
 Use `corepack pnpm` in this Windows shell because bare `pnpm` may not be on PATH.
+
+## Blog CMS Rules
+
+- Blog page-level labels, CTAs, hero copy, listing labels, article-detail labels, and SEO copy live in `formal-pages.blogPage`.
+- Blog CTA/link rendering must use `src/app/(frontend)/blog/_lib/blogSafety.ts`; do not pass raw CMS hrefs directly into public `<Link>` or `<a>` elements.
+- Blog public images must use guest-readable media only. Private Supabase object URLs and non-preview/non-public media should fall back instead of rendering.
+- Blog shell pages should use `getMarketingSiteSettings()` when they only need navigation/footer settings.
 
 Baseline validation:
 
