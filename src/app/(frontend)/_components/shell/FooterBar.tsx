@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
-import { isGuestReadableMedia } from '@/lib/mediaVisibility'
 import { getDefaultFooterLinkGroups, type FooterContent, type FooterLink } from '../../_lib/marketing-content'
+import { getFooterBrandLogoSrc, normalizeFooterHref } from './footerSafety'
 
 type FooterBarProps = {
   footerContent: FooterContent
@@ -9,84 +9,9 @@ type FooterBarProps = {
   supportEmail: string
 }
 
-type FooterImageLike = {
-  publicAccess?: boolean | null
-  purpose?: null | string
-  thumbnailURL?: null | string
-  url?: null | string
-}
-
-const defaultFooterLogoSrc = '/ui/nav/brand-wordmark.png'
-const controlCharacters = /[\u0000-\u001F\u007F]/
-
-const isRecord = (value: unknown): value is Record<string, unknown> => {
-  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
-}
-
-function getTrimmedText(value: unknown) {
-  return typeof value === 'string' ? value.trim() : ''
-}
-
-function normalizeFooterImageURL(value: unknown): null | string {
-  const trimmed = getTrimmedText(value)
-  if (!trimmed || controlCharacters.test(trimmed) || trimmed.startsWith('//')) return null
-  if (trimmed.startsWith('/')) return trimmed
-
-  try {
-    const parsed = new URL(trimmed)
-
-    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
-      return null
-    }
-
-    if (
-      (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1') &&
-      parsed.pathname.startsWith('/api/media/file/')
-    ) {
-      return `${parsed.pathname}${parsed.search}`
-    }
-
-    if (
-      parsed.hostname.endsWith('.supabase.co') &&
-      parsed.pathname.startsWith('/storage/v1/object/') &&
-      !parsed.pathname.startsWith('/storage/v1/object/public/')
-    ) {
-      return null
-    }
-
-    return parsed.toString()
-  } catch {
-    return null
-  }
-}
-
-export function getFooterBrandLogoSrc(footerContent: FooterContent) {
-  const brandLogo = footerContent.brandLogo
-  if (!isRecord(brandLogo)) return defaultFooterLogoSrc
-
-  if (('publicAccess' in brandLogo || 'purpose' in brandLogo) && !isGuestReadableMedia(brandLogo as FooterImageLike)) {
-    return defaultFooterLogoSrc
-  }
-
-  return normalizeFooterImageURL(brandLogo.thumbnailURL || brandLogo.url) || defaultFooterLogoSrc
-}
-
-function normalizeFooterHref(value: string) {
-  const href = value.trim()
-  if (!href) return null
-  if (href.startsWith('/') || href.startsWith('#')) return href
-
-  try {
-    const parsed = new URL(href)
-    return ['http:', 'https:', 'mailto:'].includes(parsed.protocol) ? parsed.toString() : null
-  } catch {
-    return null
-  }
-}
-
 function FooterLinkItem({ link }: { link: FooterLink }) {
   const href = normalizeFooterHref(link.href)
-  const label = link.label.trim()
+  const label = typeof link.label === 'string' ? link.label.trim() : ''
 
   if (!href || !label) return null
 

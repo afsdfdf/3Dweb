@@ -1850,6 +1850,9 @@ export interface SiteSetting {
     directionEyebrow?: string | null;
     directionTitle?: string | null;
     directionText?: string | null;
+    /**
+     * The public footer displays up to four groups. Keep labels short so the footer stays readable on mobile.
+     */
     linkGroups?:
       | {
           title: string;

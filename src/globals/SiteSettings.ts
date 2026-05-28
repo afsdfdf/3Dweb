@@ -87,9 +87,13 @@ export const SiteSettings: GlobalConfig = {
                   type: 'array',
                   defaultValue: defaultSiteSettings.footer.linkGroups || [],
                   label: 'Footer link groups',
+                  maxRows: 4,
                   labels: {
                     plural: 'Footer link groups',
                     singular: 'Footer link group',
+                  },
+                  admin: {
+                    description: 'The public footer displays up to four groups. Keep labels short so the footer stays readable on mobile.',
                   },
                   fields: [
                     { name: 'title', type: 'text', required: true, label: 'Group title' },
