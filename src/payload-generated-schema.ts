@@ -3772,17 +3772,6 @@ export const formal_pages = pgTable(
   "formal_pages",
   {
     id: serial("id").primaryKey(),
-    blogPage_heroEyebrow: varchar("blog_page_hero_eyebrow")
-      .notNull()
-      .default("Tavern Journal"),
-    blogPage_heroTitle: varchar("blog_page_hero_title")
-      .notNull()
-      .default("Notes from the forge, field, and tavern"),
-    blogPage_heroText: varchar("blog_page_hero_text")
-      .notNull()
-      .default(
-        "Tutorials, creator stories, platform updates, and production notes for turning ideas into collectible 3D worlds.",
-      ),
     blogPage_heroImage: integer("blog_page_hero_image_id").references(
       () => media.id,
       {
@@ -3793,6 +3782,17 @@ export const formal_pages = pgTable(
       .notNull()
       .default(
         "A dark fantasy workshop table with printed miniatures and tools",
+      ),
+    blogPage_heroEyebrow: varchar("blog_page_hero_eyebrow")
+      .notNull()
+      .default("Tavern Journal"),
+    blogPage_heroTitle: varchar("blog_page_hero_title")
+      .notNull()
+      .default("Notes from the forge, field, and tavern"),
+    blogPage_heroText: varchar("blog_page_hero_text")
+      .notNull()
+      .default(
+        "Tutorials, creator stories, platform updates, and production notes for turning ideas into collectible 3D worlds.",
       ),
     blogPage_heroPrimaryCTA_label: varchar("blog_page_hero_primary_c_t_a_label")
       .notNull()

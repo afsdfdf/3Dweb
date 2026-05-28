@@ -211,23 +211,23 @@ const marketingPageFields: Field[] = [
 
 const blogPageFields: Field[] = [
   {
+    name: 'heroImage',
+    type: 'upload',
+    relationTo: 'media',
+    label: 'Blog top banner image',
+    filterOptions: () => buildGuestReadableMediaWhere(),
+    admin: {
+      description: 'Visible at the top of /blog. Public rendering requires media with publicAccess enabled or purpose set to preview. The recommended wide banner ratio is about 5:1.',
+    },
+  },
+  { name: 'heroImageAlt', type: 'text', required: true, defaultValue: defaultBlogPageContent.heroImageAlt, label: 'Blog top banner alt text' },
+  {
     type: 'collapsible',
-    label: 'Blog hero banner and CTAs',
+    label: 'Hero copy and CTAs',
     fields: [
       { name: 'heroEyebrow', type: 'text', required: true, defaultValue: defaultBlogPageContent.heroEyebrow, label: 'Hero eyebrow' },
       { name: 'heroTitle', type: 'textarea', required: true, defaultValue: defaultBlogPageContent.heroTitle, label: 'Hero title' },
       { name: 'heroText', type: 'textarea', required: true, defaultValue: defaultBlogPageContent.heroText, label: 'Hero text' },
-      {
-        name: 'heroImage',
-        type: 'upload',
-        relationTo: 'media',
-        label: 'Hero banner image',
-        filterOptions: () => buildGuestReadableMediaWhere(),
-        admin: {
-          description: 'Controls the wide banner at the top of /blog. Public rendering requires media with publicAccess enabled or purpose set to preview. The recommended banner ratio is about 5:1.',
-        },
-      },
-      { name: 'heroImageAlt', type: 'text', required: true, defaultValue: defaultBlogPageContent.heroImageAlt, label: 'Hero image alt text' },
       {
         name: 'heroPrimaryCTA',
         type: 'group',

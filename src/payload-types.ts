@@ -2165,14 +2165,14 @@ export interface FormalPage {
       }[]
     | null;
   blogPage: {
-    heroEyebrow: string;
-    heroTitle: string;
-    heroText: string;
     /**
-     * Controls the wide banner at the top of /blog. Public rendering requires media with publicAccess enabled or purpose set to preview. The recommended banner ratio is about 5:1.
+     * Visible at the top of /blog. Public rendering requires media with publicAccess enabled or purpose set to preview. The recommended wide banner ratio is about 5:1.
      */
     heroImage?: (number | null) | Media;
     heroImageAlt: string;
+    heroEyebrow: string;
+    heroTitle: string;
+    heroText: string;
     heroPrimaryCTA: {
       label: string;
       /**
@@ -2892,11 +2892,11 @@ export interface FormalPagesSelect<T extends boolean = true> {
   blogPage?:
     | T
     | {
+        heroImage?: T;
+        heroImageAlt?: T;
         heroEyebrow?: T;
         heroTitle?: T;
         heroText?: T;
-        heroImage?: T;
-        heroImageAlt?: T;
         heroPrimaryCTA?:
           | T
           | {

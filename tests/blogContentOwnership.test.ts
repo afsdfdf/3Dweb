@@ -25,9 +25,14 @@ test('blog page auxiliary UI copy is owned by formal-pages.blogPage', () => {
   }
 
   assert.match(formalPagesSource, /name:\s*['"]all['"]/)
-  assert.match(formalPagesSource, /label:\s*['"]Blog hero banner and CTAs['"]/)
-  assert.match(formalPagesSource, /label:\s*['"]Hero banner image['"]/)
-  assert.match(formalPagesSource, /recommended banner ratio/i)
+  const bannerImageLabelIndex = formalPagesSource.indexOf("label: 'Blog top banner image'")
+  const heroCopyGroupIndex = formalPagesSource.indexOf("label: 'Hero copy and CTAs'")
+
+  assert.notEqual(bannerImageLabelIndex, -1)
+  assert.notEqual(heroCopyGroupIndex, -1)
+  assert.ok(bannerImageLabelIndex < heroCopyGroupIndex)
+  assert.match(formalPagesSource, /label:\s*['"]Blog top banner alt text['"]/)
+  assert.match(formalPagesSource, /recommended wide banner ratio/i)
   assert.match(defaultsSource, /all:\s*['"]All['"]/)
   assert.match(contentSource, /resolveBlogListingLabels/)
   assert.match(contentSource, /resolveBlogArticleLabels/)
@@ -118,7 +123,8 @@ test('blog admin content group describes whole-page ownership and validates oper
   assert.match(formalPagesSource, /label:\s*['"]Blog page content['"]/)
   assert.match(formalPagesSource, /validateBlogHref/)
   assert.match(formalPagesSource, /Use internal paths like/)
-  assert.match(formalPagesSource, /label:\s*['"]Blog hero banner and CTAs['"]/)
+  assert.match(formalPagesSource, /label:\s*['"]Blog top banner image['"]/)
+  assert.match(formalPagesSource, /label:\s*['"]Hero copy and CTAs['"]/)
   assert.match(formalPagesSource, /label:\s*['"]Listing, search, and empty states['"]/)
   assert.match(formalPagesSource, /label:\s*['"]Article detail page['"]/)
   assert.match(formalPagesSource, /label:\s*['"]SEO['"]/)
