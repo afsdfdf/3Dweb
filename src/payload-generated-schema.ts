@@ -1477,11 +1477,14 @@ export const posts = pgTable(
   "posts",
   {
     id: serial("id").primaryKey(),
+    title: varchar("title"),
     slug: varchar("slug"),
     category: enum_posts_category("category").default("article"),
     coverImage: integer("cover_image_id").references(() => media.id, {
       onDelete: "set null",
     }),
+    excerpt: varchar("excerpt"),
+    content: jsonb("content"),
     videoUrl: varchar("video_url"),
     createdBy: integer("created_by_id").references(() => users.id, {
       onDelete: "set null",
@@ -1520,29 +1523,6 @@ export const posts = pgTable(
   ],
 );
 
-export const posts_locales = pgTable(
-  "posts_locales",
-  {
-    title: varchar("title"),
-    excerpt: varchar("excerpt"),
-    content: jsonb("content"),
-    id: serial("id").primaryKey(),
-    _locale: enum__locales("_locale").notNull(),
-    _parentID: integer("_parent_id").notNull(),
-  },
-  (columns) => [
-    uniqueIndex("posts_locales_locale_parent_id_unique").on(
-      columns._locale,
-      columns._parentID,
-    ),
-    foreignKey({
-      columns: [columns["_parentID"]],
-      foreignColumns: [posts.id],
-      name: "posts_locales_parent_id_fk",
-    }).onDelete("cascade"),
-  ],
-);
-
 export const _posts_v = pgTable(
   "_posts_v",
   {
@@ -1550,6 +1530,7 @@ export const _posts_v = pgTable(
     parent: integer("parent_id").references(() => posts.id, {
       onDelete: "set null",
     }),
+    version_title: varchar("version_title"),
     version_slug: varchar("version_slug"),
     version_category:
       enum__posts_v_version_category("version_category").default("article"),
@@ -1559,6 +1540,8 @@ export const _posts_v = pgTable(
         onDelete: "set null",
       },
     ),
+    version_excerpt: varchar("version_excerpt"),
+    version_content: jsonb("version_content"),
     version_videoUrl: varchar("version_video_url"),
     version_createdBy: integer("version_created_by_id").references(
       () => users.id,
@@ -1627,29 +1610,6 @@ export const _posts_v = pgTable(
     index("_posts_v_snapshot_idx").on(columns.snapshot),
     index("_posts_v_published_locale_idx").on(columns.publishedLocale),
     index("_posts_v_latest_idx").on(columns.latest),
-  ],
-);
-
-export const _posts_v_locales = pgTable(
-  "_posts_v_locales",
-  {
-    version_title: varchar("version_title"),
-    version_excerpt: varchar("version_excerpt"),
-    version_content: jsonb("version_content"),
-    id: serial("id").primaryKey(),
-    _locale: enum__locales("_locale").notNull(),
-    _parentID: integer("_parent_id").notNull(),
-  },
-  (columns) => [
-    uniqueIndex("_posts_v_locales_locale_parent_id_unique").on(
-      columns._locale,
-      columns._parentID,
-    ),
-    foreignKey({
-      columns: [columns["_parentID"]],
-      foreignColumns: [_posts_v.id],
-      name: "_posts_v_locales_parent_id_fk",
-    }).onDelete("cascade"),
   ],
 );
 
@@ -4682,14 +4642,7 @@ export const relations__homepage_items_v = relations(
     }),
   }),
 );
-export const relations_posts_locales = relations(posts_locales, ({ one }) => ({
-  _parentID: one(posts, {
-    fields: [posts_locales._parentID],
-    references: [posts.id],
-    relationName: "_locales",
-  }),
-}));
-export const relations_posts = relations(posts, ({ one, many }) => ({
+export const relations_posts = relations(posts, ({ one }) => ({
   coverImage: one(media, {
     fields: [posts.coverImage],
     references: [media.id],
@@ -4700,21 +4653,8 @@ export const relations_posts = relations(posts, ({ one, many }) => ({
     references: [users.id],
     relationName: "createdBy",
   }),
-  _locales: many(posts_locales, {
-    relationName: "_locales",
-  }),
 }));
-export const relations__posts_v_locales = relations(
-  _posts_v_locales,
-  ({ one }) => ({
-    _parentID: one(_posts_v, {
-      fields: [_posts_v_locales._parentID],
-      references: [_posts_v.id],
-      relationName: "_locales",
-    }),
-  }),
-);
-export const relations__posts_v = relations(_posts_v, ({ one, many }) => ({
+export const relations__posts_v = relations(_posts_v, ({ one }) => ({
   parent: one(posts, {
     fields: [_posts_v.parent],
     references: [posts.id],
@@ -4729,9 +4669,6 @@ export const relations__posts_v = relations(_posts_v, ({ one, many }) => ({
     fields: [_posts_v.version_createdBy],
     references: [users.id],
     relationName: "version_createdBy",
-  }),
-  _locales: many(_posts_v_locales, {
-    relationName: "_locales",
   }),
 }));
 export const relations_announcements_locales = relations(
@@ -5679,9 +5616,7 @@ type DatabaseSchema = {
   _homepage_items_v: typeof _homepage_items_v;
   _homepage_items_v_locales: typeof _homepage_items_v_locales;
   posts: typeof posts;
-  posts_locales: typeof posts_locales;
   _posts_v: typeof _posts_v;
-  _posts_v_locales: typeof _posts_v_locales;
   announcements: typeof announcements;
   announcements_locales: typeof announcements_locales;
   _announcements_v: typeof _announcements_v;
@@ -5763,9 +5698,7 @@ type DatabaseSchema = {
   relations_homepage_items: typeof relations_homepage_items;
   relations__homepage_items_v_locales: typeof relations__homepage_items_v_locales;
   relations__homepage_items_v: typeof relations__homepage_items_v;
-  relations_posts_locales: typeof relations_posts_locales;
   relations_posts: typeof relations_posts;
-  relations__posts_v_locales: typeof relations__posts_v_locales;
   relations__posts_v: typeof relations__posts_v;
   relations_announcements_locales: typeof relations_announcements_locales;
   relations_announcements: typeof relations_announcements;

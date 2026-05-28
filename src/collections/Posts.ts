@@ -69,7 +69,6 @@ export const Posts: CollectionConfig = {
     {
       name: 'title',
       type: 'text',
-      localized: true,
       required: true,
       label: 'Title',
     },
@@ -106,13 +105,11 @@ export const Posts: CollectionConfig = {
     {
       name: 'excerpt',
       type: 'textarea',
-      localized: true,
       label: 'Excerpt',
     },
     {
       name: 'content',
       type: 'richText',
-      localized: true,
       label: 'Content',
       required: true,
     },

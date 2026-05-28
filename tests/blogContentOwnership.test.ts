@@ -97,20 +97,21 @@ test('blog shell fetches only site settings and avoids homepage overfetch', () =
   assert.doesNotMatch(detailPageSource, /getMarketingSiteData/)
 })
 
-test('blog post queries prefer the current frontend locale without Payload localized fallback', () => {
+test('blog post queries use default English content independent of frontend locale', () => {
   const dataSource = readFileSync(blogDataPath, 'utf8')
   const listPageSource = readFileSync(blogListPagePath, 'utf8')
   const detailPageSource = readFileSync(blogDetailPagePath, 'utf8')
 
   assert.match(dataSource, /locale\?:\s*Locale/)
-  assert.match(dataSource, /getPostLocaleFallbackOrder/)
+  assert.match(dataSource, /getBlogPostContentLocale/)
+  assert.match(dataSource, /locale:\s*blogPostContentLocale/)
   assert.match(dataSource, /fallbackLocale:\s*false/)
   assert.match(dataSource, /title:\s*\{\s*exists:\s*true/)
   assert.match(dataSource, /title:\s*\{\s*not_equals:\s*''/)
   assert.match(dataSource, /content:\s*\{\s*exists:\s*true/)
-  assert.match(dataSource, /hasPublicLocalizedPostContent/)
+  assert.match(dataSource, /hasPublicDefaultPostContent/)
   assert.match(dataSource, /decodeURIComponent/)
-  assert.doesNotMatch(dataSource, /locale:\s*['"]en['"]/)
+  assert.doesNotMatch(dataSource, /getPostLocaleFallbackOrder/)
   assert.match(listPageSource, /getCurrentLocale/)
   assert.match(listPageSource, /locale,\s*\n/)
   assert.match(detailPageSource, /getCurrentLocale/)

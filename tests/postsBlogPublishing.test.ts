@@ -63,6 +63,16 @@ test('Posts content changes revalidate public blog pages', () => {
   assert.ok(Posts.hooks?.afterDelete?.includes(revalidateBlogPostCacheAfterDelete))
 })
 
+test('Posts article content is shared and not localized by admin language', () => {
+  const fields = Posts.fields.filter((field): field is { localized?: boolean; name: string } => 'name' in field)
+
+  for (const fieldName of ['title', 'excerpt', 'content']) {
+    const field = fields.find((item) => item.name === fieldName)
+    assert.ok(field)
+    assert.notEqual(field.localized, true)
+  }
+})
+
 test('Posts normalizes operator-entered slugs before validation', async () => {
   assert.ok(Posts.hooks?.beforeValidate?.includes(normalizePostSlugBeforeValidate))
   assert.equal(normalizePostSlugValue(' Thorns Tavern Testing '), 'thorns-tavern-testing')
