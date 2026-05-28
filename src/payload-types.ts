@@ -1838,6 +1838,12 @@ export interface SiteSetting {
       }[]
     | null;
   footer?: {
+    /**
+     * Optional replacement for the public footer wordmark. Use guest-readable media so anonymous visitors can see it.
+     */
+    brandLogo?: (number | null) | Media;
+    brandLogoAlt?: string | null;
+    brandSummary?: string | null;
     aboutEyebrow?: string | null;
     aboutTitle?: string | null;
     aboutText?: string | null;
@@ -2503,6 +2509,9 @@ export interface SiteSettingsSelect<T extends boolean = true> {
   footer?:
     | T
     | {
+        brandLogo?: T;
+        brandLogoAlt?: T;
+        brandSummary?: T;
         aboutEyebrow?: T;
         aboutTitle?: T;
         aboutText?: T;

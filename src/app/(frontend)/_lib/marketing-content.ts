@@ -15,6 +15,16 @@ export type FooterContent = {
   aboutEyebrow: string
   aboutText: string
   aboutTitle: string
+  brandLogo?: null | number | {
+    alt?: null | string
+    filename?: null | string
+    publicAccess?: boolean | null
+    purpose?: null | string
+    thumbnailURL?: null | string
+    url?: null | string
+  }
+  brandLogoAlt?: null | string
+  brandSummary?: null | string
   directionEyebrow: string
   directionText: string
   directionTitle: string
@@ -167,6 +177,9 @@ const footerContent: FooterContent = {
   aboutEyebrow: 'About the product',
   aboutText: footerAboutText,
   aboutTitle: 'A unified platform for character creation, asset delivery, and print fulfillment',
+  brandLogo: null,
+  brandLogoAlt: 'Thorns Tavern',
+  brandSummary: 'An AI 3D product platform for character creation, asset management, and print fulfillment.',
   directionEyebrow: 'Product direction',
   directionText:
     'The current release already includes accounts, tasks, models, orders, credits, and an admin structure. The next step is to keep polishing the public site, Studio, and platform APIs.',

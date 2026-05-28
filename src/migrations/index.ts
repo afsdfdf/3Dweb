@@ -24,6 +24,8 @@ import * as migration_20260509_133000_ai_provider_concurrency_settings from './2
 import * as migration_20260527_120000_model_preview_optimization from './20260527_120000_model_preview_optimization';
 import * as migration_20260528_160500_formal_pages_blog_auxiliary_content from './20260528_160500_formal_pages_blog_auxiliary_content';
 import * as migration_20260529_020000_posts_default_content_locale from './20260529_020000_posts_default_content_locale';
+import * as migration_20260529_030000_site_footer_brand_fields from './20260529_030000_site_footer_brand_fields';
+import * as migration_20260529_031000_site_footer_brand_logo_index_name from './20260529_031000_site_footer_brand_logo_index_name';
 
 export const migrations = [
   {
@@ -155,5 +157,15 @@ export const migrations = [
     up: migration_20260529_020000_posts_default_content_locale.up,
     down: migration_20260529_020000_posts_default_content_locale.down,
     name: '20260529_020000_posts_default_content_locale'
+  },
+  {
+    up: migration_20260529_030000_site_footer_brand_fields.up,
+    down: migration_20260529_030000_site_footer_brand_fields.down,
+    name: '20260529_030000_site_footer_brand_fields'
+  },
+  {
+    up: migration_20260529_031000_site_footer_brand_logo_index_name.up,
+    down: migration_20260529_031000_site_footer_brand_logo_index_name.down,
+    name: '20260529_031000_site_footer_brand_logo_index_name'
   },
 ];

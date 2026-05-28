@@ -3,6 +3,7 @@ import type { GlobalConfig } from 'payload'
 import { defaultSiteSettings } from '@/app/(frontend)/_lib/marketing-content'
 import { isAdmin, isStaff } from '@/access'
 import { adminTextKey } from '@/lib/adminText'
+import { buildGuestReadableMediaWhere } from '@/lib/mediaVisibility'
 
 export const SiteSettings: GlobalConfig = {
   slug: 'site-settings',
@@ -51,12 +52,36 @@ export const SiteSettings: GlobalConfig = {
               type: 'group',
               label: 'Footer',
               fields: [
-                { name: 'aboutEyebrow', type: 'text', defaultValue: defaultSiteSettings.footer.aboutEyebrow, label: 'About eyebrow' },
-                { name: 'aboutTitle', type: 'text', defaultValue: defaultSiteSettings.footer.aboutTitle, label: 'About title' },
-                { name: 'aboutText', type: 'textarea', defaultValue: defaultSiteSettings.footer.aboutText, label: 'About text' },
-                { name: 'directionEyebrow', type: 'text', defaultValue: defaultSiteSettings.footer.directionEyebrow, label: 'Direction eyebrow' },
-                { name: 'directionTitle', type: 'text', defaultValue: defaultSiteSettings.footer.directionTitle, label: 'Direction title' },
-                { name: 'directionText', type: 'textarea', defaultValue: defaultSiteSettings.footer.directionText, label: 'Direction text' },
+                {
+                  name: 'brandLogo',
+                  type: 'upload',
+                  relationTo: 'media',
+                  label: 'Footer logo image',
+                  filterOptions: buildGuestReadableMediaWhere(),
+                  admin: {
+                    description: 'Optional replacement for the public footer wordmark. Use guest-readable media so anonymous visitors can see it.',
+                  },
+                },
+                {
+                  name: 'brandLogoAlt',
+                  type: 'text',
+                  defaultValue: defaultSiteSettings.footer.brandLogoAlt || 'Thorns Tavern',
+                  label: 'Footer logo alt text',
+                },
+                {
+                  name: 'brandSummary',
+                  type: 'textarea',
+                  defaultValue:
+                    defaultSiteSettings.footer.brandSummary ||
+                    'An AI 3D product platform for character creation, asset management, and print fulfillment.',
+                  label: 'Footer brand summary',
+                },
+                { name: 'aboutEyebrow', type: 'text', defaultValue: defaultSiteSettings.footer.aboutEyebrow, label: 'About eyebrow', admin: { condition: () => false } },
+                { name: 'aboutTitle', type: 'text', defaultValue: defaultSiteSettings.footer.aboutTitle, label: 'About title', admin: { condition: () => false } },
+                { name: 'aboutText', type: 'textarea', defaultValue: defaultSiteSettings.footer.aboutText, label: 'About text', admin: { condition: () => false } },
+                { name: 'directionEyebrow', type: 'text', defaultValue: defaultSiteSettings.footer.directionEyebrow, label: 'Direction eyebrow', admin: { condition: () => false } },
+                { name: 'directionTitle', type: 'text', defaultValue: defaultSiteSettings.footer.directionTitle, label: 'Direction title', admin: { condition: () => false } },
+                { name: 'directionText', type: 'textarea', defaultValue: defaultSiteSettings.footer.directionText, label: 'Direction text', admin: { condition: () => false } },
                 {
                   name: 'linkGroups',
                   type: 'array',
@@ -84,6 +109,15 @@ export const SiteSettings: GlobalConfig = {
                       ],
                     },
                   ],
+                },
+                {
+                  name: 'footerPreview',
+                  type: 'ui',
+                  admin: {
+                    components: {
+                      Field: '/components/admin/FooterPreview',
+                    },
+                  },
                 },
               ],
             },

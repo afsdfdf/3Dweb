@@ -3112,211 +3112,232 @@ export const site_settings_credit_packages = pgTable(
   ],
 );
 
-export const site_settings = pgTable("site_settings", {
-  id: serial("id").primaryKey(),
-  siteName: varchar("site_name").notNull().default("Thorns Tavern"),
-  siteDescription: varchar("site_description").default(
-    "An AI 3D product platform for character creation, asset management, and print fulfillment.",
-  ),
-  supportEmail: varchar("support_email").default("support@example.com"),
-  announcement: varchar("announcement").default(
-    "The beta now supports the marketing site, generation workspace, order flow, and credits. Public launch polish is in progress.",
-  ),
-  footer_aboutEyebrow: varchar("footer_about_eyebrow").default(
-    "About the product",
-  ),
-  footer_aboutTitle: varchar("footer_about_title").default(
-    "A unified platform for character creation, asset delivery, and print fulfillment",
-  ),
-  footer_aboutText: varchar("footer_about_text").default(
-    "Thorns Tavern connects character generation, model management, digital delivery, and print orders into one product workflow so teams can operate 3D assets like a real business.",
-  ),
-  footer_directionEyebrow: varchar("footer_direction_eyebrow").default(
-    "Product direction",
-  ),
-  footer_directionTitle: varchar("footer_direction_title").default(
-    "Evolving from an AI generation tool into an operable product website",
-  ),
-  footer_directionText: varchar("footer_direction_text").default(
-    "The current release already includes accounts, tasks, models, orders, credits, and an admin structure. The next step is to keep polishing the public site, Studio, and platform APIs.",
-  ),
-  paymentProviders_subscriptionProvider:
-    enum_site_settings_payment_providers_subscription_provider(
-      "payment_providers_subscription_provider",
-    ).default("stripe"),
-  paymentProviders_orderProvider:
-    enum_site_settings_payment_providers_order_provider(
-      "payment_providers_order_provider",
-    ).default("stripe"),
-  paymentProviders_providerNotice: varchar(
-    "payment_providers_provider_notice",
-  ).default(
-    "Stripe is the active rail for subscriptions and order payments. Shopify-compatible data structures remain in place for future commerce expansion.",
-  ),
-  subscriptionPlans_starter_name: varchar(
-    "subscription_plans_starter_name",
-  ).default("Starter"),
-  subscriptionPlans_starter_shortLabel: varchar(
-    "subscription_plans_starter_short_label",
-  ).default("Starter plan"),
-  subscriptionPlans_starter_monthlyPrice: numeric(
-    "subscription_plans_starter_monthly_price",
-    { mode: "number" },
-  ).default(19),
-  subscriptionPlans_starter_creditsPerMonth: numeric(
-    "subscription_plans_starter_credits_per_month",
-    { mode: "number" },
-  ).default(240),
-  subscriptionPlans_starter_description: varchar(
-    "subscription_plans_starter_description",
-  ).default(
-    "Designed for individual creators who need steady character generation, fast downloads, and lightweight sampling.",
-  ),
-  subscriptionPlans_pro_name: varchar("subscription_plans_pro_name").default(
-    "Pro",
-  ),
-  subscriptionPlans_pro_shortLabel: varchar(
-    "subscription_plans_pro_short_label",
-  ).default("Pro plan"),
-  subscriptionPlans_pro_monthlyPrice: numeric(
-    "subscription_plans_pro_monthly_price",
-    { mode: "number" },
-  ).default(49),
-  subscriptionPlans_pro_creditsPerMonth: numeric(
-    "subscription_plans_pro_credits_per_month",
-    { mode: "number" },
-  ).default(760),
-  subscriptionPlans_pro_description: varchar(
-    "subscription_plans_pro_description",
-  ).default(
-    "Designed for high-frequency creation, repeated iteration, and smaller teams that need more stable output capacity.",
-  ),
-  subscriptionPlans_studio_name: varchar(
-    "subscription_plans_studio_name",
-  ).default("Studio"),
-  subscriptionPlans_studio_shortLabel: varchar(
-    "subscription_plans_studio_short_label",
-  ).default("Studio plan"),
-  subscriptionPlans_studio_monthlyPrice: numeric(
-    "subscription_plans_studio_monthly_price",
-    { mode: "number" },
-  ).default(99),
-  subscriptionPlans_studio_creditsPerMonth: numeric(
-    "subscription_plans_studio_credits_per_month",
-    { mode: "number" },
-  ).default(1680),
-  subscriptionPlans_studio_description: varchar(
-    "subscription_plans_studio_description",
-  ).default(
-    "Designed for teams that need generation, asset retention, and physical sampling in one operating rhythm.",
-  ),
-  generationPricing_imageCredits: numeric("generation_pricing_image_credits", {
-    mode: "number",
-  }).default(20),
-  generationPricing_textCredits: numeric("generation_pricing_text_credits", {
-    mode: "number",
-  }).default(20),
-  generationPricing_hybridCredits: numeric(
-    "generation_pricing_hybrid_credits",
-    { mode: "number" },
-  ).default(20),
-  generationPricing_downloadCredits: numeric(
-    "generation_pricing_download_credits",
-    { mode: "number" },
-  ).default(5),
-  modelAccessPolicy_chargePreviewCredits: boolean(
-    "model_access_policy_charge_preview_credits",
-  ).default(false),
-  modelAccessPolicy_previewCredits: numeric(
-    "model_access_policy_preview_credits",
-    { mode: "number" },
-  ).default(0),
-  modelAccessPolicy_chargeDownloadCredits: boolean(
-    "model_access_policy_charge_download_credits",
-  ).default(false),
-  modelAccessPolicy_downloadCredits: numeric(
-    "model_access_policy_download_credits",
-    { mode: "number" },
-  ).default(5),
-  emailSettings_sender_fromName: varchar(
-    "email_settings_sender_from_name",
-  ).default("Thorns Tavern"),
-  emailSettings_sender_fromAddress: varchar(
-    "email_settings_sender_from_address",
-  ).default("no-reply@thornstavern.com"),
-  emailSettings_sender_replyTo: varchar("email_settings_sender_reply_to"),
-  emailSettings_branding_productName: varchar(
-    "email_settings_branding_product_name",
-  ).default("Thorns Tavern"),
-  emailSettings_branding_footerText: varchar(
-    "email_settings_branding_footer_text",
-  ).default("Thorns Tavern"),
-  emailSettings_templates_welcome_subject: varchar(
-    "email_settings_templates_welcome_subject",
-  ).default("Welcome to Thorns Tavern"),
-  emailSettings_templates_welcome_intro: varchar(
-    "email_settings_templates_welcome_intro",
-  ).default(
-    "Your account is ready. You can now start using Thorns Tavern for generation, model management, subscriptions, and orders.",
-  ),
-  emailSettings_templates_welcome_ctaLabel: varchar(
-    "email_settings_templates_welcome_cta_label",
-  ).default("Open Studio"),
-  emailSettings_templates_verify_subject: varchar(
-    "email_settings_templates_verify_subject",
-  ).default("Verify your Thorns Tavern email"),
-  emailSettings_templates_verify_intro: varchar(
-    "email_settings_templates_verify_intro",
-  ).default(
-    "Use the button below to verify your email address before signing in.",
-  ),
-  emailSettings_templates_verify_ctaLabel: varchar(
-    "email_settings_templates_verify_cta_label",
-  ).default("Verify email"),
-  emailSettings_templates_forgotPassword_subject: varchar(
-    "email_settings_templates_forgot_password_subject",
-  ).default("Thorns Tavern password reset"),
-  emailSettings_templates_forgotPassword_intro: varchar(
-    "email_settings_templates_forgot_password_intro",
-  ).default(
-    "We received a request to reset your password. Use the button below to continue.",
-  ),
-  emailSettings_templates_forgotPassword_ctaLabel: varchar(
-    "email_settings_templates_forgot_password_cta_label",
-  ).default("Reset password"),
-  emailSettings_businessTemplates_subscriptionSuccess_subject: varchar(
-    "email_settings_business_templates_subscription_success_subject",
-  ).default("Thorns Tavern subscription activated"),
-  emailSettings_businessTemplates_subscriptionSuccess_intro: varchar(
-    "email_settings_business_templates_subscription_success_intro",
-  ).default(
-    "Your subscription is active and credits for the current period have been applied to your account.",
-  ),
-  emailSettings_businessTemplates_subscriptionSuccess_ctaLabel: varchar(
-    "email_settings_business_templates_subscription_success_cta_label",
-  ).default("View credits and subscription"),
-  emailSettings_businessTemplates_orderPaid_subject: varchar(
-    "email_settings_business_templates_order_paid_subject",
-  ).default("Thorns Tavern order payment received"),
-  emailSettings_businessTemplates_orderPaid_intro: varchar(
-    "email_settings_business_templates_order_paid_intro",
-  ).default(
-    "Your print order has been paid successfully and moved into the next processing stage.",
-  ),
-  emailSettings_businessTemplates_orderPaid_ctaLabel: varchar(
-    "email_settings_business_templates_order_paid_cta_label",
-  ).default("View order details"),
-  updatedAt: timestamp("updated_at", {
-    mode: "string",
-    withTimezone: true,
-    precision: 3,
-  }),
-  createdAt: timestamp("created_at", {
-    mode: "string",
-    withTimezone: true,
-    precision: 3,
-  }),
-});
+export const site_settings = pgTable(
+  "site_settings",
+  {
+    id: serial("id").primaryKey(),
+    siteName: varchar("site_name").notNull().default("Thorns Tavern"),
+    siteDescription: varchar("site_description").default(
+      "An AI 3D product platform for character creation, asset management, and print fulfillment.",
+    ),
+    supportEmail: varchar("support_email").default("support@example.com"),
+    announcement: varchar("announcement").default(
+      "The beta now supports the marketing site, generation workspace, order flow, and credits. Public launch polish is in progress.",
+    ),
+    footer_brandLogo: integer("footer_brand_logo_id").references(
+      () => media.id,
+      {
+        onDelete: "set null",
+      },
+    ),
+    footer_brandLogoAlt: varchar("footer_brand_logo_alt").default(
+      "Thorns Tavern",
+    ),
+    footer_brandSummary: varchar("footer_brand_summary").default(
+      "An AI 3D product platform for character creation, asset management, and print fulfillment.",
+    ),
+    footer_aboutEyebrow: varchar("footer_about_eyebrow").default(
+      "About the product",
+    ),
+    footer_aboutTitle: varchar("footer_about_title").default(
+      "A unified platform for character creation, asset delivery, and print fulfillment",
+    ),
+    footer_aboutText: varchar("footer_about_text").default(
+      "Thorns Tavern connects character generation, model management, digital delivery, and print orders into one product workflow so teams can operate 3D assets like a real business.",
+    ),
+    footer_directionEyebrow: varchar("footer_direction_eyebrow").default(
+      "Product direction",
+    ),
+    footer_directionTitle: varchar("footer_direction_title").default(
+      "Evolving from an AI generation tool into an operable product website",
+    ),
+    footer_directionText: varchar("footer_direction_text").default(
+      "The current release already includes accounts, tasks, models, orders, credits, and an admin structure. The next step is to keep polishing the public site, Studio, and platform APIs.",
+    ),
+    paymentProviders_subscriptionProvider:
+      enum_site_settings_payment_providers_subscription_provider(
+        "payment_providers_subscription_provider",
+      ).default("stripe"),
+    paymentProviders_orderProvider:
+      enum_site_settings_payment_providers_order_provider(
+        "payment_providers_order_provider",
+      ).default("stripe"),
+    paymentProviders_providerNotice: varchar(
+      "payment_providers_provider_notice",
+    ).default(
+      "Stripe is the active rail for subscriptions and order payments. Shopify-compatible data structures remain in place for future commerce expansion.",
+    ),
+    subscriptionPlans_starter_name: varchar(
+      "subscription_plans_starter_name",
+    ).default("Starter"),
+    subscriptionPlans_starter_shortLabel: varchar(
+      "subscription_plans_starter_short_label",
+    ).default("Starter plan"),
+    subscriptionPlans_starter_monthlyPrice: numeric(
+      "subscription_plans_starter_monthly_price",
+      { mode: "number" },
+    ).default(19),
+    subscriptionPlans_starter_creditsPerMonth: numeric(
+      "subscription_plans_starter_credits_per_month",
+      { mode: "number" },
+    ).default(240),
+    subscriptionPlans_starter_description: varchar(
+      "subscription_plans_starter_description",
+    ).default(
+      "Designed for individual creators who need steady character generation, fast downloads, and lightweight sampling.",
+    ),
+    subscriptionPlans_pro_name: varchar("subscription_plans_pro_name").default(
+      "Pro",
+    ),
+    subscriptionPlans_pro_shortLabel: varchar(
+      "subscription_plans_pro_short_label",
+    ).default("Pro plan"),
+    subscriptionPlans_pro_monthlyPrice: numeric(
+      "subscription_plans_pro_monthly_price",
+      { mode: "number" },
+    ).default(49),
+    subscriptionPlans_pro_creditsPerMonth: numeric(
+      "subscription_plans_pro_credits_per_month",
+      { mode: "number" },
+    ).default(760),
+    subscriptionPlans_pro_description: varchar(
+      "subscription_plans_pro_description",
+    ).default(
+      "Designed for high-frequency creation, repeated iteration, and smaller teams that need more stable output capacity.",
+    ),
+    subscriptionPlans_studio_name: varchar(
+      "subscription_plans_studio_name",
+    ).default("Studio"),
+    subscriptionPlans_studio_shortLabel: varchar(
+      "subscription_plans_studio_short_label",
+    ).default("Studio plan"),
+    subscriptionPlans_studio_monthlyPrice: numeric(
+      "subscription_plans_studio_monthly_price",
+      { mode: "number" },
+    ).default(99),
+    subscriptionPlans_studio_creditsPerMonth: numeric(
+      "subscription_plans_studio_credits_per_month",
+      { mode: "number" },
+    ).default(1680),
+    subscriptionPlans_studio_description: varchar(
+      "subscription_plans_studio_description",
+    ).default(
+      "Designed for teams that need generation, asset retention, and physical sampling in one operating rhythm.",
+    ),
+    generationPricing_imageCredits: numeric(
+      "generation_pricing_image_credits",
+      { mode: "number" },
+    ).default(20),
+    generationPricing_textCredits: numeric("generation_pricing_text_credits", {
+      mode: "number",
+    }).default(20),
+    generationPricing_hybridCredits: numeric(
+      "generation_pricing_hybrid_credits",
+      { mode: "number" },
+    ).default(20),
+    generationPricing_downloadCredits: numeric(
+      "generation_pricing_download_credits",
+      { mode: "number" },
+    ).default(5),
+    modelAccessPolicy_chargePreviewCredits: boolean(
+      "model_access_policy_charge_preview_credits",
+    ).default(false),
+    modelAccessPolicy_previewCredits: numeric(
+      "model_access_policy_preview_credits",
+      { mode: "number" },
+    ).default(0),
+    modelAccessPolicy_chargeDownloadCredits: boolean(
+      "model_access_policy_charge_download_credits",
+    ).default(false),
+    modelAccessPolicy_downloadCredits: numeric(
+      "model_access_policy_download_credits",
+      { mode: "number" },
+    ).default(5),
+    emailSettings_sender_fromName: varchar(
+      "email_settings_sender_from_name",
+    ).default("Thorns Tavern"),
+    emailSettings_sender_fromAddress: varchar(
+      "email_settings_sender_from_address",
+    ).default("no-reply@thornstavern.com"),
+    emailSettings_sender_replyTo: varchar("email_settings_sender_reply_to"),
+    emailSettings_branding_productName: varchar(
+      "email_settings_branding_product_name",
+    ).default("Thorns Tavern"),
+    emailSettings_branding_footerText: varchar(
+      "email_settings_branding_footer_text",
+    ).default("Thorns Tavern"),
+    emailSettings_templates_welcome_subject: varchar(
+      "email_settings_templates_welcome_subject",
+    ).default("Welcome to Thorns Tavern"),
+    emailSettings_templates_welcome_intro: varchar(
+      "email_settings_templates_welcome_intro",
+    ).default(
+      "Your account is ready. You can now start using Thorns Tavern for generation, model management, subscriptions, and orders.",
+    ),
+    emailSettings_templates_welcome_ctaLabel: varchar(
+      "email_settings_templates_welcome_cta_label",
+    ).default("Open Studio"),
+    emailSettings_templates_verify_subject: varchar(
+      "email_settings_templates_verify_subject",
+    ).default("Verify your Thorns Tavern email"),
+    emailSettings_templates_verify_intro: varchar(
+      "email_settings_templates_verify_intro",
+    ).default(
+      "Use the button below to verify your email address before signing in.",
+    ),
+    emailSettings_templates_verify_ctaLabel: varchar(
+      "email_settings_templates_verify_cta_label",
+    ).default("Verify email"),
+    emailSettings_templates_forgotPassword_subject: varchar(
+      "email_settings_templates_forgot_password_subject",
+    ).default("Thorns Tavern password reset"),
+    emailSettings_templates_forgotPassword_intro: varchar(
+      "email_settings_templates_forgot_password_intro",
+    ).default(
+      "We received a request to reset your password. Use the button below to continue.",
+    ),
+    emailSettings_templates_forgotPassword_ctaLabel: varchar(
+      "email_settings_templates_forgot_password_cta_label",
+    ).default("Reset password"),
+    emailSettings_businessTemplates_subscriptionSuccess_subject: varchar(
+      "email_settings_business_templates_subscription_success_subject",
+    ).default("Thorns Tavern subscription activated"),
+    emailSettings_businessTemplates_subscriptionSuccess_intro: varchar(
+      "email_settings_business_templates_subscription_success_intro",
+    ).default(
+      "Your subscription is active and credits for the current period have been applied to your account.",
+    ),
+    emailSettings_businessTemplates_subscriptionSuccess_ctaLabel: varchar(
+      "email_settings_business_templates_subscription_success_cta_label",
+    ).default("View credits and subscription"),
+    emailSettings_businessTemplates_orderPaid_subject: varchar(
+      "email_settings_business_templates_order_paid_subject",
+    ).default("Thorns Tavern order payment received"),
+    emailSettings_businessTemplates_orderPaid_intro: varchar(
+      "email_settings_business_templates_order_paid_intro",
+    ).default(
+      "Your print order has been paid successfully and moved into the next processing stage.",
+    ),
+    emailSettings_businessTemplates_orderPaid_ctaLabel: varchar(
+      "email_settings_business_templates_order_paid_cta_label",
+    ).default("View order details"),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+  },
+  (columns) => [
+    index("site_settings_footer_footer_brand_logo_idx").on(
+      columns.footer_brandLogo,
+    ),
+  ],
+);
 
 export const homepage_content_featured_works = pgTable(
   "homepage_content_featured_works",
@@ -5221,35 +5242,43 @@ export const relations_site_settings_credit_packages = relations(
     }),
   }),
 );
-export const relations_site_settings = relations(site_settings, ({ many }) => ({
-  headerNav: many(site_settings_header_nav, {
-    relationName: "headerNav",
+export const relations_site_settings = relations(
+  site_settings,
+  ({ one, many }) => ({
+    headerNav: many(site_settings_header_nav, {
+      relationName: "headerNav",
+    }),
+    footer_brandLogo: one(media, {
+      fields: [site_settings.footer_brandLogo],
+      references: [media.id],
+      relationName: "footer_brandLogo",
+    }),
+    footer_linkGroups: many(site_settings_footer_link_groups, {
+      relationName: "footer_linkGroups",
+    }),
+    subscriptionPlans_starter_features: many(
+      site_settings_subscription_plans_starter_features,
+      {
+        relationName: "subscriptionPlans_starter_features",
+      },
+    ),
+    subscriptionPlans_pro_features: many(
+      site_settings_subscription_plans_pro_features,
+      {
+        relationName: "subscriptionPlans_pro_features",
+      },
+    ),
+    subscriptionPlans_studio_features: many(
+      site_settings_subscription_plans_studio_features,
+      {
+        relationName: "subscriptionPlans_studio_features",
+      },
+    ),
+    creditPackages: many(site_settings_credit_packages, {
+      relationName: "creditPackages",
+    }),
   }),
-  footer_linkGroups: many(site_settings_footer_link_groups, {
-    relationName: "footer_linkGroups",
-  }),
-  subscriptionPlans_starter_features: many(
-    site_settings_subscription_plans_starter_features,
-    {
-      relationName: "subscriptionPlans_starter_features",
-    },
-  ),
-  subscriptionPlans_pro_features: many(
-    site_settings_subscription_plans_pro_features,
-    {
-      relationName: "subscriptionPlans_pro_features",
-    },
-  ),
-  subscriptionPlans_studio_features: many(
-    site_settings_subscription_plans_studio_features,
-    {
-      relationName: "subscriptionPlans_studio_features",
-    },
-  ),
-  creditPackages: many(site_settings_credit_packages, {
-    relationName: "creditPackages",
-  }),
-}));
+);
 export const relations_homepage_content_featured_works = relations(
   homepage_content_featured_works,
   ({ one }) => ({

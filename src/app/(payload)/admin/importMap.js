@@ -22,6 +22,7 @@ import { UnderlineFeatureClient as UnderlineFeatureClient_e70f5e05f09f93e00b997e
 import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { default as default_c3161ddbfb6703b96ad5072ac2a4a8b6 } from '../../../components/admin/EmailSettingsNotice'
+import { default as default_5be97f824bb06ed397e753e47692f1ac } from '../../../components/admin/FooterPreview'
 import { default as default_b0b325e18fd593e755a3ec91f90943b3 } from '../../../components/admin/RuntimeConfigNotice'
 import { default as default_4c129e3f0527043caf517a6366d88453 } from '../../../components/admin/RuntimeEnvPreview'
 import { ThornsTavernIcon as ThornsTavernIcon_26eadeeb2c54b3fb8f19729942297b7e } from '../../../components/admin/ThornsTavernBrand'
@@ -55,6 +56,7 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#BoldFeatureClient": BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#ItalicFeatureClient": ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "/components/admin/EmailSettingsNotice#default": default_c3161ddbfb6703b96ad5072ac2a4a8b6,
+  "/components/admin/FooterPreview#default": default_5be97f824bb06ed397e753e47692f1ac,
   "/components/admin/RuntimeConfigNotice#default": default_b0b325e18fd593e755a3ec91f90943b3,
   "/components/admin/RuntimeEnvPreview#default": default_4c129e3f0527043caf517a6366d88453,
   "./components/admin/ThornsTavernBrand#ThornsTavernIcon": ThornsTavernIcon_26eadeeb2c54b3fb8f19729942297b7e,
