@@ -18,10 +18,10 @@
   border: 0;
   cursor: pointer;
   display: block;
-  height: 460px;
+  height: var(--inspiration-card-height, 460px);
   padding: 0;
   position: relative;
-  width: 288px;
+  width: var(--inspiration-card-width, 288px);
 }
 
 .item[aria-pressed="true"] {
@@ -29,9 +29,9 @@
 }
 
 .cardFrame {
-  height: 460px;
+  height: var(--inspiration-card-height, 460px);
   pointer-events: none;
-  width: 288px;
+  width: var(--inspiration-card-width, 288px);
 }
 
 .cardFrameContent {
@@ -64,7 +64,7 @@
   left: 11px;
   position: absolute;
   top: 66px;
-  width: 266px;
+  width: calc(100% - 22px);
 }
 
 .avatarWrap {
@@ -208,7 +208,7 @@
     radial-gradient(circle at 50% 100%, rgba(187, 0, 32, 0.4), transparent 22%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0));
   display: block;
-  height: 393px;
+  height: calc(100% - 67px);
   overflow: hidden;
   position: relative;
   width: 100%;

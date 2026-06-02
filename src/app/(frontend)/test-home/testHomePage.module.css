@@ -1,0 +1,915 @@
+.page {
+  position: relative;
+  min-height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: #181818;
+}
+
+.boundTopNavigation {
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  z-index: 90;
+}
+
+.heroStage {
+  --hero-scale: min(1, calc(100vw / 1920px));
+  position: relative;
+  height: calc(989px * var(--hero-scale));
+  margin-bottom: calc(-9px * var(--hero-scale));
+  overflow: hidden;
+  background: #181818;
+}
+
+.heroStage::after {
+  background: linear-gradient(180deg, rgba(24, 24, 24, 0), #181818);
+  bottom: 0;
+  content: "";
+  height: calc(42px * var(--hero-scale));
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  z-index: 3;
+}
+
+.heroStage :global(.scroll-container) {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 1920px;
+  height: 980px;
+  overflow: hidden;
+  transform: translateX(-50%) scale(var(--hero-scale));
+  transform-origin: top center;
+}
+
+.heroStage :global(.Pixso-frame-1_2877) > :global(:not(.Pixso-vector-1_2878)) {
+  transform: none;
+}
+
+.heroStage :global(.Pixso-group-1_3098) {
+  display: none;
+}
+
+.heroStage :global(.Pixso-group-1_3253),
+.heroStage :global(.Pixso-home-upload-input) {
+  pointer-events: none;
+}
+
+.heroStage :global(.Pixso-home-upload-input) {
+  display: none;
+}
+
+.framedSection {
+  --frame-gutter: 32px;
+  box-sizing: border-box;
+  width: 100%;
+  padding-inline: var(--frame-gutter);
+}
+
+.heroBottomBanner,
+.heroSecondBanner,
+.heroThirdBanner {
+  width: 100%;
+}
+
+.heroBottomBanner {
+  height: 332px;
+  margin-top: 6px;
+}
+
+.heroSecondBanner,
+.heroThirdBanner {
+  --upper-height: calc(112px - var(--top-height) - (var(--middle-height) / 2));
+  --lower-height: calc(100% - var(--top-height) - var(--upper-height) - var(--middle-height) - var(--bottom-height));
+}
+
+.heroSecondBanner {
+  height: 453px;
+  margin-top: 33px;
+}
+
+.heroThirdBanner {
+  height: 2226px;
+  margin-top: 33px;
+  min-height: 2226px;
+}
+
+.heroBottomBanner > :global([class*="content"]) {
+  min-height: 0;
+  padding: 0;
+}
+
+.heroSecondBanner > :global([class*="content"]),
+.heroThirdBanner > :global([class*="content"]) {
+  min-height: 0;
+  padding: 0 var(--right-width) var(--bottom-height) var(--left-width);
+}
+
+.bannerContent {
+  height: 100%;
+  min-height: 100%;
+  pointer-events: auto;
+  position: relative;
+  width: 100%;
+}
+
+.featureFrameBody {
+  align-items: center;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 700px 360px 360px 340px;
+  height: 280px;
+  left: 24px;
+  overflow: hidden;
+  position: absolute;
+  top: 26px;
+  transform: none;
+  width: min(1828px, calc(100% - 28px));
+  z-index: 5;
+}
+
+.featureFrameCard {
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  box-sizing: border-box;
+  display: block;
+  flex: 0 0 auto;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  text-decoration: none;
+  width: auto;
+}
+
+.featureLargeCard {
+  width: auto;
+}
+
+.featureSmallCard {
+  width: auto;
+}
+
+.featureLastCard {
+  width: auto;
+}
+
+.featureImage {
+  display: block;
+  height: 100%;
+  inset: 0;
+  object-fit: cover;
+  position: absolute;
+  width: 100%;
+}
+
+.featureRibbon {
+  left: 36px;
+  max-width: calc(100% - 72px);
+  position: absolute;
+  top: 0;
+  width: max-content;
+  z-index: 2;
+}
+
+.frameShell {
+  height: 100%;
+  min-height: 0;
+  pointer-events: auto;
+  position: relative;
+}
+
+.frameHeader {
+  display: grid;
+  grid-template-columns: 58px 240px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 16px;
+  height: 198px;
+  padding: 22px 0 0 0;
+}
+
+.heroSecondBanner .frameHeader {
+  height: 112px;
+}
+
+.frameLogo {
+  display: block;
+  width: 58px;
+  height: 58px;
+  background: url("/ui-lab/top-navigation/logo.png") center / contain no-repeat;
+  margin-left: -4px;
+  margin-top: 4px;
+}
+
+.frameTitlePlate {
+  display: flex;
+  align-items: center;
+  width: 240px;
+  height: 58px;
+  box-sizing: border-box;
+  padding: 0 34px 3px 21px;
+  background: url("/ui-lab/home-test/banner-label-bg.png") center / 100% 100% no-repeat;
+  color: #f9dfb1;
+  font-size: 28px;
+  font-weight: 500;
+  line-height: 1;
+  margin-left: 8px;
+}
+
+.frameDivider {
+  align-self: start;
+  display: block;
+  height: 2px;
+  min-width: 24px;
+  margin-left: -9px;
+  margin-top: 26px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.frameActions {
+  display: flex;
+  gap: 16px;
+  margin-top: 1.5px;
+  transform: translateX(18px);
+}
+
+.heroThirdBanner .frameActions {
+  justify-content: flex-start;
+  transform: translateX(19px);
+  width: 412px;
+}
+
+.heroThirdBanner .frameTitlePlate {
+  margin-left: 4px;
+}
+
+.heroThirdBanner .frameDivider {
+  margin-left: -13px;
+}
+
+.frameMoreAction {
+  position: relative;
+  width: 110px;
+  height: 58px;
+}
+
+.frameMoreAction button {
+  background-image: var(--button-image);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  border: 0;
+  height: 58px;
+  inset: 0;
+  position: absolute;
+  width: 110px;
+}
+
+.frameMoreAction button:active {
+  transform: none;
+}
+
+.bundleFrameBody {
+  align-items: center;
+  display: flex;
+  height: 332px;
+  margin-top: -1px;
+  min-height: 0;
+  padding: 0;
+  width: 100%;
+}
+
+.inspirationFrameBody {
+  min-height: 0;
+  inset: 0 0 42px 0;
+  padding: 0;
+  position: absolute;
+}
+
+.bundleFrameBody :global([aria-label="Selectable frame row"]) {
+  position: relative;
+  left: auto;
+  top: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, 408px);
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+  margin: 0 auto;
+  max-width: 1680px;
+  height: 300px;
+  overflow: visible;
+  transform: translateX(1px);
+}
+
+.bundleFrameBody :global([aria-label="Selectable frame row"][data-fill-empty="false"]) {
+  justify-content: start;
+}
+
+.bundleFrameBody :global([aria-label="Previous image"]),
+.bundleFrameBody :global([aria-label="Next image"]) {
+  display: block;
+  transform: none;
+}
+
+.bundleFrameBody :global([aria-label="Previous image"]) {
+  left: -67px;
+}
+
+.bundleFrameBody :global([aria-label="Next image"]) {
+  right: -67px;
+}
+
+.bundleFrameBody :global([aria-label="Selectable frame row"] > button[aria-pressed]) {
+  width: 408px;
+  height: 300px;
+  min-height: 0;
+}
+
+.inspirationGrid {
+  --card-width: 288px;
+  --card-height: 460px;
+  --compact-six-card-width: 248px;
+  --compact-six-card-height: 396px;
+  --standard-six-card-width: 256px;
+  --standard-six-card-height: 409px;
+  --inspiration-card-width: var(--card-width);
+  --inspiration-card-height: var(--card-height);
+  display: grid;
+  left: 50%;
+  position: absolute;
+  grid-template-columns: repeat(auto-fit, var(--card-width));
+  justify-content: center;
+  gap: 13.333px 9.2px;
+  top: 230.5px;
+  transform: translateX(-50%);
+  width: 100%;
+}
+
+.inspirationEmptyState {
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.58);
+  display: flex;
+  font-family: Arial, sans-serif;
+  font-size: 24px;
+  grid-column: 1 / -1;
+  height: 460px;
+  justify-content: center;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.bannerSquareLogo {
+  background-image: url("/ui-lab/top-navigation/logo.png");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  display: block;
+  height: 58px;
+  left: -4px;
+  position: absolute;
+  top: -7px;
+  width: 58px;
+}
+
+.bannerRightImage {
+  background-image: url("/ui-lab/home-test/banner-label-bg.png");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  display: block;
+  height: 58px;
+  left: 81px;
+  pointer-events: auto;
+  position: absolute;
+  top: -11px;
+  width: 240px;
+}
+
+.bannerRightImageText {
+  align-items: center;
+  box-sizing: border-box;
+  color: #f9dfb1;
+  display: flex;
+  font-size: 28px;
+  font-weight: 500;
+  line-height: 1;
+  padding: 0 34px 3px 21px;
+}
+
+.bannerDividerLine {
+  background: rgba(255, 255, 255, 0.1);
+  display: block;
+  height: 2px;
+  left: 321px;
+  pointer-events: auto;
+  position: absolute;
+  top: 15px;
+  width: calc(100% - 689px);
+}
+
+.smallButtonPairMount {
+  height: 60px;
+  position: absolute;
+  right: 126px;
+  top: calc(((112px - 5px) - 60px) / 2 - 33px);
+  width: 226px;
+  z-index: 6;
+}
+
+.sourceMediumButtonMount {
+  height: 58px;
+  position: absolute;
+  right: 0;
+  top: calc(((112px - 5px) - 60px) / 2 - 33px);
+  width: 110px;
+  z-index: 7;
+}
+
+.sourceMediumButtonMount button {
+  background-image: var(--button-image);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  border: 0;
+  height: 58px;
+  inset: 0;
+  position: absolute;
+  width: 110px;
+}
+
+.sourceMediumButtonMount button:active {
+  transform: none;
+}
+
+.lowerButtonGroupMount {
+  align-items: center;
+  display: flex;
+  height: 48px;
+  position: absolute;
+  right: 0;
+  top: calc(((112px - 5px) - 48px) / 2 - 33px);
+  width: 412px;
+  z-index: 6;
+}
+
+.inspirationGridDivider {
+  background: rgba(255, 255, 255, 0.15);
+  display: block;
+  height: 2px;
+  left: -16px;
+  position: absolute;
+  top: 187.5px;
+  width: calc(100% + 34px);
+  z-index: 5;
+}
+
+.inspirationSearchMount {
+  height: 56px;
+  position: absolute;
+  right: 10px;
+  top: 129.5px;
+  width: min(686px, calc(100% - 10px));
+  z-index: 7;
+}
+
+.inspirationSearchMount :global([class*="toolbar"]) {
+  margin-left: 0;
+  width: 100%;
+  justify-content: flex-start;
+}
+
+.bottomPagerMount {
+  height: 32px;
+  left: 172px;
+  position: absolute;
+  top: 2161px;
+  width: 276px;
+  z-index: 7;
+}
+
+.bottomPagerMount nav {
+  margin-left: 0;
+}
+
+.heroThirdBanner .bannerRightImage {
+  left: 78px;
+  top: -10px;
+}
+
+.heroThirdBanner .bannerDividerLine {
+  left: 318px;
+  width: calc(100% - 745px);
+}
+
+.heroThirdBanner :global([aria-label="Inspiration grid"]) {
+  --card-width: 288px;
+  --card-height: 460px;
+  --compact-six-card-width: 248px;
+  --compact-six-card-height: 396px;
+  --standard-six-card-width: 256px;
+  --standard-six-card-height: 409px;
+  --inspiration-card-width: var(--card-width);
+  --inspiration-card-height: var(--card-height);
+  display: grid;
+  gap: 13.333px 9.2px;
+  grid-template-columns: repeat(auto-fit, var(--card-width));
+  justify-content: center;
+  width: 100%;
+  z-index: 5;
+}
+
+.footerMount {
+  margin-top: 9px;
+  width: 100%;
+  z-index: 45;
+}
+
+@media (max-width: 1919px) {
+  .heroThirdBanner {
+    height: auto;
+    min-height: 0;
+  }
+
+  .featureFrameBody {
+    justify-content: start;
+  }
+
+  .featureFrameCard {
+    min-height: 0;
+  }
+
+  .featureLargeCard {
+    width: auto;
+  }
+
+  .featureSmallCard {
+    width: auto;
+  }
+
+  .featureLastCard {
+    display: block;
+    width: auto;
+  }
+
+  .heroSecondBanner .bannerContent {
+    min-height: 0;
+    padding-top: 154px;
+  }
+
+  .heroThirdBanner .bannerContent {
+    padding-top: 154px;
+  }
+
+  .heroThirdBanner .frameHeader {
+    height: 112px;
+  }
+
+  .inspirationFrameBody {
+    inset: auto;
+    padding: 21px 0 0;
+    position: static;
+  }
+
+  .inspirationSearchMount,
+  .bottomPagerMount {
+    position: static;
+  }
+
+  .lowerButtonGroupMount {
+    right: 0;
+  }
+
+  .inspirationSearchMount {
+    height: 32px;
+    left: 50%;
+    margin: 0 auto min(1.354vw, 26px);
+    position: relative;
+    right: auto;
+    top: auto;
+    transform: translateX(-50%);
+    width: min(92.396vw, calc(100% + 34px));
+  }
+
+  .inspirationSearchMount :global([class*="toolbar"]) {
+    margin-left: auto;
+    width: min(35.729vw, 100%);
+    justify-content: flex-end;
+  }
+
+  .inspirationGridDivider {
+    display: block;
+    height: 2px;
+    left: 50%;
+    margin: 0 auto min(2.135vw, 41px);
+    position: relative;
+    transform: translateX(-50%);
+    top: auto;
+    width: min(94.167vw, calc(100% + 34px));
+  }
+
+  .bottomPagerMount {
+    display: flex;
+    justify-content: center;
+    margin: 0;
+    width: 100%;
+  }
+
+  .heroSecondBanner :global([aria-label="Selectable frame row"]) {
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, 408px);
+    gap: 16px;
+    justify-content: center;
+    width: 100%;
+    height: 300px;
+    overflow: hidden;
+    padding: 0 0 42px;
+  }
+
+  .heroSecondBanner :global([aria-label="Previous image"]),
+  .heroSecondBanner :global([aria-label="Next image"]) {
+    display: none;
+  }
+
+  .heroSecondBanner :global([aria-label="Selectable frame row"] > button[aria-pressed]) {
+    width: 408px;
+    height: 300px;
+    min-height: 0;
+  }
+
+  .heroThirdBanner :global([aria-label="Inspiration grid"]) {
+    --card-width: min(15vw, 288px);
+    --card-height: min(23.958vw, 460px);
+    left: 50%;
+    position: relative;
+    top: auto;
+    gap: min(0.694vw, 13.333px) min(0.479vw, 9.2px);
+    padding: 0 0 min(2.188vw, 42px);
+    transform: translateX(-50%);
+    width: min(92.396vw, calc(100% + 34px));
+  }
+}
+
+@media (min-width: 1200px) and (max-width: 1919px) {
+  .heroSecondBanner :global([aria-label="Selectable frame row"]) {
+    box-sizing: border-box;
+    position: relative;
+    left: auto;
+    top: auto;
+    max-width: 100%;
+    overflow: hidden;
+    padding: 0 67px;
+  }
+
+  .heroSecondBanner :global([aria-label="Previous image"]),
+  .heroSecondBanner :global([aria-label="Next image"]) {
+    display: block;
+    transform: none;
+  }
+
+  .heroSecondBanner :global([aria-label="Previous image"]) {
+    left: 0;
+  }
+
+  .heroSecondBanner :global([aria-label="Next image"]) {
+    right: 0;
+  }
+}
+
+@media (min-width: 1680px) and (max-width: 1727px) {
+  .heroThirdBanner :global([aria-label="Inspiration grid"]) {
+    --card-width: var(--compact-six-card-width);
+    --card-height: var(--compact-six-card-height);
+  }
+}
+
+@media (max-width: 1599px) {
+  .featureSmallCard:nth-of-type(3),
+  .featureLastCard {
+    display: block;
+  }
+}
+
+@media (max-width: 1187px) {
+  .featureSmallCard {
+    display: block;
+  }
+}
+
+@media (min-width: 1728px) and (max-width: 1919px) {
+  .heroThirdBanner :global([aria-label="Inspiration grid"]) {
+    --card-width: var(--standard-six-card-width);
+    --card-height: var(--standard-six-card-height);
+  }
+}
+
+@media (max-width: 820px) {
+  .boundTopNavigation :global([class*="navLinks"]),
+  .boundTopNavigation :global([class*="navCenter"]) {
+    display: none;
+  }
+
+  .heroSecondBanner {
+    height: auto;
+    min-height: 0;
+  }
+
+  .frameHeader {
+    grid-template-columns: 58px minmax(0, 240px) minmax(0, 1fr) auto;
+    gap: 16px;
+    height: 198px;
+    padding-right: 0;
+  }
+
+  .heroSecondBanner .frameHeader {
+    height: 112px;
+  }
+
+  .frameTitlePlate {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .frameActions {
+    grid-column: auto;
+    grid-row: auto;
+    justify-self: end;
+    width: max-content;
+    margin-top: 5px;
+    transform: translateX(18px);
+  }
+
+  .heroThirdBanner .frameActions {
+    justify-content: flex-end;
+    transform: translateX(19px);
+    width: 412px;
+  }
+
+  .featureLargeCard,
+  .featureSmallCard,
+  .featureLastCard {
+    width: 360px;
+  }
+
+  .featureFrameBody {
+    display: flex;
+    height: 280px;
+    left: 50%;
+    top: 26px;
+    transform: translateX(-50%);
+    width: max-content;
+  }
+
+  .featureFrameBody .featureSmallCard,
+  .featureFrameBody .featureLastCard {
+    display: none;
+  }
+
+  .bannerDividerLine {
+    display: none;
+  }
+
+  .smallButtonPairMount,
+  .sourceMediumButtonMount,
+  .lowerButtonGroupMount,
+  .inspirationSearchMount,
+  .bottomPagerMount {
+    display: flex;
+    justify-content: center;
+    left: auto;
+    position: static;
+    transform: none;
+    width: 100%;
+    margin-right: 0;
+    margin-left: 0;
+  }
+
+  .smallButtonPairMount,
+  .sourceMediumButtonMount {
+    margin-bottom: 14px;
+  }
+
+  .heroSecondBanner .bannerContent {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .inspirationSearchMount :global([class*="toolbar"]) {
+    flex-wrap: wrap;
+    justify-content: center;
+    height: auto;
+    gap: 10px;
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .heroThirdBanner :global([aria-label="Inspiration grid"]) {
+    --card-width: 288px;
+    --card-height: 460px;
+    left: auto;
+    transform: none;
+    width: 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  .framedSection {
+    --frame-gutter: 8px;
+  }
+
+  .frameHeader {
+    grid-template-columns: minmax(0, 1fr);
+    margin-left: calc(-1 * var(--left-width));
+    width: calc(100% + var(--left-width) + var(--right-width));
+    padding-right: 0;
+  }
+
+  .frameLogo {
+    display: none;
+  }
+
+  .frameTitlePlate {
+    display: none;
+  }
+
+  .frameActions {
+    gap: 8px;
+    grid-column: 1 / -1;
+    justify-self: end;
+    transform: none;
+  }
+
+  .heroThirdBanner .frameActions {
+    width: max-content;
+    transform: none;
+  }
+
+  .frameDivider {
+    display: none;
+  }
+
+  .boundTopNavigation :global([class*="authEntry"]),
+  .boundTopNavigation :global([class*="authAvatar"]),
+  .boundTopNavigation :global([class*="notificationBellWrap"]),
+  .boundTopNavigation :global([class*="cartIconButton"]) {
+    display: none;
+  }
+
+  .featureFrameBody,
+  .heroSecondBanner :global([aria-label="Selectable frame row"]) {
+    justify-content: center;
+  }
+
+  .featureLargeCard,
+  .featureSmallCard,
+  .featureLastCard {
+    width: 288px;
+    height: 224px;
+  }
+
+  .heroBottomBanner {
+    height: 276px;
+  }
+
+  .featureFrameBody {
+    height: 224px;
+    width: 288px;
+  }
+
+  .heroSecondBanner :global([aria-label="Selectable frame row"]) {
+    grid-template-columns: 288px;
+    height: 212px;
+  }
+
+  .heroSecondBanner :global([aria-label="Selectable frame row"] > button[aria-pressed]:nth-of-type(n + 3)) {
+    display: none;
+  }
+
+  .heroSecondBanner :global([aria-label="Selectable frame row"] > button[aria-pressed]) {
+    width: 288px;
+    height: 212px;
+  }
+
+  .bundleFrameBody {
+    display: block;
+    height: auto;
+    margin-top: 0;
+  }
+
+  .bannerRightImage {
+    width: 220px;
+  }
+
+  .heroSecondBanner .bannerContent,
+  .heroThirdBanner .bannerContent {
+    padding-top: 140px;
+  }
+}

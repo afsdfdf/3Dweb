@@ -1,0 +1,146 @@
+.page {
+  min-height: 100vh;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(83, 69, 130, 0.22), transparent 34%),
+    #050505;
+  color: #ffffff;
+}
+
+.stage {
+  --frame-gutter: 32px;
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0 auto;
+  padding: 48px var(--frame-gutter) 72px;
+}
+
+.thirdFrame {
+  --upper-height: calc(112px - var(--top-height) - (var(--middle-height) / 2));
+  --lower-height: calc(100% - var(--top-height) - var(--upper-height) - var(--middle-height) - var(--bottom-height));
+  width: 100%;
+  min-height: 0;
+}
+
+.thirdFrame > :global([class*="content"]) {
+  min-height: 0;
+  padding: 0 var(--right-width) var(--bottom-height) var(--left-width);
+}
+
+.thirdFrameShell {
+  min-height: 0;
+  pointer-events: auto;
+}
+
+.thirdFrameHeader {
+  display: grid;
+  grid-template-columns: 58px 240px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 16px;
+  height: 198px;
+  padding: 22px clamp(18px, 2vw, 38px) 0 0;
+}
+
+.frameLogo {
+  display: block;
+  width: 58px;
+  height: 58px;
+  background: url("/ui-lab/top-navigation/logo.png") center / contain no-repeat;
+}
+
+.frameTitlePlate {
+  display: flex;
+  align-items: center;
+  width: 240px;
+  height: 58px;
+  box-sizing: border-box;
+  padding: 0 34px 3px 21px;
+  background: url("/ui-lab/home-test/banner-label-bg.png") center / 100% 100% no-repeat;
+  color: #f9dfb1;
+  font-size: 28px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.frameDivider {
+  align-self: start;
+  display: block;
+  height: 2px;
+  min-width: 24px;
+  margin-top: 27px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.frameActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 5px;
+}
+
+.thirdFrameBody {
+  min-height: 0;
+  padding: 0 0 42px;
+}
+
+.thirdFrameGrid {
+  --card-width: 288px;
+  --card-height: 460px;
+  --compact-six-card-width: 248px;
+  --compact-six-card-height: 396px;
+  --standard-six-card-width: 256px;
+  --standard-six-card-height: 409px;
+  --inspiration-card-width: var(--card-width);
+  --inspiration-card-height: var(--card-height);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, var(--card-width));
+  justify-content: center;
+  gap: 13px 9.2px;
+  width: 100%;
+}
+
+@media (min-width: 1680px) and (max-width: 1727px) {
+  .thirdFrameGrid {
+    --card-width: var(--compact-six-card-width);
+    --card-height: var(--compact-six-card-height);
+  }
+}
+
+@media (min-width: 1728px) and (max-width: 1919px) {
+  .thirdFrameGrid {
+    --card-width: var(--standard-six-card-width);
+    --card-height: var(--standard-six-card-height);
+  }
+}
+
+@media (max-width: 820px) {
+  .thirdFrameHeader {
+    grid-template-columns: 58px 240px minmax(0, 1fr);
+    grid-template-rows: 58px 60px;
+    gap: 14px 10px;
+    height: 206px;
+    padding-right: 0;
+  }
+
+  .frameActions {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: center;
+    width: 333px;
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 520px) {
+  .stage {
+    --frame-gutter: 8px;
+  }
+
+  .thirdFrameHeader {
+    grid-template-columns: 58px 240px;
+    padding-right: 0;
+  }
+
+  .frameDivider {
+    display: none;
+  }
+}

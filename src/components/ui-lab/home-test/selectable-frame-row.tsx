@@ -31,15 +31,21 @@ const arrowImages = {
 };
 
 type SelectableFrameRowProps = {
+  fillEmptyFrames?: boolean;
   items?: SelectableFrameRowItem[];
 };
 
-export function SelectableFrameRow({ items = [] }: SelectableFrameRowProps) {
-  const resolvedFrames = frames.map((label, index) => ({
-    ...items[index],
-    id: items[index]?.id ?? label,
-    label: items[index]?.alt ?? items[index]?.title ?? label,
-  }));
+export function SelectableFrameRow({ fillEmptyFrames = true, items = [] }: SelectableFrameRowProps) {
+  const resolvedFrames = fillEmptyFrames
+    ? frames.map((label, index) => ({
+        ...items[index],
+        id: items[index]?.id ?? label,
+        label: items[index]?.alt ?? items[index]?.title ?? label,
+      }))
+    : items.map((item) => ({
+        ...item,
+        label: item.alt ?? item.title ?? item.id,
+      }));
   const [selectedIndex, setSelectedIndex] = useState(0);
   const handleFrameClick = (frame: (typeof resolvedFrames)[number], index: number) => {
     setSelectedIndex(index);
@@ -47,7 +53,7 @@ export function SelectableFrameRow({ items = [] }: SelectableFrameRowProps) {
   };
 
   return (
-    <div className={styles.row} aria-label="Selectable frame row">
+    <div className={styles.row} aria-label="Selectable frame row" data-fill-empty={fillEmptyFrames ? "true" : "false"}>
       <button
         aria-label="Previous image"
         className={[styles.arrowButton, styles.leftArrow].join(" ")}

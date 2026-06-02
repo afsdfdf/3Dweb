@@ -57,6 +57,91 @@ type InspirationGridProps = {
   items?: InspirationGridItem[];
 };
 
+type InspirationGridCardProps = {
+  item: InspirationGridItem;
+  onActivate?: (item: InspirationGridItem) => void;
+};
+
+export function InspirationGridCard({ item, onActivate }: InspirationGridCardProps) {
+  const handleClick = () => {
+    if (onActivate) {
+      onActivate(item);
+      return;
+    }
+
+    if (item.href) window.location.assign(item.href);
+  };
+
+  return (
+    <button
+      aria-label={item.title}
+      aria-pressed={false}
+      className={styles.item}
+      onClick={handleClick}
+      type="button"
+    >
+      <ButtonBoxFrame
+        className={styles.cardFrame}
+        contentClassName={styles.cardFrameContent}
+        style={{
+          height: "var(--inspiration-card-height, 460px)",
+          width: "var(--inspiration-card-width, 288px)",
+        }}
+      >
+        <article className={styles.cardContent}>
+          <header className={styles.cardHeader}>
+            <div className={styles.avatarWrap}>
+              {item.avatarSrc ? (
+                <img
+                  alt=""
+                  className={styles.avatar}
+                  decoding="async"
+                  loading="lazy"
+                  src={item.avatarSrc}
+                />
+              ) : (
+                <span className={styles.avatarFallback}>{getInitials(item.authorName)}</span>
+              )}
+              <span className={styles.avatarBadge} aria-hidden="true" />
+            </div>
+            <div className={styles.titleBlock}>
+              <div className={styles.titleRow}>
+                <strong className={styles.name}>{item.authorName}</strong>
+                <span className={styles.time}>{item.ageLabel}</span>
+              </div>
+              <div className={styles.stats}>
+                <span className={styles.stat}>
+                  <img alt="" decoding="async" loading="lazy" src="/ui-lab/formal-components/assets/inspiration-card/icon-eye-gray.png" />
+                  {item.viewsLabel}
+                </span>
+                <span className={styles.stat}>
+                  <img alt="" decoding="async" loading="lazy" src="/ui-lab/formal-components/assets/inspiration-card/icon-heart-gray.png" />
+                  {item.likesLabel}
+                </span>
+                <span className={styles.stat}>
+                  <img alt="" decoding="async" loading="lazy" src="/ui-lab/formal-components/assets/inspiration-card/icon-star-gray.png" />
+                  {item.favoritesLabel}
+                </span>
+              </div>
+            </div>
+          </header>
+          <div className={styles.previewArea} aria-hidden="true">
+            {item.imageSrc ? (
+              <img
+                alt=""
+                className={styles.previewImage}
+                decoding="async"
+                loading="lazy"
+                src={getSupabasePreviewImageURL(item.imageSrc, "model-card")}
+              />
+            ) : null}
+          </div>
+        </article>
+      </ButtonBoxFrame>
+    </button>
+  );
+}
+
 export function InspirationGrid({ filterMountClassName, items: backendItems = [] }: InspirationGridProps) {
   const [filter, setFilter] = useState<InspirationGridFilter>("all");
   const selectedButton = filter === "all" ? null : buttonIdByFilter[filter];
@@ -84,70 +169,7 @@ export function InspirationGrid({ filterMountClassName, items: backendItems = []
       </div>
       <div className={styles.grid} aria-label="Inspiration grid">
         {filteredItems.length > 0 ? filteredItems.map((item) => (
-        <button
-          aria-label={item.title}
-          aria-pressed={false}
-          className={styles.item}
-          key={item.id}
-          onClick={() => handleItemClick(item)}
-          type="button"
-        >
-          <ButtonBoxFrame
-            className={styles.cardFrame}
-            contentClassName={styles.cardFrameContent}
-            style={{ width: 288, height: 460 }}
-          >
-            <article className={styles.cardContent}>
-              <header className={styles.cardHeader}>
-                <div className={styles.avatarWrap}>
-                  {item.avatarSrc ? (
-                    <img
-                      alt=""
-                      className={styles.avatar}
-                      decoding="async"
-                      loading="lazy"
-                      src={item.avatarSrc}
-                    />
-                  ) : (
-                    <span className={styles.avatarFallback}>{getInitials(item.authorName)}</span>
-                  )}
-                  <span className={styles.avatarBadge} aria-hidden="true" />
-                </div>
-                <div className={styles.titleBlock}>
-                  <div className={styles.titleRow}>
-                    <strong className={styles.name}>{item.authorName}</strong>
-                    <span className={styles.time}>{item.ageLabel}</span>
-                  </div>
-                  <div className={styles.stats}>
-                    <span className={styles.stat}>
-                      <img alt="" decoding="async" loading="lazy" src="/ui-lab/formal-components/assets/inspiration-card/icon-eye-gray.png" />
-                      {item.viewsLabel}
-                    </span>
-                    <span className={styles.stat}>
-                      <img alt="" decoding="async" loading="lazy" src="/ui-lab/formal-components/assets/inspiration-card/icon-heart-gray.png" />
-                      {item.likesLabel}
-                    </span>
-                    <span className={styles.stat}>
-                      <img alt="" decoding="async" loading="lazy" src="/ui-lab/formal-components/assets/inspiration-card/icon-star-gray.png" />
-                      {item.favoritesLabel}
-                    </span>
-                  </div>
-                </div>
-              </header>
-              <div className={styles.previewArea} aria-hidden="true">
-                {item.imageSrc ? (
-                  <img
-                    alt=""
-                    className={styles.previewImage}
-                    decoding="async"
-                    loading="lazy"
-                    src={getSupabasePreviewImageURL(item.imageSrc, "model-card")}
-                  />
-                ) : null}
-              </div>
-            </article>
-          </ButtonBoxFrame>
-        </button>
+        <InspirationGridCard item={item} key={item.id} onActivate={handleItemClick} />
       )) : (
         <div className={styles.emptyState}>No Models Found</div>
       )}

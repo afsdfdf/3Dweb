@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import styles from "./inspiration-search-box.module.css";
 
 type InspirationPagerProps = {
+  basePath?: string;
   page?: number;
   query?: string;
   totalPages?: number;
@@ -17,7 +18,13 @@ type InspirationSearchBoxProps = InspirationPagerProps & {
 
 const INSPIRATION_SECTION_ID = "inspiration";
 
-function buildPageHref(page: number, query = "") {
+function normalizeBasePath(basePath = "/") {
+  const trimmed = basePath.trim();
+  if (!trimmed || trimmed === "/") return "/";
+  return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+}
+
+function buildPageHref(page: number, query = "", basePath = "/") {
   const params = new URLSearchParams();
 
   if (query.trim()) {
@@ -29,7 +36,8 @@ function buildPageHref(page: number, query = "") {
   }
 
   const search = params.toString();
-  return `/${search ? `?${search}` : ""}#${INSPIRATION_SECTION_ID}`;
+  const normalizedBasePath = normalizeBasePath(basePath);
+  return `${normalizedBasePath}${search ? `?${search}` : ""}#${INSPIRATION_SECTION_ID}`;
 }
 
 function getPagerItems(page: number, totalPages: number) {
@@ -42,7 +50,7 @@ function getPagerItems(page: number, totalPages: number) {
     .sort((a, b) => a - b);
 }
 
-export function InspirationPager({ page = 1, query = "", totalPages = 1 }: InspirationPagerProps) {
+export function InspirationPager({ basePath = "/", page = 1, query = "", totalPages = 1 }: InspirationPagerProps) {
   const normalizedTotal = Math.max(1, totalPages);
   const normalizedPage = Math.min(Math.max(1, page), normalizedTotal);
   const pageItems = getPagerItems(normalizedPage, normalizedTotal);
@@ -51,7 +59,7 @@ export function InspirationPager({ page = 1, query = "", totalPages = 1 }: Inspi
 
   return (
     <nav aria-label="Inspiration pages" className={styles.pager}>
-      <a aria-disabled={normalizedPage <= 1} href={buildPageHref(previousPage, query)}>
+      <a aria-disabled={normalizedPage <= 1} href={buildPageHref(previousPage, query, basePath)}>
         {"<"}
       </a>
       {pageItems.map((item, index) => (
@@ -60,32 +68,32 @@ export function InspirationPager({ page = 1, query = "", totalPages = 1 }: Inspi
           <a
             aria-current={item === normalizedPage ? "page" : undefined}
             className={item === normalizedPage ? styles.currentPage : undefined}
-            href={buildPageHref(item, query)}
+            href={buildPageHref(item, query, basePath)}
           >
             {item}
           </a>
         </span>
       ))}
-      <a aria-disabled={normalizedPage >= normalizedTotal} href={buildPageHref(nextPage, query)}>
+      <a aria-disabled={normalizedPage >= normalizedTotal} href={buildPageHref(nextPage, query, basePath)}>
         {">"}
       </a>
     </nav>
   );
 }
 
-export function InspirationSearchBox({ page = 1, pageSize = 24, query = "", totalPages = 1 }: InspirationSearchBoxProps) {
+export function InspirationSearchBox({ basePath = "/", page = 1, pageSize = 24, query = "", totalPages = 1 }: InspirationSearchBoxProps) {
   const router = useRouter();
   const [searchText, setSearchText] = useState(query);
 
   useEffect(() => {
     if (query.trim().length === 0 || searchText.trim().length > 0) return;
 
-    router.replace(`/#${INSPIRATION_SECTION_ID}`);
-  }, [query, router, searchText]);
+    router.replace(`${normalizeBasePath(basePath)}#${INSPIRATION_SECTION_ID}`);
+  }, [basePath, query, router, searchText]);
 
   return (
     <div className={styles.toolbar}>
-      <form action={`/#${INSPIRATION_SECTION_ID}`} className={styles.searchBox} method="get" role="search">
+      <form action={`${normalizeBasePath(basePath)}#${INSPIRATION_SECTION_ID}`} className={styles.searchBox} method="get" role="search">
         <label className={styles.inputShell}>
           <span className={styles.icon} aria-hidden="true" />
           <input
@@ -102,7 +110,7 @@ export function InspirationSearchBox({ page = 1, pageSize = 24, query = "", tota
           Search
         </button>
       </form>
-      <InspirationPager page={page} query={query} totalPages={totalPages} />
+      <InspirationPager basePath={basePath} page={page} query={query} totalPages={totalPages} />
       <button className={styles.pageSize} type="button">
         <span>{pageSize} Items / Page</span>
         <span className={styles.chevron} aria-hidden="true" />
