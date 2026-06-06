@@ -247,6 +247,44 @@ test("media upload URL scope is rate limited independently", async () => {
   }
 });
 
+test("media upload complete scope does not consume upload URL quota", async () => {
+  const previousCompleteLimit = process.env.MEDIA_UPLOAD_COMPLETE_RATE_LIMIT_MAX;
+  const previousCompleteWindow = process.env.MEDIA_UPLOAD_COMPLETE_RATE_LIMIT_WINDOW_MS;
+  const previousUploadLimit = process.env.MEDIA_UPLOAD_URL_RATE_LIMIT_MAX;
+  const previousUploadWindow = process.env.MEDIA_UPLOAD_URL_RATE_LIMIT_WINDOW_MS;
+
+  process.env.MEDIA_UPLOAD_COMPLETE_RATE_LIMIT_MAX = "1";
+  process.env.MEDIA_UPLOAD_COMPLETE_RATE_LIMIT_WINDOW_MS = "60000";
+  process.env.MEDIA_UPLOAD_URL_RATE_LIMIT_MAX = "1";
+  process.env.MEDIA_UPLOAD_URL_RATE_LIMIT_WINDOW_MS = "60000";
+
+  try {
+    const req = createRequest({ user: { id: 100 } });
+
+    const uploadURL = await rejectRateLimitedEndpoint({
+      req,
+      scope: "media-upload-url",
+    });
+    const firstComplete = await rejectRateLimitedEndpoint({
+      req,
+      scope: "media-upload-complete",
+    });
+    const secondComplete = await rejectRateLimitedEndpoint({
+      req,
+      scope: "media-upload-complete",
+    });
+
+    assert.equal(uploadURL, null);
+    assert.equal(firstComplete, null);
+    assert.equal(secondComplete?.status, 429);
+  } finally {
+    process.env.MEDIA_UPLOAD_COMPLETE_RATE_LIMIT_MAX = previousCompleteLimit;
+    process.env.MEDIA_UPLOAD_COMPLETE_RATE_LIMIT_WINDOW_MS = previousCompleteWindow;
+    process.env.MEDIA_UPLOAD_URL_RATE_LIMIT_MAX = previousUploadLimit;
+    process.env.MEDIA_UPLOAD_URL_RATE_LIMIT_WINDOW_MS = previousUploadWindow;
+  }
+});
+
 test("model optimization scope is rate limited independently", async () => {
   const previousLimit = process.env.MODEL_OPTIMIZATION_RATE_LIMIT_MAX;
   const previousWindow = process.env.MODEL_OPTIMIZATION_RATE_LIMIT_WINDOW_MS;

@@ -129,10 +129,22 @@ export async function getCurrentUser() {
 }
 
 export async function getCurrentNavUser() {
-  const { userDoc } = await getCurrentUserDocument();
+  const { payload, user, userDoc } = await getCurrentUserDocument();
   if (!userDoc) return null;
 
-  const creditAccount = await getCurrentCreditAccountDocument();
+  const [creditAccount, modelsCountResult] = await Promise.all([
+    getCurrentCreditAccountDocument(),
+    payload.count({
+      collection: "models",
+      overrideAccess: false,
+      user,
+      where: {
+        owner: {
+          equals: userDoc.id,
+        },
+      },
+    }),
+  ]);
   const actualCredits = Number(creditAccount?.balance ?? userDoc.creditsBalance ?? 0);
   const displayName =
     (typeof userDoc.displayName === "string" && userDoc.displayName.trim()) ||
@@ -142,10 +154,14 @@ export async function getCurrentNavUser() {
 
   return {
     avatarUrl: getMediaUrl(userDoc.avatar),
+    bio: typeof userDoc.bio === "string" ? userDoc.bio : null,
     creditsBalance: actualCredits,
     displayName,
     email: typeof userDoc.email === "string" ? userDoc.email : null,
+    followersCount: Number(userDoc.followersCount || 0),
+    followingCount: Number(userDoc.followingCount || 0),
     id: Number(userDoc.id),
+    modelsCount: Number(modelsCountResult.totalDocs || 0),
     role: typeof userDoc.role === "string" ? userDoc.role : "customer",
   };
 }

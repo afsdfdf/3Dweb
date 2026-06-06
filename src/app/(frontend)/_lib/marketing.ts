@@ -1,6 +1,6 @@
 import { getCachedPayload } from '@/lib/getCachedPayload'
 import type { FooterContent } from './marketing-content'
-import { getDefaultFooterLinkGroups, getDefaultHomepageContent, getDefaultSiteSettings } from './marketing-content'
+import { getDefaultFooterLinkGroups, getDefaultFooterSocialLinks, getDefaultHomepageContent, getDefaultSiteSettings } from './marketing-content'
 import { getCurrentLocale } from './locale-server'
 
 type NullablePartial<T> = { [K in keyof T]?: null | T[K] }
@@ -53,6 +53,7 @@ function mergeSiteSettings(
       : null
   const footer = mergeNullableObject<FooterContent>(defaultSiteSettings.footer, footerInput)
   const footerLinkGroups = pickArray(footer.linkGroups, getDefaultFooterLinkGroups(supportEmail))
+  const footerSocialLinks = pickArray(footer.socialLinks, getDefaultFooterSocialLinks())
 
   return {
     ...defaultSiteSettings,
@@ -67,6 +68,7 @@ function mergeSiteSettings(
     footer: {
       ...footer,
       linkGroups: footerLinkGroups,
+      socialLinks: footerSocialLinks,
     },
     generationPricing: {
       ...defaultSiteSettings.generationPricing,

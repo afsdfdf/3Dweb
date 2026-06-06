@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ThornsTavern 项目专业审计报告</title>
+<style>
+  :root{
+    --bg:#0d1117; --panel:#161b22; --panel2:#1c2230; --border:#2d333b;
+    --text:#e6edf3; --muted:#9da7b3; --accent:#58a6ff; --accent2:#7ee787;
+    --crit:#f85149; --high:#ff9e64; --med:#e3b341; --low:#3fb950; --tip:#a371f7;
+    --shadow:0 8px 28px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.7;font-size:15px;
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px 96px}
+  header.hero{
+    background:linear-gradient(135deg,#161b22 0%,#1c2438 55%,#241b34 100%);
+    border-bottom:1px solid var(--border);padding:56px 24px 44px;margin-bottom:8px;
+  }
+  .hero-inner{max-width:1080px;margin:0 auto}
+  .tag{display:inline-block;font-size:12px;letter-spacing:.18em;color:var(--accent);
+    text-transform:uppercase;border:1px solid var(--border);padding:4px 12px;border-radius:999px;background:rgba(88,166,255,.08)}
+  h1{font-size:34px;margin:18px 0 6px;font-weight:800;letter-spacing:-.5px}
+  .sub{color:var(--muted);font-size:15px;max-width:760px}
+  .meta-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-top:28px}
+  .meta-grid .m{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+  .meta-grid .m b{display:block;font-size:20px;font-weight:700}
+  .meta-grid .m span{font-size:12px;color:var(--muted)}
+
+  section{margin-top:46px}
+  h2{font-size:23px;margin:0 0 4px;font-weight:750;display:flex;align-items:center;gap:10px}
+  h2 .num{font-size:13px;color:var(--accent);background:rgba(88,166,255,.12);border-radius:7px;padding:2px 9px;font-weight:700}
+  .lead{color:var(--muted);margin:6px 0 22px}
+
+  /* overall score */
+  .score-wrap{display:grid;grid-template-columns:240px 1fr;gap:28px;align-items:center;
+    background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:28px;box-shadow:var(--shadow)}
+  @media(max-width:720px){.score-wrap{grid-template-columns:1fr}}
+  .gauge{position:relative;width:200px;height:200px;margin:0 auto}
+  .gauge svg{transform:rotate(-90deg)}
+  .gauge .val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .gauge .val b{font-size:46px;font-weight:800;line-height:1}
+  .gauge .val small{color:var(--muted);font-size:13px;margin-top:4px}
+  .grade{display:inline-block;font-size:13px;font-weight:700;padding:3px 11px;border-radius:7px;margin-top:8px}
+  .summary-points li{margin:7px 0}
+  .verdict{font-size:16px;line-height:1.8}
+
+  /* domain scorecards */
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:16px}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:18px 18px 16px;transition:.2s;position:relative;overflow:hidden}
+  .card:hover{transform:translateY(-3px);border-color:#3d4452}
+  .card h3{margin:0 0 2px;font-size:15px;display:flex;align-items:center;gap:8px}
+  .card .ico{font-size:18px}
+  .card .pct{font-size:30px;font-weight:800;margin:6px 0 2px}
+  .bar{height:7px;border-radius:6px;background:#222a35;overflow:hidden;margin-top:8px}
+  .bar i{display:block;height:100%;border-radius:6px}
+  .card .note{font-size:12px;color:var(--muted);margin-top:9px;min-height:32px}
+
+  /* severity legend / distribution */
+  .dist{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:8px}
+  @media(max-width:640px){.dist{grid-template-columns:repeat(2,1fr)}}
+  .pill{border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center;background:var(--panel)}
+  .pill b{display:block;font-size:28px;font-weight:800}
+  .pill span{font-size:12.5px;color:var(--muted)}
+
+  /* findings */
+  .domain-block{margin-top:30px}
+  .domain-head{display:flex;align-items:center;gap:12px;border-left:4px solid var(--accent);padding:6px 0 6px 14px;margin-bottom:14px}
+  .domain-head h3{margin:0;font-size:19px}
+  .domain-head .sc{margin-left:auto;font-size:13px;color:var(--muted)}
+  .finding{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:13px;border-left:4px solid var(--border)}
+  .finding.crit{border-left-color:var(--crit)}
+  .finding.high{border-left-color:var(--high)}
+  .finding.med{border-left-color:var(--med)}
+  .finding.low{border-left-color:var(--low)}
+  .finding.tip{border-left-color:var(--tip)}
+  .finding .ttl{font-weight:700;font-size:15.5px;display:flex;align-items:flex-start;gap:9px;flex-wrap:wrap}
+  .badge{font-size:11px;font-weight:700;padding:2px 9px;border-radius:6px;white-space:nowrap;letter-spacing:.04em}
+  .b-crit{background:rgba(248,81,73,.16);color:#ff7b72;border:1px solid rgba(248,81,73,.35)}
+  .b-high{background:rgba(255,158,100,.14);color:#ffb787;border:1px solid rgba(255,158,100,.3)}
+  .b-med{background:rgba(227,179,65,.14);color:#e3b341;border:1px solid rgba(227,179,65,.3)}
+  .b-low{background:rgba(63,185,80,.14);color:#56d364;border:1px solid rgba(63,185,80,.3)}
+  .b-tip{background:rgba(163,113,247,.14);color:#bc8cff;border:1px solid rgba(163,113,247,.3)}
+  .b-ok{background:rgba(126,231,135,.14);color:#7ee787;border:1px solid rgba(126,231,135,.3)}
+  .finding .row{margin-top:9px;font-size:14px}
+  .finding .row b{color:var(--muted);font-weight:600;display:inline-block;min-width:64px}
+  code{background:#0b0f15;border:1px solid var(--border);border-radius:5px;padding:1px 6px;font-size:12.5px;
+    font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;color:#d2a8ff;word-break:break-all}
+  .verified{font-size:11px;color:var(--accent2);font-weight:700;border:1px solid rgba(126,231,135,.3);background:rgba(126,231,135,.08);padding:1px 7px;border-radius:6px}
+
+  /* strengths */
+  .strengths{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:13px}
+  .strength{background:linear-gradient(180deg,rgba(126,231,135,.05),transparent);border:1px solid rgba(126,231,135,.2);border-radius:11px;padding:14px 16px}
+  .strength b{color:var(--accent2)}
+  .strength p{margin:5px 0 0;font-size:13.5px;color:var(--muted)}
+
+  /* roadmap */
+  .road{position:relative;margin-top:10px}
+  .phase{background:var(--panel);border:1px solid var(--border);border-radius:13px;padding:18px 20px;margin-bottom:16px}
+  .phase-head{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+  .pl{font-size:12px;font-weight:800;padding:4px 11px;border-radius:8px;letter-spacing:.05em}
+  .p0{background:rgba(248,81,73,.16);color:#ff7b72}
+  .p1{background:rgba(255,158,100,.16);color:#ffb787}
+  .p2{background:rgba(227,179,65,.16);color:#e3b341}
+  .p3{background:rgba(163,113,247,.16);color:#bc8cff}
+  .phase h3{margin:0;font-size:17px}
+  .phase .eff{margin-left:auto;font-size:12px;color:var(--muted);border:1px solid var(--border);padding:3px 10px;border-radius:999px}
+  .phase ol{margin:10px 0 0;padding-left:20px}
+  .phase ol li{margin:7px 0;font-size:14px}
+  .phase ol li b{color:var(--text)}
+
+  table.matrix{width:100%;border-collapse:collapse;margin-top:6px;font-size:13.5px}
+  table.matrix th,table.matrix td{border:1px solid var(--border);padding:9px 12px;text-align:left}
+  table.matrix th{background:var(--panel2);font-weight:700}
+  table.matrix tr:nth-child(even) td{background:rgba(255,255,255,.015)}
+
+  .toc{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-top:26px}
+  .toc a{color:var(--accent);text-decoration:none;font-size:14px}
+  .toc a:hover{text-decoration:underline}
+  .toc ol{margin:8px 0 0;columns:2;padding-left:20px}
+  @media(max-width:640px){.toc ol{columns:1}}
+  .toc li{margin:4px 0}
+
+  footer{margin-top:60px;border-top:1px solid var(--border);padding-top:22px;color:var(--muted);font-size:12.5px}
+  .disclaimer{background:rgba(227,179,65,.06);border:1px solid rgba(227,179,65,.2);border-radius:10px;padding:13px 16px;font-size:13px;color:#d7c79a;margin-top:16px}
+  @media print{body{background:#fff;color:#000}.card,.finding,.phase,.pill,.score-wrap{box-shadow:none}}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <span class="tag">Professional Codebase Audit · 只读审计</span>
+    <h1>ThornsTavern 项目专业审计报告</h1>
+    <p class="sub">针对 <code>payload-local-demo</code> 仓库的全面工程审计 —— 覆盖架构、安全、数据层、前端性能与代码质量五大维度。本次审计为<strong>纯只读分析,未修改任何项目文件</strong>,核心高危结论均经人工二次核验。</p>
+    <div class="meta-grid">
+      <div class="m"><b>Payload 3.82</b><span>CMS 框架</span></div>
+      <div class="m"><b>Next.js 16</b><span>App Router · React 19</span></div>
+      <div class="m"><b>PostgreSQL</b><span>+ Supabase · Stripe</span></div>
+      <div class="m"><b>365</b><span>TS/TSX 文件</span></div>
+      <div class="m"><b>~66.8k</b><span>源码行数 (src)</span></div>
+      <div class="m"><b>2026-05-29</b><span>审计日期</span></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="toc">
+    <b>目录导航</b>
+    <ol>
+      <li><a href="#summary">执行摘要与综合评分</a></li>
+      <li><a href="#scorecard">五维度评分卡</a></li>
+      <li><a href="#dist">问题分布概览</a></li>
+      <li><a href="#findings">详细发现(按维度)</a></li>
+      <li><a href="#strengths">亮点与做得好的地方</a></li>
+      <li><a href="#roadmap">优化提升方案(优先级路线图)</a></li>
+      <li><a href="#method">审计方法与范围</a></li>
+    </ol>
+  </div>
+
+  <!-- ===================== EXECUTIVE SUMMARY ===================== -->
+  <section id="summary">
+    <h2><span class="num">01</span> 执行摘要与综合评分</h2>
+    <p class="lead">综合五个维度的加权评估,项目整体处于<strong>「良好」</strong>水平,工程基础扎实但存在需要优先处理的资金一致性与前端性能短板。</p>
+    <div class="score-wrap">
+      <div>
+        <div class="gauge">
+          <svg width="200" height="200" viewBox="0 0 200 200">
+            <circle cx="100" cy="100" r="86" fill="none" stroke="#222a35" stroke-width="16"/>
+            <circle cx="100" cy="100" r="86" fill="none" stroke="url(#g)" stroke-width="16"
+              stroke-linecap="round" stroke-dasharray="540.4" stroke-dashoffset="118.9"/>
+            <defs>
+              <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#e3b341"/><stop offset="1" stop-color="#7ee787"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="val"><b>78</b><small>/ 100</small>
+            <span class="grade" style="background:rgba(227,179,65,.16);color:#e3b341">B+ 良好</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <p class="verdict">这是一份<strong>工程纪律明显高于同类项目平均水平</strong>的代码库:测试覆盖广(65 个测试文件全部含有效断言)、技术债标记几乎为零(0 个 TODO/FIXME)、Git 工作区干净、环境变量与密钥管理堪称范本、支付与访问控制逻辑稳健。</p>
+        <ul class="summary-points">
+          <li>🔴 <b>5 个严重问题</b> —— 集中于<strong>积分账本的资金一致性</strong>(三处真相 + 跨事务原子性)与<strong>前端性能</strong>(完全未用 next/image、Three.js 未代码分割)。</li>
+          <li>🟠 <b>10 个高危问题</b> —— Supabase/Payload 双数据源、SEO 基础设施缺失、错误信息向客户端泄露等。</li>
+          <li>🟡 11 个中危 · 🟢 11 个低危 · 💡 多项加固建议。</li>
+          <li><span class="verified">已核验</span> 全部 🔴/🟠 关键结论均经人工读取源码二次确认。</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== SCORECARD ===================== -->
+  <section id="scorecard">
+    <h2><span class="num">02</span> 五维度评分卡</h2>
+    <p class="lead">各维度独立打分(满分 100),颜色反映健康度。综合分按 安全 25% · 数据层 25% · 前端 20% · 架构 15% · 代码质量 15% 加权得出。</p>
+    <div class="cards">
+      <div class="card">
+        <h3><span class="ico">🛡️</span> 安全与认证</h3>
+        <div class="pct" style="color:#56d364">86</div>
+        <div class="bar"><i style="width:86%;background:linear-gradient(90deg,#3fb950,#56d364)"></i></div>
+        <div class="note">无严重项,支付/访问控制/SQL 参数化均稳健;待修 webhook 时序比较与限流加固。</div>
+      </div>
+      <div class="card">
+        <h3><span class="ico">✅</span> 代码质量与测试</h3>
+        <div class="pct" style="color:#56d364">88</div>
+        <div class="bar"><i style="width:88%;background:linear-gradient(90deg,#3fb950,#56d364)"></i></div>
+        <div class="note">0 个 TODO、2 处 console、空 catch 为 0、提交规范;待修错误回显与 37 处 any。</div>
+      </div>
+      <div class="card">
+        <h3><span class="ico">🏗️</span> 架构与配置</h3>
+        <div class="pct" style="color:#e3b341">82</div>
+        <div class="bar"><i style="width:82%;background:linear-gradient(90deg,#e3b341,#3fb950)"></i></div>
+        <div class="note">结构清晰、迁移有序、环境变量优秀;调试路由残留、测试工具链不完整。</div>
+      </div>
+      <div class="card">
+        <h3><span class="ico">🎨</span> 前端与性能</h3>
+        <div class="pct" style="color:#ff9e64">70</div>
+        <div class="bar"><i style="width:70%;background:linear-gradient(90deg,#ff9e64,#e3b341)"></i></div>
+        <div class="note">完全未用 next/image(67 处原生 img)、Three.js 无代码分割、SEO 基础设施缺失。</div>
+      </div>
+      <div class="card">
+        <h3><span class="ico">🗄️</span> 数据层与 Payload</h3>
+        <div class="pct" style="color:#ff9e64">68</div>
+        <div class="bar"><i style="width:68%;background:linear-gradient(90deg,#f85149,#ff9e64)"></i></div>
+        <div class="note">社交表索引规范,但积分账本三处真相 + 跨事务不一致 + 双数据源是结构性风险。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== DISTRIBUTION ===================== -->
+  <section id="dist">
+    <h2><span class="num">03</span> 问题分布概览</h2>
+    <p class="lead">本次审计共识别 <strong>37</strong> 项可执行发现(去重跨维度重叠后),分级如下。严重度图例:🔴 严重 / 🟠 高 / 🟡 中 / 🟢 低 / 💡 建议。</p>
+    <div class="dist">
+      <div class="pill"><b style="color:#ff7b72">5</b><span>🔴 严重</span></div>
+      <div class="pill"><b style="color:#ffb787">10</b><span>🟠 高</span></div>
+      <div class="pill"><b style="color:#e3b341">11</b><span>🟡 中</span></div>
+      <div class="pill"><b style="color:#56d364">11</b><span>🟢 低</span></div>
+      <div class="pill"><b style="color:#bc8cff">12+</b><span>💡 建议/亮点</span></div>
+    </div>
+  </section>
+
+  <!-- ===================== DETAILED FINDINGS ===================== -->
+  <section id="findings">
+    <h2><span class="num">04</span> 详细发现</h2>
+    <p class="lead">按维度展开,每条含问题描述、定位、影响与改进建议。<span class="verified">已核验</span> 标记表示该结论已由审计人手动读取源码确认。</p>
+
+    <!-- DATA LAYER -->
+    <div class="domain-block">
+      <div class="domain-head">
+        <h3>🗄️ 数据层与 Payload Collections</h3>
+        <span class="sc">评分 68 · 最高风险区</span>
+      </div>
+
+      <div class="finding crit">
+        <div class="ttl"><span class="badge b-crit">🔴 严重</span> 积分账本「双写 + 三处真相」一致性风险 <span class="verified">已核验</span></div>
+        <div class="row"><b>位置</b> <code>src/lib/creditLedger.ts:366-391</code> · <code>src/hooks/syncCreditBalanceMirror.ts:24</code> · <code>src/collections/Credits.ts:23</code></div>
+        <div class="row"><b>问题</b> 账本事务用原生 SQL 直接 <code>UPDATE credits</code> 与 <code>UPDATE users.credits_balance</code>(绕过 Payload hooks);而 <code>Credits.afterChange</code> 又经 <code>req.payload.update</code> 把余额镜像写回 <code>users</code>。同一字段 <code>users.credits_balance</code> 存在三条写路径(原生 SQL、镜像 hook、Admin 手改),原生路径不触发镜像 hook。</div>
+        <div class="row"><b>影响</b> 余额为冗余反范式字段,任一路径漂移即导致<strong>账实不符(资金问题)</strong>,且难以排查。</div>
+        <div class="row"><b>建议</b> 以 <code>credits.balance</code> 为唯一真相,<code>users.credits_balance</code> 改为只读派生;所有写入统一收敛到同一服务层。</div>
+      </div>
+
+      <div class="finding crit">
+        <div class="ttl"><span class="badge b-crit">🔴 严重</span> 账本事务与 Payload 请求事务相互独立,跨操作无原子性 <span class="verified">已核验</span></div>
+        <div class="row"><b>位置</b> <code>src/lib/ledgerStore.ts:22-51</code> · <code>src/lib/creditLedger.ts:274</code></div>
+        <div class="row"><b>问题</b> <code>withLedgerTransaction</code> 从 <code>req.payload.db.drizzle.$client</code> 自取连接开 <code>BEGIN/COMMIT</code>,与 Payload 自身 <code>req.transactionID</code> 事务<strong>并非同一事务</strong>。</div>
+        <div class="row"><b>影响</b> 同一业务流程若既调账本原生事务、又调 <code>payload.create/update</code>,二者无法共同回滚 —— 出现「扣费成功但任务落库失败」的孤儿扣款。</div>
+        <div class="row"><b>建议</b> 复用 Payload 事务(透传 <code>req</code> 与同一 drizzle transaction),或把业务写入纳入同一原生事务。</div>
+      </div>
+
+      <div class="finding high">
+        <div class="ttl"><span class="badge b-high">🟠 高</span> Supabase 与 Payload 双 Schema 并存,数据源混乱 <span class="verified">已核验</span></div>
+        <div class="row"><b>位置</b> <code>src/lib/supabase/queries.ts:233,265</code> · <code>src/lib/supabase/billing.ts:23,56</code></div>
+        <div class="row"><b>问题</b> 查询层仍读写旧 Supabase 业务表 <code>public.profiles / ai_tasks / credit_ledger_entries / models</code>,而 Payload 实际拥有 <code>users / generation-tasks / credit_transactions / models</code>(主键类型亦不同:UUID vs integer)。<code>billing.ts:56</code> 甚至 <code>UPDATE public.profiles.stripe_customer_id</code>,与 <code>Users.stripeCustomerId</code> 是两份数据。</div>
+        <div class="row"><b>影响</b> 结构性隐患;<code>supabase/reset-public-business-schema.sql</code> 已 drop 这些表,线上若未建则相关查询全部失败。</div>
+        <div class="row"><b>建议</b> 明确以 Payload 为唯一业务数据源,下线或改写 <code>supabase/queries.ts</code>、<code>billing.ts</code> 的旧表读写。</div>
+      </div>
+
+      <div class="finding high">
+        <div class="ttl"><span class="badge b-high">🟠 高</span> 破坏性迁移删除本地化表,但配置实际未用本地化</div>
+        <div class="row"><b>位置</b> <code>src/migrations/20260529_020000_posts_default_content_locale.ts:133-134</code></div>
+        <div class="row"><b>问题</b> <code>DROP TABLE posts_locales / _posts_v_locales</code>,而 <code>Posts.ts</code> 无任何 <code>localized:true</code> 字段。down 回滚仅恢复 <code>en</code> 行,其他 locale 数据永久丢失,实质不可逆。</div>
+        <div class="row"><b>影响</b> 配合 <code>localization.locales:['en','zh']</code>,内容多语言能力被静默移除。</div>
+        <div class="row"><b>建议</b> 确认产品不再需要 Posts 多语言;迁移头部显著标注数据丢失风险。</div>
+      </div>
+
+      <div class="finding high">
+        <div class="ttl"><span class="badge b-high">🟠 高</span> 计数字段无 DB 层并发保护,易计数漂移</div>
+        <div class="row"><b>位置</b> <code>Models.ts:155-209</code>(view/likes/favorites/comments Count)· <code>Users.ts:257-277</code>(followers/following)</div>
+        <div class="row"><b>问题</b> 冗余计数列通过 <code>payload.update</code> 读改写(非原子 <code>SET x = x+1</code>),高并发下丢更新。</div>
+        <div class="row"><b>建议</b> 计数走原生 <code>UPDATE ... SET likes_count = likes_count + 1</code>,或依赖已有唯一索引(<code>model_likes_user_model_unique_idx</code>)做幂等后聚合。</div>
+      </div>
+
+      <div class="finding med">
+        <div class="ttl"><span class="badge b-med">🟡 中</span> 关键外键缺索引,关联查询全表扫描</div>
+        <div class="row"><b>位置</b> <code>CreditTransactions.ts:25-26,45-46</code> · <code>PrintOrders.ts:24-26</code> · <code>GenerationTasks.ts:24,82</code> · <code>Models.ts:46-47</code></div>
+        <div class="row"><b>问题</b> 「按用户查交易/订单」「按 owner 查模型」是高频路径,relationship 字段却无 <code>index:true</code>(社交表已正确加索引,作正面对照)。</div>
+        <div class="row"><b>建议</b> 对上述 relationship 字段补 <code>index: true</code>。</div>
+      </div>
+
+      <div class="finding med">
+        <div class="ttl"><span class="badge b-med">🟡 中</span> Hook 内 payload.update 触发隐式查询放大;邮件副作用阻塞主流程</div>
+        <div class="row"><b>位置</b> <code>syncCreditBalanceMirror.ts:24</code> · <code>createDefaultCreditAccount.ts</code> · <code>sendWelcomeEmail.ts</code>(均挂 <code>Users.afterChange</code>)</div>
+        <div class="row"><b>问题</b> 每次 Credits 变更额外触发 users 更新及其完整 afterChange 链;注册时同步发信会阻塞响应。</div>
+        <div class="row"><b>建议</b> 镜像改原生单条 SQL;邮件/缓存 revalidate 改异步队列(fire-and-forget)。</div>
+      </div>
+
+      <div class="finding low">
+        <div class="ttl"><span class="badge b-low">🟢 低</span> PG 连接池双实例 · 迁移 no-op 残留 · 字段命名误导</div>
+        <div class="row"><b>位置</b> <code>payload.config.ts:213</code> + <code>postgres.ts:34</code>(两套 <code>max:20</code> 池)· <code>PrintOrders.ts:56-77</code>(用 <code>shopifyOrderId</code> 存 Stripe 数据)</div>
+        <div class="row"><b>建议</b> 统一复用 <code>db.drizzle.$client</code>;清理废弃 no-op 迁移;字段重命名以匹配实际语义。</div>
+      </div>
+
+      <div class="finding tip">
+        <div class="ttl"><span class="badge b-tip">💡 建议</span> 金融表缺软删除/审计列 · JSON 字段无 schema · 危险 SQL 脚本应隔离</div>
+        <div class="row"><b>说明</b> <code>Credits/CreditTransactions/PrintOrders</code> 无软删除与变更审计列;<code>GenerationTasks.parameterSnapshot</code> 等 <code>type:json</code> 无结构约束;<code>reset-public-business-schema.sql</code> 含 <code>DROP ... CASCADE</code>,建议移出代码库或加显著警示。</div>
+      </div>
+    </div>
+
+    <!-- FRONTEND -->
+    <div class="domain-block">
+      <div class="domain-head">
+        <h3>🎨 前端架构与性能</h3>
+        <span class="sc">评分 70</span>
+      </div>
+
+      <div class="finding crit">
+        <div class="ttl"><span class="badge b-crit">🔴 严重</span> 完全未使用 next/image,全站 67 处原生 &lt;img&gt; <span class="verified">已核验</span></div>
+        <div class="row"><b>位置</b> 全站(<code>page.tsx:45/102/120</code> · <code>ModelDetailNative.tsx:582/712</code> · <code>bundles/[slug]/page.tsx:75</code> 等),55 处用 <code>eslint-disable</code> 压制告警</div>
+        <div class="row"><b>量化</b> <code>next/image</code> 引用 = <strong>0</strong>,原生 <code>&lt;img&gt;</code> = <strong>67</strong></div>
+        <div class="row"><b>影响</b> 无自动 AVIF/WebP、无响应式 srcset、无尺寸约束 → CLS 布局抖动、LCP 劣化、移动端流量浪费;<code>sharp</code> 已装却未经 Image 管线发挥作用。</div>
+        <div class="row"><b>建议</b> 接入 <code>next/image</code> + 配置 <code>remotePatterns</code>(Supabase 图源),优先改造首页/详情页的 LCP 图。</div>
+      </div>
+
+      <div class="finding crit">
+        <div class="ttl"><span class="badge b-crit">🔴 严重</span> Three.js ModelViewer 未做代码分割 <span class="verified">已核验</span></div>
+        <div class="row"><b>位置</b> <code>ModelDetailNative.tsx:18</code> · <code>WorkbenchClient.tsx:15</code> · <code>WorkbenchPanels.tsx:10</code>(均为静态 import)</div>
+        <div class="row"><b>量化</b> <code>dynamic()</code> 动态导入 = <strong>0</strong>;<code>ModelViewer.tsx</code> 单文件 1215 行</div>
+        <div class="row"><b>影响</b> <code>three</code>+<code>drei</code>+<code>GLTFLoader</code>+<code>DRACOLoader</code>(数百 KB)进入这些路由首屏 bundle,即使用户未滚动到 3D 区域也被下载解析,阻塞可交互时间。</div>
+        <div class="row"><b>建议</b> <code>const ModelViewer = dynamic(() =&gt; import('./ModelViewer'), { ssr:false, loading })</code>,配合视口内再挂载。</div>
+      </div>
+
+      <div class="finding high">
+        <div class="ttl"><span class="badge b-high">🟠 高</span> 缺少 SEO 基础设施</div>
+        <div class="row"><b>位置</b> 无 <code>sitemap.ts</code> / <code>robots.ts</code>;JSON-LD 仅 <code>blog/[slug]</code> 一处;<code>generateMetadata</code> 仅 2 个前台页</div>
+        <div class="row"><b>影响</b> 核心商品页(模型详情、bundle)无标题/描述/OG/结构化数据,搜索与社交分享表现差。</div>
+        <div class="row"><b>建议</b> 补 <code>app/(frontend)/sitemap.ts</code>、<code>robots.ts</code>;详情页加 <code>generateMetadata</code> + <code>Product</code>/<code>BreadcrumbList</code> JSON-LD。</div>
+      </div>
+
+      <div class="finding high">
+        <div class="ttl"><span class="badge b-high">🟠 高</span> 动态商品页缺缓存策略</div>
+        <div class="row"><b>位置</b> <code>model-detail/page.tsx</code> · <code>bundles/[slug]</code> · <code>showcase</code> 依赖 <code>cookies()</code>/session → 隐式 force-dynamic;仅 blog 有 <code>revalidate=60</code></div>
+        <div class="row"><b>影响</b> 商品列表/详情每请求全量 SSR 打 DB,TTFB 偏高,无 ISR/CDN 收益。</div>
+        <div class="row"><b>建议</b> 拆分公共数据(<code>unstable_cache</code>/ISR)与用户态数据;详情页加 <code>generateStaticParams</code> 预渲染热门模型。</div>
+      </div>
+
+      <div class="finding med">
+        <div class="ttl"><span class="badge b-med">🟡 中</span> 首页过度客户端化 + 巨型 client 组件 · useEffect 偏多</div>
+        <div class="row"><b>位置</b> <code>ModelViewer.tsx</code>(1215 行)· <code>WorkbenchClient.tsx</code>(&gt;1275 行)</div>
+        <div class="row"><b>量化</b> <code>use client</code> = <strong>58</strong> 文件;<code>useEffect</code> = <strong>67</strong> 处(ModelViewer 内 6 处)</div>
+        <div class="row"><b>影响</b> hydration 成本高,单文件难分割与 tree-shake;切换模型 src 时若未逐项 dispose 旧 geometry/material/texture 可能残留显存(已有 <code>gl.dispose()</code> 与 Suspense,基础到位)。</div>
+        <div class="row"><b>建议</b> 按交互边界拆分 client 组件,纯展示下沉为 server component;卸载时 <code>scene.traverse</code> 显式 dispose。</div>
+      </div>
+
+      <div class="finding low">
+        <div class="ttl"><span class="badge b-low">🟢 低</span> i18n 文案硬编码 · 残留空路由目录</div>
+        <div class="row"><b>位置</b> <code>i18n/marketing.ts</code> 已集中管理,但 <code>page.tsx</code> 首页大量英文(如 <code>"Ideas to Miniatures"</code>)直接写死;<code>t()</code> 调用 0 处。空目录 <code>(frontend)/test</code>、<code>test-bundles</code>、<code>formal-components</code></div>
+        <div class="row"><b>建议</b> 统一文案出口;确认空/实验路由不进生产构建。<em>注:<code>components/ui-lab/</code> 经核实为生产 UI 库(被 40+ 文件引用),非死代码。</em></div>
+      </div>
+    </div>
+
+    <!-- SECURITY -->
+    <div class="domain-block">
+      <div class="domain-head">
+        <h3>🛡️ 安全与认证授权</h3>
+        <span class="sc">评分 86 · 无严重项</span>
+      </div>
+
+      <div class="finding high">
+        <div class="ttl"><span class="badge b-high">🟠 高</span> Meshy webhook 令牌:非恒定时间比较 + 可走 URL 查询参数 <span class="verified">已核验</span></div>
+        <div class="row"><b>位置</b> <code>src/endpoints/aiTasks.ts:246</code>(<code>getMeshyWebhookToken(req) !== expectedToken</code>)· <code>:46</code>(从 <code>?token=</code> 取值)</div>
+        <div class="row"><b>问题</b> <code>!==</code> 短路比较存在时序侧信道;令牌经 URL query 传入会落入访问日志/Referer。同项目 AI provider webhook 已正确用 <code>HMAC + timingSafeEqual + 防重放</code>,此处不一致。</div>
+        <div class="row"><b>建议</b> 改用 <code>crypto.timingSafeEqual</code>;仅接受请求头令牌,移除 query 回退;或统一为 HMAC 签名方案。</div>
+      </div>
+
+      <div class="finding high">
+        <div class="ttl"><span class="badge b-high">🟠 高</span> 调试端点 __codex 骨架残留于源码树 <span class="verified">已核验</span></div>
+        <div class="row"><b>位置</b> <code>src/app/api/__codex/image-provider-e2e/reference/</code>(空目录,未被 git 跟踪)</div>
+        <div class="row"><b>问题</b> 当前无 <code>route.ts</code> 故不暴露路由,但目录骨架残留 —— 若误放回路由文件将直接上线,且 <code>__codex</code> 未被 <code>.gitignore</code> 覆盖。</div>
+        <div class="row"><b>建议</b> 彻底删除 <code>__codex</code> 目录;在 middleware/next.config 对生产环境 <code>/api/__*</code> 路径返回 404。</div>
+      </div>
+
+      <div class="finding med">
+        <div class="ttl"><span class="badge b-med">🟡 中</span> 鉴权前先实例化 Payload/解析 body,部分路由缺限流兜底</div>
+        <div class="row"><b>位置</b> <code>media/upload-url/route.ts:32</code> · <code>profile-media/*</code> · <code>locale</code>(auth 端点已有 <code>rejectRateLimitedEndpoint</code>)</div>
+        <div class="row"><b>影响</b> 未认证请求即可触发 DB/Payload 初始化与 JSON 解析,放大 DoS 面。</div>
+        <div class="row"><b>建议</b> 所有 mutation 路由统一加限流;来源/限流检查前置于重操作。</div>
+      </div>
+
+      <div class="finding med">
+        <div class="ttl"><span class="badge b-med">🟡 中</span> 限流键依赖可伪造的代理头</div>
+        <div class="row"><b>位置</b> <code>src/lib/requestSecurity.ts:107-137</code>(<code>getRequestIP</code>)</div>
+        <div class="row"><b>问题</b> <code>TRUST_PROXY_HEADERS=true</code> 时信任 <code>cf-connecting-ip</code>/<code>x-real-ip</code>;否则回退到 UA 甚至 <code>'anonymous'</code>(所有攻击者共享一个限流桶)。</div>
+        <div class="row"><b>建议</b> 生产强制经可信代理并校验来源链;回退键避免使用全局 <code>'anonymous'</code>。</div>
+      </div>
+
+      <div class="finding low">
+        <div class="ttl"><span class="badge b-low">🟢 低</span> 首个用户自动提权 · 错误信息直接回显 · locale cookie 无 secure</div>
+        <div class="row"><b>位置</b> <code>Users.ts:34,41-50</code>(首注册赋 admin,依赖「仅零用户时可用」语义)· 多处 <code>getErrorMessage(error)</code> 返回 400</div>
+        <div class="row"><b>建议</b> 部署后确认已存在用户并显式禁用首注册路径;生产错误仅返回通用文案。</div>
+      </div>
+    </div>
+
+    <!-- ARCHITECTURE -->
+    <div class="domain-block">
+      <div class="domain-head">
+        <h3>🏗️ 架构与配置</h3>
+        <span class="sc">评分 82</span>
+      </div>
+
+      <div class="finding high">
+        <div class="ttl"><span class="badge b-high">🟠 高</span> 测试工具链不完整:Playwright 无配置 + 缺 typecheck 脚本</div>
+        <div class="row"><b>位置</b> <code>package.json</code>(无 <code>typecheck</code>,playwright 已装但无 <code>playwright.config.*</code>)· <code>tsconfig.json:43-47</code> 排除 <code>tests</code></div>
+        <div class="row"><b>影响</b> E2E 无法标准化运行;<code>tests/</code> 下测试文件永不做类型校验,易长期腐化。</div>
+        <div class="row"><b>建议</b> 新增 <code>"typecheck": "tsc --noEmit"</code> 与 <code>tsconfig.test.json</code>;补 <code>playwright.config.ts</code> 或移除依赖。</div>
+      </div>
+
+      <div class="finding med">
+        <div class="ttl"><span class="badge b-med">🟡 中</span> 依赖职责划分错误 + 关键依赖锁死精确版本</div>
+        <div class="row"><b>位置</b> <code>package.json:48</code>(<code>shadcn</code> CLI 列为运行时依赖)· <code>next/react/sharp/typescript</code> 等无 <code>^</code></div>
+        <div class="row"><b>影响</b> shadcn 脚手架进入生产安装体积;精确锁版冻结安全补丁(尤其 <code>sharp</code> 原生图像库)。</div>
+        <div class="row"><b>建议</b> <code>shadcn</code> 移至 devDependencies 或移除;<code>sharp</code> 放开补丁位 <code>~0.34.2</code>。</div>
+      </div>
+
+      <div class="finding low">
+        <div class="ttl"><span class="badge b-low">🟢 低</span> dev/build 打包器不一致 · TS 轻微宽松</div>
+        <div class="row"><b>位置</b> <code>package.json:8</code>(<code>build --webpack</code>)+ <code>next.config.ts:21-32</code>(同时配 webpack 与 turbopack)· <code>tsconfig.json:10-11</code>(<code>allowJs</code>+<code>skipLibCheck</code>)</div>
+        <div class="row"><b>建议</b> 统一打包器或文档说明;关闭 <code>allowJs</code>(纯 TS 项目无必要)。</div>
+      </div>
+
+      <div class="finding tip">
+        <div class="ttl"><span class="badge b-tip">💡 建议</span> vercel.json cron 每分钟触发 · 本地日志堆积</div>
+        <div class="row"><b>位置</b> <code>vercel.json:5</code>(<code>* * * * *</code>)· 根目录 <code>.codex-next-dev.log</code>(285KB)等(<strong>已被 .gitignore 正确覆盖,未污染仓库</strong>)</div>
+        <div class="row"><b>建议</b> 确认 cron 任务幂等且有 <code>CRON_SECRET</code> 校验;定期 <code>pnpm cleanup:temp</code>。</div>
+      </div>
+    </div>
+
+    <!-- CODE QUALITY -->
+    <div class="domain-block">
+      <div class="domain-head">
+        <h3>✅ 代码质量、错误处理与测试</h3>
+        <span class="sc">评分 88 · 最高分</span>
+      </div>
+
+      <div class="finding high">
+        <div class="ttl"><span class="badge b-high">🟠 高</span> 原始错误信息泄露给客户端</div>
+        <div class="row"><b>位置</b> 约 12 个端点:<code>account.ts:29,92,190,208</code> · <code>aiTasks.ts:371</code> · <code>engagement.ts:39</code> · <code>modelComments.ts:68</code> 等</div>
+        <div class="row"><b>问题</b> 普遍 <code>error instanceof Error ? error.message : '兜底'</code> 后直接返回响应体,底层异常(DB 驱动/SQL/SDK)的 message 可能含表名、约束名、连接串片段。</div>
+        <div class="row"><b>建议</b> 统一错误处理层:内部细节走 <code>payload.logger.error</code>,客户端仅返回稳定错误码+通用文案;仅对 <code>ValidationError</code> 透出 message。</div>
+      </div>
+
+      <div class="finding med">
+        <div class="ttl"><span class="badge b-med">🟡 中</span> 类型逃逸:37 处 any,集中于资金/认证关键路径</div>
+        <div class="row"><b>位置</b> <code>creditLedger.ts</code>(10 处,<code>(row as any).balance</code>)· <code>payloadAuthFallback.ts:86,88,128</code>(<code>user as any</code>)· <code>emailTemplates.ts</code>(5)</div>
+        <div class="row"><b>问题</b> 对原始 SQL 结果整体 <code>as any</code> 取字段,资金敏感逻辑字段拼写/类型错误不会被编译捕获;认证回退路径风险更高。</div>
+        <div class="row"><b>建议</b> 为 SQL 行定义 <code>interface CreditLedgerRow</code> 集中映射;认证回退用类型守卫替代 any。</div>
+      </div>
+
+      <div class="finding low">
+        <div class="ttl"><span class="badge b-low">🟢 低</span> eslint-disable 多为合理 · 端点文件偏大</div>
+        <div class="row"><b>量化</b> 58 处 <code>eslint-disable</code> 中 57 处为 <code>no-img-element</code>(伴随 next/image 问题)· 最大端点 <code>modelViewer.ts</code> 675 行</div>
+        <div class="row"><b>建议</b> 封装统一远程图片组件;复杂端点按 public/authenticated 拆分。</div>
+      </div>
+
+      <div class="finding tip">
+        <div class="ttl"><span class="badge b-tip">💡 建议</span> 缺 README · lib 层 80+ 文件平铺 · 无覆盖率统计</div>
+        <div class="row"><b>说明</b> 根目录无 <code>README.md</code>(有 AGENTS.md 556 行 + docs/);<code>src/lib/</code> 建议按域(billing/auth/media/ai)建子目录;冒烟测试为自研脚本,建议接入 coverage 量化覆盖率。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== STRENGTHS ===================== -->
+  <section id="strengths">
+    <h2><span class="num">05</span> 亮点与做得好的地方</h2>
+    <p class="lead">审计同样关注优秀实践。以下为经核验、值得保持的工程亮点。</p>
+    <div class="strengths">
+      <div class="strength"><b>💰 支付金额服务端权威</b><p>金额取自 <code>ORDER_PRICE_MAP</code> 与 DB 产品价,不来自客户端;Stripe webhook 强制 <code>constructEvent</code> 验签,信用充值含 <code>idempotencyKey</code> 防重复入账。</p></div>
+      <div class="strength"><b>🔐 访问控制收敛</b><p><code>src/access</code> 默认拒绝,<code>ownerOrStaff</code> 收敛属主;财务表对客户只读、写操作仅 admin,无 IDOR。</p></div>
+      <div class="strength"><b>🗝️ 密钥管理范本</b><p><code>.env</code> 从未提交(git 历史仅 *.example);无敏感值挂 <code>NEXT_PUBLIC_</code>;<code>PAYLOAD_SECRET</code> 强制 ≥32 字符;生产 CSP/HSTS 完备。</p></div>
+      <div class="strength"><b>🧪 测试纪律</b><p>65 个测试文件全部含有效断言;资金、安全、权限逻辑均有专门覆盖;Git 工作区干净、提交信息规范。</p></div>
+      <div class="strength"><b>🧹 极低技术债</b><p>0 个 TODO/FIXME/HACK;src 内仅 2 处 <code>console.warn</code>(合理降级);空 catch 块为 0;41 处结构化 <code>payload.logger</code>。</p></div>
+      <div class="strength"><b>💉 注入防护到位</b><p>所有原生 <code>pg</code> 查询均参数化(<code>$1..$n</code>),无字符串拼接;无 <code>dangerouslySetInnerHTML</code>/<code>eval</code>/<code>child_process</code>;SSRF 经主机白名单校验。</p></div>
+      <div class="strength"><b>📁 结构与迁移有序</b><p><code>access/collections/endpoints/globals/hooks/i18n/migrations</code> 职责分明;<code>(frontend)/(payload)</code> 路由分组规范;迁移文件管理有序。</p></div>
+      <div class="strength"><b>♿ a11y 基础达标</b><p>67 处 <code>&lt;img&gt;</code> 全部带 <code>alt</code>(缺失 0);普遍使用 <code>aria-label</code>/<code>aria-hidden</code>。</p></div>
+    </div>
+  </section>
+
+  <!-- ===================== ROADMAP ===================== -->
+  <section id="roadmap">
+    <h2><span class="num">06</span> 优化提升方案(优先级路线图)</h2>
+    <p class="lead">按「风险 × 影响 / 改造成本」排序为四个阶段。建议从 P0 资金安全开始,P1 性能与 SEO 收益最高。</p>
+
+    <div class="road">
+      <div class="phase">
+        <div class="phase-head"><span class="pl p0">P0 · 立即</span><h3>资金一致性与数据正确性</h3><span class="eff">成本:中-高</span></div>
+        <ol>
+          <li><b>统一积分账本写入路径</b> —— 以 <code>credits.balance</code> 为唯一真相,<code>users.credits_balance</code> 改为只读派生;所有扣费/充值收敛到单一服务层,消除三处真相。</li>
+          <li><b>统一事务边界</b> —— 账本事务复用 Payload 的 drizzle 事务并透传 <code>req</code>,确保「扣费 + 业务写入」可共同回滚,杜绝孤儿扣款。</li>
+          <li><b>收敛数据源</b> —— 明确 Payload 为唯一业务数据源,下线 <code>supabase/queries.ts</code> 与 <code>billing.ts</code> 对旧表(<code>public.profiles</code>/<code>ai_tasks</code>)的读写。</li>
+          <li><b>消除资金/认证路径的 any</b> —— 为 SQL 行定义类型接口,认证回退改用类型守卫。</li>
+        </ol>
+      </div>
+
+      <div class="phase">
+        <div class="phase-head"><span class="pl p1">P1 · 近期</span><h3>前端性能与可发现性(用户感知最强)</h3><span class="eff">成本:中</span></div>
+        <ol>
+          <li><b>接入 next/image</b> —— 优先替换首页与详情页 LCP 图,配置 Supabase <code>remotePatterns</code>,补 <code>width/height/sizes</code>,直接改善 LCP 与 CLS。</li>
+          <li><b>Three.js 代码分割</b> —— <code>ModelViewer</code> 改 <code>dynamic(..., {ssr:false})</code> + 视口内挂载,显著降低商品页首屏 JS。</li>
+          <li><b>补齐 SEO 基础设施</b> —— 新增 <code>sitemap.ts</code>/<code>robots.ts</code>;详情页 <code>generateMetadata</code> + <code>Product</code>/<code>BreadcrumbList</code> JSON-LD。</li>
+          <li><b>商品页缓存</b> —— 拆分公共数据(ISR/<code>unstable_cache</code>)与用户态;热门模型 <code>generateStaticParams</code> 预渲染。</li>
+        </ol>
+      </div>
+
+      <div class="phase">
+        <div class="phase-head"><span class="pl p2">P2 · 中期</span><h3>安全加固与数据库性能</h3><span class="eff">成本:低-中</span></div>
+        <ol>
+          <li><b>webhook 加固</b> —— Meshy 改 <code>timingSafeEqual</code>,移除 URL query 令牌回退,向 HMAC 方案对齐。</li>
+          <li><b>统一错误响应</b> —— 引入错误处理层,内部细节仅入日志,对外返回稳定错误码,堵住信息泄露。</li>
+          <li><b>限流与代理信任</b> —— 所有 mutation 路由加限流并前置;生产强制可信代理,回退键避免全局 anonymous。</li>
+          <li><b>补关键外键索引</b> —— <code>CreditTransactions</code>/<code>PrintOrders</code>/<code>GenerationTasks</code>/<code>Models</code> 的 user/owner 字段加 <code>index:true</code>。</li>
+          <li><b>计数原子化</b> —— like/follow 等计数改原生 <code>SET x = x + 1</code> 或唯一索引幂等聚合。</li>
+          <li><b>清理调试残留</b> —— 删除 <code>__codex</code> 与空路由目录;部署后禁用首注册自动提权路径。</li>
+        </ol>
+      </div>
+
+      <div class="phase">
+        <div class="phase-head"><span class="pl p3">P3 · 持续改进</span><h3>工程化与可维护性</h3><span class="eff">成本:低</span></div>
+        <ol>
+          <li><b>补全工具链</b> —— 新增 <code>typecheck</code> 脚本与 <code>tsconfig.test.json</code>;补 <code>playwright.config.ts</code> 并接入覆盖率统计。</li>
+          <li><b>依赖治理</b> —— <code>shadcn</code> 移出运行时依赖;<code>sharp</code> 放开补丁位;统一 dev/build 打包器。</li>
+          <li><b>异步化副作用</b> —— 注册欢迎邮件、缓存 revalidate 改 fire-and-forget 队列,缩短关键路径响应。</li>
+          <li><b>文档与结构</b> —— 补 <code>README.md</code>;<code>src/lib</code> 按域分子目录;统一首页文案走 i18n;危险 SQL 脚本移出代码库。</li>
+        </ol>
+      </div>
+    </div>
+
+    <h3 style="margin-top:30px;font-size:17px">预期收益矩阵</h3>
+    <table class="matrix">
+      <thead><tr><th>阶段</th><th>核心收益</th><th>风险下降</th><th>用户可感知</th></tr></thead>
+      <tbody>
+        <tr><td><b>P0</b></td><td>杜绝账实不符与孤儿扣款</td><td style="color:#ff7b72">极高</td><td>间接(信任/对账)</td></tr>
+        <tr><td><b>P1</b></td><td>LCP/CLS 改善、首屏 JS 下降、SEO 流量</td><td style="color:#e3b341">中</td><td style="color:#56d364">极高</td></tr>
+        <tr><td><b>P2</b></td><td>关闭信息泄露面、DB 查询提速</td><td style="color:#ff9e64">高</td><td>间接</td></tr>
+        <tr><td><b>P3</b></td><td>长期可维护性与回归防护</td><td style="color:#56d364">低</td><td>无(团队收益)</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ===================== METHOD ===================== -->
+  <section id="method">
+    <h2><span class="num">07</span> 审计方法与范围</h2>
+    <p class="lead">本次审计的执行方式与边界说明。</p>
+    <div class="finding">
+      <div class="row"><b>方式</b> 纯静态只读分析(读取源码、配置、迁移、git 元数据),<strong>未修改任何项目文件</strong>。</div>
+      <div class="row"><b>范围</b> 架构与配置 · 安全与认证 · 数据层与 Payload · 前端与性能 · 代码质量与测试,共五大维度。</div>
+      <div class="row"><b>样本</b> 365 个 TS/TSX 文件 / ~66.8k 行 src 源码 / 25 个 Collections / 8 个 Globals / 29+ 迁移 / 65 个测试文件。</div>
+      <div class="row"><b>核验</b> 全部 🔴 严重与关键 🟠 高危结论已由审计人手动读取源码二次确认(标注 <span class="verified">已核验</span>)。</div>
+      <div class="row"><b>评分法</b> 各维度独立打分;综合分加权 = 安全 25% + 数据层 25% + 前端 20% + 架构 15% + 代码质量 15%。</div>
+    </div>
+    <div class="disclaimer">
+      ⚠️ <b>免责声明:</b>本报告基于静态代码审计,未执行动态渗透测试、负载压测或线上数据校验。部分结论(如「首注册提权是否仍可用」「线上是否已建表」)依赖实际部署状态,落地修复前请结合运行环境复核。严重度分级为审计人专业判断,具体优先级请结合业务上下文权衡。
+    </div>
+  </section>
+
+  <footer>
+    <p>ThornsTavern · <code>payload-local-demo</code> 专业审计报告 &nbsp;|&nbsp; 生成于 2026-05-29 &nbsp;|&nbsp; 综合评分 <b style="color:#e3b341">78/100 (B+ 良好)</b></p>
+    <p>本报告为只读审计产物,未对项目源码做任何改动。建议按 P0 → P3 路线图分阶段落地。</p>
+  </footer>
+
+</div>
+</body>
+</html>

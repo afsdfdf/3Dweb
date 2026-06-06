@@ -3,7 +3,9 @@ import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
 const pagePath = 'src/app/(frontend)/test-home/page.tsx'
+const homePagePath = 'src/app/(frontend)/page.tsx'
 const cssPath = 'src/app/(frontend)/test-home/testHomePage.module.css'
+const homeDataPath = 'src/app/(frontend)/_home/homeData.ts'
 
 test('/test-home uses responsive homepage containers without whole-page scaling', async () => {
   const [pageSource, cssSource] = await Promise.all([
@@ -12,6 +14,7 @@ test('/test-home uses responsive homepage containers without whole-page scaling'
   ])
 
   assert.match(pageSource, /TopNavigation/)
+  assert.match(pageSource, /<AuthModalStage clipContent=\{false\} fitViewport>/)
   assert.match(pageSource, /Frame12877/)
   assert.match(pageSource, /getHomeData/)
   assert.match(pageSource, /featureFrameBody/)
@@ -34,6 +37,7 @@ test('/test-home uses responsive homepage containers without whole-page scaling'
   assert.doesNotMatch(pageSource, /<InspirationGrid\s/)
 
   const interactiveSource = await readFile('src/app/(frontend)/test-home/TestHomeInteractivePanels.tsx', 'utf8')
+  const homeDataSource = await readFile(homeDataPath, 'utf8')
   assert.match(interactiveSource, /"use client"/)
   assert.match(interactiveSource, /useMemo/)
   assert.match(interactiveSource, /useState/)
@@ -47,13 +51,29 @@ test('/test-home uses responsive homepage containers without whole-page scaling'
   assert.match(interactiveSource, /InspirationGridCard/)
   assert.match(interactiveSource, /InspirationSearchBox/)
   assert.match(interactiveSource, /InspirationPager/)
-  assert.match(interactiveSource, /basePath="\/test-home"/)
+  assert.match(interactiveSource, /basePath\s*=\s*"\/test-home"/)
+  assert.match(interactiveSource, /<InspirationSearchBox basePath=\{basePath\}/)
+  assert.match(interactiveSource, /<InspirationPager basePath=\{basePath\}/)
   assert.match(interactiveSource, /SmallButtonTriple/)
   assert.match(interactiveSource, /const nextFilter = filterByButtonId\[button\]/)
   assert.match(interactiveSource, /current === nextFilter \? "all" : nextFilter/)
   assert.match(interactiveSource, /filteredItems/)
+  assert.match(homeDataSource, /bio:\s*navUser\.bio/)
+  assert.match(homeDataSource, /creditsBalance:\s*navUser\.creditsBalance/)
+  assert.match(homeDataSource, /followersCount:\s*navUser\.followersCount/)
+  assert.match(homeDataSource, /followingCount:\s*navUser\.followingCount/)
+  assert.match(homeDataSource, /modelsCount:\s*navUser\.modelsCount/)
+
+  const homePageSource = await readFile(homePagePath, 'utf8')
+  assert.match(homePageSource, /TopNavigation/)
+  assert.match(homePageSource, /<AuthModalStage clipContent=\{false\} fitViewport>/)
+  assert.match(homePageSource, /user=\{data\.navUser\}/)
+  assert.doesNotMatch(homePageSource, /TopNavBar/)
+  assert.doesNotMatch(homePageSource, /ProfileMenuReferencePreview/)
 
   assert.match(cssSource, /\.page\s*\{[\s\S]*background:\s*#181818/)
+  assert.match(cssSource, /\.footerMount\s*\{[\s\S]*background:\s*#181818[\s\S]*padding:\s*0/)
+  assert.match(cssSource, /\.footerMount :global\(footer > div\)\s*\{[\s\S]*min-height:\s*176px/)
   assert.match(cssSource, /--frame-gutter:\s*32px/)
   assert.match(cssSource, /\.framedSection\s*\{[\s\S]*padding-inline:\s*var\(--frame-gutter\)/)
   assert.match(cssSource, /\.boundTopNavigation\s*\{[\s\S]*position:\s*absolute/)
@@ -122,7 +142,7 @@ test('/test-home uses responsive homepage containers without whole-page scaling'
   assert.match(cssSource, /@media \(max-width:\s*1919px\)\s*\{[\s\S]*\.inspirationSearchMount :global\(\[class\*="toolbar"\]\)\s*\{[\s\S]*margin-left:\s*auto[\s\S]*width:\s*min\(35\.729vw,\s*100%\)[\s\S]*justify-content:\s*flex-end/)
   assert.match(cssSource, /@media \(max-width:\s*1919px\)\s*\{[\s\S]*\.inspirationGridDivider\s*\{[\s\S]*display:\s*block[\s\S]*height:\s*2px[\s\S]*left:\s*50%[\s\S]*margin:\s*0\s+auto\s+min\(2\.135vw,\s*41px\)[\s\S]*position:\s*relative[\s\S]*transform:\s*translateX\(-50%\)[\s\S]*width:\s*min\(94\.167vw,\s*calc\(100%\s*\+\s*34px\)\)/)
   assert.match(cssSource, /@media \(max-width:\s*1919px\)\s*\{[\s\S]*\.bottomPagerMount\s*\{[\s\S]*display:\s*flex[\s\S]*justify-content:\s*center[\s\S]*margin:\s*0[\s\S]*width:\s*100%/)
-  assert.match(cssSource, /@media \(max-width:\s*1919px\)\s*\{[\s\S]*\.heroThirdBanner :global\(\[aria-label="Inspiration grid"\]\)\s*\{[\s\S]*--card-width:\s*min\(15vw,\s*288px\)[\s\S]*--card-height:\s*min\(23\.958vw,\s*460px\)[\s\S]*gap:\s*min\(0\.694vw,\s*13\.333px\)\s+min\(0\.479vw,\s*9\.2px\)[\s\S]*width:\s*min\(92\.396vw,\s*calc\(100%\s*\+\s*34px\)\)/)
+  assert.match(cssSource, /@media \(max-width:\s*1919px\)\s*\{[\s\S]*\.heroThirdBanner :global\(\[aria-label="Inspiration grid"\]\)\s*\{[\s\S]*--card-width:\s*274px[\s\S]*--card-height:\s*437px[\s\S]*gap:\s*min\(0\.694vw,\s*13\.333px\)\s+6px[\s\S]*width:\s*min\(92\.396vw,\s*calc\(100%\s*\+\s*34px\)\)/)
   assert.match(cssSource, /\.inspirationGridDivider\s*\{[^}]*position:\s*absolute/)
   assert.match(cssSource, /\.inspirationGridDivider\s*\{[^}]*left:\s*-16px/)
   assert.match(cssSource, /\.inspirationGridDivider\s*\{[^}]*top:\s*187\.5px/)
@@ -130,6 +150,10 @@ test('/test-home uses responsive homepage containers without whole-page scaling'
   assert.match(cssSource, /\.inspirationGrid\s*\{[^}]*position:\s*absolute/)
   assert.match(cssSource, /\.inspirationGrid\s*\{[^}]*top:\s*230\.5px/)
   assert.match(cssSource, /\.inspirationGrid\s*\{[^}]*grid-template-columns:\s*repeat\(auto-fit,\s*var\(--card-width\)\)/)
+  assert.doesNotMatch(cssSource, /--compact-six-card-width/)
+  assert.doesNotMatch(cssSource, /--standard-six-card-width/)
+  assert.doesNotMatch(cssSource, /--card-width:\s*var\(--compact-six-card-width\)/)
+  assert.doesNotMatch(cssSource, /--card-width:\s*var\(--standard-six-card-width\)/)
   assert.doesNotMatch(cssSource, /grid-template-columns:\s*repeat\(auto-fit,\s*minmax\([^)]*1fr/)
   assert.match(cssSource, /@media \(max-width:\s*520px\)[\s\S]*--frame-gutter:\s*8px/)
   assert.match(cssSource, /@media \(max-width:\s*520px\)[\s\S]*\.heroSecondBanner :global\(\[aria-label="Selectable frame row"\]\s*>\s*button\[aria-pressed\]:nth-of-type\(n\s*\+\s*3\)\)\s*\{[\s\S]*display:\s*none/)

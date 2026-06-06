@@ -1,6 +1,6 @@
-import { ModelViewer } from '../../_components/ModelViewer'
 import styles from './WorkbenchScaffold.module.css'
 import { WorkbenchLeftPanel } from './WorkbenchLeftPanel'
+import { WorkbenchModelViewer } from './WorkbenchModelViewer'
 import { WorkbenchRightPanel } from './WorkbenchRightPanel'
 
 export function WorkbenchScaffold() {
@@ -43,7 +43,7 @@ export function WorkbenchScaffold() {
                 </div>
 
                 <div className={styles.viewerWrap}>
-                  <ModelViewer
+                  <WorkbenchModelViewer
                     className={styles.viewerCanvas}
                     showPlaceholderModel={false}
                     transparentBackground

@@ -1,6 +1,6 @@
 # Thorns Tavern Current Project Guide
 
-Updated: 2026-05-28
+Updated: 2026-06-05
 
 This is the current human-readable source of truth for `D:\web\payload-local-demo`. Older root docs, dated reports, rollout plans, and local test-route notes were removed or superseded by this file. For compact machine-readable guardrails, use `docs/AI_PROJECT_MEMORY.md`.
 
@@ -14,7 +14,7 @@ Active product surfaces:
 - Public model showcase and model bundle pages
 - Public/private model detail preview through controlled viewer endpoints
 - Studio Workbench for AI image generation, 3D generation, task polling, and model review
-- Account Center for profile, tasks, models, orders, billing, subscriptions, and notifications
+- Account Center for profile editing, points history, orders, model library, generation tasks, subscriptions, and notifications
 - Payload Admin for operators and admins
 - Platform, studio, commerce, billing, account, social, and notification APIs
 
@@ -81,6 +81,8 @@ Formal public/customer routes:
 - `/blog/[slug]`
 - `/bundles`
 - `/bundles/[slug]`
+- `/cart`
+- `/checkout`
 - `/contact`
 - `/developers`
 - `/features`
@@ -104,6 +106,15 @@ Formal public/customer routes:
 - `/workbench/history`
 - `/workbench/models/[id]` redirects to `/model-detail?id=<id>`
 - `/account`
+
+Frontend cart note:
+
+- `/cart` is currently a browser-local shopping cart modal backed by `localStorage`; it does not create Payload records or multi-item payment sessions.
+- `/checkout` is a front-end placeholder route for the cart flow until a backend multi-item payment design is added.
+
+Account note:
+
+- `/account` currently renders the fixed account-frame personal center with secondary tabs for profile, points history, orders, model library, and generation tasks. Legacy `section=billing` maps to points history, while `section=overview` and `section=settings` map to profile.
 
 Payload and API shells:
 
@@ -168,7 +179,7 @@ Do not add Next route handlers that shadow Payload REST roots such as `/api/medi
 - `posts`: public blog and Tavern Journal content.
 - `model-bundles`: public curated bundle merchandising and bundle detail content.
 - `site-settings.headerNav`: backend-managed public navigation labels/order.
-- `site-settings.footer.linkGroups`: shared footer groups.
+- `site-settings.footer.linkGroups` and `site-settings.footer.socialLinks`: shared footer groups and public media links.
 
 Avoid adding new hardcoded page copy when the page is already backed by Payload-managed content.
 

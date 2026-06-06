@@ -189,15 +189,23 @@ export function getTopNavigationUserMenuText(locale: Locale = 'en') {
   const labels = {
     en: {
       account: 'Account',
+      assetLibrary: 'Asset Library',
+      language: 'Language',
       models: 'My models',
+      personalCenter: 'Personal Center',
       plans: 'Plans',
+      pointRedemption: 'Point Redemption',
       signOut: 'Sign out',
       signingOut: 'Signing out...',
     },
     zh: {
       account: '\u4e2a\u4eba\u4e2d\u5fc3',
+      assetLibrary: '\u8d44\u4ea7\u5e93',
+      language: '\u8bed\u8a00',
       models: '\u6211\u7684\u6a21\u578b',
+      personalCenter: '\u4e2a\u4eba\u4e2d\u5fc3',
       plans: '\u5957\u9910\u5145\u503c',
+      pointRedemption: '\u79ef\u5206\u5151\u6362',
       signOut: '\u9000\u51fa\u767b\u5f55',
       signingOut: '\u9000\u51fa\u4e2d...',
     },

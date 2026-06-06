@@ -5,10 +5,11 @@ import styles from "./border-combo-frame-1.module.css";
 type BorderComboFrame1Props = {
   children?: ReactNode;
   className?: string;
+  contentClassName?: string;
   style?: CSSProperties;
 };
 
-export function BorderComboFrame1({ children, className, style }: BorderComboFrame1Props) {
+export function BorderComboFrame1({ children, className, contentClassName, style }: BorderComboFrame1Props) {
   return (
     <div className={[styles.frame, className].filter(Boolean).join(" ")} style={style}>
       <span aria-hidden="true" className={styles.cornerTopLeft} />
@@ -19,7 +20,7 @@ export function BorderComboFrame1({ children, className, style }: BorderComboFra
       <span aria-hidden="true" className={styles.cornerBottomLeft} />
       <span aria-hidden="true" className={styles.edgeBottom} />
       <span aria-hidden="true" className={styles.cornerBottomRight} />
-      <div className={styles.content}>{children}</div>
+      <div className={[styles.content, contentClassName].filter(Boolean).join(" ")}>{children}</div>
     </div>
   );
 }

@@ -7,7 +7,7 @@ import { LineFrame } from '@/components/ui/line-frame'
 import { getSupabasePreviewImageURL } from '@/lib/supabase/imageTransform'
 import { cn } from '@/lib/utils'
 
-import { ModelViewer } from '../../_components/ModelViewer'
+import { WorkbenchModelViewer } from './WorkbenchModelViewer'
 import {
   formatStatusBadge,
   formatVisibilityBadge,
@@ -175,7 +175,7 @@ export function WorkbenchStage({
 
       {selectedModel ? (
         <div className="relative h-full min-h-[680px]">
-          <ModelViewer className="h-full min-h-[680px] w-full" label={selectedModel.title} src={selectedModel.viewerURL} />
+          <WorkbenchModelViewer className="h-full min-h-[680px] w-full" label={selectedModel.title} src={selectedModel.viewerURL} />
         </div>
       ) : (
         <EmptyWorkbenchStage />

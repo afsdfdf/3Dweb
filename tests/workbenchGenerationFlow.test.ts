@@ -1,11 +1,14 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
 import { pathToFileURL } from 'node:url'
 
 const rootDir = process.cwd()
 const workbenchClientPath = path.join(rootDir, 'src', 'app', '(frontend)', 'workbench', 'WorkbenchClient.tsx')
+const workbenchPanelsPath = path.join(rootDir, 'src', 'app', '(frontend)', 'workbench', '_components', 'WorkbenchPanels.tsx')
+const workbenchScaffoldPath = path.join(rootDir, 'src', 'app', '(frontend)', 'workbench', '_components', 'WorkbenchScaffold.tsx')
+const workbenchModelViewerPath = path.join(rootDir, 'src', 'app', '(frontend)', 'workbench', '_components', 'WorkbenchModelViewer.tsx')
 const workbenchPollingPath = path.join(rootDir, 'src', 'app', '(frontend)', 'workbench', '_lib', 'workbenchPolling.ts')
 const workbenchProgressPath = path.join(rootDir, 'src', 'app', '(frontend)', 'workbench', '_lib', 'workbenchProgress.ts')
 const modelLibraryPanelPath = path.join(rootDir, 'src', 'components', 'ui-lab', 'model-library-panel', 'model-library-panel.tsx')
@@ -37,6 +40,26 @@ test('Workbench keeps 3D generation on the current page and polls task sync', ()
   assert.match(source, /Math\.min\(99,\s*Math\.max\(progress,\s*96\)\)/)
   assert.doesNotMatch(source, /router\.push\(`\/results\/\$\{taskCode\}`\)/)
   assert.doesNotMatch(source, /router\.push\("\/results\//)
+})
+
+test('Workbench secondary panels dynamically load the heavy model viewer', () => {
+  const panelsSource = readFileSync(workbenchPanelsPath, 'utf8')
+  const scaffoldSource = readFileSync(workbenchScaffoldPath, 'utf8')
+
+  assert.doesNotMatch(
+    panelsSource,
+    /import\s+\{\s*ModelViewer\s*\}\s+from\s+['"]\.\.\/\.\.\/_components\/ModelViewer['"]/,
+  )
+  assert.doesNotMatch(
+    scaffoldSource,
+    /import\s+\{\s*ModelViewer\s*\}\s+from\s+['"]\.\.\/\.\.\/_components\/ModelViewer['"]/,
+  )
+  assert.equal(existsSync(workbenchModelViewerPath), true)
+
+  const viewerSource = readFileSync(workbenchModelViewerPath, 'utf8')
+  assert.match(viewerSource, /^"use client";/)
+  assert.match(viewerSource, /dynamic\(/)
+  assert.match(viewerSource, /ssr:\s*false/)
 })
 
 test('AI task sync endpoint returns the refreshed succeeded task', () => {

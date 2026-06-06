@@ -50,16 +50,7 @@ export async function SiteShell({
   const defaultSiteSettings = getDefaultSiteSettings(locale)
   const footerContent = { ...getDefaultFooter(locale), ...footer }
   const navigationItems = resolvePublicNavigationItems(navigation)
-  const navigationUser = navUser
-    ? {
-        avatarUrl: navUser.avatarUrl,
-        creditsBalance: navUser.creditsBalance,
-        displayName: navUser.displayName,
-        email: navUser.email,
-      }
-    : user
-      ? { email: user.email }
-      : null
+  const navigationUser = navUser ?? (user ? { email: user.email, role: user.role } : null)
 
   const fixedStageStyle = {
     '--app-nav-scale': 'calc(100vw / 1920px)',

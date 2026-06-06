@@ -2,6 +2,7 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -12,7 +13,10 @@ import { TopNavigation, migrationTestNavItems } from "@/components/ui-lab/top-na
 import type { TopNavigationUser } from "@/components/ui-lab/top-navigation";
 import { getSupabasePreviewImageURL } from "@/lib/supabase/imageTransform";
 
-import { ModelViewer } from "../_components/ModelViewer";
+const ModelViewer = dynamic(
+  () => import("../_components/ModelViewer").then((m) => m.ModelViewer),
+  { ssr: false, loading: () => null },
+);
 import {
   clearWorkbenchDraft,
   getWorkbenchUploadAccept,

@@ -1,6 +1,6 @@
 import { isGuestReadableMedia } from '@/lib/mediaVisibility'
 
-import type { FooterContent } from '../../_lib/marketing-content'
+import type { FooterContent, FooterSocialLink } from '../../_lib/marketing-content'
 
 type FooterImageLike = {
   publicAccess?: boolean | null
@@ -74,4 +74,26 @@ export function getFooterBrandLogoSrc(footerContent: Pick<FooterContent, 'brandL
   if (!isRecord(brandLogo) || !isGuestReadableMedia(brandLogo as FooterImageLike)) return defaultFooterLogoSrc
 
   return normalizeFooterImageURL(brandLogo.thumbnailURL || brandLogo.url) || defaultFooterLogoSrc
+}
+
+export function getVisibleFooterSocialLinks(footerContent: Pick<FooterContent, 'socialLinks'>): FooterSocialLink[] {
+  if (!Array.isArray(footerContent.socialLinks)) return []
+
+  return footerContent.socialLinks
+    .filter((link) => link?.enabled !== false)
+    .flatMap((link) => {
+      const href = normalizeFooterHref(link.href)
+      const label = getTrimmedText(link.label)
+      if (!href || !label) return []
+
+      return [
+        {
+          enabled: true,
+          href,
+          label,
+          platform: getTrimmedText(link.platform) || 'website',
+        },
+      ]
+    })
+    .slice(0, 8)
 }

@@ -55,6 +55,7 @@
 .cardHeader {
   height: 67px;
   position: relative;
+  z-index: 3;
 }
 
 .cardHeader::after {
@@ -81,6 +82,13 @@
   content: "";
   inset: 0;
   position: absolute;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.item:hover .avatarWrap::before,
+.item:focus-visible .avatarWrap::before {
+  border-color: #12d990;
+  box-shadow: 0 0 10px rgba(18, 217, 144, 0.36);
 }
 
 .avatar {
@@ -120,6 +128,12 @@
   position: absolute;
   right: -3px;
   width: 13px;
+}
+
+.creatorPopover {
+  pointer-events: auto;
+  position: fixed;
+  z-index: 1000;
 }
 
 .titleBlock {
@@ -192,7 +206,15 @@
   line-height: 14px;
   padding: 0 5px;
   text-align: left;
+  transition: border-color 160ms ease, color 160ms ease, background-color 160ms ease;
   width: 48px;
+}
+
+.item:hover .stat,
+.item:focus-visible .stat {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(245, 218, 164, 0.34);
+  color: rgba(255, 255, 255, 0.92);
 }
 
 .stat img {
@@ -200,7 +222,14 @@
   height: 10px;
   margin-right: 3px;
   object-fit: contain;
+  transition: filter 160ms ease, opacity 160ms ease;
   width: 10px;
+}
+
+.item:hover .stat img,
+.item:focus-visible .stat img {
+  filter: brightness(1.35);
+  opacity: 0.92;
 }
 
 .previewArea {
@@ -214,13 +243,46 @@
   width: 100%;
 }
 
+.previewArea::before {
+  background:
+    radial-gradient(ellipse at 50% 68%, rgba(246, 217, 151, 0.22), transparent 37%),
+    radial-gradient(ellipse at 50% 100%, rgba(0, 184, 113, 0.16), transparent 43%);
+  bottom: -18px;
+  content: "";
+  height: 142px;
+  left: 22px;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 22px;
+  transform: translateY(14px) scaleX(0.82);
+  transition: opacity 180ms ease, transform 220ms ease;
+  z-index: 2;
+}
+
+.item:hover .previewArea::before,
+.item:focus-visible .previewArea::before {
+  opacity: 1;
+  transform: translateY(0) scaleX(1);
+}
+
 .previewImage {
   display: block;
   height: 100%;
   inset: 0;
   object-fit: cover;
   position: absolute;
+  transform: translate3d(0, 0, 0) scale(1);
+  transform-origin: 50% 72%;
+  transition: transform 220ms ease, filter 220ms ease;
   width: 100%;
+  z-index: 1;
+}
+
+.item:hover .previewImage,
+.item:focus-visible .previewImage {
+  filter: saturate(1.08) contrast(1.04) brightness(1.05);
+  transform: translate3d(0, -5px, 0) scale(1.025);
 }
 
 .emptyState {
@@ -235,4 +297,19 @@
   justify-content: center;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .avatarWrap::before,
+  .previewArea::before,
+  .previewImage,
+  .stat,
+  .stat img {
+    transition: none;
+  }
+
+  .item:hover .previewImage,
+  .item:focus-visible .previewImage {
+    transform: none;
+  }
 }

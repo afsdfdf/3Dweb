@@ -9,22 +9,25 @@ import {
   useRef,
   useState,
 } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
-  Download,
+  Box,
+  ClipboardList,
   Edit3,
   ExternalLink,
-  Plus,
-  RefreshCw,
-  SlidersHorizontal,
-  WalletCards,
+  Eye,
+  EyeOff,
+  ReceiptText,
+  Save,
+  UserRound,
+  WandSparkles,
+  X,
 } from "lucide-react";
 
 import { AuthModalStage } from "@/components/auth/AuthModalStage";
+import { BorderComboFrame2 } from "@/components/ui-lab/border-combo-frame-2";
 import { TopNavigation } from "@/components/ui-lab/top-navigation";
 import {
-  getPublicNavigationActiveID,
   resolvePublicNavigationItems,
   type PublicNavigationInputItem,
 } from "@/lib/publicNavigation";
@@ -32,13 +35,15 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 import styles from "./account-center.module.css";
 
-type SectionId =
-  | "overview"
-  | "orders"
+export type AccountSection =
   | "models"
-  | "tasks"
-  | "billing"
-  | "settings";
+  | "orders"
+  | "points-history"
+  | "profile"
+  | "tasks";
+
+type EditableField = "avatar" | "background" | "displayName" | "password";
+type ModelVisibility = "private" | "public";
 
 type RecordRow = {
   actionLabel?: string;
@@ -49,23 +54,11 @@ type RecordRow = {
   status: string;
   time: string;
   type: string;
-  visibility?: "private" | "public";
-  visibilitySelectLabel?: string;
+  visibility?: ModelVisibility;
 };
 
-type SectionConfig = {
-  id: SectionId;
-  label: string;
-  meta: string;
-  value: string;
-};
-
-type OverviewMetricCard = {
-  detail: string;
-  label: string;
-  section: Exclude<SectionId, "overview" | "settings">;
-  value: string;
-};
+type RecordSection = Exclude<AccountSection, "points-history" | "profile">;
+type RowSection = RecordSection | "billing";
 
 export type AccountCenterData = {
   avatarFrame?: null | string;
@@ -92,14 +85,12 @@ export type AccountCenterData = {
   };
   phone?: null | string;
   profileVisibility?: "private" | "public";
-  rows?: Partial<
-    Record<Exclude<SectionId, "overview" | "settings">, RecordRow[]>
-  >;
+  rows?: Partial<Record<RowSection, RecordRow[]>>;
 };
 
 type AccountCenterProps = {
   accountData?: AccountCenterData;
-  initialSection?: SectionId;
+  initialSection?: AccountSection;
   navigationItems?: null | PublicNavigationInputItem[];
   navUser?: null | {
     avatarUrl?: null | string;
@@ -111,23 +102,34 @@ type AccountCenterProps = {
   };
 };
 
-const emptyRowsBySection: Record<
-  Exclude<SectionId, "overview" | "settings">,
-  RecordRow[]
-> = {
+const emptyRowsBySection: Record<RowSection, RecordRow[]> = {
   billing: [],
   models: [],
   orders: [],
   tasks: [],
 };
 
-const detailTitleBySection: Record<SectionId, string> = {
-  billing: "Credit ledger and payment activity",
-  models: "Model library records",
-  orders: "Order history and fulfillment status",
-  overview: "Credits, tasks, orders, and model activity",
-  settings: "Profile, visibility, and security",
-  tasks: "Generation task history",
+const profileImageAccept = "image/jpeg,image/png,image/webp";
+const profileImageTypes = new Set(profileImageAccept.split(","));
+const displayNameMaxLength = 32;
+const pointsPageSize = 10;
+const defaultRecordPageSize = 10;
+const minRecordPageSize = 6;
+const maxRecordPageSize = 14;
+const compactDesktopQuery = "(min-width: 981px) and (max-height: 980px)";
+
+const normalizeAccountSection = (
+  value?: null | string,
+  fallback: AccountSection = "profile",
+): AccountSection => {
+  if (value === "billing" || value === "points-history") return "points-history";
+  if (value === "models" || value === "orders" || value === "tasks") {
+    return value;
+  }
+  if (value === "overview" || value === "profile" || value === "settings") {
+    return "profile";
+  }
+  return fallback;
 };
 
 const formatNumber = (value: unknown) => {
@@ -137,48 +139,120 @@ const formatNumber = (value: unknown) => {
   );
 };
 
-const profileImageAccept = "image/jpeg,image/png,image/webp";
-const profileImageTypes = new Set(profileImageAccept.split(","));
-const displayNameMaxLength = 32;
-const fullNameMaxLength = 64;
-
 const limitTextLength = (value: string, maxLength: number) => {
   return value.length > maxLength ? value.slice(0, maxLength) : value;
 };
 
-const parseRowTime = (value: string) => {
-  const date = new Date(value.replace(/\./g, "-"));
-  return Number.isNaN(date.getTime()) ? null : date.getTime();
-};
-
-const escapeCsvValue = (value: string) => {
-  const normalized = value.replace(/\r?\n/g, " ");
-  return /[",]/.test(normalized)
-    ? `"${normalized.replace(/"/g, '""')}"`
-    : normalized;
+const getBalanceValue = (row: RecordRow) => {
+  const match = /^Balance\s+(.+)$/i.exec(row.status);
+  return match?.[1] || row.status || "-";
 };
 
 export function AccountCenter({
   accountData,
-  initialSection = "overview",
+  initialSection = "profile",
   navigationItems,
   navUser = null,
 }: AccountCenterProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const sectionParam = searchParams.get("section");
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
-  const [activeSection, setActiveSection] = useState<SectionId>(initialSection);
+  const accountContentViewportRef = useRef<HTMLDivElement>(null);
+  const [activeSection, setActiveSection] =
+    useState<AccountSection>(initialSection);
   const [profileData, setProfileData] = useState<AccountCenterData>(
     accountData ?? {},
   );
+  const [editingField, setEditingField] = useState<EditableField | null>(null);
+  const [displayNameDraft, setDisplayNameDraft] = useState("");
+  const [passwordDraft, setPasswordDraft] = useState({
+    confirmNewPassword: "",
+    currentPassword: "",
+    newPassword: "",
+  });
   const [recordPage, setRecordPage] = useState(1);
-  const [recordRange, setRecordRange] = useState("all");
-  const [recordSearch, setRecordSearch] = useState("");
-  const [recordMessage, setRecordMessage] = useState("");
-  const [saveMessage, setSaveMessage] = useState("");
+  const [recordPageSize, setRecordPageSize] = useState(defaultRecordPageSize);
+  const [statusMessage, setStatusMessage] = useState("");
+  const [rowsData, setRowsData] = useState<
+    Partial<Record<RowSection, RecordRow[]>>
+  >(accountData?.rows ?? {});
   const [visibilityUpdatingId, setVisibilityUpdatingId] = useState<
     null | string
   >(null);
+
+  const topNavigationItems = useMemo(
+    () => resolvePublicNavigationItems(navigationItems),
+    [navigationItems],
+  );
+
+  useEffect(() => {
+    setActiveSection(normalizeAccountSection(sectionParam, initialSection));
+  }, [initialSection, sectionParam]);
+
+  useEffect(() => {
+    document.documentElement.classList.add("account-page-locked");
+    document.body.classList.add("account-page-locked");
+
+    return () => {
+      document.documentElement.classList.remove("account-page-locked");
+      document.body.classList.remove("account-page-locked");
+    };
+  }, []);
+
+  useEffect(() => {
+    setProfileData(accountData ?? {});
+    setRowsData(accountData?.rows ?? {});
+  }, [accountData]);
+
+  useEffect(() => {
+    setRecordPage(1);
+  }, [activeSection]);
+
+  useEffect(() => {
+    const viewport = accountContentViewportRef.current;
+    if (!viewport) return;
+
+    const calculateRecordPageSize = () => {
+      const isCompactDesktop = window.matchMedia(compactDesktopQuery).matches;
+      const rowHeight = isCompactDesktop ? 37 : 44;
+      const sectionHeaderHeight = isCompactDesktop ? 22 : 24;
+      const sectionHeaderGap = isCompactDesktop ? 6 : 12;
+      const paginationGap = isCompactDesktop ? 6 : 16;
+      const paginationHeight = isCompactDesktop ? 28 : 30;
+      const fixedHeight =
+        sectionHeaderHeight +
+        sectionHeaderGap +
+        rowHeight +
+        paginationGap +
+        paginationHeight +
+        2;
+      const nextPageSize = Math.min(
+        maxRecordPageSize,
+        Math.max(
+          minRecordPageSize,
+          Math.floor((viewport.clientHeight - fixedHeight) / rowHeight),
+        ),
+      );
+
+      setRecordPageSize((current) =>
+        current === nextPageSize ? current : nextPageSize,
+      );
+    };
+
+    calculateRecordPageSize();
+
+    const resizeObserver = new ResizeObserver(calculateRecordPageSize);
+    resizeObserver.observe(viewport);
+    window.addEventListener("resize", calculateRecordPageSize);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener("resize", calculateRecordPageSize);
+    };
+  }, [activeSection]);
+
   const displayName =
     profileData.displayName ||
     navUser?.displayName ||
@@ -186,7 +260,7 @@ export function AccountCenter({
     navUser?.email ||
     "Adventurer";
   const email =
-    profileData.email || navUser?.email || "Sign in to sync account";
+    profileData.email || navUser?.email || "Registration email unavailable";
   const avatarUrl =
     profileData.avatarUrl ||
     navUser?.avatarUrl ||
@@ -199,10 +273,6 @@ export function AccountCenter({
       : null;
   const selectedAvatarFrameUrl =
     selectedAvatarFrame?.frameImageUrl || selectedAvatarFrame?.thumbnailUrl || null;
-  const topNavigationItems = useMemo(
-    () => resolvePublicNavigationItems(navigationItems),
-    [navigationItems],
-  );
   const backgroundUrl =
     profileData.backgroundUrl ||
     "/ui-lab/model-detail-uicut/images/detail-side-banner.webp";
@@ -215,266 +285,119 @@ export function AccountCenter({
   const accountMetrics = accountData?.metrics ?? {
     activeOrders: 0,
     activeTasks: 0,
-    billingCount: 0,
-    modelCount: 0,
-    orderCount: 0,
-    taskCount: 0,
+    billingCount: accountData?.rows?.billing?.length ?? 0,
+    modelCount: accountData?.rows?.models?.length ?? 0,
+    orderCount: accountData?.rows?.orders?.length ?? 0,
+    taskCount: accountData?.rows?.tasks?.length ?? 0,
   };
-  const accountRowsBySection = useMemo(
+  const rowsBySection = useMemo<Record<RowSection, RecordRow[]>>(
     () => ({
-      billing: accountData?.rows
-        ? (accountData.rows.billing ?? [])
-        : emptyRowsBySection.billing,
-      models: accountData?.rows
-        ? (accountData.rows.models ?? [])
-        : emptyRowsBySection.models,
-      orders: accountData?.rows
-        ? (accountData.rows.orders ?? [])
-        : emptyRowsBySection.orders,
-      tasks: accountData?.rows
-        ? (accountData.rows.tasks ?? [])
-        : emptyRowsBySection.tasks,
+      billing: rowsData.billing ?? emptyRowsBySection.billing,
+      models: rowsData.models ?? emptyRowsBySection.models,
+      orders: rowsData.orders ?? emptyRowsBySection.orders,
+      tasks: rowsData.tasks ?? emptyRowsBySection.tasks,
     }),
-    [accountData?.rows],
+    [rowsData],
   );
-  const [rowsBySection, setRowsBySection] = useState(accountRowsBySection);
-  const sections = useMemo<SectionConfig[]>(
-    () => [
-      {
-        id: "overview",
-        label: "Overview",
-        meta: "Account summary",
-        value: "Live",
-      },
-      {
-        id: "orders",
-        label: "Orders",
-        meta: "Print and digital",
-        value: String(accountMetrics.orderCount ?? 0),
-      },
-      {
-        id: "models",
-        label: "Model Library",
-        meta: "Assets and files",
-        value: String(accountMetrics.modelCount || 0),
-      },
-      {
-        id: "tasks",
-        label: "Generation Tasks",
-        meta: "AI workflow",
-        value: String(accountMetrics.taskCount ?? 0),
-      },
-      {
-        id: "billing",
-        label: "Billing",
-        meta: "Credits and payments",
-        value: formattedCredits,
-      },
-      {
-        id: "settings",
-        label: "Account Settings",
-        meta: "Profile",
-        value: "Edit",
-      },
-    ],
-    [
-      accountMetrics.activeOrders,
-      accountMetrics.activeTasks,
-      accountMetrics.modelCount,
-      accountMetrics.orderCount,
-      accountMetrics.taskCount,
-      formattedCredits,
-    ],
+  const pointRows = rowsBySection.billing;
+  const recordSection =
+    activeSection === "models" ||
+    activeSection === "orders" ||
+    activeSection === "tasks"
+      ? activeSection
+      : null;
+  const recordRows = recordSection ? rowsBySection[recordSection] : [];
+  const totalPointPages = Math.max(
+    1,
+    Math.ceil(pointRows.length / pointsPageSize),
   );
-  const activeConfig =
-    sections.find((section) => section.id === activeSection) ?? sections[0];
-  const isPanelRefreshAction =
-    activeSection === "overview" || activeSection === "settings";
-  const activeRecordSection =
-    isPanelRefreshAction ? null : activeSection;
-  const activeRows = activeRecordSection
-    ? rowsBySection[activeRecordSection]
-    : [];
-  const filteredRows = useMemo(() => {
-    const query = recordSearch.trim().toLowerCase();
-    const now = Date.now();
-    const maxAge =
-      recordRange === "7d"
-        ? 7 * 24 * 60 * 60 * 1000
-        : recordRange === "30d"
-          ? 30 * 24 * 60 * 60 * 1000
-          : null;
-
-    return activeRows.filter((row) => {
-      if (query) {
-        const haystack =
-          `${row.id} ${row.type} ${row.item} ${row.status} ${row.amount} ${row.time}`.toLowerCase();
-        if (!haystack.includes(query)) return false;
-      }
-
-      if (maxAge) {
-        const rowTime = parseRowTime(row.time);
-        if (rowTime && now - rowTime > maxAge) return false;
-      }
-
-      return true;
-    });
-  }, [activeRows, recordRange, recordSearch]);
-  const pageSize = 10;
   const totalRecordPages = Math.max(
     1,
-    Math.ceil(filteredRows.length / pageSize),
+    Math.ceil(recordRows.length / recordPageSize),
   );
+  const currentPointPage = Math.min(recordPage, totalPointPages);
   const currentRecordPage = Math.min(recordPage, totalRecordPages);
-  const pagedRows = filteredRows.slice(
-    (currentRecordPage - 1) * pageSize,
-    currentRecordPage * pageSize,
+  const pagedPointRows = pointRows.slice(
+    (currentPointPage - 1) * pointsPageSize,
+    currentPointPage * pointsPageSize,
   );
-  const visibleRecordRowCount = pagedRows.length === 0 ? 1 : pagedRows.length;
-  const placeholderRecordRows = Array.from(
-    { length: Math.max(0, pageSize - visibleRecordRowCount) },
+  const pagedRecordRows = recordRows.slice(
+    (currentRecordPage - 1) * recordPageSize,
+    currentRecordPage * recordPageSize,
+  );
+  const placeholderRows = Array.from(
+    {
+      length: Math.max(0, pointsPageSize - (pagedPointRows.length || 1)),
+    },
     (_, index) => index,
   );
-  const overviewMetricCards: OverviewMetricCard[] = [
+  const recordPlaceholderRows = Array.from(
     {
-      detail: "Saved models",
-      label: "Model Library",
-      section: "models",
-      value: String(accountMetrics.modelCount || 0),
+      length: Math.max(0, recordPageSize - (pagedRecordRows.length || 1)),
+    },
+    (_, index) => index,
+  );
+  const accountTabs: {
+    count?: number;
+    icon: typeof UserRound;
+    id: AccountSection;
+    label: string;
+  }[] = [
+    { icon: UserRound, id: "profile", label: "PROFILE" },
+    {
+      count: accountMetrics.billingCount,
+      icon: ReceiptText,
+      id: "points-history",
+      label: "POINTS HISTORY",
     },
     {
-      detail: "Queued or processing",
-      label: "Generation Tasks",
-      section: "tasks",
-      value: String(accountMetrics.activeTasks || 0),
+      count: accountMetrics.orderCount,
+      icon: ClipboardList,
+      id: "orders",
+      label: "ORDERS",
     },
     {
-      detail: "Active fulfillment",
-      label: "Orders",
-      section: "orders",
-      value: String(accountMetrics.activeOrders || 0),
+      count: accountMetrics.modelCount,
+      icon: Box,
+      id: "models",
+      label: "MODEL LIBRARY",
     },
     {
-      detail: "Available credits",
-      label: "Billing",
-      section: "billing",
-      value: formattedCredits,
+      count: accountMetrics.taskCount,
+      icon: WandSparkles,
+      id: "tasks",
+      label: "GENERATION TASKS",
     },
   ];
-  const sectionInsights: Record<SectionId, { label: string; value: string }[]> =
-    {
-      overview: [
-        { label: "Billing", value: formattedCredits },
-        {
-          label: "Generation Tasks",
-          value: String(accountMetrics.activeTasks || 0),
-        },
-        {
-          label: "Orders",
-          value: String(accountMetrics.activeOrders || 0),
-        },
-      ],
-      billing: [
-        {
-          label: "Transactions",
-          value: String(
-            accountMetrics.billingCount ?? rowsBySection.billing.length,
-          ),
-        },
-        { label: "Available", value: formattedCredits },
-        { label: "Status", value: "Active" },
-      ],
-      models: [
-        {
-          label: "Total",
-          value: String(
-            accountMetrics.modelCount || rowsBySection.models.length,
-          ),
-        },
-        { label: "Recent", value: String(rowsBySection.models.length) },
-        {
-          label: "Ready",
-          value: String(
-            rowsBySection.models.filter((row) =>
-              /ready|public|printable/i.test(row.status),
-            ).length,
-          ),
-        },
-      ],
-      orders: [
-        { label: "Active", value: String(accountMetrics.activeOrders || 0) },
-        { label: "Recent", value: String(rowsBySection.orders.length) },
-        {
-          label: "Total",
-          value: String(
-            accountMetrics.orderCount || rowsBySection.orders.length,
-          ),
-        },
-      ],
-      settings: [],
-      tasks: [
-        { label: "Active", value: String(accountMetrics.activeTasks || 0) },
-        { label: "Recent", value: String(rowsBySection.tasks.length) },
-        {
-          label: "Total",
-          value: String(accountMetrics.taskCount || rowsBySection.tasks.length),
-        },
-      ],
-    };
-  const overviewActivity = [
-    ...rowsBySection.orders
-      .slice(0, 1)
-      .map((row) => ({ label: row.item, meta: "Orders", status: row.status })),
-    ...rowsBySection.tasks
-      .slice(0, 1)
-      .map((row) => ({
-        label: row.item,
-        meta: "Generation Tasks",
-        status: row.status,
-      })),
-    ...rowsBySection.billing
-      .slice(0, 1)
-      .map((row) => ({ label: row.item, meta: "Billing", status: row.status })),
-  ];
-  useEffect(() => {
-    setProfileData(accountData ?? {});
-  }, [accountData]);
+  const isEditing = (field: EditableField) => editingField === field;
+  const editLocked = (field: EditableField) =>
+    Boolean(editingField && editingField !== field);
+  const isSavingDisplayName =
+    isEditing("displayName") && statusMessage === "Saving account name...";
 
-  useEffect(() => {
-    setRowsBySection(accountRowsBySection);
-  }, [accountRowsBySection]);
+  function openRecordHref(href: string) {
+    if (/^https?:\/\//i.test(href)) {
+      window.location.href = href;
+      return;
+    }
 
-  useEffect(() => {
-    setRecordPage(1);
-    setRecordMessage("");
-  }, [activeSection, recordRange, recordSearch]);
-
-  function updateProfileField<Key extends keyof AccountCenterData>(
-    key: Key,
-    value: AccountCenterData[Key],
-  ) {
-    setProfileData((current) => ({ ...current, [key]: value }));
+    router.push(href);
   }
 
-  function changeSection(section: SectionId) {
-    setActiveSection(section);
-    const target =
-      section === "overview"
-        ? "/account"
-        : `/account?section=${encodeURIComponent(section)}`;
-    router.replace(target, { scroll: false });
+  function getModelVisibilityLabel(visibility?: ModelVisibility) {
+    return visibility === "public" ? "Public" : "Hidden";
   }
 
-  async function updateModelVisibility(
-    row: RecordRow,
-    nextVisibility: string,
-  ) {
-    if (!row.visibility) return;
-    if (nextVisibility !== "public" && nextVisibility !== "private") return;
-    if (nextVisibility === row.visibility) return;
+  async function toggleModelVisibility(row: RecordRow) {
+    if (visibilityUpdatingId) return;
 
-    setRecordMessage("");
+    const currentVisibility =
+      row.visibility === "public" ? "public" : "private";
+    const nextVisibility =
+      currentVisibility === "public" ? "private" : "public";
+
     setVisibilityUpdatingId(row.id);
+    setStatusMessage("Updating model visibility...");
 
     try {
       const response = await fetch(
@@ -492,24 +415,25 @@ export function AccountCenter({
         throw new Error(payload.message || "Model visibility update failed.");
       }
 
-      const visibility =
+      const updatedVisibility =
         payload.model?.visibility === "public" ? "public" : "private";
-      setRowsBySection((current) => ({
+
+      setRowsData((current) => ({
         ...current,
-        models: current.models.map((item) =>
-          item.id === row.id
+        models: (current.models ?? []).map((modelRow) =>
+          modelRow.id === row.id
             ? {
-                ...item,
-                type: visibility,
-                visibility,
-                visibilitySelectLabel: "Model visibility",
+                ...modelRow,
+                type: getModelVisibilityLabel(updatedVisibility),
+                visibility: updatedVisibility,
               }
-            : item,
+            : modelRow,
         ),
       }));
+      setStatusMessage("Model visibility updated.");
       router.refresh();
     } catch (error) {
-      setRecordMessage(
+      setStatusMessage(
         error instanceof Error
           ? error.message
           : "Model visibility update failed.",
@@ -519,30 +443,53 @@ export function AccountCenter({
     }
   }
 
-  async function saveProfile(event: FormEvent<HTMLFormElement>) {
+  function changeSection(section: AccountSection) {
+    setActiveSection(section);
+    setRecordPage(1);
+    setStatusMessage("");
+    setEditingField(null);
+    router.replace(
+      section === "profile"
+        ? "/account"
+        : `/account?section=${encodeURIComponent(section)}`,
+      { scroll: false },
+    );
+  }
+
+  function startDisplayNameEdit() {
+    if (editLocked("displayName")) return;
+    setDisplayNameDraft(displayName);
+    setEditingField("displayName");
+    setStatusMessage("");
+  }
+
+  function startPasswordEdit() {
+    if (editLocked("password")) return;
+    setPasswordDraft({
+      confirmNewPassword: "",
+      currentPassword: "",
+      newPassword: "",
+    });
+    setEditingField("password");
+    setStatusMessage("");
+  }
+
+  function cancelEdit() {
+    setEditingField(null);
+    setStatusMessage("");
+  }
+
+  async function saveDisplayName(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    setSaveMessage("Saving profile...");
+    const nextDisplayName = limitTextLength(
+      displayNameDraft.trim(),
+      displayNameMaxLength,
+    );
+    setStatusMessage("Saving account name...");
 
     try {
       const response = await fetch("/api/account/profile", {
-        body: JSON.stringify({
-          avatarFrame: String(formData.get("avatarFrame") || "none"),
-          bio: String(formData.get("bio") || ""),
-          displayName: limitTextLength(
-            String(formData.get("displayName") || ""),
-            displayNameMaxLength,
-          ),
-          fullName: limitTextLength(
-            String(formData.get("fullName") || ""),
-            fullNameMaxLength,
-          ),
-          phone: String(formData.get("phone") || ""),
-          profileVisibility:
-            formData.get("profileVisibility") === "public"
-              ? "public"
-              : "private",
-        }),
+        body: JSON.stringify({ displayName: nextDisplayName }),
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         method: "PATCH",
@@ -550,31 +497,27 @@ export function AccountCenter({
       const payload = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        throw new Error(payload.message || "Profile save failed.");
+        throw new Error(payload.message || "Account name save failed.");
       }
 
       setProfileData((current) => ({ ...current, ...(payload.profile ?? {}) }));
-      setSaveMessage("Profile saved.");
+      setEditingField(null);
+      setStatusMessage("Account name saved.");
       router.refresh();
     } catch (error) {
-      setSaveMessage(
-        error instanceof Error ? error.message : "Profile save failed.",
+      setStatusMessage(
+        error instanceof Error ? error.message : "Account name save failed.",
       );
     }
   }
 
   async function savePassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    setSaveMessage("Saving password...");
+    setStatusMessage("Saving password...");
 
     try {
       const response = await fetch("/api/account/password", {
-        body: JSON.stringify({
-          confirmNewPassword: String(formData.get("confirmNewPassword") || ""),
-          currentPassword: String(formData.get("currentPassword") || ""),
-          newPassword: String(formData.get("newPassword") || ""),
-        }),
+        body: JSON.stringify(passwordDraft),
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         method: "POST",
@@ -585,10 +528,16 @@ export function AccountCenter({
         throw new Error(payload.message || "Password update failed.");
       }
 
-      setSaveMessage("Password updated.");
+      setPasswordDraft({
+        confirmNewPassword: "",
+        currentPassword: "",
+        newPassword: "",
+      });
+      setEditingField(null);
+      setStatusMessage("Password updated.");
       router.refresh();
     } catch (error) {
-      setSaveMessage(
+      setStatusMessage(
         error instanceof Error ? error.message : "Password update failed.",
       );
     }
@@ -602,10 +551,10 @@ export function AccountCenter({
       throw new Error("Only JPEG, PNG, and WebP profile images are supported.");
     }
 
-    setSaveMessage(
+    setStatusMessage(
       purpose === "avatar"
         ? "Uploading avatar..."
-        : "Uploading profile banner...",
+        : "Uploading profile background...",
     );
 
     const configResponse = await fetch(
@@ -670,36 +619,28 @@ export function AccountCenter({
     const profileResponse = await fetch("/api/account/profile", {
       body: JSON.stringify(
         purpose === "avatar"
-          ? { avatar: Number(completedMedia.mediaId) }
-          : { profileBanner: Number(completedMedia.mediaId) },
+          ? { avatar: completedMedia.mediaId }
+          : { profileBackground: completedMedia.mediaId },
       ),
       credentials: "include",
       headers: { "Content-Type": "application/json" },
       method: "PATCH",
     });
-    const payload = await profileResponse.json().catch(() => ({}));
+    const profilePayload = await profileResponse.json().catch(() => ({}));
 
     if (!profileResponse.ok) {
       throw new Error(
-        payload.message ||
-          "Profile media was uploaded, but profile update failed.",
+        profilePayload.message || "Profile media link update failed.",
       );
     }
 
-    const finalPublicUrl =
-      typeof completedMedia.publicUrl === "string" && completedMedia.publicUrl
-        ? completedMedia.publicUrl
-        : config.publicUrl;
-
     setProfileData((current) => ({
       ...current,
-      ...(payload.profile ?? {}),
-      ...(purpose === "avatar"
-        ? { avatarUrl: finalPublicUrl }
-        : { backgroundUrl: finalPublicUrl }),
+      ...(profilePayload.profile ?? {}),
     }));
-    setSaveMessage(
-      purpose === "avatar" ? "Avatar updated." : "Profile banner updated.",
+    setEditingField(null);
+    setStatusMessage(
+      purpose === "avatar" ? "Avatar saved." : "Profile background saved.",
     );
     router.refresh();
   }
@@ -710,36 +651,33 @@ export function AccountCenter({
   ) {
     const file = event.currentTarget.files?.[0];
     event.currentTarget.value = "";
-    if (!file) return;
+    if (!file) {
+      setEditingField(null);
+      return;
+    }
+
+    setEditingField(purpose === "avatar" ? "avatar" : "background");
 
     try {
       await uploadProfileMedia(file, purpose);
     } catch (error) {
-      setSaveMessage(
+      setEditingField(null);
+      setStatusMessage(
         error instanceof Error ? error.message : "Profile media upload failed.",
       );
     }
   }
 
-  function downloadCsv() {
-    if (!activeRecordSection) return;
+  function editAvatar() {
+    if (editLocked("avatar")) return;
+    setStatusMessage("");
+    avatarInputRef.current?.click();
+  }
 
-    const headers = ["ID", "Type", "Item", "Status", "Amount", "Time"];
-    const csv = [
-      headers.join(","),
-      ...filteredRows.map((row) =>
-        [row.id, row.type, row.item, row.status, row.amount, row.time]
-          .map(escapeCsvValue)
-          .join(","),
-      ),
-    ].join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `account-${activeRecordSection}.csv`;
-    anchor.click();
-    URL.revokeObjectURL(url);
+  function editBackground() {
+    if (editLocked("background")) return;
+    setStatusMessage("");
+    bannerInputRef.current?.click();
   }
 
   return (
@@ -770,647 +708,502 @@ export function AccountCenter({
           type="file"
         />
 
-        <section aria-label="Account center" className={styles.accountShell}>
-          <header className={styles.accountHero}>
-            <img
-              alt=""
-              aria-hidden="true"
-              className={styles.accountHeroImage}
-              decoding="async"
-              src={backgroundUrl}
-            />
-            <div className={styles.accountHeroCopy}>
-              <span className={styles.accountEyebrow}>Account Center</span>
-              <h1>Manage your Tavern workspace</h1>
-              <p>
-                Review generated models, active tasks, print orders, billing,
-                and profile settings from one focused control surface.
-              </p>
+        <section aria-label="Account" className={styles.accountShell}>
+          <BorderComboFrame2 className={styles.accountFrame}>
+            <div className={styles.accountChrome}>
+              <header className={styles.accountTitleRow}>
+                <span className={styles.accountFrameLogo} aria-hidden="true" />
+                <h1>Account</h1>
+                <span className={styles.accountFrameDivider} aria-hidden="true" />
+              </header>
             </div>
-            <div className={styles.accountHeroStats}>
-              {overviewMetricCards.slice(0, 3).map((item) => (
-                <div key={item.label}>
-                  <span>{item.label}</span>
-                  <strong>{item.value}</strong>
+
+            <div className={styles.accountBody}>
+              <nav className={styles.secondaryTabs} aria-label="Account sections">
+                {accountTabs.map((tab) => {
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      aria-pressed={activeSection === tab.id}
+                      className={
+                        activeSection === tab.id ? styles.tabActive : undefined
+                      }
+                      key={tab.id}
+                      onClick={() => changeSection(tab.id)}
+                      type="button"
+                    >
+                      <Icon aria-hidden="true" size={16} />
+                      <span>{tab.label}</span>
+                      {typeof tab.count === "number" ? (
+                        <em>{formatNumber(tab.count)}</em>
+                      ) : null}
+                    </button>
+                  );
+                })}
+              </nav>
+              <div
+                className={styles.accountContentViewport}
+                ref={accountContentViewportRef}
+              >
+                {activeSection === "profile" ? (
+                  <section className={styles.profilePane} aria-label="Profile">
+                <div className={styles.profileField}>
+                  <span className={styles.fieldLabel}>Avatar</span>
+                  <div className={styles.avatarEditor}>
+                    <span className={styles.avatarRing}>
+                      <img alt={displayName} src={avatarUrl} />
+                      {selectedAvatarFrameUrl ? (
+                        <img
+                          alt=""
+                          aria-hidden="true"
+                          className={styles.avatarFrameImage}
+                          src={selectedAvatarFrameUrl}
+                        />
+                      ) : null}
+                    </span>
+                    <button
+                      className={styles.editButton}
+                      disabled={editLocked("avatar")}
+                      onClick={editAvatar}
+                      type="button"
+                    >
+                      <Edit3 aria-hidden="true" size={14} />
+                      <span>{isEditing("avatar") ? "UPLOADING" : "EDIT"}</span>
+                    </button>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </header>
 
-          <div className={styles.accountFrameGrid}>
-                  <aside className={styles.profilePanel}>
-                    <div className={styles.panelFrameContent}>
-                      <section className={styles.identityBlock}>
-                        <div className={styles.avatarRing}>
-                          <img
-                            alt={`${displayName} avatar`}
-                            decoding="async"
-                            src={avatarUrl}
-                          />
-                          {selectedAvatarFrameUrl ? (
-                            <img
-                              alt=""
-                              aria-hidden="true"
-                              className={styles.avatarFrameImage}
-                              decoding="async"
-                              src={selectedAvatarFrameUrl}
-                            />
-                          ) : null}
-                          <button
-                            aria-label="Change avatar"
-                            className={styles.avatarEditButton}
-                            onClick={() => avatarInputRef.current?.click()}
-                            type="button"
-                          >
-                            <Edit3 aria-hidden="true" size={13} />
-                            Edit
-                          </button>
-                        </div>
-                        <div>
-                          <p>Personal Center</p>
-                          <h1 title={displayName}>{displayName}</h1>
-                          <span>{email}</span>
-                        </div>
-                      </section>
-
-                      <section className={styles.creditPlate}>
-                        <img
-                          alt=""
-                          aria-hidden="true"
-                          decoding="async"
-                          src="/ui-lab/model-detail-uicut/images/detail-bottom-icon-1.png"
-                        />
-                        <div>
-                          <strong>{formattedCredits}</strong>
-                          <span>Available credits</span>
-                        </div>
-                      </section>
-
-                      <section
-                        className={styles.profileBackgroundCard}
-                        aria-label="Profile background"
+                <form className={styles.profileField} onSubmit={saveDisplayName}>
+                  <span className={styles.fieldLabel}>Account Name</span>
+                  <p className={styles.fieldHelp}>
+                    Please enter 4-32 valid characters (letters, numbers or hyphens)
+                  </p>
+                  <div className={styles.inlineEditor}>
+                    <input
+                      disabled={!isEditing("displayName")}
+                      maxLength={displayNameMaxLength}
+                      onChange={(event) =>
+                        setDisplayNameDraft(
+                          limitTextLength(
+                            event.target.value,
+                            displayNameMaxLength,
+                          ),
+                        )
+                      }
+                      value={
+                        isEditing("displayName")
+                          ? displayNameDraft
+                          : displayName
+                      }
+                    />
+                    {isEditing("displayName") ? (
+                      <>
+                        <button
+                          aria-label={
+                            isSavingDisplayName
+                              ? "Saving account name..."
+                              : "Save account name"
+                          }
+                          className={styles.editButton}
+                          disabled={isSavingDisplayName}
+                          type="submit"
+                        >
+                          <Save aria-hidden="true" size={14} />
+                          <span>{isSavingDisplayName ? "SAVING" : "SAVE"}</span>
+                        </button>
+                        <button
+                          aria-label="Cancel account name edit"
+                          className={styles.iconButton}
+                          onClick={cancelEdit}
+                          type="button"
+                        >
+                          <X aria-hidden="true" size={15} />
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        className={styles.editButton}
+                        disabled={editLocked("displayName")}
+                        onClick={startDisplayNameEdit}
+                        type="button"
                       >
-                        <div>
-                          <span>Profile Background</span>
-                          <strong>Creator Banner</strong>
-                        </div>
-                        <img
-                          alt=""
-                          aria-hidden="true"
-                          decoding="async"
-                          src={backgroundUrl}
-                        />
-                        <button
-                          aria-label="Change profile background"
-                          className={styles.backgroundEditButton}
-                          onClick={() => bannerInputRef.current?.click()}
-                          type="button"
-                        >
-                          <Edit3 aria-hidden="true" size={13} />
-                          Edit
-                        </button>
-                      </section>
+                        <Edit3 aria-hidden="true" size={14} />
+                        <span>EDIT</span>
+                      </button>
+                    )}
+                  </div>
+                </form>
 
-                      <nav
-                        aria-label="Account center sections"
-                        className={styles.sideMenu}
+                <div className={styles.profileField}>
+                  <span className={styles.fieldLabel}>Background</span>
+                  <p className={styles.fieldHelp}>
+                    Supported image formats: JPEG, JPG, PNG, WEBP. Maximum file size: 5MB
+                  </p>
+                  <div className={styles.backgroundPreview}>
+                    <img alt="" src={backgroundUrl} />
+                    <button
+                      className={styles.backgroundEditButton}
+                      disabled={editLocked("background")}
+                      onClick={editBackground}
+                      type="button"
+                    >
+                      <Edit3 aria-hidden="true" size={14} />
+                      <span>{isEditing("background") ? "UPLOADING" : "EDIT"}</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className={styles.profileField}>
+                  <span className={styles.fieldLabel}>Email</span>
+                  <p className={styles.fieldHelp}>Email used for registration</p>
+                  <div className={styles.inlineEditor}>
+                    <input disabled value={email} />
+                    <button
+                      className={styles.editButton}
+                      disabled
+                      title="Registration email is managed by sign-in settings."
+                      type="button"
+                    >
+                      <Edit3 aria-hidden="true" size={14} />
+                      <span>EDIT</span>
+                    </button>
+                  </div>
+                </div>
+
+                <form className={styles.profileField} onSubmit={savePassword}>
+                  <span className={styles.fieldLabel}>Password</span>
+                  <p className={styles.fieldHelp}>Change your password</p>
+                  {isEditing("password") ? (
+                    <div className={styles.passwordEditor}>
+                      <input
+                        autoComplete="current-password"
+                        onChange={(event) =>
+                          setPasswordDraft((current) => ({
+                            ...current,
+                            currentPassword: event.target.value,
+                          }))
+                        }
+                        placeholder="Current password"
+                        type="password"
+                        value={passwordDraft.currentPassword}
+                      />
+                      <input
+                        autoComplete="new-password"
+                        onChange={(event) =>
+                          setPasswordDraft((current) => ({
+                            ...current,
+                            newPassword: event.target.value,
+                          }))
+                        }
+                        placeholder="New password"
+                        type="password"
+                        value={passwordDraft.newPassword}
+                      />
+                      <input
+                        autoComplete="new-password"
+                        onChange={(event) =>
+                          setPasswordDraft((current) => ({
+                            ...current,
+                            confirmNewPassword: event.target.value,
+                          }))
+                        }
+                        placeholder="Confirm password"
+                        type="password"
+                        value={passwordDraft.confirmNewPassword}
+                      />
+                      <button className={styles.editButton} type="submit">
+                        <Save aria-hidden="true" size={14} />
+                        <span>SAVE</span>
+                      </button>
+                      <button
+                        aria-label="Cancel password edit"
+                        className={styles.iconButton}
+                        onClick={cancelEdit}
+                        type="button"
                       >
-                        {sections.map((section) => (
-                          <button
-                            className={[
-                              section.id === activeSection
-                                ? styles.sideMenuActive
-                                : "",
-                              section.id === "settings"
-                                ? styles.sideMenuSettings
-                                : "",
-                            ]
-                              .filter(Boolean)
-                              .join(" ")}
-                            key={section.id}
-                            onClick={() => changeSection(section.id)}
-                            type="button"
-                          >
-                            <strong>{section.label}</strong>
-                            <em>{section.value}</em>
-                          </button>
-                        ))}
-                      </nav>
-
-                      <div className={styles.primaryActions}>
-                        <button
-                          className={`${styles.accountButton} ${styles.accountButtonPrimary} ${styles.accountButtonFull}`}
-                          onClick={() => router.push("/workbench")}
-                          type="button"
-                        >
-                          <Plus aria-hidden="true" size={16} />
-                          Create Model
-                        </button>
-                        <button
-                          className={`${styles.accountButton} ${styles.accountButtonSecondary} ${styles.accountButtonFull}`}
-                          onClick={() => router.push("/pricing")}
-                          type="button"
-                        >
-                          <WalletCards aria-hidden="true" size={16} />
-                          Recharge Credits
-                        </button>
-                      </div>
+                        <X aria-hidden="true" size={15} />
+                      </button>
                     </div>
-                  </aside>
-
-                  <section className={styles.accountPanel}>
-                    <div className={styles.accountFrameContent}>
-                      <section
-                        className={`${styles.contentPanel} ${activeSection === "overview" ? styles.contentPanelWithSummary : styles.contentPanelFull}`}
+                  ) : (
+                    <div className={styles.inlineEditor}>
+                      <input disabled type="password" value="******" />
+                      <button
+                        className={styles.editButton}
+                        disabled={editLocked("password")}
+                        onClick={startPasswordEdit}
+                        type="button"
                       >
-                        <header className={styles.contentHeader}>
-                          <div>
-                            <p>{activeConfig.label}</p>
-                            <h3>{detailTitleBySection[activeSection]}</h3>
-                          </div>
-                          <button
-                            className={`${styles.accountButton} ${styles.accountButtonSecondary} ${styles.accountButtonCompact}`}
-                            onClick={() => {
-                              if (activeSection === "overview") {
-                                router.refresh();
-                              } else if (activeSection === "settings") {
-                                router.refresh();
-                              } else {
-                                setRecordSearch((value) => value.trim());
-                              }
-                            }}
-                            type="button"
-                          >
-                            <span
-                              className={`${styles.panelActionIcon} ${
-                                isPanelRefreshAction
-                                  ? ""
-                                  : styles.panelActionIconHidden
-                              }`}
-                            >
-                              <RefreshCw aria-hidden="true" size={15} />
-                            </span>
-                            <span
-                              className={`${styles.panelActionIcon} ${
-                                isPanelRefreshAction
-                                  ? styles.panelActionIconHidden
-                                  : ""
-                              }`}
-                            >
-                              <SlidersHorizontal aria-hidden="true" size={15} />
-                            </span>
-                            <span>{isPanelRefreshAction ? "Refresh" : "Apply"}</span>
-                          </button>
-                        </header>
-
-                        {activeSection === "overview" ||
-                        activeSection === "settings" ? null : (
-                          <section
-                            className={styles.insightStrip}
-                            aria-label={`${activeConfig.label} summary`}
-                          >
-                            {sectionInsights[activeSection].map((item) => (
-                              <div key={item.label}>
-                                <span>{item.label}</span>
-                                <strong>{item.value}</strong>
-                              </div>
-                            ))}
-                          </section>
-                        )}
-
-                        {activeSection === "overview" ? (
-                          <div className={styles.overviewFrame}>
-                            <section className={styles.overviewHero}>
-                              <div>
-                                <span>Account Status</span>
-                                <strong>
-                                  Everything important is ready at a glance.
-                                </strong>
-                                <p>
-                                  Track credits, generated models, print orders,
-                                  and recent activity before jumping into a
-                                  detailed account section.
-                                </p>
-                              </div>
-                              <button
-                                className={`${styles.accountButton} ${styles.accountButtonSecondary} ${styles.accountButtonCompact}`}
-                                onClick={() => router.push("/workbench")}
-                                type="button"
-                              >
-                                <Plus aria-hidden="true" size={16} />
-                                Create Model
-                              </button>
-                            </section>
-
-                            <section
-                              className={styles.overviewGrid}
-                              aria-label="Overview highlights"
-                            >
-                              {overviewMetricCards.map((item) => (
-                                <button
-                                  aria-label={`Open ${item.label}`}
-                                  className={styles.metricCardButton}
-                                  key={item.label}
-                                  onClick={() => changeSection(item.section)}
-                                  type="button"
-                                >
-                                  <span>{item.label}</span>
-                                  <strong>{item.value}</strong>
-                                  <em>{item.detail}</em>
-                                </button>
-                              ))}
-                            </section>
-
-                            <section
-                              className={styles.overviewActivity}
-                              aria-label="Recent activity"
-                            >
-                              <header>
-                                <span>Recent Activity</span>
-                                <strong>Latest account movement</strong>
-                              </header>
-                              {overviewActivity.map((item) => (
-                                <div key={item.label}>
-                                  <span>{item.meta}</span>
-                                  <strong>{item.label}</strong>
-                                  <em>{item.status}</em>
-                                </div>
-                              ))}
-                            </section>
-                          </div>
-                        ) : activeSection === "settings" ? (
-                          <div className={styles.accountSettingsFrame}>
-                            <form
-                              className={styles.profileFormGrid}
-                              onSubmit={saveProfile}
-                            >
-                              <label>
-                                <span>Display Name</span>
-                                <input
-                                  name="displayName"
-                                  maxLength={displayNameMaxLength}
-                                  onChange={(event) =>
-                                    updateProfileField(
-                                      "displayName",
-                                      limitTextLength(
-                                        event.target.value,
-                                        displayNameMaxLength,
-                                      ),
-                                    )
-                                  }
-                                  value={
-                                    profileData.displayName ??
-                                    navUser?.displayName ??
-                                    navUser?.name ??
-                                    ""
-                                  }
-                                />
-                              </label>
-                              <label>
-                                <span>Legal Name</span>
-                                <input
-                                  name="fullName"
-                                  maxLength={fullNameMaxLength}
-                                  onChange={(event) =>
-                                    updateProfileField(
-                                      "fullName",
-                                      limitTextLength(
-                                        event.target.value,
-                                        fullNameMaxLength,
-                                      ),
-                                    )
-                                  }
-                                  placeholder="Enter legal name"
-                                  value={profileData.fullName ?? ""}
-                                />
-                              </label>
-                              <label>
-                                <span>Phone Number</span>
-                                <input
-                                  name="phone"
-                                  onChange={(event) =>
-                                    updateProfileField(
-                                      "phone",
-                                      event.target.value,
-                                    )
-                                  }
-                                  placeholder="Enter phone number"
-                                  value={profileData.phone ?? ""}
-                                />
-                              </label>
-                              <label>
-                                <span>Profile Visibility</span>
-                                <select
-                                  name="profileVisibility"
-                                  onChange={(event) =>
-                                    updateProfileField(
-                                      "profileVisibility",
-                                      event.target.value === "public"
-                                        ? "public"
-                                        : "private",
-                                    )
-                                  }
-                                  value={
-                                    profileData.profileVisibility ?? "private"
-                                  }
-                                >
-                                  <option value="private">Private</option>
-                                  <option value="public">Public</option>
-                                </select>
-                              </label>
-                              <label className={styles.bioField}>
-                                <span>Creator Bio</span>
-                                <textarea
-                                  name="bio"
-                                  onChange={(event) =>
-                                    updateProfileField(
-                                      "bio",
-                                      event.target.value,
-                                    )
-                                  }
-                                  placeholder="Write a public creator bio"
-                                  value={profileData.bio ?? ""}
-                                />
-                              </label>
-                              <label>
-                                <span>Avatar Frame</span>
-                                <select
-                                  name="avatarFrame"
-                                  onChange={(event) =>
-                                    updateProfileField(
-                                      "avatarFrame",
-                                      event.target.value,
-                                    )
-                                  }
-                                  value={profileData.avatarFrame ?? "none"}
-                                >
-                                  <option value="none">None</option>
-                                  {(accountData?.avatarFrameStyles ?? []).map(
-                                    (style) => (
-                                      <option key={style.key} value={style.key}>
-                                        {style.title}
-                                      </option>
-                                    ),
-                                  )}
-                                </select>
-                              </label>
-                              <button
-                                className={`${styles.accountButton} ${styles.accountButtonPrimary} ${styles.accountButtonWide}`}
-                                type="submit"
-                              >
-                                Save Profile
-                              </button>
-                            </form>
-
-                            <form
-                              className={styles.passwordPanel}
-                              onSubmit={savePassword}
-                            >
-                              <div>
-                                <span>Password</span>
-                                <strong>Change Password</strong>
-                                <p>
-                                  Submit current password, new password, and
-                                  confirmation to account security.
-                                </p>
-                              </div>
-                              <div className={styles.passwordFields}>
-                                <input
-                                  name="currentPassword"
-                                  placeholder="Current password"
-                                  type="password"
-                                />
-                                <input
-                                  name="newPassword"
-                                  placeholder="New password"
-                                  type="password"
-                                />
-                                <input
-                                  name="confirmNewPassword"
-                                  placeholder="Confirm password"
-                                  type="password"
-                                />
-                              </div>
-                              <button
-                                className={`${styles.accountButton} ${styles.accountButtonPrimary} ${styles.accountButtonWide}`}
-                                type="submit"
-                              >
-                                Save Password
-                              </button>
-                              {saveMessage ? (
-                                <p className={styles.saveMessage}>
-                                  {saveMessage}
-                                </p>
-                              ) : null}
-                            </form>
-                          </div>
-                        ) : (
-                          <>
-                            <div className={styles.recordsToolbar}>
-                              <label>
-                                <span>Search</span>
-                                <input
-                                  onChange={(event) =>
-                                    setRecordSearch(event.target.value)
-                                  }
-                                  placeholder={`Search ${activeConfig.label.toLowerCase()}`}
-                                  value={recordSearch}
-                                />
-                              </label>
-                              <label>
-                                <span>Range</span>
-                                <select
-                                  onChange={(event) =>
-                                    setRecordRange(event.target.value)
-                                  }
-                                  value={recordRange}
-                                >
-                                  <option value="all">All records</option>
-                                  <option value="30d">Last 30 days</option>
-                                  <option value="7d">Last 7 days</option>
-                                </select>
-                              </label>
-                              <button
-                                className={`${styles.accountButton} ${styles.accountButtonPrimary} ${styles.accountButtonCompact}`}
-                                onClick={downloadCsv}
-                                type="button"
-                              >
-                                <Download aria-hidden="true" size={15} />
-                                Export CSV
-                              </button>
-                            </div>
-                            {recordMessage ? (
-                              <p className={styles.recordMessage}>
-                                {recordMessage}
-                              </p>
-                            ) : null}
-
-                            <table className={styles.recordsTable}>
-                              <thead>
-                                <tr>
-                                  <th>ID</th>
-                                  <th>Type</th>
-                                  <th>Item</th>
-                                  <th>Status</th>
-                                  <th>Amount</th>
-                                  <th>Time</th>
-                                  <th>Open</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {pagedRows.map((row) => (
-                                  <tr key={row.id}>
-                                    <td>{row.id}</td>
-                                    <td>
-                                      {activeSection === "models" &&
-                                      row.visibility ? (
-                                        <span className={styles.visibilitySelectWrap}>
-                                          <select
-                                            aria-label={`${row.visibilitySelectLabel ?? "Model visibility"}: ${row.item}`}
-                                            className={[
-                                              styles.visibilitySelect,
-                                              row.visibility === "public"
-                                                ? styles.visibilitySelectPublic
-                                                : "",
-                                            ]
-                                              .filter(Boolean)
-                                              .join(" ")}
-                                            disabled={
-                                              visibilityUpdatingId === row.id
-                                            }
-                                            onChange={(event) =>
-                                              void updateModelVisibility(
-                                                row,
-                                                event.target.value,
-                                              )
-                                            }
-                                            value={row.visibility}
-                                          >
-                                            <option value="public">
-                                              PUBLIC
-                                            </option>
-                                            <option value="private">
-                                              PRIVATE
-                                            </option>
-                                          </select>
-                                        </span>
-                                      ) : (
-                                        row.type
-                                      )}
-                                    </td>
-                                    <td>{row.item}</td>
-                                    <td>{row.status}</td>
-                                    <td className={styles.amountCell}>
-                                      {row.amount}
-                                    </td>
-                                    <td>{row.time}</td>
-                                    <td className={styles.recordActionCell}>
-                                      {row.href ? (
-                                        <Link
-                                          prefetch={false}
-                                          className={styles.tableActionButton}
-                                          href={row.href}
-                                        >
-                                          {row.actionLabel ?? "Open"}
-                                          <ExternalLink
-                                            aria-hidden="true"
-                                            size={13}
-                                          />
-                                        </Link>
-                                      ) : (
-                                        <span aria-hidden="true">-</span>
-                                      )}
-                                    </td>
-                                  </tr>
-                                ))}
-                                {pagedRows.length === 0 ? (
-                                  <tr>
-                                    <td colSpan={7}>No matching records.</td>
-                                  </tr>
-                                ) : null}
-                                {placeholderRecordRows.map((index) => (
-                                  <tr
-                                    aria-hidden="true"
-                                    className={styles.recordPlaceholderRow}
-                                    key={`placeholder-${index}`}
-                                  >
-                                    <td />
-                                    <td />
-                                    <td />
-                                    <td />
-                                    <td />
-                                    <td />
-                                    <td />
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-
-                            <nav
-                              aria-label="Record pagination"
-                              className={styles.pagination}
-                            >
-                              <button
-                                aria-label="Previous page"
-                                disabled={currentRecordPage <= 1}
-                                onClick={() =>
-                                  setRecordPage((page) => Math.max(1, page - 1))
-                                }
-                                type="button"
-                              >
-                                {"<"}
-                              </button>
-                              {Array.from(
-                                { length: totalRecordPages },
-                                (_, index) => String(index + 1),
-                              ).map((item) => (
-                                <button
-                                  aria-current={
-                                    Number(item) === currentRecordPage
-                                      ? "page"
-                                      : undefined
-                                  }
-                                  className={
-                                    Number(item) === currentRecordPage
-                                      ? styles.currentPage
-                                      : undefined
-                                  }
-                                  key={item}
-                                  onClick={() => setRecordPage(Number(item))}
-                                  type="button"
-                                >
-                                  {item}
-                                </button>
-                              ))}
-                              <button
-                                aria-label="Next page"
-                                disabled={currentRecordPage >= totalRecordPages}
-                                onClick={() =>
-                                  setRecordPage((page) =>
-                                    Math.min(totalRecordPages, page + 1),
-                                  )
-                                }
-                                type="button"
-                              >
-                                {">"}
-                              </button>
-                              <button
-                                className={styles.pageSizeButton}
-                                type="button"
-                              >
-                                <span>10 / Page</span>
-                                <span
-                                  className={styles.pageSizeChevron}
-                                  aria-hidden="true"
-                                />
-                              </button>
-                            </nav>
-                          </>
-                        )}
-                      </section>
+                        <Edit3 aria-hidden="true" size={14} />
+                        <span>EDIT</span>
+                      </button>
                     </div>
+                  )}
+                </form>
+
+                {statusMessage ? (
+                  <p
+                    aria-live="polite"
+                    className={styles.statusMessage}
+                    role="status"
+                  >
+                    {statusMessage}
+                  </p>
+                ) : null}
                   </section>
-          </div>
+                ) : activeSection === "points-history" ? (
+                  <section
+                    className={styles.pointsPane}
+                    aria-label="Points history"
+                  >
+                <div className={styles.balancePlate}>
+                  <div>
+                    <strong>{formattedCredits}</strong>
+                    <span>POINTS</span>
+                  </div>
+                  <em>BALANCE</em>
+                  <button onClick={() => router.push("/pricing")} type="button">
+                    RECHARGE
+                  </button>
+                </div>
+
+                <div className={styles.pointsHeader}>
+                  <h2>Points History</h2>
+                </div>
+
+                <div className={styles.pointsTableWrap}>
+                  <table className={styles.pointsTable}>
+                    <thead>
+                      <tr>
+                        <th>NO.</th>
+                        <th>OPERATION</th>
+                        <th>POINTS</th>
+                        <th>POINTS</th>
+                        <th>DATE</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pagedPointRows.map((row, index) => (
+                        <tr key={`${row.id}-${index}`}>
+                          <td>
+                            {(currentPointPage - 1) * pointsPageSize + index + 1}
+                          </td>
+                          <td>{row.type || row.item}</td>
+                          <td className={styles.pointDelta}>{row.amount}</td>
+                          <td className={styles.pointBalance}>
+                            {getBalanceValue(row)}
+                          </td>
+                          <td>{row.time}</td>
+                        </tr>
+                      ))}
+                      {pagedPointRows.length === 0 ? (
+                        <tr>
+                          <td colSpan={5}>No points records yet.</td>
+                        </tr>
+                      ) : null}
+                      {placeholderRows.map((index) => (
+                        <tr
+                          aria-hidden="true"
+                          className={styles.placeholderRow}
+                          key={`placeholder-${index}`}
+                        >
+                          <td />
+                          <td />
+                          <td />
+                          <td />
+                          <td />
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <nav className={styles.pagination} aria-label="Points pages">
+                  <button
+                    aria-label="Previous page"
+                    disabled={currentPointPage <= 1}
+                    onClick={() => setRecordPage((page) => Math.max(1, page - 1))}
+                    type="button"
+                  >
+                    {"<"}
+                  </button>
+                  <span aria-current="page" className={styles.pageIndicator}>
+                    {currentPointPage} / {totalPointPages}
+                  </span>
+                  <button
+                    aria-label="Next page"
+                    disabled={currentPointPage >= totalPointPages}
+                    onClick={() =>
+                      setRecordPage((page) =>
+                        Math.min(totalPointPages, page + 1),
+                      )
+                    }
+                    type="button"
+                  >
+                    {">"}
+                  </button>
+                  <span className={styles.pageSizeLabel}>
+                    {pointsPageSize} Items / Page
+                  </span>
+                </nav>
+                  </section>
+                ) : (
+                  <section
+                    className={styles.recordsPane}
+                    aria-label={`${activeSection} records`}
+                  >
+                    <div className={styles.recordsHeader}>
+                      <h2>
+                        {activeSection === "orders"
+                          ? "Orders"
+                          : activeSection === "models"
+                            ? "Model Library"
+                            : "Generation Tasks"}
+                      </h2>
+                      <span>
+                        {formatNumber(recordRows.length)} RECORDS
+                      </span>
+                    </div>
+
+                    <div className={styles.pointsTableWrap}>
+                      <table className={styles.recordsTable}>
+                        <thead>
+                          <tr>
+                            <th>ID</th>
+                            <th>TYPE</th>
+                            <th>ITEM</th>
+                            <th>STATUS</th>
+                            <th>AMOUNT</th>
+                            <th>TIME</th>
+                            <th>OPEN</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {pagedRecordRows.map((row) => (
+                            <tr key={row.id}>
+                              <td title={row.id}>{row.id}</td>
+                              <td
+                                title={
+                                  activeSection === "models"
+                                    ? getModelVisibilityLabel(row.visibility)
+                                    : row.type
+                                }
+                              >
+                                {activeSection === "models" ? (
+                                  <button
+                                    aria-label={`Set ${row.item} visibility to ${
+                                      row.visibility === "public"
+                                        ? "hidden"
+                                        : "public"
+                                    }`}
+                                    className={`${styles.visibilityToggle} ${
+                                      row.visibility === "public"
+                                        ? styles.visibilityPublic
+                                        : styles.visibilityHidden
+                                    }`}
+                                    disabled={visibilityUpdatingId === row.id}
+                                    onClick={() => void toggleModelVisibility(row)}
+                                    type="button"
+                                  >
+                                    {row.visibility === "public" ? (
+                                      <Eye aria-hidden="true" size={14} />
+                                    ) : (
+                                      <EyeOff aria-hidden="true" size={14} />
+                                    )}
+                                    <span>
+                                      {visibilityUpdatingId === row.id
+                                        ? "Saving"
+                                        : getModelVisibilityLabel(row.visibility)}
+                                    </span>
+                                  </button>
+                                ) : (
+                                  row.type
+                                )}
+                              </td>
+                              <td title={row.item}>{row.item}</td>
+                              <td title={row.status}>{row.status}</td>
+                              <td className={styles.pointDelta}>
+                                {row.amount}
+                              </td>
+                              <td title={row.time}>{row.time}</td>
+                              <td className={styles.recordActionCell}>
+                                {row.href ? (
+                                  <button
+                                    className={styles.tableActionButton}
+                                    onClick={() => openRecordHref(row.href!)}
+                                    type="button"
+                                  >
+                                    <span>{row.actionLabel ?? "OPEN"}</span>
+                                    <ExternalLink aria-hidden="true" size={13} />
+                                  </button>
+                                ) : (
+                                  <span aria-hidden="true">-</span>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                          {pagedRecordRows.length === 0 ? (
+                            <tr>
+                              <td colSpan={7}>No records yet.</td>
+                            </tr>
+                          ) : null}
+                          {recordPlaceholderRows.map((index) => (
+                            <tr
+                              aria-hidden="true"
+                              className={styles.placeholderRow}
+                              key={`record-placeholder-${index}`}
+                            >
+                              <td />
+                              <td />
+                              <td />
+                              <td />
+                              <td />
+                              <td />
+                              <td />
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {statusMessage ? (
+                      <p className={styles.statusMessage}>{statusMessage}</p>
+                    ) : null}
+
+                    <nav className={styles.pagination} aria-label="Record pages">
+                      <button
+                        aria-label="Previous page"
+                        disabled={currentRecordPage <= 1}
+                        onClick={() =>
+                          setRecordPage((page) => Math.max(1, page - 1))
+                        }
+                        type="button"
+                      >
+                        {"<"}
+                      </button>
+                      <span aria-current="page" className={styles.pageIndicator}>
+                        {currentRecordPage} / {totalRecordPages}
+                      </span>
+                      <button
+                        aria-label="Next page"
+                        disabled={currentRecordPage >= totalRecordPages}
+                        onClick={() =>
+                          setRecordPage((page) =>
+                            Math.min(totalRecordPages, page + 1),
+                          )
+                        }
+                        type="button"
+                      >
+                        {">"}
+                      </button>
+                      <span className={styles.pageSizeLabel}>
+                        {recordPageSize} Items / Page
+                      </span>
+                    </nav>
+                  </section>
+                )}
+              </div>
+            </div>
+          </BorderComboFrame2>
         </section>
       </AuthModalStage>
     </main>

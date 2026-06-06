@@ -954,7 +954,7 @@
   width: 24px;
   margin-right: 10px;
 }.pageRoot :global(.uc-detail .detail-bottom .center) {
-  width: 410px;
+  width: 620px;
   height: 74px;
   background: url("/ui-lab/model-detail-uicut/styles/images/detail-bottom-2.png") center center no-repeat;
   background-size: 100% 100%;
@@ -981,6 +981,9 @@
 }
 .pageRoot :global(.uc-detail .detail-bottom .btn2-icon-print) {
   right: 34px;
+}
+.pageRoot :global(.uc-detail .detail-bottom .btn2-icon-add-cart) {
+  right: 28px;
 }
 .pageRoot :global(.uc-detail .detail-bottom .btn2-slot button) {
   background: transparent;

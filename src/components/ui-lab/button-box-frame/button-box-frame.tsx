@@ -1,17 +1,17 @@
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 
 import styles from "./button-box-frame.module.css";
 
-type ButtonBoxFrameProps = {
+type ButtonBoxFrameProps = Omit<HTMLAttributes<HTMLDivElement>, "children" | "className" | "style"> & {
   children?: ReactNode;
   className?: string;
   contentClassName?: string;
   style?: CSSProperties;
 };
 
-export function ButtonBoxFrame({ children, className, contentClassName, style }: ButtonBoxFrameProps) {
+export function ButtonBoxFrame({ children, className, contentClassName, style, ...frameProps }: ButtonBoxFrameProps) {
   return (
-    <div className={[styles.frame, className].filter(Boolean).join(" ")} style={style}>
+    <div {...frameProps} className={[styles.frame, className].filter(Boolean).join(" ")} style={style}>
       <span aria-hidden="true" className={styles.cornerTopLeft} />
       <span aria-hidden="true" className={styles.edgeTop} />
       <span aria-hidden="true" className={styles.cornerTopRight} />

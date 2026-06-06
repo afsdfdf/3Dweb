@@ -34,6 +34,7 @@ type TestHomeBundlePanelProps = {
 };
 
 type TestHomeInspirationPanelProps = {
+  basePath?: string;
   items: HomeInspirationItem[];
   page: number;
   pageSize: number;
@@ -78,7 +79,7 @@ export function TestHomeBundlePanel({ items }: TestHomeBundlePanelProps) {
   );
 }
 
-export function TestHomeInspirationPanel({ items, page, pageSize, query, totalPages }: TestHomeInspirationPanelProps) {
+export function TestHomeInspirationPanel({ basePath = "/test-home", items, page, pageSize, query, totalPages }: TestHomeInspirationPanelProps) {
   const [filter, setFilter] = useState<InspirationFilter>("all");
   const selectedButton = filter === "all" ? null : buttonIdByFilter[filter];
   const filteredItems = filter === "all" ? items : items.filter((item) => item.filter === filter);
@@ -106,7 +107,7 @@ export function TestHomeInspirationPanel({ items, page, pageSize, query, totalPa
       </header>
       <div className={styles.inspirationFrameBody}>
         <div className={styles.inspirationSearchMount}>
-          <InspirationSearchBox basePath="/test-home" page={page} pageSize={pageSize} query={query} totalPages={totalPages} />
+          <InspirationSearchBox basePath={basePath} page={page} pageSize={pageSize} query={query} totalPages={totalPages} />
         </div>
         <span className={styles.inspirationGridDivider} aria-hidden="true" />
         <div className={styles.inspirationGrid} aria-label="Inspiration grid">
@@ -117,7 +118,7 @@ export function TestHomeInspirationPanel({ items, page, pageSize, query, totalPa
           )}
         </div>
         <div className={styles.bottomPagerMount}>
-          <InspirationPager basePath="/test-home" page={page} query={query} totalPages={totalPages} />
+          <InspirationPager basePath={basePath} page={page} query={query} totalPages={totalPages} />
         </div>
       </div>
     </>

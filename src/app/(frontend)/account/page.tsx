@@ -1,6 +1,7 @@
 import {
   AccountCenter,
   type AccountCenterData,
+  type AccountSection,
 } from "@/components/account/account-center";
 import type { GenerationTask, Model, PrintOrder } from "@/payload-types";
 
@@ -18,13 +19,13 @@ import { getMarketingSiteSettings } from "../_lib/marketing";
 import { formatTaskGenerationType } from "../_lib/ui-text";
 
 const transactionTypeLabels: Record<string, string> = {
-  download_spend: "Download",
+  download_spend: "Model Download",
   manual_adjustment: "Adjustment",
-  purchase: "Purchase",
+  purchase: "Recharge",
   refund: "Refund",
   subscription_grant: "Subscription",
   task_hold: "Task Hold",
-  task_spend: "Generation",
+  task_spend: "Model Generate",
 };
 
 const formatNumber = (value: unknown) => {
@@ -53,8 +54,9 @@ const formatDate = (value: unknown) => {
   const day = String(date.getDate()).padStart(2, "0");
   const hours = String(date.getHours()).padStart(2, "0");
   const minutes = String(date.getMinutes()).padStart(2, "0");
+  const seconds = String(date.getSeconds()).padStart(2, "0");
 
-  return `${year}.${month}.${day} ${hours}:${minutes}`;
+  return `${year}.${month}.${day} ${hours}:${minutes}:${seconds}`;
 };
 
 const getRelationTitle = (value: unknown, fallback: string) => {
@@ -66,15 +68,21 @@ const getRelationTitle = (value: unknown, fallback: string) => {
   return fallback;
 };
 
+const normalizeModelVisibility = (value: unknown) => {
+  return value === "public" ? "public" : "private";
+};
+
+const formatModelVisibility = (value: unknown) => {
+  return normalizeModelVisibility(value) === "public" ? "Public" : "Hidden";
+};
+
 const accountSections = [
-  "overview",
+  "profile",
+  "points-history",
   "orders",
   "models",
   "tasks",
-  "billing",
-  "settings",
 ] as const;
-
 const accountRecordLimit = 200;
 const accountSummaryLimit = 1;
 const accountBillingSelect: Record<string, true> = {
@@ -85,45 +93,13 @@ const accountBillingSelect: Record<string, true> = {
   referenceCode: true,
   type: true,
 };
-const accountModelSelect: Record<string, true> = {
-  createdAt: true,
-  id: true,
-  status: true,
-  title: true,
-  updatedAt: true,
-  visibility: true,
-};
-const accountOrderSelect: Record<string, true> = {
-  amount: true,
-  createdAt: true,
-  id: true,
-  model: true,
-  orderNumber: true,
-  status: true,
-  updatedAt: true,
-};
-const accountTaskSelect: Record<string, true> = {
-  createdAt: true,
-  creditsSpent: true,
-  id: true,
-  inputMode: true,
-  prompt: true,
-  status: true,
-  taskCode: true,
-  taskType: true,
-  updatedAt: true,
-};
-
-type AccountSection = (typeof accountSections)[number];
 
 function getInitialSection(value?: null | string): AccountSection {
+  if (value === "billing") return "points-history";
+  if (value === "settings" || value === "overview") return "profile";
   return accountSections.includes(value as AccountSection)
     ? (value as AccountSection)
-    : "overview";
-}
-
-function getTotalDocs(result: { docs: unknown[]; totalDocs?: number }) {
-  return "totalDocs" in result ? (result.totalDocs ?? 0) : result.docs.length;
+    : "profile";
 }
 
 export default async function AccountPage({
@@ -134,15 +110,10 @@ export default async function AccountPage({
   await requireUser("/account");
   const query = await searchParams;
   const activeSection = getInitialSection(query.section);
-  const rowLimitsBySection = {
-    billing:
-      activeSection === "billing" ? accountRecordLimit : accountSummaryLimit,
-    models:
-      activeSection === "models" ? accountRecordLimit : accountSummaryLimit,
-    orders:
-      activeSection === "orders" ? accountRecordLimit : accountSummaryLimit,
-    tasks: activeSection === "tasks" ? accountRecordLimit : accountSummaryLimit,
-  };
+  const billingLimit =
+    activeSection === "points-history"
+      ? accountRecordLimit
+      : accountSummaryLimit;
 
   const [
     navUser,
@@ -152,8 +123,6 @@ export default async function AccountPage({
     tasks,
     models,
     orders,
-    activeTaskSummary,
-    activeOrderSummary,
     siteSettings,
   ] = await Promise.all([
     getCurrentNavUser(),
@@ -161,41 +130,21 @@ export default async function AccountPage({
     getCurrentUserCreditAccount(),
     getCurrentUserCreditTransactions({
       depth: 0,
-      limit: rowLimitsBySection.billing,
+      limit: billingLimit,
       select: accountBillingSelect,
     }),
-    getCurrentUserTasks({
-      depth: 0,
-      limit: rowLimitsBySection.tasks,
-      select: accountTaskSelect,
-    }),
-    getCurrentUserModels({
-      depth: 0,
-      limit: rowLimitsBySection.models,
-      select: accountModelSelect,
-    }),
-    getCurrentUserOrders({
-      depth: 0,
-      limit: rowLimitsBySection.orders,
-      select: accountOrderSelect,
-    }),
-    getCurrentUserTasks({
-      depth: 0,
-      limit: accountSummaryLimit,
-      select: accountTaskSelect,
-      status: ["queued", "processing"],
-    }),
-    getCurrentUserOrders({
-      depth: 0,
-      limit: accountSummaryLimit,
-      select: accountOrderSelect,
-      status: ["paid", "in-production", "shipped"],
-    }),
+    getCurrentUserTasks({ limit: accountRecordLimit }),
+    getCurrentUserModels({ limit: accountRecordLimit }),
+    getCurrentUserOrders({ limit: accountRecordLimit }),
     getMarketingSiteSettings(),
   ]);
 
-  const activeTasks = getTotalDocs(activeTaskSummary);
-  const activeOrders = getTotalDocs(activeOrderSummary);
+  const activeTasks = tasks.docs.filter((task: GenerationTask) =>
+    ["queued", "processing"].includes(String(task.status)),
+  ).length;
+  const activeOrders = orders.docs.filter((order: PrintOrder) =>
+    ["paid", "in-production", "shipped"].includes(String(order.status)),
+  ).length;
 
   const accountData: AccountCenterData = {
     avatarUrl: navUser?.avatarUrl ?? null,
@@ -212,10 +161,13 @@ export default async function AccountPage({
     metrics: {
       activeOrders,
       activeTasks,
-      billingCount: getTotalDocs(creditTransactions),
-      modelCount: getTotalDocs(models),
-      orderCount: getTotalDocs(orders),
-      taskCount: getTotalDocs(tasks),
+      billingCount:
+        "totalDocs" in creditTransactions
+          ? creditTransactions.totalDocs
+          : creditTransactions.docs.length,
+      modelCount: "totalDocs" in models ? models.totalDocs : models.docs.length,
+      orderCount: "totalDocs" in orders ? orders.totalDocs : orders.docs.length,
+      taskCount: "totalDocs" in tasks ? tasks.totalDocs : tasks.docs.length,
     },
     phone: accountProfile?.phone ?? null,
     profileVisibility:
@@ -237,27 +189,24 @@ export default async function AccountPage({
           transactionTypeLabels[String(transaction.type)] ??
           String(transaction.type || "Transaction"),
       })),
-      models: models.docs.map((model: Model) => {
-        const visibility = model.visibility === "public" ? "public" : "private";
-
-        return {
-          actionLabel: "Open",
-          amount: "-",
-          href: `/model-detail?id=${encodeURIComponent(String(model.id))}`,
-          id: String(model.id),
-          item: String(model.title || `Model ${model.id}`),
-          status: String(model.status || "Ready"),
-          time: formatDate(model.updatedAt || model.createdAt),
-          type: visibility,
-          visibility,
-          visibilitySelectLabel: "Model visibility",
-        };
-      }),
+      models: models.docs.map((model: Model) => ({
+        actionLabel: "OPEN",
+        amount: "-",
+        href: `/model-detail?id=${encodeURIComponent(String(model.id))}`,
+        id: String(model.id),
+        item: String(model.title || `Model ${model.id}`),
+        status: String(model.status || model.visibility || "Ready"),
+        time: formatDate(model.updatedAt || model.createdAt),
+        type: formatModelVisibility(model.visibility),
+        visibility: normalizeModelVisibility(model.visibility),
+      })),
       orders: orders.docs.map((order: PrintOrder) => ({
+        actionLabel: order.shopifyCheckoutUrl ? "PAY" : undefined,
         amount:
           order.amount === null || order.amount === undefined
             ? "-"
             : `$${formatNumber(order.amount)}`,
+        href: order.shopifyCheckoutUrl || undefined,
         id: String(order.orderNumber || order.id),
         item: getRelationTitle(order.model, `Order ${order.id}`),
         status: String(order.status || "Pending"),
@@ -265,7 +214,7 @@ export default async function AccountPage({
         type: "Print order",
       })),
       tasks: tasks.docs.map((task: GenerationTask) => ({
-        actionLabel: task.taskCode ? "Result" : undefined,
+        actionLabel: task.taskCode ? "RESULT" : undefined,
         amount:
           task.creditsSpent === null || task.creditsSpent === undefined
             ? "0"

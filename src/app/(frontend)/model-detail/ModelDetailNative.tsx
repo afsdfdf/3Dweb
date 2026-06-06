@@ -15,8 +15,14 @@ import { ModelDownloadConfirmation } from "@/components/ui-lab/model-download-co
 import type { TopNavigationUser } from "@/components/ui-lab/top-navigation";
 import { getSupabasePreviewImageURL } from "@/lib/supabase/imageTransform";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ModelViewer } from "../_components/ModelViewer";
+import dynamic from "next/dynamic";
 import { PrintOrderDialog } from "../_components/PrintOrderDialog";
+import { addModelToCart } from "../_lib/cartStorage";
+
+const ModelViewer = dynamic(
+  () => import("../_components/ModelViewer").then((m) => m.ModelViewer),
+  { ssr: false, loading: () => null },
+);
 import { ModelDetailHeader } from "./ModelDetailHeader";
 import type {
   ModelDetailData,
@@ -204,6 +210,7 @@ export default function ModelDetailNative({
   const [relatedError, setRelatedError] = useState<null | string>(null);
   const [showDownloadConfirm, setShowDownloadConfirm] = useState(false);
   const [downloadStatus, setDownloadStatus] = useState<null | string>(null);
+  const [cartStatus, setCartStatus] = useState<null | string>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [commentInput, setCommentInput] = useState("");
   const [commentFeedback, setCommentFeedback] = useState<null | string>(null);
@@ -231,6 +238,7 @@ export default function ModelDetailNative({
     : detail.isOwnedByCurrentUser
       ? "REVIEW NEEDED"
       : "WORKBENCH";
+  const visibleStatus = cartStatus || downloadStatus;
 
   const getCurrentRedirect = useCallback(() => {
     if (typeof window === "undefined") return `/model-detail?id=${activeModel.id}`;
@@ -398,6 +406,7 @@ export default function ModelDetailNative({
     setSlide(0);
     setShowDownloadConfirm(false);
     setDownloadStatus(null);
+    setCartStatus(null);
 
     if (typeof window !== "undefined") {
       window.history.pushState(null, "", item.href);
@@ -523,6 +532,24 @@ export default function ModelDetailNative({
     }
   };
 
+  const handleAddToCart = () => {
+    addModelToCart({
+      discountedPrice: 22.5,
+      imageSrc: activeModel.imageSrc,
+      modelId: activeModel.id,
+      originalPrice: 25,
+      quantity: 1,
+      serviceType: "3D Printing Service",
+      tags: activeModel.tags,
+      title: activeModel.title,
+    });
+    setCartStatus("Added to cart.");
+
+    window.setTimeout(() => {
+      setCartStatus(null);
+    }, 1800);
+  };
+
   return (
     <main className={styles.pageRoot}>
       {activeModel.viewerURL ? (
@@ -623,8 +650,11 @@ export default function ModelDetailNative({
           <Link href={activeModel.id ? `/workbench?reference=${activeModel.id}` : "/workbench"}>
             Use in Workbench
           </Link>
+          <button onClick={handleAddToCart} type="button">
+            Add To Cart
+          </button>
         </section>
-        {downloadStatus ? <div className={styles.mobileStatus}>{downloadStatus}</div> : null}
+        {visibleStatus ? <div className={styles.mobileStatus}>{visibleStatus}</div> : null}
 
         <section className={styles.mobileCard}>
           <div className={styles.mobileAuthor}>
@@ -863,7 +893,7 @@ export default function ModelDetailNative({
                   style={{ left: "50%", marginLeft: 170, top: "45%" }}
                 />
               ) : null}
-              {downloadStatus ? <div className="download-status">{downloadStatus}</div> : null}
+              {visibleStatus ? <div className="download-status">{visibleStatus}</div> : null}
             </section>
 
             <section className="detail-right">
@@ -1166,6 +1196,19 @@ export default function ModelDetailNative({
                     src="/ui-lab/model-detail-assets/images/Boolean_operation_1_8833.png"
                     alt=""
                     className="btn2-icon btn2-icon-print"
+                    decoding="async"
+                  />
+                </div>
+                <div className="btn2-slot">
+                  <SourcePurpleMediumButton
+                    label="ADD TO CART"
+                    onClick={handleAddToCart}
+                    style={detailBottomActionButtonStyle}
+                  />
+                  <img
+                    src="/ui-lab/top-navigation/icon-cart-gold.png"
+                    alt=""
+                    className="btn2-icon btn2-icon-add-cart"
                     decoding="async"
                   />
                 </div>

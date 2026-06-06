@@ -1,0 +1,316 @@
+.card {
+  --frame-border-width: 34px;
+  --frame-seam-overlap: 2px;
+  background: rgba(255, 255, 255, 0);
+  box-sizing: border-box;
+  height: 432px;
+  pointer-events: auto;
+  position: relative;
+  width: 300px;
+}
+
+.frameContent {
+  height: 100%;
+  min-height: 0;
+  overflow: visible;
+  padding: 31px 24px 18px !important;
+  pointer-events: auto;
+  z-index: 5;
+}
+
+.panel {
+  background: rgba(0, 0, 0, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    inset 0 2px 5px 0 #000000,
+    inset 0 0 0 1px rgba(0, 0, 0, 0.74);
+  box-sizing: border-box;
+  color: #ffffff;
+  font-family: Arial, sans-serif;
+  height: 100%;
+  overflow: visible;
+  position: relative;
+  width: 100%;
+}
+
+.panel::before {
+  background: rgba(255, 255, 255, 0.08);
+  content: "";
+  height: 1px;
+  left: 14px;
+  position: absolute;
+  right: 14px;
+  top: 52px;
+}
+
+.menuButton {
+  align-items: center;
+  appearance: none;
+  background: rgba(0, 0, 0, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  box-sizing: border-box;
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  height: 38px;
+  justify-content: center;
+  padding: 0;
+  position: absolute;
+  right: 13px;
+  top: 7px;
+  width: 38px;
+  z-index: 8;
+}
+
+.menuButton:hover,
+.menuButton:focus-visible {
+  border-color: rgba(255, 255, 255, 0.38);
+  outline: 0;
+}
+
+.menuPopover {
+  background: rgba(0, 0, 0, 0.97);
+  border: 1px solid #2c2c2f;
+  box-sizing: border-box;
+  min-height: 86px;
+  position: absolute;
+  right: -106px;
+  top: 48px;
+  width: 158px;
+  z-index: 12;
+}
+
+.menuItemPrimary,
+.menuItem {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  box-sizing: border-box;
+  color: rgba(255, 255, 255, 0.36);
+  cursor: pointer;
+  display: block;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  height: 42px;
+  line-height: 18px;
+  padding: 0 16px;
+  text-align: left;
+  width: 100%;
+}
+
+.menuItemPrimary {
+  background: #242326;
+  color: #ffffff;
+}
+
+.menuItem:hover,
+.menuItem:focus-visible,
+.menuItemPrimary:hover,
+.menuItemPrimary:focus-visible {
+  color: #ffffff;
+  outline: 0;
+}
+
+.profile {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 54px;
+}
+
+.avatarWrap {
+  height: 82px;
+  position: relative;
+  width: 82px;
+}
+
+.avatarRing {
+  align-items: center;
+  background:
+    radial-gradient(circle at 50% 50%, #0a0a0b 0 57%, transparent 58%),
+    linear-gradient(180deg, #20d991 0%, #078b60 100%);
+  border-radius: 999px;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.55),
+    0 0 11px rgba(17, 212, 142, 0.26);
+  box-sizing: border-box;
+  display: flex;
+  height: 82px;
+  justify-content: center;
+  padding: 5px;
+  width: 82px;
+}
+
+.avatarImage {
+  background: #eee9df;
+  border: 4px solid #0a0a0b;
+  border-radius: 999px;
+  box-sizing: border-box;
+  display: block;
+  height: 72px;
+  object-fit: cover;
+  object-position: 50% 36%;
+  width: 72px;
+}
+
+.avatarBadge {
+  background:
+    linear-gradient(180deg, rgba(16, 24, 27, 0.94), rgba(7, 11, 12, 0.98)),
+    #0b1113;
+  border: 2px solid #1bd78a;
+  border-radius: 8px;
+  bottom: -2px;
+  box-shadow:
+    0 2px 0 #066742,
+    0 0 0 1px rgba(0, 0, 0, 0.45);
+  color: #1bd78a;
+  font-size: 20px;
+  font-weight: 800;
+  height: 24px;
+  left: 9px;
+  line-height: 20px;
+  position: absolute;
+  text-align: center;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.75);
+  text-transform: uppercase;
+  transform: skew(-8deg);
+  width: 64px;
+}
+
+.name {
+  color: #ffffff;
+  display: block;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 22px;
+  margin-top: 22px;
+  max-width: 170px;
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stats {
+  align-items: center;
+  display: flex;
+  gap: 32px;
+  justify-content: center;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 196px;
+}
+
+.stat {
+  align-items: center;
+  color: #ffffff;
+  display: inline-flex;
+  font-size: 12px;
+  gap: 7px;
+  line-height: 24px;
+  min-width: 57px;
+}
+
+.statIcon {
+  display: block;
+  height: 24px;
+  object-fit: contain;
+  width: 24px;
+}
+
+.followButton {
+  --frame-button-height: 48px;
+  --frame-button-width: 144px;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  left: 50%;
+  position: absolute;
+  top: 236px;
+  transform: translateX(-50%);
+}
+
+.followButton span {
+  line-height: 18px;
+}
+
+.carousel {
+  align-items: center;
+  bottom: 12px;
+  display: grid;
+  grid-template-columns: 24px 1fr 24px;
+  left: 0;
+  position: absolute;
+  right: 0;
+}
+
+.thumbStrip {
+  display: grid;
+  gap: 9px;
+  grid-template-columns: repeat(3, 1fr);
+  height: 72px;
+  padding: 0 5px;
+}
+
+.thumb {
+  appearance: none;
+  background: rgba(24, 24, 24, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 2px;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: block;
+  height: 72px;
+  overflow: hidden;
+  padding: 0;
+  position: relative;
+  width: 100%;
+}
+
+.thumb:hover,
+.thumb:focus-visible {
+  border-color: rgba(255, 255, 255, 0.28);
+  outline: 0;
+}
+
+.thumbImage {
+  display: block;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+  width: 100%;
+}
+
+.arrowButton {
+  --arrow-image: var(--arrow-normal);
+  appearance: none;
+  background: var(--arrow-image) center / 100% 100% no-repeat;
+  border: 0;
+  cursor: pointer;
+  height: 72px;
+  padding: 0;
+  width: 24px;
+}
+
+.arrowButton:hover,
+.arrowButton:focus-visible {
+  --arrow-image: var(--arrow-hover);
+  filter: brightness(1.08);
+  outline: 0;
+}
+
+.arrowLeft {
+  --arrow-normal: url("/ui-lab/formal-components/assets/arrows/side-arrow-left-dark-normal.png");
+  --arrow-hover: url("/ui-lab/formal-components/assets/arrows/side-arrow-left-dark-hover.png");
+}
+
+.arrowRight {
+  --arrow-normal: url("/ui-lab/formal-components/assets/arrows/side-arrow-right-dark-normal.png");
+  --arrow-hover: url("/ui-lab/formal-components/assets/arrows/side-arrow-right-dark-hover.png");
+}

@@ -1,9 +1,13 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useState } from "react";
+import type { MouseEvent } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { ButtonBoxFrame } from "@/components/ui-lab/button-box-frame";
+import { FollowCreatorCard } from "@/components/ui-lab/follow-creator-card";
+import type { FollowCreatorCardData } from "@/components/ui-lab/follow-creator-card";
 import { SmallButtonTriple } from "@/components/ui-lab/small-button-pair/small-button-pair";
 import type { HomeInspirationFilter } from "@/app/(frontend)/_home/homeData";
 import { getSupabasePreviewImageURL } from "@/lib/supabase/imageTransform";
@@ -42,6 +46,7 @@ export type InspirationGridItem = {
   alt?: string;
   authorName?: string;
   avatarSrc?: null | string;
+  creatorCard?: FollowCreatorCardData | null;
   favoritesLabel?: string;
   filter?: HomeInspirationFilter;
   href?: null | string;
@@ -63,6 +68,46 @@ type InspirationGridCardProps = {
 };
 
 export function InspirationGridCard({ item, onActivate }: InspirationGridCardProps) {
+  const avatarRef = useRef<HTMLDivElement>(null);
+  const closeTimerRef = useRef<number | null>(null);
+  const [popoverPosition, setPopoverPosition] = useState<{ left: number; top: number } | null>(null);
+
+  const clearCloseTimer = () => {
+    if (closeTimerRef.current === null) return;
+
+    window.clearTimeout(closeTimerRef.current);
+    closeTimerRef.current = null;
+  };
+
+  const schedulePopoverClose = () => {
+    if (closeTimerRef.current !== null) return;
+
+    closeTimerRef.current = window.setTimeout(() => {
+      setPopoverPosition(null);
+      closeTimerRef.current = null;
+    }, 160);
+  };
+
+  const showCreatorPopover = () => {
+    if (!item.creatorCard || !avatarRef.current) return;
+
+    clearCloseTimer();
+    const rect = avatarRef.current.getBoundingClientRect();
+    setPopoverPosition({
+      left: rect.left - 18,
+      top: rect.top + 52,
+    });
+  };
+
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current === null) return;
+
+      window.clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    };
+  }, []);
+
   const handleClick = () => {
     if (onActivate) {
       onActivate(item);
@@ -72,12 +117,49 @@ export function InspirationGridCard({ item, onActivate }: InspirationGridCardPro
     if (item.href) window.location.assign(item.href);
   };
 
+  const handleMouseMove = (event: MouseEvent<HTMLButtonElement>) => {
+    if (!item.creatorCard || !avatarRef.current) return;
+
+    const rect = avatarRef.current.getBoundingClientRect();
+    const isOverAvatar =
+      event.clientX >= rect.left &&
+      event.clientX <= rect.right &&
+      event.clientY >= rect.top &&
+      event.clientY <= rect.bottom;
+
+    if (isOverAvatar) {
+      showCreatorPopover();
+      return;
+    }
+
+    if (popoverPosition) schedulePopoverClose();
+  };
+
+  const creatorPopover =
+    item.creatorCard && popoverPosition && typeof document !== "undefined"
+      ? createPortal(
+          <div
+            className={styles.creatorPopover}
+            onClick={(event) => event.stopPropagation()}
+            onMouseDown={(event) => event.stopPropagation()}
+            onMouseEnter={clearCloseTimer}
+            onMouseLeave={schedulePopoverClose}
+            style={{ left: popoverPosition.left, top: popoverPosition.top }}
+          >
+            <FollowCreatorCard {...item.creatorCard} defaultMenuOpen={false} />
+          </div>,
+          document.body,
+        )
+      : null;
+
   return (
     <button
       aria-label={item.title}
       aria-pressed={false}
       className={styles.item}
       onClick={handleClick}
+      onMouseLeave={schedulePopoverClose}
+      onMouseMove={handleMouseMove}
       type="button"
     >
       <ButtonBoxFrame
@@ -90,7 +172,7 @@ export function InspirationGridCard({ item, onActivate }: InspirationGridCardPro
       >
         <article className={styles.cardContent}>
           <header className={styles.cardHeader}>
-            <div className={styles.avatarWrap}>
+            <div className={styles.avatarWrap} ref={avatarRef}>
               {item.avatarSrc ? (
                 <img
                   alt=""
@@ -138,6 +220,7 @@ export function InspirationGridCard({ item, onActivate }: InspirationGridCardPro
           </div>
         </article>
       </ButtonBoxFrame>
+      {creatorPopover}
     </button>
   );
 }

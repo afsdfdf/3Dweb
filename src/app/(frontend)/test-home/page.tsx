@@ -28,8 +28,8 @@ export default async function TestHomeResponsivePage({ searchParams }: TestHomeR
 
   return (
     <main className={styles.page}>
-      <TopNavigation active="HOME" className={styles.boundTopNavigation} items={migrationTestNavItems} user={data.navUser} />
-      <AuthModalStage clipContent={false}>
+      <AuthModalStage clipContent={false} fitViewport>
+        <TopNavigation active="HOME" className={styles.boundTopNavigation} items={migrationTestNavItems} user={data.navUser} />
         <section className={styles.heroStage} aria-label="Responsive home hero">
           <Frame12877 />
         </section>

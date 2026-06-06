@@ -29,11 +29,19 @@ export type FooterContent = {
   directionText: string
   directionTitle: string
   linkGroups?: FooterLinkGroup[] | null
+  socialLinks?: FooterSocialLink[] | null
 }
 
 export type FooterLink = {
   href: string
   label: string
+}
+
+export type FooterSocialLink = {
+  enabled?: boolean | null
+  href: string
+  label: string
+  platform?: null | string
 }
 
 export type FooterLinkGroup = {
@@ -185,22 +193,30 @@ const footerContent: FooterContent = {
     'The current release already includes accounts, tasks, models, orders, credits, and an admin structure. The next step is to keep polishing the public site, Studio, and platform APIs.',
   directionTitle: footerDirectionTitle,
   linkGroups: getDefaultFooterLinkGroups('support@example.com'),
+  socialLinks: getDefaultFooterSocialLinks(),
 }
 
 export function getFooterInformationLinks(): FooterLink[] {
   return [
-    { href: '/about', label: 'About' },
-    { href: '/blog', label: 'Blog' },
-    { href: '/privacy-policy', label: 'Privacy Policy' },
     { href: '/refund-policy', label: 'Refund Policy' },
+    { href: '/shipping-policy', label: 'Shipping Policy' },
+    { href: '/privacy-policy', label: 'Privacy Policy' },
+    { href: '/contact', label: 'Contact Us' },
   ]
 }
 
 export function getFooterCustomerLinks(supportEmail: string): FooterLink[] {
   return [
-    { href: '/contact', label: 'Contact' },
-    { href: '/shipping-policy', label: 'Shipping Policy' },
     { href: `mailto:${supportEmail}`, label: supportEmail },
+  ]
+}
+
+export function getDefaultFooterSocialLinks(): FooterSocialLink[] {
+  return [
+    { enabled: true, href: 'https://x.com/', label: 'X', platform: 'x' },
+    { enabled: true, href: 'https://www.facebook.com/', label: 'Facebook', platform: 'facebook' },
+    { enabled: true, href: 'https://www.instagram.com/', label: 'Instagram', platform: 'instagram' },
+    { enabled: true, href: 'https://www.youtube.com/', label: 'YouTube', platform: 'youtube' },
   ]
 }
 
@@ -210,13 +226,13 @@ export function getDefaultFooterLinkGroups(supportEmail: string): FooterLinkGrou
       ariaLabel: 'Footer information',
       helperText: footerDirectionTitle,
       links: getFooterInformationLinks(),
-      title: 'Information',
+      title: 'INFORMATION',
     },
     {
       ariaLabel: 'Footer customer help',
       helperText: footerAboutText,
       links: getFooterCustomerLinks(supportEmail),
-      title: 'Help customers',
+      title: 'Help Customers',
     },
   ]
 }

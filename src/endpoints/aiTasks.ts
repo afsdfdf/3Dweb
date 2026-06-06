@@ -1,5 +1,7 @@
 import type { PayloadRequest } from 'payload'
 
+import crypto from 'node:crypto'
+
 import { handleAIWebhook, handleMeshyWebhook, submitAITask, syncAITask } from '@/lib/aiTaskFlow'
 import { writeAuditLog } from '@/lib/auditLog'
 import { InsufficientCreditsError } from '@/lib/creditLedger'
@@ -34,6 +36,12 @@ const readPositiveNumber = (value: unknown) => {
 
 const getMeshyWebhookSecret = () =>
   (process.env.MESHY_WEBHOOK_TOKEN || process.env.AI_WEBHOOK_SECRET || process.env.PAYLOAD_AI_WEBHOOK_SECRET || '').trim()
+
+const meshyTokenEquals = (provided: string, expected: string) => {
+  const a = Buffer.from(provided)
+  const b = Buffer.from(expected)
+  return a.length === b.length && crypto.timingSafeEqual(a, b)
+}
 
 const getMeshyWebhookToken = (req: PayloadRequest) => {
   const headerToken = req.headers.get('x-meshy-webhook-token') || req.headers.get('x-webhook-token')
@@ -243,7 +251,7 @@ export const meshyWebhookEndpoint = {
       return Response.json({ message: 'Meshy webhook token is not configured.' }, { status: 503 })
     }
 
-    if (getMeshyWebhookToken(req) !== expectedToken) {
+    if (!meshyTokenEquals(getMeshyWebhookToken(req), expectedToken)) {
       writeAuditLog({
         eventType: 'ai.webhook.verification',
         provider: 'meshy',

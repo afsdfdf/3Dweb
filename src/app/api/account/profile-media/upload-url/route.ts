@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 
+import { rejectRateLimitedEndpoint } from '@/lib/endpointRateLimit'
 import { getCachedPayload } from '@/lib/getCachedPayload'
 import { resolvePayloadUserFromHeaders } from '@/lib/payloadAuthFallback'
 import { rejectDisallowedMutationOrigin } from '@/lib/requestSecurity'
@@ -78,6 +79,18 @@ export async function POST(request: NextRequest) {
 
   if (!user) {
     return Response.json({ message: 'Please sign in first.' }, { status: 401 })
+  }
+
+  const rateLimited = await rejectRateLimitedEndpoint({
+    req: {
+      headers: request.headers,
+      user,
+    } as never,
+    scope: 'media-upload-url',
+  })
+
+  if (rateLimited) {
+    return rateLimited
   }
 
   const body = await request.json().catch(() => ({}))

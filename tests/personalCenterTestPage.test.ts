@@ -12,6 +12,22 @@ const componentPath = path.join(
   "account-center",
   "account-center.tsx",
 );
+const componentIndexPath = path.join(
+  rootDir,
+  "src",
+  "components",
+  "account",
+  "account-center",
+  "index.ts",
+);
+const componentCssPath = path.join(
+  rootDir,
+  "src",
+  "components",
+  "account",
+  "account-center",
+  "account-center.module.css",
+);
 const accountRoutePath = path.join(
   rootDir,
   "src",
@@ -48,42 +64,81 @@ const completeRoutePath = path.join(
   "complete",
   "route.ts",
 );
-const componentCssPath = path.join(
-  rootDir,
-  "src",
-  "components",
-  "account",
-  "account-center",
-  "account-center.module.css",
-);
 
-test("account center is promoted to the default account route", () => {
+test("account center keeps fixed UI while restoring personal center sections", () => {
   assert.equal(existsSync(componentPath), true);
   assert.equal(existsSync(accountRoutePath), true);
 
   const source = readFileSync(componentPath, "utf8");
+  const indexSource = readFileSync(componentIndexPath, "utf8");
   const cssSource = readFileSync(componentCssPath, "utf8");
   const accountRouteSource = readFileSync(accountRoutePath, "utf8");
   const frontendSessionSource = readFileSync(frontendSessionPath, "utf8");
 
   assert.match(source, /export function AccountCenter/);
+  assert.match(source, /"points-history"/);
+  assert.match(source, /"profile"/);
+  assert.match(source, /"orders"/);
+  assert.match(source, /"models"/);
+  assert.match(source, /"tasks"/);
+  assert.match(indexSource, /AccountSection/);
   assert.match(source, /AccountCenterData/);
   assert.match(source, /accountData/);
   assert.match(source, /emptyRowsBySection/);
+  assert.match(source, /TopNavigation/);
+  assert.match(source, /BorderComboFrame2/);
+  assert.doesNotMatch(source, /BorderComboFrame2Variant/);
+  assert.match(source, /styles\.accountFrameLogo/);
+  assert.match(source, /styles\.accountFrameDivider/);
+  assert.match(source, /AuthModalStage/);
+  assert.match(source, /resolvePublicNavigationItems/);
+  assert.match(source, /getSupabaseBrowserClient/);
   assert.doesNotMatch(source, /fallbackRowsBySection/);
   assert.doesNotMatch(source, /Dragon rider/);
   assert.doesNotMatch(source, /Northern Watcher/);
   assert.doesNotMatch(source, /Lava Colossus/);
-  assert.doesNotMatch(source, /\b1280\b/);
   assert.doesNotMatch(source, /OrangeMediumActionButton/);
   assert.doesNotMatch(source, /PurpleMediumActionButton/);
-  assert.doesNotMatch(source, /mediumActionSlot/);
-  assert.doesNotMatch(source, /sidebarMediumButton/);
-  assert.match(source, /selectedAvatarFrameUrl/);
-  assert.match(source, /avatarFrameImage/);
-  assert.match(source, /TopNavigation/);
-  assert.match(source, /resolvePublicNavigationItems/);
-  assert.doesNotMatch(source, /realNavigationItems/);
+
+  for (const label of [
+    "PROFILE",
+    "POINTS HISTORY",
+    "ORDERS",
+    "MODEL LIBRARY",
+    "GENERATION TASKS",
+    "Account Name",
+    "Background",
+    "Email used for registration",
+    "Change your password",
+    "Points History",
+    "RECHARGE",
+  ]) {
+    assert.match(source, new RegExp(label));
+  }
+
+  for (const oldDashboardLabel of [
+    "Overview",
+    "Account Settings",
+    "Save Profile",
+    "Save Password",
+  ]) {
+    assert.doesNotMatch(source, new RegExp(oldDashboardLabel));
+  }
+
+  assert.match(source, /useState<EditableField \| null>\(null\)/);
+  assert.match(source, /editingField && editingField !== field/);
+  assert.match(source, /startDisplayNameEdit/);
+  assert.match(source, /saveDisplayName/);
+  assert.match(source, /setStatusMessage\("Saving account name\.\.\."\)/);
+  assert.match(source, /isSavingDisplayName \? "SAVING" : "SAVE"/);
+  assert.match(source, /aria-live="polite"/);
+  assert.match(source, /savePassword/);
+  assert.match(source, /setEditingField\(null\)/);
+  assert.match(source, /if \(!file\) \{[\s\S]*setEditingField\(null\);[\s\S]*return;/);
+  assert.match(
+    source,
+    /setEditingField\(purpose === "avatar" \? "avatar" : "background"\)/,
+  );
   assert.match(source, /fetch\(\s*["']\/api\/account\/profile["']/);
   assert.match(source, /fetch\(\s*["']\/api\/account\/password["']/);
   assert.match(
@@ -94,150 +149,299 @@ test("account center is promoted to the default account route", () => {
     source,
     /fetch\(\s*["']\/api\/account\/profile-media\/complete["']/,
   );
-  assert.match(source, /getSupabaseBrowserClient/);
   assert.match(source, /router\.refresh\(\)/);
-  assert.match(source, /router\.push\("\/workbench"\)/);
   assert.match(source, /router\.push\("\/pricing"\)/);
-  assert.match(source, /downloadCsv/);
-  assert.match(source, /AuthModalStage/);
+  assert.match(source, /openRecordHref/);
+  assert.match(source, /toggleModelVisibility/);
+  assert.match(source, /\/api\/account\/models\/\$\{encodeURIComponent\(row\.id\)\}\/visibility/);
+  assert.match(source, /visibility === "public"/);
+  assert.match(source, /getModelVisibilityLabel/);
+  assert.match(source, /ExternalLink/);
+  assert.match(source, /EyeOff/);
+  assert.match(source, /useSearchParams/);
+  assert.match(source, /normalizeAccountSection\(sectionParam, initialSection\)/);
+  assert.match(source, /account-page-locked/);
+  assert.doesNotMatch(source, /downloadCsv/);
+  assert.doesNotMatch(source, /Export CSV/);
   assert.doesNotMatch(source, /publicAccess:/);
+
+  assert.match(source, /activeSection === tab\.id/);
+  assert.match(source, /section=\$\{encodeURIComponent\(section\)\}/);
+  assert.match(source, /pointsPageSize\s*=\s*10/);
+  assert.match(source, /defaultRecordPageSize\s*=\s*10/);
+  assert.match(source, /minRecordPageSize\s*=\s*6/);
+  assert.match(source, /maxRecordPageSize\s*=\s*14/);
+  assert.match(source, /ResizeObserver/);
+  assert.match(source, /setRecordPageSize/);
+  assert.match(source, /viewport\.clientHeight - fixedHeight/);
+  assert.match(source, /\{pointsPageSize\} Items \/ Page/);
+  assert.match(source, /\{recordPageSize\} Items \/ Page/);
+  assert.match(source, /className=\{styles\.pageIndicator\}/);
+  assert.match(source, /className=\{styles\.pageSizeLabel\}/);
+  assert.match(source, /<td title=\{row\.id\}>\{row\.id\}<\/td>/);
+  assert.match(source, /<td title=\{row\.item\}>\{row\.item\}<\/td>/);
+  assert.match(source, /<td title=\{row\.status\}>\{row\.status\}<\/td>/);
+  assert.match(source, /<td title=\{row\.time\}>\{row\.time\}<\/td>/);
+  assert.doesNotMatch(source, /styles\.currentPage/);
+  assert.doesNotMatch(source, /Array\.from\(\{ length: totalPointPages/);
+  assert.doesNotMatch(source, /Array\.from\(\s*\{ length: totalRecordPages/);
+  assert.doesNotMatch(source, /detail-bottom-icon-1\.png/);
+
+  const chromeIndex = source.indexOf("className={styles.accountChrome}");
+  const bodyIndex = source.indexOf("className={styles.accountBody}");
+  const tabsIndex = source.indexOf("className={styles.secondaryTabs}");
+  const viewportIndex = source.indexOf("className={styles.accountContentViewport}");
+
+  assert.notEqual(chromeIndex, -1);
+  assert.notEqual(bodyIndex, -1);
+  assert.notEqual(tabsIndex, -1);
+  assert.notEqual(viewportIndex, -1);
+  assert.ok(chromeIndex < bodyIndex);
+  assert.ok(bodyIndex < tabsIndex);
+  assert.ok(tabsIndex < viewportIndex);
+
+  const editAvatarIndex = source.indexOf("function editAvatar()");
+  const editBackgroundIndex = source.indexOf("function editBackground()");
+  const returnIndex = source.indexOf("return (", editBackgroundIndex);
+
+  assert.notEqual(editAvatarIndex, -1);
+  assert.notEqual(editBackgroundIndex, -1);
+  assert.notEqual(returnIndex, -1);
+  assert.doesNotMatch(
+    source.slice(editAvatarIndex, returnIndex),
+    /setEditingField\("avatar"\)|setEditingField\("background"\)/,
+  );
+
+  for (const tableHeader of [
+    "NO.",
+    "OPERATION",
+    "POINTS",
+    "DATE",
+  ]) {
+    assert.match(source, new RegExp(tableHeader));
+  }
+
   assert.match(accountRouteSource, /@\/components\/account\/account-center/);
   assert.match(accountRouteSource, /AccountCenter/);
+  assert.match(accountRouteSource, /AccountSection/);
+  assert.match(accountRouteSource, /GenerationTask/);
+  assert.match(accountRouteSource, /PrintOrder/);
+  assert.match(accountRouteSource, /getCurrentUserTasks/);
+  assert.match(accountRouteSource, /getCurrentUserModels/);
+  assert.match(accountRouteSource, /getCurrentUserOrders/);
+  assert.match(accountRouteSource, /visibility:\s*normalizeModelVisibility\(model\.visibility\)/);
+  assert.match(accountRouteSource, /formatModelVisibility\(model\.visibility\)/);
   assert.match(accountRouteSource, /getMarketingSiteSettings/);
   assert.doesNotMatch(accountRouteSource, /getMarketingSiteData/);
   assert.doesNotMatch(accountRouteSource, /PersonalCenterTest/);
   assert.match(accountRouteSource, /requireUser\("\/account"\)/);
   assert.match(accountRouteSource, /initialSection=\{activeSection\}/);
-  assert.match(accountRouteSource, /accountRecordLimit\s*=\s*200/);
-  assert.doesNotMatch(accountRouteSource, /\.slice\(0,\s*10\)/);
-  assert.match(accountRouteSource, /href:\s*`\/model-detail\?id=/);
-  assert.match(accountRouteSource, /href:\s*task\.taskCode/);
   assert.match(accountRouteSource, /fullName:/);
   assert.match(accountRouteSource, /phone:/);
   assert.match(accountRouteSource, /bio:/);
   assert.match(accountRouteSource, /profileVisibility:/);
   assert.match(accountRouteSource, /avatarFrameStyles:/);
   assert.match(frontendSessionSource, /frameImageUrl:\s*getMediaUrl\(style\.frameImage\)/);
-  assert.match(
-    frontendSessionSource,
-    /where:\s*getCurrentUserScopedWhere\("owner", user\.id, options\)/,
-  );
-  assert.match(
-    frontendSessionSource,
-    /collection:\s*"credit-transactions"[\s\S]*where:\s*getCurrentUserScopedWhere\("user", user\.id, options\)/,
-  );
-  assert.doesNotMatch(accountRouteSource, /AccountTestPage/);
 
-  for (const label of [
-    "Overview",
-    "Account Settings",
-    "Orders",
-    "Model Library",
-    "Generation Tasks",
-    "Billing",
-    "Change avatar",
-    "Creator Banner",
-    "Save Profile",
-    "Save Password",
-  ]) {
-    assert.match(source, new RegExp(label));
-  }
-
-  assert.doesNotMatch(source, /Credit Ledger/);
-  assert.doesNotMatch(source, /Payment Data/);
-  assert.doesNotMatch(source, /Classic Account/);
-  assert.doesNotMatch(source, /Main Dashboard/);
-  assert.doesNotMatch(source, /Control Panel/);
-  assert.doesNotMatch(source, /panelHeader/);
-  assert.doesNotMatch(source, /titleBySection/);
-  assert.doesNotMatch(source, /number:/);
-  assert.doesNotMatch(source, /section\.number/);
-  assert.doesNotMatch(source, /Profile Avatar/);
-  assert.doesNotMatch(source, /Change Avatar/);
-  assert.doesNotMatch(source, /\$\{activeConfig\.label\} Details/);
-  assert.doesNotMatch(source, /Orders Details/);
-  assert.match(source, /Order history and fulfillment status/);
-  assert.match(source, /useState\("all"\)/);
-  assert.match(source, /\? "Refresh" : "Apply"/);
-  assert.match(source, /<Link[\s\S]*prefetch=\{false\}[\s\S]*className=\{styles\.tableActionButton\}/);
-  assert.match(source, /visibleRecordRowCount\s*=\s*pagedRows\.length === 0 \? 1 : pagedRows\.length/);
-  assert.match(source, /placeholderRecordRows\s*=\s*Array\.from/);
-  assert.match(source, /pageSize - visibleRecordRowCount/);
-  assert.match(source, /className=\{styles\.recordPlaceholderRow\}/);
-  assert.match(source, /type OverviewMetricCard/);
-  assert.match(source, /overviewMetricCards:\s*OverviewMetricCard\[\]/);
-  assert.doesNotMatch(source, /const metrics =/);
-  assert.doesNotMatch(source, /overviewHighlights/);
-  assert.doesNotMatch(source, /Account asset summary/);
-  assert.doesNotMatch(source, /styles\.assetStrip/);
-  assert.doesNotMatch(source, /label:\s*"Balance"/);
-  assert.doesNotMatch(source, /label:\s*"Active Tasks"/);
-  assert.match(source, /label:\s*"Generation Tasks"[\s\S]*section:\s*"tasks"/);
-  assert.match(source, /label:\s*"Billing"[\s\S]*section:\s*"billing"/);
-  assert.match(source, /onClick=\{\(\) => changeSection\(item\.section\)\}/);
-  assert.match(source, /updateModelVisibility/);
-  assert.match(source, /\/api\/account\/models\/\$\{encodeURIComponent\(row\.id\)\}\/visibility/);
-  assert.match(source, /styles\.visibilitySelectWrap/);
-  assert.match(source, /styles\.visibilitySelect/);
-  assert.match(source, /<option value="public">\s*PUBLIC\s*<\/option>/);
-  assert.match(source, /<option value="private">\s*PRIVATE\s*<\/option>/);
-  assert.match(accountRouteSource, /const visibility = model\.visibility === "public" \? "public" : "private"/);
-  assert.match(accountRouteSource, /visibilitySelectLabel:/);
-  assert.doesNotMatch(cssSource, /scaleX\(/);
-  assert.doesNotMatch(cssSource, /mediumActionSlot/);
   assert.match(cssSource, /\.accountShell/);
+  assert.match(cssSource, /height:\s*calc\(100svh - 60px\)/);
   assert.match(cssSource, /\.boundTopNavigation/);
-  assert.match(cssSource, /--account-readable-text:\s*15px/);
-  assert.match(cssSource, /--account-workspace-min-height:\s*848px/);
-  assert.match(cssSource, /padding:\s*18px var\(--content-page-gutter\) 72px/);
-  assert.match(cssSource, /\.accountHero\s*\{[\s\S]*min-height:\s*112px/);
-  assert.match(cssSource, /\.accountHeroCopy h1\s*\{[\s\S]*font-size:\s*34px/);
-  assert.match(cssSource, /\.accountFrameGrid\s*\{[\s\S]*margin-top:\s*18px/);
-  assert.match(cssSource, /\.accountPanel\s*\{[\s\S]*display:\s*flex/);
-  assert.match(cssSource, /\.panelFrameContent\s*\{[\s\S]*min-height:\s*var\(--account-workspace-min-height\)/);
-  assert.match(cssSource, /\.accountFrameContent\s*\{[\s\S]*min-height:\s*var\(--account-workspace-min-height\)/);
-  assert.match(cssSource, /\.accountFrameContent\s*\{[\s\S]*flex:\s*1 1 auto/);
-  assert.match(cssSource, /\.contentPanel\s*\{[\s\S]*flex:\s*1 1 auto/);
-  assert.match(cssSource, /\.contentPanel\s*\{[\s\S]*min-height:\s*0/);
-  assert.match(cssSource, /\.contentPanelWithSummary\s*\{[\s\S]*min-height:\s*560px/);
-  assert.match(cssSource, /\.contentPanelFull\s*\{[\s\S]*min-height:\s*0/);
-  assert.match(cssSource, /\.pagination\s*\{[\s\S]*margin-top:\s*8px/);
-  assert.doesNotMatch(cssSource, /\.pagination\s*\{[\s\S]*position:\s*absolute/);
-  assert.match(cssSource, /\.metricCardButton\s*\{[\s\S]*cursor:\s*pointer/);
-  assert.match(cssSource, /\.metricCardButton:hover,\s*\.metricCardButton:focus-visible\s*\{/);
-  assert.doesNotMatch(cssSource, /assetStrip/);
-  assert.match(cssSource, /\.overviewGrid \.metricCardButton\s*\{[\s\S]*min-height:\s*84px/);
-  assert.match(cssSource, /\.visibilitySelectWrap\s*\{/);
-  assert.match(cssSource, /\.visibilitySelectWrap::after\s*\{/);
-  assert.match(cssSource, /\.visibilitySelect\s*\{[\s\S]*cursor:\s*pointer/);
-  assert.match(cssSource, /\.visibilitySelectPublic\s*\{/);
-  assert.match(cssSource, /\.visibilitySelect:disabled\s*\{/);
-  assert.match(cssSource, /\.recordPlaceholderRow\s*\{[\s\S]*pointer-events:\s*none/);
-  assert.match(cssSource, /\.recordPlaceholderRow td\s*\{[\s\S]*color:\s*transparent/);
-  assert.match(cssSource, /\.sideMenu button\s*\{[\s\S]*min-height:\s*54px/);
-  assert.match(cssSource, /\.sideMenu strong\s*\{[\s\S]*font-size:\s*15px/);
-  assert.match(cssSource, /\.recordsTable th,\s*\.recordsTable td\s*\{[\s\S]*height:\s*52px/);
-  assert.match(cssSource, /\.recordsTable th,\s*\.recordsTable td\s*\{[\s\S]*font-size:\s*14px/);
-  assert.match(cssSource, /@media \(max-width: 980px\)[\s\S]*--account-workspace-min-height:\s*0/);
-  assert.ok(
-    source.indexOf('label: "Overview"') <
-      source.indexOf('label: "Account Settings"'),
+  assert.match(cssSource, /\.accountFrame/);
+  assert.match(
+    cssSource,
+    /\.accountFrame\s*\{[^}]*background:\s*transparent/,
   );
-  assert.match(source, /useState<SectionId>\(initialSection\)/);
-
-  for (const tableHeader of [
-    "ID",
-    "Type",
-    "Item",
-    "Status",
-    "Amount",
-    "Time",
-  ]) {
-    assert.match(source, new RegExp(tableHeader));
-  }
+  assert.match(
+    cssSource,
+    /\.accountFrame\s*\{[^}]*--upper-height:\s*calc\(112px - var\(--top-height\) - \(var\(--middle-height\) \/ 2\)\)/,
+  );
+  assert.match(
+    cssSource,
+    /\.accountFrame\s*\{[^}]*--lower-height:\s*calc\(100% - var\(--top-height\) - var\(--upper-height\) - var\(--middle-height\) - var\(--bottom-height\)\)/,
+  );
+  assert.match(
+    cssSource,
+    /\.accountFrame > :global\(\[class\*="content"\]\)\s*\{[^}]*padding:\s*0 var\(--right-width\) var\(--bottom-height\) var\(--left-width\)/,
+  );
+  assert.match(
+    cssSource,
+    /\.accountChrome\s*\{[^}]*background:\s*transparent/,
+  );
+  assert.match(
+    cssSource,
+    /\.accountChrome\s*\{[^}]*flex:\s*0 0 112px/,
+  );
+  assert.match(
+    cssSource,
+    /\.accountChrome\s*\{[^}]*min-height:\s*112px/,
+  );
+  assert.match(
+    cssSource,
+    /\.accountChrome\s*\{[^}]*padding:\s*0/,
+  );
+  assert.match(
+    cssSource,
+    /\.accountTitleRow\s*\{[^}]*grid-template-columns:\s*58px 240px minmax\(0, 1fr\)/,
+  );
+  assert.match(
+    cssSource,
+    /\.accountTitleRow\s*\{[^}]*height:\s*112px/,
+  );
+  assert.match(
+    cssSource,
+    /\.accountTitleRow\s*\{[^}]*padding:\s*22px 0 0/,
+  );
+  assert.match(
+    cssSource,
+    /\.accountFrameLogo\s*\{[^}]*top-navigation\/logo\.png/,
+  );
+  assert.match(
+    cssSource,
+    /\.accountFrameLogo\s*\{[^}]*margin-left:\s*-4px/,
+  );
+  assert.match(
+    cssSource,
+    /\.accountFrameLogo\s*\{[^}]*margin-top:\s*4px/,
+  );
+  assert.match(
+    cssSource,
+    /\.accountFrameDivider\s*\{[^}]*margin-top:\s*26px/,
+  );
+  assert.doesNotMatch(cssSource, /\.accountTitleRow > span/);
+  assert.match(
+    cssSource,
+    /\.accountTitleRow\s*\{[^}]*width:\s*100%/,
+  );
+  assert.match(
+    cssSource,
+    /\.accountBody\s*\{[^}]*background:\s*#000000/,
+  );
+  assert.match(
+    cssSource,
+    /\.accountBody\s*\{[^}]*display:\s*flex/,
+  );
+  assert.match(
+    cssSource,
+    /\.accountBody\s*\{[^}]*overflow:\s*hidden/,
+  );
+  assert.match(
+    cssSource,
+    /\.accountContentViewport\s*\{[^}]*flex:\s*1 1 auto/,
+  );
+  assert.doesNotMatch(
+    cssSource,
+    /\.accountFrame::before/,
+  );
+  assert.doesNotMatch(
+    cssSource,
+    /\[class\*="middle11"\]/,
+  );
+  assert.doesNotMatch(
+    cssSource,
+    /\.accountFrame\s*\{[^}]*background:\s*#000000/,
+  );
+  assert.match(cssSource, /banner-label-bg\.png/);
+  assert.match(cssSource, /width:\s*240px/);
+  assert.doesNotMatch(cssSource, /linear-gradient\(90deg, #8f5639/);
+  assert.match(cssSource, /account-page-locked/);
+  assert.match(cssSource, /toggle-bar-dark-alt\.png/);
+  assert.match(cssSource, /--account-tab-border/);
+  assert.match(
+    cssSource,
+    /\.secondaryTabs button\s*\{[\s\S]*border:\s*1px solid var\(--account-tab-border\)/,
+  );
+  assert.match(cssSource, /button-dark-small-normal\.png/);
+  assert.match(cssSource, /button-dark-small-hover\.png/);
+  assert.match(cssSource, /button-dark-small-pushed\.png/);
+  assert.doesNotMatch(cssSource, /button-purple-small-normal\.png/);
+  assert.doesNotMatch(cssSource, /button-purple-small-hover\.png/);
+  assert.doesNotMatch(cssSource, /button-purple-small-pushed\.png/);
+  assert.match(cssSource, /slate-normal\.png/);
+  assert.match(cssSource, /slate-hover\.png/);
+  assert.match(cssSource, /slate-pressed\.png/);
+  assert.match(cssSource, /gold-normal\.png/);
+  assert.match(cssSource, /gold-hover\.png/);
+  assert.match(cssSource, /gold-pressed\.png/);
+  assert.match(cssSource, /account-balance-plate-wide@2x\.png/);
+  assert.match(
+    cssSource,
+    /\.balancePlate\s*\{[^}]*background:\s*url\("\/ui-lab\/account-center\/account-balance-plate-wide@2x\.png"\) left center \/ 100% 100% no-repeat/,
+  );
+  assert.match(cssSource, /\.balancePlate\s*\{[^}]*width:\s*620px/);
+  assert.match(cssSource, /\.balancePlate\s*\{[^}]*max-width:\s*620px/);
+  assert.doesNotMatch(cssSource, /\.balancePlate\s*\{[^}]*width:\s*340px/);
+  assert.doesNotMatch(cssSource, /cart-subtotal-strip@2x\.png/);
+  assert.doesNotMatch(cssSource, /--account-subtotal-strip-reference/);
+  assert.doesNotMatch(cssSource, /\.balancePlate::before/);
+  assert.doesNotMatch(cssSource, /\.balancePlate::after/);
+  assert.doesNotMatch(cssSource, /\.balancePlate img/);
+  assert.match(cssSource, /--account-action-border/);
+  assert.match(
+    cssSource,
+    /\.editButton,\s*\.iconButton,\s*\.backgroundEditButton\s*\{[\s\S]*border:\s*1px solid var\(--account-action-border\)/,
+  );
+  assert.match(
+    cssSource,
+    /\.editButton::before,\s*\.iconButton::before,\s*\.backgroundEditButton::before\s*\{[\s\S]*content:\s*none/,
+  );
+  assert.doesNotMatch(cssSource, /background:\s*linear-gradient\(180deg, #ffe2a8/);
+  assert.match(cssSource, /\.accountTitleRow/);
+  assert.match(cssSource, /\.secondaryTabs/);
+  assert.match(cssSource, /\.profilePane/);
+  assert.match(cssSource, /\.pointsPane/);
+  assert.match(cssSource, /\.recordsPane/);
+  assert.match(cssSource, /\.balancePlate/);
+  assert.match(cssSource, /\.pointsTable/);
+  assert.match(cssSource, /\.recordsTable/);
+  assert.match(
+    cssSource,
+    /\.pointsTable th,\s*\.pointsTable td,\s*\.recordsTable th,\s*\.recordsTable td\s*\{[\s\S]*overflow:\s*hidden/,
+  );
+  assert.match(
+    cssSource,
+    /\.pointsTable th,\s*\.pointsTable td,\s*\.recordsTable th,\s*\.recordsTable td\s*\{[\s\S]*text-overflow:\s*ellipsis/,
+  );
+  assert.match(
+    cssSource,
+    /\.recordsTable th:nth-child\(1\),\s*\.recordsTable td:nth-child\(1\)\s*\{[\s\S]*width:\s*250px/,
+  );
+  assert.match(cssSource, /\.recordsHeader/);
+  assert.match(cssSource, /\.visibilityToggle/);
+  assert.match(cssSource, /\.visibilityPublic/);
+  assert.match(cssSource, /\.visibilityHidden/);
+  assert.match(cssSource, /\.tableActionButton/);
+  assert.match(cssSource, /\.pageIndicator/);
+  assert.match(cssSource, /\.pageSizeLabel/);
+  assert.doesNotMatch(cssSource, /\.currentPage/);
+  assert.doesNotMatch(cssSource, /\.pageSizeButton/);
+  assert.doesNotMatch(cssSource, /\.pagination span::before/);
+  assert.doesNotMatch(cssSource, /\.pagination button::before/);
+  assert.match(
+    cssSource,
+    /@media \(min-width: 981px\) and \(max-height: 980px\)/,
+  );
+  assert.match(
+    cssSource,
+    /@media \(min-width: 981px\) and \(max-height: 980px\)[\s\S]*\.accountChrome\s*\{[\s\S]*flex-basis:\s*112px/,
+  );
+  assert.match(
+    cssSource,
+    /@media \(min-width: 981px\) and \(max-height: 980px\)[\s\S]*\.accountChrome\s*\{[\s\S]*min-height:\s*112px/,
+  );
+  assert.match(
+    cssSource,
+    /@media \(min-width: 981px\) and \(max-height: 980px\)[\s\S]*\.pointsTable th,\s*\.pointsTable td,\s*\.recordsTable th,\s*\.recordsTable td\s*\{[\s\S]*height:\s*37px/,
+  );
+  assert.match(
+    cssSource,
+    /@media \(min-width: 981px\) and \(max-height: 980px\)[\s\S]*\.balancePlate\s*\{[\s\S]*height:\s*88px/,
+  );
+  assert.match(cssSource, /\.placeholderRow/);
+  assert.match(cssSource, /@media \(max-width: 980px\)/);
+  assert.doesNotMatch(cssSource, /mediumActionSlot/);
 });
 
-test("account route only loads full records for the active account section", () => {
+test("account route loads restored personal center record sources", () => {
   const accountRouteSource = readFileSync(accountRoutePath, "utf8");
   const frontendSessionSource = readFileSync(frontendSessionPath, "utf8");
   const marketingSource = readFileSync(
@@ -249,62 +453,38 @@ test("account route only loads full records for the active account section", () 
     accountRouteSource,
     /const activeSection = getInitialSection\(query\.section\)/,
   );
+  assert.match(accountRouteSource, /const accountSections = \[/);
+  assert.match(accountRouteSource, /"profile"/);
+  assert.match(accountRouteSource, /"points-history"/);
+  assert.match(accountRouteSource, /"orders"/);
+  assert.match(accountRouteSource, /"models"/);
+  assert.match(accountRouteSource, /"tasks"/);
+  assert.match(accountRouteSource, /accountRecordLimit\s*=\s*200/);
   assert.match(accountRouteSource, /accountSummaryLimit\s*=\s*1/);
-
-  for (const section of ["billing", "models", "orders", "tasks"]) {
-    assert.match(
-      accountRouteSource,
-      new RegExp(
-        `${section}:\\s*activeSection === "${section}"\\s*\\?\\s*accountRecordLimit\\s*:\\s*accountSummaryLimit`,
-      ),
-    );
-  }
-
-  assert.doesNotMatch(
+  assert.match(accountRouteSource, /if \(value === "billing"\) return "points-history"/);
+  assert.match(accountRouteSource, /if \(value === "settings" \|\| value === "overview"\) return "profile"/);
+  assert.match(
     accountRouteSource,
-    /getCurrentUserCreditTransactions\(\{ limit: accountRecordLimit \}\)[\s\S]*getCurrentUserTasks\(\{ limit: accountRecordLimit \}\)[\s\S]*getCurrentUserModels\(\{ limit: accountRecordLimit \}\)[\s\S]*getCurrentUserOrders\(\{ limit: accountRecordLimit \}\)/,
+    /activeSection === "points-history"[\s\S]*\? accountRecordLimit[\s\S]*: accountSummaryLimit/,
   );
   assert.match(
     accountRouteSource,
-    /getCurrentUserTasks\(\{\s*depth: 0,\s*limit: accountSummaryLimit,[\s\S]*select: accountTaskSelect,[\s\S]*status: \["queued", "processing"\],\s*\}\)/,
+    /getCurrentUserCreditTransactions\(\{[\s\S]*depth: 0,[\s\S]*limit: billingLimit,[\s\S]*select: accountBillingSelect/,
   );
-  assert.match(
-    accountRouteSource,
-    /getCurrentUserOrders\(\{\s*depth: 0,\s*limit: accountSummaryLimit,[\s\S]*select: accountOrderSelect,[\s\S]*status: \["paid", "in-production", "shipped"\],\s*\}\)/,
-  );
-  assert.match(frontendSessionSource, /status\?: string \| string\[\]/);
+  assert.match(accountRouteSource, /getCurrentUserTasks\(\{ limit: accountRecordLimit \}\)/);
+  assert.match(accountRouteSource, /getCurrentUserModels\(\{ limit: accountRecordLimit \}\)/);
+  assert.match(accountRouteSource, /getCurrentUserOrders\(\{ limit: accountRecordLimit \}\)/);
+  assert.match(accountRouteSource, /rows:\s*\{[\s\S]*billing:/);
+  assert.match(accountRouteSource, /models:\s*models\.docs\.map/);
+  assert.match(accountRouteSource, /orders:\s*orders\.docs\.map/);
+  assert.match(accountRouteSource, /tasks:\s*tasks\.docs\.map/);
+  assert.match(accountRouteSource, /\/model-detail\?id=/);
+  assert.match(accountRouteSource, /\/results\/\$\{encodeURIComponent/);
+  assert.match(accountRouteSource, /transactionTypeLabels/);
+  assert.match(accountRouteSource, /Model Generate/);
   assert.match(frontendSessionSource, /depth\?: number/);
   assert.match(frontendSessionSource, /select\?: Record<string, true>/);
-  assert.match(frontendSessionSource, /depth: options\.depth \?\? 1/);
-  assert.match(frontendSessionSource, /select: options\.select/);
-  assert.match(frontendSessionSource, /status: \{ in: options\.status \}/);
   assert.match(marketingSource, /export async function getMarketingSiteSettings/);
-
-  for (const queryName of [
-    "getCurrentUserCreditTransactions",
-    "getCurrentUserTasks",
-    "getCurrentUserModels",
-    "getCurrentUserOrders",
-  ]) {
-    assert.match(
-      accountRouteSource,
-      new RegExp(`${queryName}\\(\\{[\\s\\S]*depth: 0`),
-    );
-  }
-
-  for (const field of [
-    "accountBillingSelect",
-    "accountModelSelect",
-    "accountOrderSelect",
-    "accountTaskSelect",
-  ]) {
-    assert.match(accountRouteSource, new RegExp(`${field}: Record<string, true>`));
-  }
-
-  assert.match(accountRouteSource, /select: accountTaskSelect/);
-  assert.match(accountRouteSource, /select: accountBillingSelect/);
-  assert.match(accountRouteSource, /select: accountModelSelect/);
-  assert.match(accountRouteSource, /select: accountOrderSelect/);
 });
 
 test("profile media upload creates media only after Supabase upload completion", () => {

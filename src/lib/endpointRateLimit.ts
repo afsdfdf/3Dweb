@@ -14,6 +14,7 @@ type RateLimitScope =
   | 'credit-checkout'
   | 'credit-sync'
   | 'engagement-view-write'
+  | 'media-upload-complete'
   | 'media-upload-url'
   | 'model-optimization'
   | 'social-comment-write'
@@ -95,6 +96,12 @@ const scopeConfigs: Record<RateLimitScope, ScopeConfig> = {
     fallbackWindowMs: 10 * 60 * 1000,
     limitEnv: 'ENGAGEMENT_VIEW_WRITE_RATE_LIMIT_MAX',
     windowEnv: 'ENGAGEMENT_VIEW_WRITE_RATE_LIMIT_WINDOW_MS',
+  },
+  'media-upload-complete': {
+    fallbackLimit: 30,
+    fallbackWindowMs: 10 * 60 * 1000,
+    limitEnv: 'MEDIA_UPLOAD_COMPLETE_RATE_LIMIT_MAX',
+    windowEnv: 'MEDIA_UPLOAD_COMPLETE_RATE_LIMIT_WINDOW_MS',
   },
   'media-upload-url': {
     fallbackLimit: 30,
@@ -187,6 +194,7 @@ const scopeMessages: Record<RateLimitScope, string> = {
   'credit-checkout': 'Too many credit checkout attempts. Please try again later.',
   'credit-sync': 'Too many credit purchase sync requests. Please wait a moment and retry.',
   'engagement-view-write': 'Too many view events. Please try again later.',
+  'media-upload-complete': 'Too many media upload completion requests. Please try again later.',
   'media-upload-url': 'Too many media upload requests. Please try again later.',
   'model-optimization': 'Too many model optimization requests. Please try again later.',
   'social-comment-write': 'Too many comment actions. Please try again later.',

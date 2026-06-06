@@ -2,6 +2,8 @@ import { getCachedPayload } from '@/lib/getCachedPayload'
 import { getMediaAccessURL } from '@/lib/mediaAccessURL'
 import { getPublicBundleList, type PublicBundleCard, type PublicBundleListResult } from '@/lib/bundleService'
 import type { Where } from 'payload'
+import { getFollowCreatorCardDataForOwner } from '@/components/ui-lab/follow-creator-card/follow-creator-card-data'
+import type { FollowCreatorCardData } from '@/components/ui-lab/follow-creator-card'
 
 import { getMarketingSiteData } from '../_lib/marketing'
 import { defaultSiteSettings, type FooterContent } from '../_lib/marketing-content'
@@ -91,6 +93,7 @@ export type HomeInspirationItem = {
   alt: string
   authorName: string
   avatarSrc?: null | string
+  creatorCard?: FollowCreatorCardData | null
   favoritesLabel: string
   filter: HomeInspirationFilter
   href?: null | string
@@ -121,10 +124,17 @@ export type HomeData = {
   inspirationSearchQuery: string
   navUser: {
     avatarUrl?: null | string
+    bio?: null | string
     credits: number
+    creditsBalance?: null | number
     displayName: string
     email?: null | string
+    followersCount?: null | number
+    followingCount?: null | number
+    id?: number | string
+    modelsCount?: null | number
     name: string
+    role?: null | string
   } | null
   shelfItems: HomeShelfItem[]
 }
@@ -547,6 +557,7 @@ async function getPublicModelItems(
   })
 
   const ownerProfileCache = new Map<number, ReturnType<typeof getPublicOwnerProfile>>()
+  const creatorCardCache = new Map<number, ReturnType<typeof getFollowCreatorCardDataForOwner>>()
   const getCachedOwnerProfile = (owner: unknown) => {
     const ownerId = getRelationId(owner)
     if (!ownerId) return Promise.resolve(null)
@@ -558,17 +569,32 @@ async function getPublicModelItems(
     ownerProfileCache.set(ownerId, next)
     return next
   }
+  const getCachedCreatorCard = (owner: unknown) => {
+    const ownerId = getRelationId(owner)
+    if (!ownerId) return Promise.resolve(null)
+
+    const cached = creatorCardCache.get(ownerId)
+    if (cached) return cached
+
+    const next = getFollowCreatorCardDataForOwner(payload, owner)
+    creatorCardCache.set(ownerId, next)
+    return next
+  }
 
   const items = await Promise.all(
     (result.docs as ModelLike[]).map(async (model) => {
       const title = typeof model.title === 'string' && model.title.trim() ? model.title.trim() : `Model ${model.id}`
-      const ownerProfile = await getCachedOwnerProfile(model.owner)
+      const [ownerProfile, creatorCard] = await Promise.all([
+        getCachedOwnerProfile(model.owner),
+        getCachedCreatorCard(model.owner),
+      ])
 
       return {
         ageLabel: getAgeLabel(model.updatedAt || model.createdAt),
         alt: title,
         authorName: ownerProfile?.name ?? getOwnerName(model.owner),
         avatarSrc: ownerProfile?.avatarSrc ?? null,
+        creatorCard,
         favoritesLabel: compactCount(model.favoritesCount),
         filter: getModelInspirationFilter(model),
         href: model.id ? `/model-detail?id=${encodeURIComponent(String(model.id))}` : null,
@@ -671,10 +697,17 @@ export async function getHomeData(args: HomeDataArgs = {}): Promise<HomeData> {
       navUser: navUser
         ? {
             avatarUrl: navUser.avatarUrl,
+            bio: navUser.bio,
             credits: navUser.creditsBalance,
+            creditsBalance: navUser.creditsBalance,
             displayName: navUser.displayName,
             email: navUser.email,
+            followersCount: navUser.followersCount,
+            followingCount: navUser.followingCount,
+            id: navUser.id,
+            modelsCount: navUser.modelsCount,
             name: navUser.displayName,
+            role: navUser.role,
           }
         : null,
       shelfItems:

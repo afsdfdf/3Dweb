@@ -332,6 +332,10 @@ export const enum_shopify_payments_status = pgEnum(
   "enum_shopify_payments_status",
   ["pending", "paid", "failed", "refunded"],
 );
+export const enum_site_settings_footer_social_links_platform = pgEnum(
+  "enum_site_settings_footer_social_links_platform",
+  ["x", "facebook", "instagram", "youtube", "discord", "tiktok", "website"],
+);
 export const enum_site_settings_payment_providers_subscription_provider =
   pgEnum("enum_site_settings_payment_providers_subscription_provider", [
     "stripe",
@@ -3020,6 +3024,31 @@ export const site_settings_footer_link_groups = pgTable(
   ],
 );
 
+export const site_settings_footer_social_links = pgTable(
+  "site_settings_footer_social_links",
+  {
+    _order: integer("_order").notNull(),
+    _parentID: integer("_parent_id").notNull(),
+    id: varchar("id").primaryKey(),
+    platform:
+      enum_site_settings_footer_social_links_platform("platform").default("x"),
+    label: varchar("label").notNull(),
+    href: varchar("href").notNull(),
+    enabled: boolean("enabled").default(true),
+  },
+  (columns) => [
+    index("site_settings_footer_social_links_order_idx").on(columns._order),
+    index("site_settings_footer_social_links_parent_id_idx").on(
+      columns._parentID,
+    ),
+    foreignKey({
+      columns: [columns["_parentID"]],
+      foreignColumns: [site_settings.id],
+      name: "site_settings_footer_social_links_parent_id_fk",
+    }).onDelete("cascade"),
+  ],
+);
+
 export const site_settings_subscription_plans_starter_features = pgTable(
   "site_settings_subscription_plans_starter_features",
   {
@@ -5208,6 +5237,16 @@ export const relations_site_settings_footer_link_groups = relations(
     }),
   }),
 );
+export const relations_site_settings_footer_social_links = relations(
+  site_settings_footer_social_links,
+  ({ one }) => ({
+    _parentID: one(site_settings, {
+      fields: [site_settings_footer_social_links._parentID],
+      references: [site_settings.id],
+      relationName: "footer_socialLinks",
+    }),
+  }),
+);
 export const relations_site_settings_subscription_plans_starter_features =
   relations(site_settings_subscription_plans_starter_features, ({ one }) => ({
     _parentID: one(site_settings, {
@@ -5255,6 +5294,9 @@ export const relations_site_settings = relations(
     }),
     footer_linkGroups: many(site_settings_footer_link_groups, {
       relationName: "footer_linkGroups",
+    }),
+    footer_socialLinks: many(site_settings_footer_social_links, {
+      relationName: "footer_socialLinks",
     }),
     subscriptionPlans_starter_features: many(
       site_settings_subscription_plans_starter_features,
@@ -5606,6 +5648,7 @@ type DatabaseSchema = {
   enum_print_orders_payment_status: typeof enum_print_orders_payment_status;
   enum_shopify_payments_payment_type: typeof enum_shopify_payments_payment_type;
   enum_shopify_payments_status: typeof enum_shopify_payments_status;
+  enum_site_settings_footer_social_links_platform: typeof enum_site_settings_footer_social_links_platform;
   enum_site_settings_payment_providers_subscription_provider: typeof enum_site_settings_payment_providers_subscription_provider;
   enum_site_settings_payment_providers_order_provider: typeof enum_site_settings_payment_providers_order_provider;
   enum_homepage_content_featured_works_tone: typeof enum_homepage_content_featured_works_tone;
@@ -5677,6 +5720,7 @@ type DatabaseSchema = {
   site_settings_header_nav: typeof site_settings_header_nav;
   site_settings_footer_link_groups_links: typeof site_settings_footer_link_groups_links;
   site_settings_footer_link_groups: typeof site_settings_footer_link_groups;
+  site_settings_footer_social_links: typeof site_settings_footer_social_links;
   site_settings_subscription_plans_starter_features: typeof site_settings_subscription_plans_starter_features;
   site_settings_subscription_plans_pro_features: typeof site_settings_subscription_plans_pro_features;
   site_settings_subscription_plans_studio_features: typeof site_settings_subscription_plans_studio_features;
@@ -5760,6 +5804,7 @@ type DatabaseSchema = {
   relations_site_settings_header_nav: typeof relations_site_settings_header_nav;
   relations_site_settings_footer_link_groups_links: typeof relations_site_settings_footer_link_groups_links;
   relations_site_settings_footer_link_groups: typeof relations_site_settings_footer_link_groups;
+  relations_site_settings_footer_social_links: typeof relations_site_settings_footer_social_links;
   relations_site_settings_subscription_plans_starter_features: typeof relations_site_settings_subscription_plans_starter_features;
   relations_site_settings_subscription_plans_pro_features: typeof relations_site_settings_subscription_plans_pro_features;
   relations_site_settings_subscription_plans_studio_features: typeof relations_site_settings_subscription_plans_studio_features;

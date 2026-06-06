@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 import { useAuthModal } from "@/components/auth/AuthModalProvider";
+import { ButtonBoxFrame } from "@/components/ui-lab/button-box-frame";
 import { publicNavigationItems } from "@/lib/publicNavigation";
 
 import styles from "./top-navigation.module.css";
@@ -21,11 +22,17 @@ export type TopNavigationItem = {
 
 export type TopNavigationUser = {
   avatarUrl?: null | string;
+  bio?: null | string;
   credits?: null | number;
   creditsBalance?: null | number;
   displayName?: null | string;
   email?: null | string;
+  followersCount?: null | number;
+  followingCount?: null | number;
+  id?: number | string;
+  modelsCount?: null | number;
   name?: null | string;
+  role?: null | string;
 };
 
 type TopNavigationProps = {
@@ -61,6 +68,13 @@ type NotificationsResponse = {
   unreadCount?: number;
 };
 
+type NotificationTab = "message" | "notification";
+
+const notificationTabs: Array<{ id: NotificationTab; label: string }> = [
+  { id: "message", label: "Message" },
+  { id: "notification", label: "Notification" },
+];
+
 const formatNotificationTime = (value: string) => {
   const timestamp = new Date(value).getTime();
   if (!Number.isFinite(timestamp)) return "";
@@ -76,9 +90,15 @@ const formatNotificationTime = (value: string) => {
   }).format(new Date(timestamp));
 };
 
+const isMessageNotification = (item: NotificationItem) => {
+  const searchable = `${item.type} ${item.title}`.toLowerCase();
+  return searchable.includes("message") || searchable.includes("comment") || searchable.includes("reply");
+};
+
 function NotificationBellButton({ authenticated }: { authenticated: boolean }) {
   const { openAuthModal } = useAuthModal();
   const panelRef = useRef<HTMLDivElement>(null);
+  const [activeTab, setActiveTab] = useState<NotificationTab>("message");
   const [isOpen, setIsOpen] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -157,15 +177,6 @@ function NotificationBellButton({ authenticated }: { authenticated: boolean }) {
     }).catch(() => undefined);
   }, []);
 
-  const markAllRead = useCallback(async () => {
-    setNotifications((current) => current.map((item) => ({ ...item, readAt: item.readAt || new Date().toISOString() })));
-    setUnreadCount(0);
-
-    await fetch("/api/account/notifications/read-all", {
-      method: "POST",
-    }).catch(() => undefined);
-  }, []);
-
   const handleToggle = () => {
     if (!authenticated) {
       openAuthModal("login");
@@ -180,6 +191,15 @@ function NotificationBellButton({ authenticated }: { authenticated: boolean }) {
 
   const visibleCount = unreadCount > 99 ? "99+" : String(unreadCount);
   const hasUnread = unreadCount > 0;
+  const messageNotifications = notifications.filter(isMessageNotification);
+  const noticeNotifications = notifications.filter((item) => !isMessageNotification(item));
+  const visibleNotifications = activeTab === "message" ? messageNotifications : noticeNotifications;
+  const unreadMessages = messageNotifications.filter((item) => !item.readAt).length;
+  const unreadNotices = noticeNotifications.filter((item) => !item.readAt).length;
+  const tabUnreadCount = {
+    message: unreadMessages,
+    notification: unreadNotices,
+  } satisfies Record<NotificationTab, number>;
 
   return (
     <div className={styles.notificationBellWrap} ref={panelRef}>
@@ -204,87 +224,94 @@ function NotificationBellButton({ authenticated }: { authenticated: boolean }) {
       </button>
 
       {isOpen ? (
-        <div aria-label="Notifications" className={styles.notificationPopover} role="dialog">
-          <div className={styles.notificationHeader}>
-            <div>
-              <span>Notifications</span>
-              <strong>{hasUnread ? `${unreadCount} unread` : "All caught up"}</strong>
+        <ButtonBoxFrame
+          className={styles.notificationPopover}
+          contentClassName={styles.notificationPopoverContent}
+          style={{ height: 676, width: 320 }}
+        >
+          <div aria-label="Notifications" className={styles.notificationPanel} role="dialog">
+            <div className={styles.notificationTabBar} role="tablist" aria-label="Notification categories">
+              {notificationTabs.map((tab) => {
+                const isActive = activeTab === tab.id;
+                const showUnreadDot = tabUnreadCount[tab.id] > 0;
+
+                return (
+                  <button
+                    aria-selected={isActive}
+                    className={isActive ? styles.notificationTabActive : styles.notificationTab}
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    role="tab"
+                    type="button"
+                  >
+                    <span>{tab.label}</span>
+                    {showUnreadDot ? <i aria-hidden="true" /> : null}
+                  </button>
+                );
+              })}
             </div>
-            {hasUnread ? (
-              <button className={styles.notificationMarkAll} onClick={() => void markAllRead()} type="button">
-                Mark all read
-              </button>
-            ) : null}
+
+            <div className={styles.notificationList}>
+              {isLoading ? <div className={styles.notificationState}>Loading...</div> : null}
+              {!isLoading && loadError ? <div className={styles.notificationState}>{loadError}</div> : null}
+              {!isLoading && !loadError && visibleNotifications.length === 0 ? (
+                <div className={styles.notificationEmpty}>
+                  <span>{activeTab === "message" ? "No messages" : "No notices"}</span>
+                </div>
+              ) : null}
+              {!isLoading && !loadError
+                ? visibleNotifications.map((item) => {
+                    const itemClass = [
+                      styles.notificationItem,
+                      item.readAt ? styles.notificationItemRead : styles.notificationItemUnread,
+                    ]
+                      .filter(Boolean)
+                      .join(" ");
+
+                    const action = item.href ? (
+                      <Link
+                        className={styles.notificationGoButton}
+                        href={item.href}
+                        onClick={() => {
+                          if (!item.readAt) void markNotificationRead(item.id);
+                          setIsOpen(false);
+                        }}
+                      >
+                        <span>Go Now</span>
+                        <b aria-hidden="true" />
+                      </Link>
+                    ) : (
+                      <button
+                        className={styles.notificationGoButton}
+                        onClick={() => {
+                          if (!item.readAt) void markNotificationRead(item.id);
+                        }}
+                        type="button"
+                      >
+                        <span>Go Now</span>
+                        <b aria-hidden="true" />
+                      </button>
+                    );
+
+                    return (
+                      <article className={itemClass} key={item.id}>
+                        <span className={styles.notificationStatusDot} aria-hidden="true" />
+                        <div className={styles.notificationText}>
+                          <header>
+                            <strong>{item.title}</strong>
+                            <em>{formatNotificationTime(item.createdAt)}</em>
+                          </header>
+                          <p>{item.body}</p>
+                          {action}
+                        </div>
+                      </article>
+                    );
+                  })
+                : null}
+            </div>
+
           </div>
-
-          <div className={styles.notificationList}>
-            {isLoading ? <div className={styles.notificationState}>Loading notifications...</div> : null}
-            {!isLoading && loadError ? <div className={styles.notificationState}>{loadError}</div> : null}
-            {!isLoading && !loadError && notifications.length === 0 ? (
-              <div className={styles.notificationEmpty}>
-                <span>No new notices</span>
-                <p>Generation results, credit updates, and order changes will appear here.</p>
-              </div>
-            ) : null}
-            {!isLoading && !loadError
-              ? notifications.map((item) => {
-                  const severityClass =
-                    item.severity === "success"
-                      ? styles.notificationSeveritySuccess
-                      : item.severity === "warning"
-                        ? styles.notificationSeverityWarning
-                        : item.severity === "critical"
-                          ? styles.notificationSeverityCritical
-                          : styles.notificationSeverityInfo;
-                  const itemClass = [
-                    styles.notificationItem,
-                    item.readAt ? styles.notificationItemRead : styles.notificationItemUnread,
-                  ]
-                    .filter(Boolean)
-                    .join(" ");
-                  const content = (
-                    <>
-                      <span className={`${styles.notificationStatusDot} ${severityClass}`} aria-hidden="true" />
-                      <span className={styles.notificationText}>
-                        <strong>{item.title}</strong>
-                        <span>{item.body}</span>
-                        <em>{formatNotificationTime(item.createdAt)}</em>
-                      </span>
-                    </>
-                  );
-
-                  return item.href ? (
-                    <Link
-                      className={itemClass}
-                      href={item.href}
-                      key={item.id}
-                      onClick={() => {
-                        if (!item.readAt) void markNotificationRead(item.id);
-                        setIsOpen(false);
-                      }}
-                    >
-                      {content}
-                    </Link>
-                  ) : (
-                    <button
-                      className={itemClass}
-                      key={item.id}
-                      onClick={() => {
-                        if (!item.readAt) void markNotificationRead(item.id);
-                      }}
-                      type="button"
-                    >
-                      {content}
-                    </button>
-                  );
-                })
-              : null}
-          </div>
-
-          <Link className={styles.notificationFooter} href="/account" onClick={() => setIsOpen(false)}>
-            View account activity
-          </Link>
-        </div>
+        </ButtonBoxFrame>
       ) : null}
     </div>
   );
@@ -292,7 +319,7 @@ function NotificationBellButton({ authenticated }: { authenticated: boolean }) {
 
 function CartIconButton() {
   return (
-    <Link aria-label="Orders" className={styles.cartIconButton} href="/account?section=orders">
+    <Link aria-label="Shopping cart" className={styles.cartIconButton} href="/cart">
       <span className={styles.navActionIcon} aria-hidden="true">
         <img alt="" className={styles.navActionIconNormal} decoding="async" src={`${assetBase}/icon-cart-line.png`} />
         <img alt="" className={styles.navActionIconHover} decoding="async" src={`${assetBase}/icon-cart-line-emphasis.png`} />

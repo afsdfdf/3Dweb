@@ -3,6 +3,7 @@ export * from "./border-combo-frame-1";
 export * from "./border-combo-frame-2";
 export * from "./button-box-frame";
 export * from "./button-box-frame-11";
+export * from "./follow-creator-card";
 export * from "./hero-product-ribbon";
 export * from "./formal-auth-collections";
 export * from "./module-common-frame";

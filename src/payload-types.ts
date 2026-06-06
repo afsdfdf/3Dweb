@@ -1851,7 +1851,7 @@ export interface SiteSetting {
     directionTitle?: string | null;
     directionText?: string | null;
     /**
-     * The public footer displays up to four groups. Keep labels short so the footer stays readable on mobile.
+     * The public footer stores up to four groups and displays the first two in the compact homepage layout. Keep labels short so the footer stays readable on mobile.
      */
     linkGroups?:
       | {
@@ -1865,6 +1865,18 @@ export interface SiteSetting {
                 id?: string | null;
               }[]
             | null;
+          id?: string | null;
+        }[]
+      | null;
+    /**
+     * Controls the public footer social/media icon links. Disable a row to keep it configured but hidden.
+     */
+    socialLinks?:
+      | {
+          platform?: ('x' | 'facebook' | 'instagram' | 'youtube' | 'discord' | 'tiktok' | 'website') | null;
+          label: string;
+          href: string;
+          enabled?: boolean | null;
           id?: string | null;
         }[]
       | null;
@@ -2534,6 +2546,15 @@ export interface SiteSettingsSelect<T extends boolean = true> {
                     href?: T;
                     id?: T;
                   };
+              id?: T;
+            };
+        socialLinks?:
+          | T
+          | {
+              platform?: T;
+              label?: T;
+              href?: T;
+              enabled?: T;
               id?: T;
             };
       };

@@ -1,146 +1,356 @@
 .menuAnchor {
+  pointer-events: auto;
   position: absolute;
-  z-index: 40;
-  top: 63px;
-  right: 16px;
-  width: 218px;
+  right: 0;
+  top: 60px;
+  width: 320px;
+  z-index: 55;
+}
+
+.profileMenuReferenceFrame {
+  --frame-border-width: 32px;
+  filter: drop-shadow(0 24px 38px rgba(0, 0, 0, 0.48));
   pointer-events: auto;
 }
 
-.menuFrame {
-  width: 218px;
-  min-height: 194px;
-  background: linear-gradient(180deg, rgba(28, 28, 33, 0.98), rgba(14, 14, 17, 0.98));
-  filter: drop-shadow(0 18px 34px rgba(0, 0, 0, 0.38));
-}
-
-.menuFrame > div {
+.profileMenuReferenceFrame > div {
   pointer-events: auto;
 }
 
-.menuContent {
-  padding: 15px 14px 13px;
-}
-
-.userSummary {
-  display: grid;
-  grid-template-columns: 38px minmax(0, 1fr);
-  gap: 10px;
-  align-items: center;
-}
-
-.avatarRing {
-  position: relative;
-  display: block;
-  width: 38px;
-  height: 38px;
-  overflow: hidden;
-  border: 1px solid rgba(241, 209, 137, 0.72);
-  border-radius: 999px;
-  background: #26252a;
-  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.46);
-}
-
-.avatarRing img {
-  display: block;
-  width: 100%;
+.profileMenuReferenceFrameContent {
   height: 100%;
+  min-height: 0;
+  overflow: visible;
+  padding: 13px 9px 5px !important;
+  z-index: 5;
+}
+
+.profileMenuReferencePanel {
+  width: 302px;
+  height: 396px;
+  background: rgba(18, 17, 20, 0);
+  box-shadow: inset 0px 2px 5px 0px #000000;
+  border: 1px solid;
+  border-image: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.1)) 1 1;
+  box-sizing: border-box;
+  color: #ffffff;
+  position: relative;
+}
+
+.profileMenuHero {
+  height: 114px;
+  position: relative;
+}
+
+.profileMenuAvatar {
+  align-items: center;
+  background: url("/ui-lab/top-navigation/profile-menu-avatar-frame@2x.png") center / 100% 100% no-repeat;
+  border-radius: 999px;
+  display: flex;
+  height: 80px;
+  justify-content: center;
+  left: 15px;
+  position: absolute;
+  top: 18px;
+  width: 80px;
+  z-index: 2;
+}
+
+.profileMenuAvatarInner {
+  align-items: center;
+  background: #651311;
+  border-radius: 999px;
+  display: flex;
+  height: 72px;
+  justify-content: center;
+  overflow: hidden;
+  width: 72px;
+}
+
+.profileMenuAvatarInner img {
+  background: #ece4dc;
+  border-radius: 999px;
+  display: block;
+  height: 64px;
   object-fit: cover;
+  object-position: 50% 36%;
+  width: 64px;
 }
 
-.userText {
-  min-width: 0;
+.profileMenuNamePlate {
+  background: url("/ui-lab/top-navigation/profile-menu-nameplate@2x.png") center / 100% 100% no-repeat;
+  border: 0;
+  box-sizing: border-box;
+  height: 56px;
+  left: 64px;
+  overflow: hidden;
+  padding: 8px 54px 7px 44px;
+  position: absolute;
+  top: 29px;
+  width: 232px;
 }
 
-.userText strong,
-.userText span {
+.profileMenuNamePlate strong,
+.profileMenuNamePlate span {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.userText strong {
-  color: #f3bd63;
-  font-size: 13px;
+.profileMenuNamePlate strong {
+  color: #ffffff;
+  font-family: Arial, sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 22px;
+}
+
+.profileMenuNamePlate span {
+  color: rgba(255, 255, 255, 0.46);
+  font-family: Arial, sans-serif;
+  font-size: 12px;
   line-height: 18px;
 }
 
-.userText span {
-  color: rgba(236, 229, 213, 0.56);
-  font-size: 10px;
-  line-height: 14px;
+.profileMenuStats {
+  height: 47px;
+  position: relative;
 }
 
-.creditLine {
-  display: flex;
+.profileMenuCreditPill {
   align-items: center;
-  justify-content: space-between;
-  height: 25px;
-  margin: 11px 0 9px;
-  padding: 0 9px;
-  border: 1px solid rgba(224, 171, 91, 0.2);
-  background: rgba(4, 4, 5, 0.42);
-  color: rgba(238, 228, 206, 0.64);
-  font-size: 11px;
-  line-height: 25px;
+  border: 1px solid rgba(176, 116, 33, 0.8);
+  border-radius: 5px;
+  box-sizing: border-box;
+  display: flex;
+  height: 26px;
+  left: 42px;
+  padding-left: 36px;
+  position: absolute;
+  top: 0;
+  width: 96px;
 }
 
-.creditLine strong {
+.profileMenuCreditPill img {
+  height: 44px;
+  left: -13px;
+  position: absolute;
+  top: -9px;
+  width: 44px;
+}
+
+.profileMenuCreditPill strong {
   color: #ffffff;
-  font-size: 12px;
+  font-family: Arial, sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 26px;
 }
 
-.menuList {
-  display: grid;
-  gap: 2px;
-}
-
-.menuItem {
-  display: flex;
+.profileMenuStat {
   align-items: center;
+  color: rgba(112, 113, 128, 0.94);
+  display: flex;
   gap: 8px;
-  width: 100%;
-  min-height: 27px;
-  border: 0;
-  background: transparent;
-  color: rgba(244, 237, 223, 0.82);
-  cursor: pointer;
-  font: inherit;
+  position: absolute;
+  top: 1px;
+}
+
+.profileMenuStat:nth-child(2) {
+  left: 158px;
+}
+
+.profileMenuStat:nth-child(3) {
+  left: 232px;
+}
+
+.profileMenuStat span {
+  color: #ffffff;
+  font-family: Arial, sans-serif;
   font-size: 12px;
-  line-height: 16px;
-  padding: 5px 8px;
+  line-height: 24px;
+}
+
+.profileMenuStatIcon {
+  display: block;
+  flex: 0 0 auto;
+  height: 24px;
+  object-fit: contain;
+  width: 24px;
+}
+
+.profileMenuDivider {
+  background: rgba(255, 255, 255, 0.1);
+  height: 2px;
+  left: 15px;
+  position: absolute;
+  top: 161px;
+  width: 272px;
+}
+
+.profileMenuLinks {
+  display: grid;
+  gap: 4px;
+  left: 15px;
+  position: absolute;
+  top: 171px;
+  width: 272px;
+}
+
+.profileMenuLink,
+.profileMenuLanguageRow {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  box-sizing: border-box;
+  color: rgba(123, 124, 133, 0.9);
+  display: flex;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  gap: 12px;
+  height: 38px;
+  line-height: 21px;
+  padding: 0 16px;
   text-align: left;
   text-decoration: none;
 }
 
-.menuItem svg {
-  flex: 0 0 auto;
-  color: rgba(243, 190, 99, 0.74);
+.profileMenuLink {
+  cursor: pointer;
+  width: 100%;
 }
 
-.menuItem:hover,
-.menuItem:focus-visible {
-  background: rgba(244, 189, 96, 0.12);
-  color: #ffffff;
-  outline: 1px solid rgba(244, 189, 96, 0.28);
-}
-
-.menuItem:disabled {
+.profileMenuLink:disabled {
   cursor: wait;
   opacity: 0.72;
 }
 
-.separator {
-  height: 1px;
-  margin: 7px 4px 6px;
-  background: linear-gradient(90deg, transparent, rgba(216, 202, 176, 0.3), transparent);
+.profileMenuLink:hover,
+.profileMenuLink:focus-visible,
+.profileMenuLinkActive {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  color: #ffffff;
 }
 
-.logoutItem {
-  color: rgba(242, 157, 117, 0.88);
+.profileMenuLinkIcon {
+  display: block;
+  flex: 0 0 auto;
+  height: 20px;
+  object-fit: contain;
+  width: 20px;
 }
 
-.logoutItem svg {
-  color: rgba(242, 157, 117, 0.86);
+.profileMenuPointIcon {
+  align-items: center;
+  border: 2px solid rgba(123, 124, 133, 0.9);
+  border-radius: 999px;
+  box-sizing: border-box;
+  color: rgba(123, 124, 133, 0.9);
+  display: flex;
+  flex: 0 0 20px;
+  height: 20px;
+  justify-content: center;
+  width: 20px;
+}
+
+.profileMenuLinkText {
+  color: rgba(255, 255, 255, 0.5);
+  display: block;
+  font-family: PingFangSC, "PingFang SC", Arial, sans-serif;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 500;
+  height: 18px;
+  line-height: 18px;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 102px;
+}
+
+.profileMenuLink:hover .profileMenuLinkText,
+.profileMenuLink:focus-visible .profileMenuLinkText,
+.profileMenuLinkActive .profileMenuLinkText {
+  color: #ffffff;
+}
+
+.profileMenuLanguageRow {
+  justify-content: space-between;
+  padding-right: 4px;
+}
+
+.profileMenuLanguageLabel {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+.profileMenuLanguageButton {
+  align-items: center;
+  appearance: none;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 2px;
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  font-family: Arial, sans-serif;
+  font-size: 15px;
+  height: 30px;
+  justify-content: space-between;
+  line-height: 30px;
+  padding: 0 12px;
+  width: 82px;
+}
+
+.profileMenuLanguageMenu {
+  background: #000000;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 2px;
+  box-shadow: 0 16px 28px rgba(0, 0, 0, 0.44);
+  box-sizing: border-box;
+  color: rgba(134, 135, 143, 0.92);
+  display: grid;
+  font-family: Arial, sans-serif;
+  font-size: 15px;
+  gap: 18px;
+  min-height: 88px;
+  padding: 5px 5px 13px;
+  position: absolute;
+  right: 19px;
+  top: 339px;
+  width: 130px;
+  z-index: 5;
+}
+
+.profileMenuLanguageOption,
+.profileMenuLanguageOptionActive {
+  appearance: none;
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  height: 24px;
+  padding: 0 20px;
+  text-align: left;
+}
+
+.profileMenuLanguageOptionActive {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  justify-content: space-between;
+}
+
+.profileMenuArrowIcon,
+.profileMenuTickIcon {
+  display: block;
+  height: 14px;
+  object-fit: contain;
+  width: 14px;
 }

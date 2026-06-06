@@ -11,6 +11,7 @@ import { CreditTopupButton } from './CreditTopupButton'
 import { CreditTopupStatusSync } from './CreditTopupStatusSync'
 import { ManageSubscriptionButton } from './ManageSubscriptionButton'
 import { PricingLoginButton } from './PricingLoginButton'
+import { PricingSubscriptionPanel } from './PricingSubscriptionPanel'
 import { SubscribePlanButton } from './SubscribePlanButton'
 import { SubscriptionStatusSync } from './SubscriptionStatusSync'
 import type { FooterContent, MarketingPageContent, MarketingSection } from '../_lib/marketing-content'
@@ -316,152 +317,27 @@ export function SubscriptionPage(props: SubscriptionPageProps) {
     user,
   } = props
 
-  const currentPlan = activeSubscription?.planKey || 'No active plan'
-  const supportSections = pageContent.sections.slice(0, 2)
-
   return (
-    <>
-      <div className="h-[1020px] overflow-y-auto bg-[radial-gradient(circle_at_50%_4%,rgba(155,112,45,0.16),transparent_24%),linear-gradient(180deg,#181818_0%,#222225_42%,#181818_100%)]">
-        <section className="mx-auto max-w-[1600px] px-4 pb-4 pt-8 sm:px-6">
-          <div className="grid gap-4">
-            <BorderComboFrame1
-              className="min-h-[220px] bg-[linear-gradient(135deg,rgba(13,13,15,0.96),rgba(47,45,48,0.9))] shadow-[0_20px_52px_rgba(0,0,0,0.36)]"
-              style={{ pointerEvents: 'auto' }}
-            >
-              <div className="grid min-h-[152px] items-center gap-6 p-1 lg:grid-cols-[minmax(0,1fr)_420px]">
-                <div className="flex flex-col justify-center gap-4">
-                  <Badge className="w-fit border-[#8d5c25] bg-[#24211c] text-[#f1d99c]" variant="outline">
-                    {pageContent.heroEyebrow}
-                  </Badge>
-                  <h1 className="max-w-5xl text-4xl font-semibold leading-tight tracking-tight text-[#f5ead0]">
-                    {pageContent.heroTitle}
-                  </h1>
-                  <p className="max-w-4xl text-base leading-7 text-[#b9bac0]">{pageContent.heroText}</p>
-                </div>
-                <div className="grid gap-3 border-l border-[#403f46] pl-6">
-                  <Badge className="w-fit border-[#5c4a35] text-[#d8d0bf]" variant="outline">
-                    {stripeSubscriptionsEnabled ? 'Stripe checkout enabled' : 'Checkout unavailable'}
-                  </Badge>
-                  <p className="text-sm leading-6 text-[#a7a9b0]">Plan names, prices, monthly credits, and feature text are editable from backend site settings.</p>
-                  {paymentProviderNotice ? <p className="text-sm leading-6 text-[#8f9199]">{paymentProviderNotice}</p> : null}
-                </div>
-              </div>
-            </BorderComboFrame1>
-          </div>
-        </section>
-
-        <section className="mx-auto max-w-[1600px] px-4 py-4 sm:px-6">
-          <div className="grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)]">
-            <BorderComboFrame2Variant className="min-h-[396px] bg-[#1c1c20]" style={{ pointerEvents: 'auto' }}>
-              <div className="flex min-h-[404px] flex-col gap-4 p-1">
-                <p className="text-xs uppercase tracking-[0.24em] text-[#8f7a4a]">Current subscription</p>
-                <h2 className="text-3xl font-semibold tracking-tight text-[#f1e2bc]">{currentPlan}</h2>
-                <FreePlanSummary />
-                {shouldSync && syncSessionId ? <SubscriptionStatusSync enabled sessionId={syncSessionId} /> : null}
-                {shouldSyncCreditTopup && syncSessionId ? <CreditTopupStatusSync enabled sessionId={syncSessionId} /> : null}
-                {isCancelled ? <p className="text-sm leading-6 text-[#d8d0bf]">Checkout was cancelled. You can choose a plan again when ready.</p> : null}
-                {isCreditTopupCancelled ? <p className="text-sm leading-6 text-[#d8d0bf]">Credit checkout was cancelled. You can choose a pack again when ready.</p> : null}
-                {activeSubscription ? (
-                  <div className="grid gap-3 text-sm leading-6 text-[#a7a9b0]">
-                    <p>Status: {formatSubscriptionStatus(activeSubscription.status)}</p>
-                    <p>Monthly credits: {activeSubscription.monthlyCredits ?? 0}</p>
-                    <p>Current period ends: {formatDateTime(activeSubscription.currentPeriodEnd)}</p>
-                    {user ? <ManageSubscriptionButton /> : null}
-                  </div>
-                ) : (
-                  <p className="mt-auto text-sm leading-6 text-[#a7a9b0]">
-                    Subscribe to unlock a predictable monthly credit allowance. Credits support generation, delivery, downloads, and downstream order workflows.
-                  </p>
-                )}
-              </div>
-            </BorderComboFrame2Variant>
-
-            <div className="grid gap-4 xl:grid-cols-3">
-              {subscriptionPlans.map((plan) => {
-                const isCurrentPlan = activeSubscription?.planKey === plan.key
-
-                return (
-                  <BorderComboFrame1 className="min-h-[500px] bg-[#1c1c20]" key={plan.key} style={{ pointerEvents: 'auto' }}>
-                    <article className="flex min-h-[432px] flex-col gap-3 p-1">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-xs uppercase tracking-[0.24em] text-[#8f7a4a]">{plan.shortLabel}</p>
-                          <h2 className="mt-1 text-2xl font-semibold tracking-tight text-[#f1e2bc]">{plan.name}</h2>
-                        </div>
-                        {isCurrentPlan ? <Badge variant="secondary">Current</Badge> : null}
-                      </div>
-                      <p className="min-h-[48px] text-sm leading-6 text-[#a7a9b0]">{plan.description}</p>
-                      <Separator className="bg-[#403f46]" />
-                      <div className="flex min-h-[84px] flex-col justify-center rounded-[8px] border border-[#403f46] bg-[#18181b] p-4">
-                        <p className="text-xs uppercase tracking-[0.18em] text-[#8f7a4a]">Monthly allowance</p>
-                        <p className="mt-1 text-2xl font-semibold tracking-tight text-[#f0d188]">{plan.creditsPerMonth} credits</p>
-                      </div>
-                      <BillingComparison plan={plan} />
-                      <ul className="grid min-h-[90px] content-start gap-2 text-sm leading-6 text-[#9b9da5]">
-                        {plan.features.map((feature) => (
-                          <li key={feature}>{feature}</li>
-                        ))}
-                      </ul>
-                      <div className="mt-auto pt-4">
-                        <PlanAction {...props} isCurrentPlan={isCurrentPlan} plan={plan} />
-                      </div>
-                    </article>
-                  </BorderComboFrame1>
-                )
-              })}
-            </div>
-          </div>
-        </section>
-
-        {creditTopupProducts.length > 0 ? (
-          <section className="mx-auto max-w-[1600px] px-4 py-4 sm:px-6">
-            <BorderComboFrame1 className="bg-[#1c1c20]" style={{ pointerEvents: 'auto' }}>
-              <div className="grid gap-5 p-1">
-                <div className="flex flex-wrap items-end justify-between gap-4">
-                  <div>
-                    <Badge className="w-fit border-[#5c4a35] text-[#d8d0bf]" variant="outline">
-                      One-time credits
-                    </Badge>
-                    <h2 className="mt-2 text-3xl font-semibold tracking-tight text-[#f1e2bc]">Buy credit packs without changing subscription.</h2>
-                  </div>
-                  <p className="max-w-xl text-sm leading-6 text-[#a7a9b0]">
-                    Packs are loaded from backend credit products. Stripe checkout creates a payment record, and webhook confirmation applies the ledger purchase.
-                  </p>
-                </div>
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  {creditTopupProducts.map((product) => (
-                    <div className="grid min-h-[220px] gap-4 rounded-[8px] border border-[#403f46] bg-[#18181b] p-5" key={product.id}>
-                      <div>
-                        <p className="text-xs uppercase tracking-[0.18em] text-[#8f7a4a]">{product.credits} credits</p>
-                        <h3 className="mt-1 text-2xl font-semibold tracking-tight text-[#f1e2bc]">{product.title}</h3>
-                      </div>
-                      {product.description ? <p className="text-sm leading-6 text-[#a7a9b0]">{product.description}</p> : null}
-                      <div className="mt-auto flex items-center justify-between gap-4">
-                        <p className="text-2xl font-semibold tracking-tight text-[#f0d188]">{formatMoney(product.price, product.currency)}</p>
-                        <div className="w-[132px]">
-                          <CreditTopupAction product={product} stripeCreditTopupsEnabled={stripeCreditTopupsEnabled} user={user} />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </BorderComboFrame1>
-          </section>
-        ) : null}
-
-        <section className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6">
-          <div className="grid gap-4 lg:grid-cols-2">
-            {supportSections.length > 0
-              ? supportSections.map((section) => (
-                  <SupportPanel body={section.text} eyebrow={section.eyebrow} key={section.id} section={section} title={section.title} />
-                ))
-              : null}
-          </div>
-        </section>
-
-        <FooterBar footerContent={footerContent} siteDescription={siteDescription} supportEmail={supportEmail} />
-      </div>
-    </>
+    <div className="h-[1020px] overflow-y-auto bg-[radial-gradient(circle_at_50%_9%,rgba(45,64,126,0.34),transparent_34%),radial-gradient(circle_at_16%_18%,rgba(155,112,45,0.14),transparent_28%),linear-gradient(180deg,#111111_0%,#181818_46%,#111111_100%)]">
+      <section className="mx-auto flex min-h-[960px] max-w-[1600px] items-start justify-center px-4 pb-10 pt-[49px]">
+        {shouldSync && syncSessionId ? <SubscriptionStatusSync enabled sessionId={syncSessionId} /> : null}
+        {shouldSyncCreditTopup && syncSessionId ? <CreditTopupStatusSync enabled sessionId={syncSessionId} /> : null}
+        <PricingSubscriptionPanel
+          activeSubscription={activeSubscription}
+          isCancelled={isCancelled}
+          paymentProviderNotice={paymentProviderNotice}
+          stripeSubscriptionsEnabled={stripeSubscriptionsEnabled}
+          subscriptionPlans={subscriptionPlans}
+          user={user}
+        />
+      </section>
+      {isCreditTopupCancelled ? (
+        <p className="mx-auto mb-4 max-w-[720px] px-4 text-center text-sm leading-6 text-[#d8d0bf]">
+          Credit checkout was cancelled. You can choose a pack again when ready.
+        </p>
+      ) : null}
+      <FooterBar footerContent={footerContent} siteDescription={siteDescription} supportEmail={supportEmail} />
+    </div>
   )
+
 }

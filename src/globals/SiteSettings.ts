@@ -93,7 +93,7 @@ export const SiteSettings: GlobalConfig = {
                     singular: 'Footer link group',
                   },
                   admin: {
-                    description: 'The public footer displays up to four groups. Keep labels short so the footer stays readable on mobile.',
+                    description: 'The public footer stores up to four groups and displays the first two in the compact homepage layout. Keep labels short so the footer stays readable on mobile.',
                   },
                   fields: [
                     { name: 'title', type: 'text', required: true, label: 'Group title' },
@@ -112,6 +112,40 @@ export const SiteSettings: GlobalConfig = {
                         { name: 'href', type: 'text', required: true, label: 'Link' },
                       ],
                     },
+                  ],
+                },
+                {
+                  name: 'socialLinks',
+                  type: 'array',
+                  defaultValue: defaultSiteSettings.footer.socialLinks || [],
+                  label: 'Social media links',
+                  maxRows: 8,
+                  labels: {
+                    plural: 'Social media links',
+                    singular: 'Social media link',
+                  },
+                  admin: {
+                    description: 'Controls the public footer social/media icon links. Disable a row to keep it configured but hidden.',
+                  },
+                  fields: [
+                    {
+                      name: 'platform',
+                      type: 'select',
+                      defaultValue: 'x',
+                      label: 'Platform',
+                      options: [
+                        { label: 'X', value: 'x' },
+                        { label: 'Facebook', value: 'facebook' },
+                        { label: 'Instagram', value: 'instagram' },
+                        { label: 'YouTube', value: 'youtube' },
+                        { label: 'Discord', value: 'discord' },
+                        { label: 'TikTok', value: 'tiktok' },
+                        { label: 'Website', value: 'website' },
+                      ],
+                    },
+                    { name: 'label', type: 'text', required: true, label: 'Label' },
+                    { name: 'href', type: 'text', required: true, label: 'Link' },
+                    { name: 'enabled', type: 'checkbox', defaultValue: true, label: 'Show in public footer' },
                   ],
                 },
                 {

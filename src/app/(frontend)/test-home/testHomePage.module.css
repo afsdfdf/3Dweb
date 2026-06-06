@@ -333,10 +333,6 @@
 .inspirationGrid {
   --card-width: 288px;
   --card-height: 460px;
-  --compact-six-card-width: 248px;
-  --compact-six-card-height: 396px;
-  --standard-six-card-width: 256px;
-  --standard-six-card-height: 409px;
   --inspiration-card-width: var(--card-width);
   --inspiration-card-height: var(--card-height);
   display: grid;
@@ -510,10 +506,6 @@
 .heroThirdBanner :global([aria-label="Inspiration grid"]) {
   --card-width: 288px;
   --card-height: 460px;
-  --compact-six-card-width: 248px;
-  --compact-six-card-height: 396px;
-  --standard-six-card-width: 256px;
-  --standard-six-card-height: 409px;
   --inspiration-card-width: var(--card-width);
   --inspiration-card-height: var(--card-height);
   display: grid;
@@ -525,9 +517,20 @@
 }
 
 .footerMount {
-  margin-top: 9px;
+  background: #181818;
+  margin-top: 0;
+  padding: 0;
   width: 100%;
   z-index: 45;
+}
+
+.footerMount :global(footer) {
+  background: transparent;
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+.footerMount :global(footer > div) {
+  min-height: 176px;
 }
 
 @media (max-width: 1919px) {
@@ -644,12 +647,12 @@
   }
 
   .heroThirdBanner :global([aria-label="Inspiration grid"]) {
-    --card-width: min(15vw, 288px);
-    --card-height: min(23.958vw, 460px);
+    --card-width: 274px;
+    --card-height: 437px;
     left: 50%;
     position: relative;
     top: auto;
-    gap: min(0.694vw, 13.333px) min(0.479vw, 9.2px);
+    gap: min(0.694vw, 13.333px) 6px;
     padding: 0 0 min(2.188vw, 42px);
     transform: translateX(-50%);
     width: min(92.396vw, calc(100% + 34px));
@@ -682,13 +685,6 @@
   }
 }
 
-@media (min-width: 1680px) and (max-width: 1727px) {
-  .heroThirdBanner :global([aria-label="Inspiration grid"]) {
-    --card-width: var(--compact-six-card-width);
-    --card-height: var(--compact-six-card-height);
-  }
-}
-
 @media (max-width: 1599px) {
   .featureSmallCard:nth-of-type(3),
   .featureLastCard {
@@ -699,13 +695,6 @@
 @media (max-width: 1187px) {
   .featureSmallCard {
     display: block;
-  }
-}
-
-@media (min-width: 1728px) and (max-width: 1919px) {
-  .heroThirdBanner :global([aria-label="Inspiration grid"]) {
-    --card-width: var(--standard-six-card-width);
-    --card-height: var(--standard-six-card-height);
   }
 }
 
