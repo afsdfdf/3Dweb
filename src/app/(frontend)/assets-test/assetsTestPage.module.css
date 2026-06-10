@@ -33,9 +33,11 @@
   width: 100%;
 }
 
-.profileFrameContent {
-  inset: 14px;
-  position: absolute;
+/* ButtonBoxFrame11 disables pointer events on the frame wrapper and only
+   provides min-height on its content layer, so restore both here. */
+.profileFrame > div:last-child {
+  height: 100%;
+  pointer-events: auto;
 }
 
 .profileBanner {
@@ -180,13 +182,9 @@
   width: 100%;
 }
 
-.assetsFrameContent {
-  padding: 0 26px 52px;
-}
-
 .frameShell {
   min-height: 0;
-  padding-top: 34px;
+  padding-bottom: 16px;
   pointer-events: auto;
   position: relative;
 }
@@ -410,9 +408,8 @@
   background: rgba(255, 255, 255, 0.15);
   display: block;
   height: 2px;
-  margin-left: -16px;
   margin-top: 26px;
-  width: calc(100% + 34px);
+  width: 100%;
 }
 
 .assetsGrid {

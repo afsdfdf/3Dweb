@@ -6,9 +6,9 @@ import { Package, Star, UserRound, Users } from "lucide-react";
 
 import { FrameButton } from "@/components/ui/frame-button";
 import { BorderComboFrame1 } from "@/components/ui-lab/border-combo-frame-1";
+import { ButtonBoxFrame11 } from "@/components/ui-lab/button-box-frame-11";
 import cardStyles from "@/components/ui-lab/home-test/inspiration-grid.module.css";
 
-import { PersonalCenterFrame } from "./PersonalCenterFrame";
 import styles from "./assetsTestPage.module.css";
 
 const SKETCH = "/ui/workbench/model-detail/sketch-assets";
@@ -304,7 +304,7 @@ export function AssetsTestClient() {
   return (
     <div className={styles.stage}>
       <section className={styles.framedSection} aria-label="Creator profile">
-        <PersonalCenterFrame className={styles.profileFrame} compact contentClassName={styles.profileFrameContent}>
+        <ButtonBoxFrame11 className={styles.profileFrame}>
           <div className={styles.profileBanner}>
             <div className={styles.profileMain}>
               <span className={[styles.profileAvatarRing, profile.kick ? styles.profileAvatarRingKick : ""].filter(Boolean).join(" ")}>
@@ -351,11 +351,11 @@ export function AssetsTestClient() {
             </div>
             <div className={styles.profileArt} aria-hidden="true" />
           </div>
-        </PersonalCenterFrame>
+        </ButtonBoxFrame11>
       </section>
 
       <section className={styles.framedSection} aria-label="Assets">
-        <PersonalCenterFrame className={styles.assetsFrame} contentClassName={styles.assetsFrameContent}>
+        <ButtonBoxFrame11 className={styles.assetsFrame}>
           <div className={styles.frameShell}>
             <div className={styles.toolbarRow}>
               <div className={styles.tabs} role="tablist" aria-label="Asset views">
@@ -489,7 +489,7 @@ export function AssetsTestClient() {
               </nav>
             </div>
           </div>
-        </PersonalCenterFrame>
+        </ButtonBoxFrame11>
       </section>
     </div>
   );
