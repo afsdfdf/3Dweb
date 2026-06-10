@@ -470,7 +470,9 @@
   padding: 4px 9px;
   position: absolute;
   top: 78px;
-  z-index: 6;
+  /* ButtonBoxFrame establishes a stacking context at z-index 40, so card
+     overlays must sit above it. */
+  z-index: 45;
 }
 
 .moreButton {
@@ -491,7 +493,7 @@
   right: 13px;
   top: 78px;
   width: 26px;
-  z-index: 6;
+  z-index: 45;
 }
 
 .moreButton:hover {
@@ -510,7 +512,7 @@
   right: 13px;
   top: 102px;
   width: 178px;
-  z-index: 7;
+  z-index: 46;
 }
 
 .actionMenuItem {
@@ -545,7 +547,7 @@
   right: 13px;
   top: 78px;
   width: 26px;
-  z-index: 6;
+  z-index: 45;
 }
 
 .collectStar:hover {

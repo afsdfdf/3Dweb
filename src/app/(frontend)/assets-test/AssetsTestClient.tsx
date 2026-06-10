@@ -16,6 +16,8 @@ const SKETCH = "/ui/workbench/model-detail/sketch-assets";
 type MockCreatorId = "greenwood" | "xingmu";
 
 type MockCreator = {
+  /** object-position for circular avatar crops of full-body art. */
+  avatarFocus?: string;
   avatarSrc: string;
   favoritesLabel: string;
   id: MockCreatorId;
@@ -40,7 +42,8 @@ type AssetsTab = "assets" | "collections" | "creator" | "follows";
 
 const mockCreators: Record<MockCreatorId, MockCreator> = {
   greenwood: {
-    avatarSrc: "/ui-lab/formal-components/assets/inspiration-card/avatar-greenwood.png",
+    avatarFocus: "50% 10%",
+    avatarSrc: `${SKETCH}/input-thumb.webp`,
     favoritesLabel: "267",
     id: "greenwood",
     likesLabel: "56",
@@ -119,7 +122,14 @@ function AssetTestCard({
         <article className={cardStyles.cardContent}>
           <header className={cardStyles.cardHeader}>
             <div className={cardStyles.avatarWrap}>
-              <img alt="" className={cardStyles.avatar} decoding="async" loading="lazy" src={creator.avatarSrc} />
+              <img
+                alt=""
+                className={cardStyles.avatar}
+                decoding="async"
+                loading="lazy"
+                src={creator.avatarSrc}
+                style={creator.avatarFocus ? { objectPosition: creator.avatarFocus } : undefined}
+              />
               <span className={cardStyles.avatarBadge} aria-hidden="true" />
             </div>
             <div className={cardStyles.titleBlock}>
@@ -281,11 +291,13 @@ export function AssetsTestClient() {
 
   const profile = isCreatorView
     ? {
+        avatarFocus: mockCreators.greenwood.avatarFocus,
         avatarSrc: mockCreators.greenwood.avatarSrc,
         kick: true,
         name: "Greenwood",
       }
     : {
+        avatarFocus: mockCreators.xingmu.avatarFocus,
         avatarSrc: mockCreators.xingmu.avatarSrc,
         kick: false,
         name: "Xing Mu",
@@ -298,7 +310,13 @@ export function AssetsTestClient() {
           <div className={styles.profileBanner}>
             <div className={styles.profileMain}>
               <span className={[styles.profileAvatarRing, profile.kick ? styles.profileAvatarRingKick : ""].filter(Boolean).join(" ")}>
-                <img alt={`${profile.name} avatar`} className={styles.profileAvatar} decoding="async" src={profile.avatarSrc} />
+                <img
+                  alt={`${profile.name} avatar`}
+                  className={styles.profileAvatar}
+                  decoding="async"
+                  src={profile.avatarSrc}
+                  style={profile.avatarFocus ? { objectPosition: profile.avatarFocus } : undefined}
+                />
                 {profile.kick ? <span className={styles.profileKickBadge}>KICK</span> : null}
               </span>
               <div className={styles.profileInfo}>
