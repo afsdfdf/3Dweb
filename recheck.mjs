@@ -1,0 +1,11 @@
+import { chromium } from 'playwright';
+const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+const page = await browser.newPage({ viewport: { width: 1920, height: 1200 } });
+await page.goto('http://127.0.0.1:3000/assets-test', { waitUntil: 'networkidle', timeout: 180000 });
+await page.waitForTimeout(2000);
+await page.screenshot({ path: '/tmp/v2-full.png', fullPage: true });
+await page.locator('section[aria-label="Creator profile"]').screenshot({ path: '/tmp/v2-banner.png' });
+await page.locator('[aria-label="Asset grid"] > div').first().screenshot({ path: '/tmp/v2-card.png' });
+await page.locator('[aria-label="Asset grid"] > div').nth(6).screenshot({ path: '/tmp/v2-card-gold.png' });
+await browser.close();
+console.log('DONE');
