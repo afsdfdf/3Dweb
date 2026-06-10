@@ -613,20 +613,31 @@ export function WorkbenchClient({
       }
     };
 
+    // Guards against parallel sync chains: a visibilitychange firing while a
+    // sync is already in flight must not spawn a second self-rescheduling loop.
+    let syncInFlight = false;
+
     const syncOnce = async () => {
-      if (cancelled) return;
+      if (cancelled || syncInFlight) return;
+      syncInFlight = true;
 
-      const { nextCursor, selectedTasks } = selectWorkbenchSyncTasks({
-        activePendingCardId,
-        batchSize: syncBatchSize,
-        cursor: syncCursorRef.current,
-        tasks: pendingTasksRef.current,
-      });
-      syncCursorRef.current = nextCursor;
+      try {
+        const { nextCursor, selectedTasks } = selectWorkbenchSyncTasks({
+          activePendingCardId,
+          batchSize: syncBatchSize,
+          cursor: syncCursorRef.current,
+          tasks: pendingTasksRef.current,
+        });
+        syncCursorRef.current = nextCursor;
 
-      await Promise.all(selectedTasks.map(syncTask));
+        await Promise.all(selectedTasks.map(syncTask));
+      } finally {
+        syncInFlight = false;
+      }
 
-      if (!cancelled && pendingTasksRef.current.some((task) => task.taskId && !isTerminalGenerationStatus(task.status))) {
+      if (cancelled || document.hidden) return;
+
+      if (pendingTasksRef.current.some((task) => task.taskId && !isTerminalGenerationStatus(task.status))) {
         timer = setTimeout(() => {
           void syncOnce();
         }, getSyncDelayMs(Date.now() - syncStartedAtMs));
@@ -636,8 +647,11 @@ export function WorkbenchClient({
     const handleVisibilityChange = () => {
       if (document.hidden) {
         if (timer) { clearTimeout(timer); timer = null; }
-      } else {
-        if (!cancelled) void syncOnce();
+      } else if (!cancelled) {
+        // Clear any pending timer before kicking an immediate sync so only
+        // one reschedule chain exists at a time.
+        if (timer) { clearTimeout(timer); timer = null; }
+        void syncOnce();
       }
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);

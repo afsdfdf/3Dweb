@@ -1,6 +1,6 @@
+/* eslint-disable @next/next/no-img-element -- thumbnails and frames here are sized by in-flow CSS (aspect-ratio / padding); next/image fill breaks those layouts */
 "use client";
 
-import NextImage from "next/image";
 import Link from "next/link";
 import {
   OrangeMediumActionButton,
@@ -740,7 +740,7 @@ export default function ModelDetailNative({
                   }}
                 >
                   {item.imageSrc ? (
-                    <NextImage alt={item.title} fill sizes="80px" src={getSupabasePreviewImageURL(item.imageSrc, "model-card")} style={{ objectFit: "cover" }} />
+                    <img alt={item.title} decoding="async" loading="lazy" src={getSupabasePreviewImageURL(item.imageSrc, "model-card")} />
                   ) : null}
                   <span>{item.title}</span>
                 </a>
@@ -1062,12 +1062,12 @@ export default function ModelDetailNative({
                                     }
                                   }}
                                 >
-                                  <NextImage
+                                  <img
                                     alt={item.title}
-                                    fill
-                                    sizes="80px"
+                                    decoding="async"
+                                    fetchPriority="low"
+                                    loading="eager"
                                     src={getSupabasePreviewImageURL(item.imageSrc, "model-card")}
-                                    style={{ objectFit: "cover" }}
                                   />
                                 </a>
                               </ButtonBoxFrame>

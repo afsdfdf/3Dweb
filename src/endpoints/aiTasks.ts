@@ -274,20 +274,33 @@ export const cronReconcileAITasksEndpoint = {
       notificationCleanup = { error: 'Notification cleanup failed; see logs.' }
     }
 
-    // Counter-drift resync: runs weekly (every Monday via separate cron
-    // schedule) but harmless on every tick — fast on small catalogs, slow
-    // but idempotent on large ones.
-    let counterReconciliation: { comments: number; follows: number; reactions: number } | { error: string }
-    try {
-      const [follows, reactions, comments] = await Promise.all([
-        reconcileUserFollowCounts({ req }),
-        reconcileModelReactionCounts({ req }),
-        reconcileModelCommentCounts({ req }),
-      ])
-      counterReconciliation = { comments: comments.reconciled, follows: follows.reconciled, reactions: reactions.reconciled }
-    } catch (error) {
-      req.payload.logger?.error?.({ err: error, msg: 'Counter reconciliation failed during cron.' })
-      counterReconciliation = { error: 'Counter reconciliation failed; see logs.' }
+    // Counter-drift resync walks the full users and models tables, so it
+    // runs at most once per day: the cron fires every 10 minutes, and only
+    // the first tick inside the daily window (default 04:00 UTC) does the
+    // full-table work. Per-operation recounts self-heal normal paths in
+    // between.
+    const resyncHourUTC = Math.min(23, Math.max(0, Number(process.env.COUNTER_RESYNC_HOUR_UTC ?? 4)))
+    const now = new Date()
+    const inDailyResyncWindow = now.getUTCHours() === resyncHourUTC && now.getUTCMinutes() < 10
+
+    let counterReconciliation:
+      | { comments: number; follows: number; reactions: number }
+      | { error: string }
+      | { skipped: true }
+    if (inDailyResyncWindow) {
+      try {
+        const [follows, reactions, comments] = await Promise.all([
+          reconcileUserFollowCounts({ req }),
+          reconcileModelReactionCounts({ req }),
+          reconcileModelCommentCounts({ req }),
+        ])
+        counterReconciliation = { comments: comments.reconciled, follows: follows.reconciled, reactions: reactions.reconciled }
+      } catch (error) {
+        req.payload.logger?.error?.({ err: error, msg: 'Counter reconciliation failed during cron.' })
+        counterReconciliation = { error: 'Counter reconciliation failed; see logs.' }
+      }
+    } else {
+      counterReconciliation = { skipped: true }
     }
 
     return Response.json({

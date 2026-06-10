@@ -11,7 +11,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { apiFetch } from '@/app/(frontend)/_lib/apiFetch'
 import * as THREE from "three";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
@@ -856,7 +855,11 @@ export function ModelViewer({
       }
 
       try {
-        const response = await apiFetch(fetchSrc, { timeoutMs: 120_000,
+        // Plain fetch on purpose: this request has its own progress-refreshing
+        // timeout (requestController + refreshTimeout), and the URL may be
+        // cross-origin Supabase storage where credentials: 'include' would
+        // fail CORS (ACAO: *). Do not route through apiFetch.
+        const response = await fetch(fetchSrc, {
           cache: "force-cache",
           priority: "high",
           signal: requestController.signal,
