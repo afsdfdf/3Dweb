@@ -33,9 +33,9 @@
   width: 100%;
 }
 
-/* ButtonBoxFrame11 disables pointer events on the frame wrapper and only
+/* ButtonBoxFrame disables pointer events on the frame wrapper and only
    provides min-height on its content layer, so restore both here. */
-.profileFrame > div:last-child {
+.panelFrameContent {
   height: 100%;
   pointer-events: auto;
 }
