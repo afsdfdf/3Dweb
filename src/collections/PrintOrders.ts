@@ -1,7 +1,32 @@
-﻿import type { CollectionConfig } from 'payload'
+﻿import type { CollectionBeforeChangeHook, CollectionConfig } from 'payload'
 
 import { isStaff, ownerOrStaff } from '@/access'
 import { adminLabelsKey, adminTextKey } from '@/lib/adminText'
+
+// Financial / identity fields must not change once an order has left the
+// pending-payment state. Staff can still progress status, tracking, and notes,
+// but the billed amount, model, owner, and credits used are frozen so a paid
+// order's terms cannot be rewritten after the fact.
+const FROZEN_FIELDS_AFTER_PAYMENT = ['amount', 'currency', 'creditsUsed', 'model', 'user'] as const
+
+const freezeFinancialFieldsAfterPayment: CollectionBeforeChangeHook = ({ data, operation, originalDoc }) => {
+  if (operation !== 'update' || !originalDoc) {
+    return data
+  }
+
+  if (String(originalDoc.status) === 'pending-payment') {
+    return data
+  }
+
+  const next = { ...data }
+  for (const field of FROZEN_FIELDS_AFTER_PAYMENT) {
+    if (field in next && String(next[field]) !== String(originalDoc[field])) {
+      next[field] = originalDoc[field]
+    }
+  }
+
+  return next
+}
 
 export const PrintOrders: CollectionConfig = {
   slug: 'print-orders',
@@ -16,6 +41,9 @@ export const PrintOrders: CollectionConfig = {
     create: isStaff,
     read: ownerOrStaff('user'),
     update: isStaff,
+  },
+  hooks: {
+    beforeChange: [freezeFinancialFieldsAfterPayment],
   },
   defaultSort: '-createdAt',
   timestamps: true,

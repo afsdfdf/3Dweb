@@ -45,6 +45,10 @@ export function getStripeClient() {
 
   stripeClient = new Stripe(secretKey, {
     apiVersion: '2026-03-25.dahlia',
+    // Bound network calls so a hung Stripe request cannot stall a serverless
+    // function until its platform timeout. One retry covers transient blips.
+    maxNetworkRetries: 1,
+    timeout: 20_000,
   })
 
   return stripeClient

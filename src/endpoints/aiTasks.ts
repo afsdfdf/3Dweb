@@ -3,6 +3,7 @@ import type { PayloadRequest } from 'payload'
 import crypto from 'node:crypto'
 
 import { handleAIWebhook, handleMeshyWebhook, reconcileStaleAITasks, submitAITask, syncAITask } from '@/lib/aiTaskFlow'
+import { purgeExpiredNotifications } from '@/lib/notificationService'
 import { writeAuditLog } from '@/lib/auditLog'
 import { InsufficientCreditsError } from '@/lib/creditLedger'
 import { rejectRateLimitedEndpoint } from '@/lib/endpointRateLimit'
@@ -255,7 +256,25 @@ export const cronReconcileAITasksEndpoint = {
       return Response.json({ message: 'AI task reconciliation verification failed.' }, { status: 401 })
     }
 
-    return Response.json(await reconcileStaleAITasks({ req }))
+    const reconciliation = await reconcileStaleAITasks({ req })
+
+    // Piggyback housekeeping on the same 10-minute cron: purge read
+    // notifications past the retention window so the table stays bounded.
+    let notificationCleanup: { deleted: number; retentionDays: number } | { error: string }
+    try {
+      notificationCleanup = await purgeExpiredNotifications({ req })
+    } catch (error) {
+      req.payload.logger?.error?.({
+        err: error,
+        msg: 'Failed to purge expired notifications during cron reconcile.',
+      })
+      notificationCleanup = { error: 'Notification cleanup failed; see logs.' }
+    }
+
+    return Response.json({
+      ...reconciliation,
+      notificationCleanup,
+    })
   },
 }
 
