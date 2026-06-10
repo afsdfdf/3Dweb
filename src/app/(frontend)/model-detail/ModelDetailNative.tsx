@@ -1,6 +1,6 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
 
+import NextImage from "next/image";
 import Link from "next/link";
 import {
   OrangeMediumActionButton,
@@ -740,7 +740,7 @@ export default function ModelDetailNative({
                   }}
                 >
                   {item.imageSrc ? (
-                    <img alt={item.title} src={getSupabasePreviewImageURL(item.imageSrc, "model-card")} />
+                    <NextImage alt={item.title} fill sizes="80px" src={getSupabasePreviewImageURL(item.imageSrc, "model-card")} style={{ objectFit: "cover" }} />
                   ) : null}
                   <span>{item.title}</span>
                 </a>
@@ -1062,12 +1062,12 @@ export default function ModelDetailNative({
                                     }
                                   }}
                                 >
-                                  <img
-                                    src={getSupabasePreviewImageURL(item.imageSrc, "model-card")}
+                                  <NextImage
                                     alt={item.title}
-                                    decoding="async"
-                                    fetchPriority="low"
-                                    loading="eager"
+                                    fill
+                                    sizes="80px"
+                                    src={getSupabasePreviewImageURL(item.imageSrc, "model-card")}
+                                    style={{ objectFit: "cover" }}
                                   />
                                 </a>
                               </ButtonBoxFrame>

@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
 export const revalidate = 60
 
 export const metadata = {
@@ -10,6 +9,7 @@ export const metadata = {
   },
 }
 
+import Image from 'next/image'
 import Link from 'next/link'
 import type { Where } from 'payload'
 import { ArrowRight, Box, Eye, Sparkles } from 'lucide-react'
@@ -381,11 +381,11 @@ export default async function ShowcasePage({ searchParams }: ShowcasePageProps) 
                   <article className={styles.modelCard} key={model.id}>
                     <Link className={styles.modelImageLink} href={model.href}>
                       {model.previewURL ? (
-                        <img
+                        <Image
                           alt={model.title}
                           className={styles.modelImage}
-                          decoding="async"
-                          loading="lazy"
+                          fill
+                          sizes="(max-width:640px) 50vw, (max-width:1024px) 33vw, 25vw"
                           src={getSupabasePreviewImageURL(model.previewURL, 'model-card')}
                         />
                       ) : (

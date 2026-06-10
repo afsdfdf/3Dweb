@@ -1,3 +1,5 @@
+import Image from 'next/image'
+
 import { getSupabasePreviewImageURL } from '@/lib/supabase/imageTransform'
 
 export type FeaturedItem = {
@@ -43,8 +45,7 @@ export function HomeFeaturedRail({ copy, items }: { copy?: HomeFeaturedRailCopy;
 
             return (
               <article className={SLOT_CLASS_BY_VARIANT[item.variant]} key={item.id}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img alt={item.alt} className="block h-full w-full object-contain" src={previewSrc} />
+                <Image alt={item.alt} fill sizes="(max-width:640px) 50vw, 25vw" src={previewSrc} style={{ objectFit: 'contain' }} />
               </article>
             )
           })}
