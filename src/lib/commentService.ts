@@ -246,3 +246,34 @@ export async function moderateModelComment(args: {
 
   return updated
 }
+
+const RECONCILE_PAGE_SIZE = 100
+
+export async function reconcileModelCommentCounts(args: { req: PayloadRequest }) {
+  let page = 1
+  let reconciled = 0
+
+  for (;;) {
+    const models = await args.req.payload.find({
+      collection: 'models',
+      depth: 0,
+      limit: RECONCILE_PAGE_SIZE,
+      overrideAccess: true,
+      page,
+      pagination: true,
+      req: args.req,
+    })
+
+    for (const model of models.docs) {
+      const modelId = typeof model.id === 'number' ? model.id : Number(model.id)
+      if (!Number.isFinite(modelId)) continue
+      await syncModelCommentCount({ req: args.req, modelId })
+      reconciled += 1
+    }
+
+    if (!models.hasNextPage) break
+    page += 1
+  }
+
+  return { reconciled }
+}

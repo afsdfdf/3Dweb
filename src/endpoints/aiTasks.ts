@@ -3,7 +3,10 @@ import type { PayloadRequest } from 'payload'
 import crypto from 'node:crypto'
 
 import { handleAIWebhook, handleMeshyWebhook, reconcileStaleAITasks, submitAITask, syncAITask } from '@/lib/aiTaskFlow'
+import { reconcileModelCommentCounts } from '@/lib/commentService'
+import { reconcileUserFollowCounts } from '@/lib/followService'
 import { purgeExpiredNotifications } from '@/lib/notificationService'
+import { reconcileModelReactionCounts } from '@/lib/reactionService'
 import { writeAuditLog } from '@/lib/auditLog'
 import { InsufficientCreditsError } from '@/lib/creditLedger'
 import { rejectRateLimitedEndpoint } from '@/lib/endpointRateLimit'
@@ -271,8 +274,25 @@ export const cronReconcileAITasksEndpoint = {
       notificationCleanup = { error: 'Notification cleanup failed; see logs.' }
     }
 
+    // Counter-drift resync: runs weekly (every Monday via separate cron
+    // schedule) but harmless on every tick — fast on small catalogs, slow
+    // but idempotent on large ones.
+    let counterReconciliation: { comments: number; follows: number; reactions: number } | { error: string }
+    try {
+      const [follows, reactions, comments] = await Promise.all([
+        reconcileUserFollowCounts({ req }),
+        reconcileModelReactionCounts({ req }),
+        reconcileModelCommentCounts({ req }),
+      ])
+      counterReconciliation = { comments: comments.reconciled, follows: follows.reconciled, reactions: reactions.reconciled }
+    } catch (error) {
+      req.payload.logger?.error?.({ err: error, msg: 'Counter reconciliation failed during cron.' })
+      counterReconciliation = { error: 'Counter reconciliation failed; see logs.' }
+    }
+
     return Response.json({
       ...reconciliation,
+      counterReconciliation,
       notificationCleanup,
     })
   },

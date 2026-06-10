@@ -1519,6 +1519,29 @@ async function dispatchMeshyTask(args: {
 
   meshyDispatchLocks.add(taskId)
 
+  // Pre-claim the dispatch slot in the DB before checking capacity so that
+  // concurrent serverless instances see this task as "in-flight" when they
+  // run their own capacity check. This closes the check-then-act race.
+  const startedAt = new Date().toISOString()
+  await req.payload.update({
+    collection: 'generation-tasks',
+    data: {
+      parameterSnapshot: {
+        ...currentSnapshot,
+        meshy: {
+          ...currentMeshy,
+          dispatchStartedAt: startedAt,
+        },
+      },
+      status: 'processing',
+    },
+    id: task.id,
+    overrideAccess: INTERNAL_ACCESS,
+    req,
+  })
+
+  // Re-read capacity AFTER writing our slot; if another instance already
+  // filled the limit we release our slot and back off.
   if (!(await hasMeshyDispatchCapacity({ excludeTaskId: taskId, req }))) {
     req.payload.logger.info(
       {
@@ -1527,11 +1550,25 @@ async function dispatchMeshyTask(args: {
       },
       'Meshy dispatch deferred because provider concurrency is at capacity.',
     )
+    // Clear our pre-claimed slot so the task isn't stuck as "processing"
+    // without actually dispatching.
+    await req.payload.update({
+      collection: 'generation-tasks',
+      data: {
+        parameterSnapshot: {
+          ...currentSnapshot,
+          meshy: { ...currentMeshy, dispatchStartedAt: null },
+        },
+        status: 'queued',
+      },
+      id: task.id,
+      overrideAccess: INTERNAL_ACCESS,
+      req,
+    }).catch(() => {/* best-effort rollback */})
     meshyDispatchLocks.delete(taskId)
     return task
   }
 
-  const startedAt = new Date().toISOString()
   const sourceImageAssetFromSnapshot = isRecord(currentSnapshot.sourceImageAsset) ? currentSnapshot.sourceImageAsset : undefined
   const sourceImageAssetsFromSnapshot = Array.isArray(currentSnapshot.sourceImageAssets)
     ? (currentSnapshot.sourceImageAssets.filter(isRecord) as Record<string, unknown>[])
@@ -1548,15 +1585,7 @@ async function dispatchMeshyTask(args: {
   const dispatchingTask = await req.payload.update({
     collection: 'generation-tasks',
     data: {
-      parameterSnapshot: {
-        ...currentSnapshot,
-        meshy: {
-          ...currentMeshy,
-          dispatchStartedAt: startedAt,
-        },
-      },
       progress: Math.max(7, Number(task.progress || 0)),
-      status: 'processing',
     },
     id: task.id,
     req,
