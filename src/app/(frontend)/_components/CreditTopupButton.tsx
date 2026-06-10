@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
+import { apiFetch } from '@/app/(frontend)/_lib/apiFetch'
 import { OrangeMediumActionButton } from '@/components/ui-lab/action-buttons'
 
 type CreditTopupButtonProps = {
@@ -22,12 +23,9 @@ export function CreditTopupButton({ disabled = false, productId }: CreditTopupBu
     setError('')
 
     try {
-      const response = await fetch('/api/billing/credits/checkout', {
+      const response = await apiFetch('/api/billing/credits/checkout', {
         body: JSON.stringify({ productId }),
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         method: 'POST',
       })
       const json = await response.json()

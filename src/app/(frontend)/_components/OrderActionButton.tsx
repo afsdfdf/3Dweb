@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
+import { apiFetch } from '@/app/(frontend)/_lib/apiFetch'
 import { Button } from '@/components/ui/button'
 
 type OrderActionButtonProps = {
@@ -31,9 +32,9 @@ export function OrderActionButton({ orderId, status }: OrderActionButtonProps) {
     setError('')
 
     try {
-      const response = await fetch(`/api/commerce/print-orders/${orderId}/sync`, {
+      const response = await apiFetch(`/api/commerce/print-orders/${orderId}/sync`, {
         method: 'POST',
-        credentials: 'include',
+        
       })
       const json = await response.json()
 

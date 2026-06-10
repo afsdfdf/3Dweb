@@ -32,6 +32,7 @@ import {
   type WorkbenchImageInput,
   type WorkbenchMode,
 } from "./WorkbenchLeftGenerationPanel";
+import { apiFetch } from "../_lib/apiFetch";
 import { selectWorkbenchSyncTasks } from "./_lib/workbenchPolling";
 import { getEstimatedWorkbenchProgress } from "./_lib/workbenchProgress";
 import styles from "./page.module.css";
@@ -479,10 +480,7 @@ export function WorkbenchClient({
           task.kind === "image"
             ? `/api/studio/ai/images/${task.taskId}/sync`
             : `/api/studio/ai/tasks/${task.taskId}/sync`;
-        const response = await fetch(syncEndpoint, {
-          credentials: "include",
-          method: "POST",
-        });
+        const response = await apiFetch(syncEndpoint, { method: "POST" });
         const json = await response.json().catch(() => ({}));
 
         if (!response.ok) {
@@ -847,7 +845,7 @@ export function WorkbenchClient({
 
       const response =
         activeMode === "imageTools"
-          ? await fetch("/api/studio/ai/images", {
+          ? await apiFetch("/api/studio/ai/images", {
               body: JSON.stringify({
                 inputMode: sourceImageAsset ? "image" : "text",
                 parameterSnapshot: commonSnapshot,
@@ -855,11 +853,10 @@ export function WorkbenchClient({
                 sourceImageAsset,
                 sourceImageAssets,
               }),
-              credentials: "include",
               headers: { "Content-Type": "application/json" },
               method: "POST",
             })
-          : await fetch("/api/studio/ai/tasks", {
+          : await apiFetch("/api/studio/ai/tasks", {
               body: JSON.stringify({
                 inputMode: sourceImageAsset ? "hybrid" : "text",
                 parameterSnapshot: commonSnapshot,
@@ -867,7 +864,6 @@ export function WorkbenchClient({
                 sourceImageAsset,
                 sourceImageAssets,
               }),
-              credentials: "include",
               headers: { "Content-Type": "application/json" },
               method: "POST",
             });

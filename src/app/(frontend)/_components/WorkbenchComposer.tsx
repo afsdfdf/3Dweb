@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { apiFetch } from '@/app/(frontend)/_lib/apiFetch'
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser'
 import type { GenerationPricing } from '@/lib/taskBilling'
 
@@ -92,16 +93,16 @@ export function WorkbenchComposer({
   const tags = useMemo(() => parseTagInput(tagInput), [tagInput])
 
   const uploadSourceImage = async (file: File): Promise<SourceImageAsset> => {
-    const configResp = await fetch('/api/media/upload-url', {
+    const configResp = await apiFetch('/api/media/upload-url', {
       body: JSON.stringify({
         contentType: file.type || 'application/octet-stream',
         filename: file.name || 'reference-image',
         purpose: 'input',
         size: file.size,
       }),
-      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       method: 'POST',
+      timeoutMs: 15_000,
     })
 
     if (!configResp.ok) {
@@ -167,7 +168,7 @@ export function WorkbenchComposer({
         sourceImageAsset = await uploadSourceImage(primaryImage)
       }
 
-      const response = await fetch('/api/studio/ai/tasks', {
+      const response = await apiFetch('/api/studio/ai/tasks', {
         body: JSON.stringify({
           inputMode: mode,
           parameterSnapshot: {
@@ -184,7 +185,6 @@ export function WorkbenchComposer({
           prompt: formData.get('prompt'),
           sourceImageAsset,
         }),
-        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         method: 'POST',
       })

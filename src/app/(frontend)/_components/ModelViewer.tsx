@@ -11,6 +11,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { apiFetch } from '@/app/(frontend)/_lib/apiFetch'
 import * as THREE from "three";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
@@ -855,7 +856,7 @@ export function ModelViewer({
       }
 
       try {
-        const response = await fetch(fetchSrc, {
+        const response = await apiFetch(fetchSrc, { timeoutMs: 120_000,
           cache: "force-cache",
           priority: "high",
           signal: requestController.signal,

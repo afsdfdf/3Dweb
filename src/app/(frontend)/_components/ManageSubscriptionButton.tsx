@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 
+import { apiFetch } from '@/app/(frontend)/_lib/apiFetch'
 import { Button } from '@/components/ui/button'
 
 type ManageSubscriptionButtonProps = {
@@ -18,9 +19,9 @@ export function ManageSubscriptionButton({ label, variant = 'outline' }: ManageS
     setError('')
 
     try {
-      const response = await fetch('/api/billing/subscriptions/portal', {
+      const response = await apiFetch('/api/billing/subscriptions/portal', {
         method: 'POST',
-        credentials: 'include',
+        
       })
       const json = await response.json()
 

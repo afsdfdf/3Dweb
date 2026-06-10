@@ -6,6 +6,7 @@ import {
   OrangeMediumActionButton,
   SourcePurpleMediumButton,
 } from "@/components/ui-lab/action-buttons";
+import { apiFetch } from '@/app/(frontend)/_lib/apiFetch'
 import { AuthModalStage } from "@/components/auth/AuthModalStage";
 import { useAuthModal } from "@/components/auth/AuthModalProvider";
 import { ButtonBoxFrame } from "@/components/ui-lab/button-box-frame";
@@ -258,7 +259,7 @@ export default function ModelDetailNative({
     setCommentFeedback(null);
 
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `/api/social/models/${activeModel.id}/comments?limit=${commentLimit}`,
         { credentials: "same-origin" },
       );
@@ -297,7 +298,7 @@ export default function ModelDetailNative({
       setRelatedError(null);
 
       try {
-        const response = await fetch(
+        const response = await apiFetch(
           `/api/platform/models/${activeModel.id}/related?page=${nextPage}&limit=${relatedPagination.limit}`,
           { credentials: "same-origin" },
         );
@@ -363,7 +364,7 @@ export default function ModelDetailNative({
 
     const controller = new AbortController();
 
-    void fetch("/api/engagement/view", {
+    void apiFetch("/api/engagement/view", {
       body: JSON.stringify({
         targetId: detail.id,
         targetType: "model",
@@ -449,7 +450,7 @@ export default function ModelDetailNative({
 
     setCommentSubmitting(true);
     try {
-      const response = await fetch(`/api/social/models/${activeModel.id}/comments`, {
+      const response = await apiFetch(`/api/social/models/${activeModel.id}/comments`, {
         body: JSON.stringify({ content }),
         credentials: "same-origin",
         headers: {
@@ -495,7 +496,7 @@ export default function ModelDetailNative({
 
     setIsDownloading(true);
     try {
-      const response = await fetch(`${downloadURL}&inline=1`, {
+      const response = await apiFetch(`${downloadURL}&inline=1`, {
         credentials: "same-origin",
       });
 

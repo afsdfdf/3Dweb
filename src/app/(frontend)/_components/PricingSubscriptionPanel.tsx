@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useMemo, useState } from 'react'
 
+import { apiFetch } from '@/app/(frontend)/_lib/apiFetch'
 import { useAuthModal } from '@/components/auth/AuthModalProvider'
 import { SubscriptionPanel, type SubscriptionPanelPlan } from '@/components/ui-lab/subscription-panel'
 import type { SubscriptionPlanDefinition } from '@/lib/subscriptionPlans'
@@ -88,8 +89,8 @@ export function PricingSubscriptionPanel({
     setMessage('')
 
     try {
-      const response = await fetch('/api/billing/subscriptions/portal', {
-        credentials: 'include',
+      const response = await apiFetch('/api/billing/subscriptions/portal', {
+        
         method: 'POST',
       })
       const json = await response.json()
@@ -117,9 +118,9 @@ export function PricingSubscriptionPanel({
     setMessage('')
 
     try {
-      const response = await fetch('/api/billing/subscriptions/checkout', {
+      const response = await apiFetch('/api/billing/subscriptions/checkout', {
         body: JSON.stringify({ planKey }),
-        credentials: 'include',
+        
         headers: {
           'Content-Type': 'application/json',
         },
