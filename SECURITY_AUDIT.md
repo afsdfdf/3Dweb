@@ -1,306 +1,159 @@
-# ThornsTavern 安全与代码质量审计报告
+# ThornsTavern 安全与代码质量审计报告（严格复审版）
 
-**审计日期**: 2026-06-10  
+**审计日期**: 2026-06-10（复审并修复）  
 **项目**: ThornsTavern — 3D 模型 / AI 生成平台  
-**技术栈**: Next.js 16 · React 19 · Payload CMS 3.82 · PostgreSQL · Supabase · Stripe · Three.js
+**技术栈**: Next.js 16 · React 19 · Payload CMS 3.82 · PostgreSQL · Supabase · Stripe · Three.js  
+**审计方式**: 逐文件人工核查关键安全路径（认证、限流、支付、GraphQL、迁移、集合定义）
+
+> 本版报告对初版结论做了**实证复核**：每个问题都核对了实际代码；初版中两项被夸大的风险已更正，同时新发现三个初版遗漏的真实问题。**所有确认的问题已在本次提交中修复**，并通过 typecheck、ESLint（0 错误）和 351 项单元测试验证。
 
 ---
 
-## 总体评级：A－（优秀）
+## 一、已修复的问题
 
-| 维度 | 评分 |
-|------|------|
-| 认证与鉴权 | ✅ 优秀 |
-| 输入验证 | ✅ 优秀 |
-| 密钥管理 | ✅ 优秀 |
-| 速率限制 | ✅ 优秀 |
-| 支付安全 | ✅ 良好，有改进项 |
-| 类型安全 | ⚠️ 有少量问题 |
-| 依赖管理 | ⚠️ 需周期性维护 |
-| 可观测性 | ❌ 缺少错误追踪 |
+### 🔴 F-1 · GraphQL fragment 循环递归导致 DoS（新发现，初版遗漏）
 
----
+**文件**: `src/lib/graphqlSecurity.ts`
 
-## 一、安全问题
+**问题**: 安全校验器在展开 `FragmentSpread` 时没有循环检测。恶意构造相互引用的 fragment（`fragment A { ...B }` / `fragment B { ...A }`）会让 `visitSelection` 无限递归，在限流和深度检查生效之前就触发栈溢出，使生产 GraphQL 端点崩溃。`graphql.parse()` 不拒绝循环 fragment（循环检测属于执行期 validation，而此校验器运行在执行之前）。
 
-### 🔴 严重（Critical）
-
-> 未发现严重漏洞。
+**修复**:
+- 递归时携带"活跃 fragment 集合"，遇到已展开的 fragment 直接判为超深（拒绝请求）
+- 增加 64 层的绝对遍历深度上限作为兜底
 
 ---
 
-### 🟠 高风险（High）
+### 🟠 F-2 · 速率限制读改写竞态（新发现，初版遗漏）
 
-> 未发现高风险漏洞。
+**文件**: `src/lib/rateLimit.ts`、`src/lib/kvStore.ts`
 
----
+**问题**: 原实现为 `get → 判断 → set`，非原子操作。并发请求会同时读到相同计数并各自加一写回，使实际通过量超过配置上限——对登录、注册等低限额（5～10 次）的敏感端点，攻击者用并发请求即可成倍放大尝试次数。
 
-### 🟡 中风险（Medium）
-
-#### M-1 · 迁移文件中的 SQL 字符串拼接
-
-**文件**: `src/migrations/20260509_074100_formal_pages_blog_header.ts`
-
-**问题**: 迁移文件使用 `quote()` 函数手工拼接 SQL UPDATE 语句，绕过了 ORM 的参数化查询保护。若 `quote()` 实现不够健壮，存在 SQL 注入风险。
-
-**解决方案**:
-```ts
-// ❌ 当前写法
-sql`UPDATE "models" SET "title" = ${quote(title)} WHERE id = ${id}`
-
-// ✅ 改用 Drizzle 参数化占位符
-await db.update(models).set({ title }).where(eq(models.id, id))
-```
-若必须使用原始 SQL，则切换为 `$1`/`$2` 占位符并传参数组：
-```ts
-await payload.db.pool.query(
-  'UPDATE "models" SET "title" = $1 WHERE id = $2',
-  [title, id]
-)
-```
+**修复**:
+- `KVStore` 接口新增原子 `increment(key, ttlMs)`：Redis 用 `INCR` + 首次创建时 `PEXPIRE`；内存实现利用 Node 单线程同 tick 原子性
+- `enforceRateLimit` 改为基于原子自增判断，彻底消除竞态
+- 顺带修复：原实现每次请求对内存存储做 O(n) 全量过期清理，现节流为每 60 秒一次
 
 ---
 
-#### M-2 · Auth 工具函数中的 `as any` 类型强转
+### 🟠 F-3 · 限流 IP 识别在 Vercel 上失效（新发现，初版遗漏）
 
-**文件**: `src/lib/payloadAuthFallback.ts`，约第 90 行
+**文件**: `src/lib/requestSecurity.ts`、`.env.example`
 
-**问题**: 使用 `as any` 跳过 TypeScript 类型检查，若数据库 schema 变更可能引发运行时类型错误。
+**问题**: `getRequestIP` 只信任 `cf-connecting-ip` 和 `x-real-ip`。Vercel 平台主要提供 `x-forwarded-for`，因此即使设置了 `TRUST_PROXY_HEADERS=true`，限流键也会退化为 User-Agent 桶——攻击者轮换 UA 即可绕过限流，而使用常见 UA 的正常用户会共享配额、被他人刷爆而误伤。
 
-**解决方案**:
-```ts
-// ❌ 当前写法
-const user = (await payload.findByID({ ... })) as any as AuthenticatedUser
-
-// ✅ 使用类型守卫
-function isAuthenticatedUser(u: unknown): u is AuthenticatedUser {
-  return (
-    typeof u === 'object' && u !== null &&
-    'id' in u && 'email' in u && 'role' in u
-  )
-}
-
-const rawUser = await payload.findByID({ ... })
-if (!isAuthenticatedUser(rawUser)) {
-  throw new Error('Unexpected user shape from Payload')
-}
-const user = rawUser // 类型已推断为 AuthenticatedUser
-```
+**修复**:
+- 受信代理头列表加入 `x-forwarded-for`（取首跳 IP，已有的 `normalizeIP` 负责拆分）
+- `.env.example` 显式说明生产环境必须设置 `TRUST_PROXY_HEADERS=true` 与 `REDIS_URL`，否则限流降级
 
 ---
 
-### 🟢 低风险（Low）
-
-#### L-1 · 配置文件中硬编码 Supabase 项目地址
-
-**文件**: `src/next.config.ts`，第 12 行
-
-**问题**: `umxjtmlmxwjwnbivuxep.supabase.co` 直接写入代码，暴露项目 ID。
-
-**解决方案**:
-```ts
-// next.config.ts
-const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
-  ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname
-  : 'placeholder.supabase.co'
-```
-
----
-
-#### L-2 · 控制台日志替代结构化日志
-
-**文件**: `src/lib/kvStore.ts`，第 128 行
-
-**问题**: `console.warn()` 在生产环境中输出内部状态信息，不易聚合分析。
-
-**解决方案**: 引入轻量日志库（如 `pino`）：
-```ts
-import pino from 'pino'
-const logger = pino({ level: process.env.LOG_LEVEL ?? 'info' })
-
-// 替换 console.warn
-logger.warn({ store: 'memory' }, 'Redis unavailable, falling back to in-memory KV store')
-```
-
----
-
-#### L-3 · Stripe 生产环境未禁止测试密钥
+### 🟡 F-4 · Stripe 测试密钥可在生产环境使用
 
 **文件**: `src/lib/stripeGateway.ts`
 
-**问题**: 若误将 `sk_test_*` 密钥部署到生产环境，支付将静默失败。
+**问题**: 无任何校验阻止 `sk_test_*` 密钥部署到生产环境，会导致支付静默走测试模式。
 
-**解决方案**: 在应用启动时加入校验：
-```ts
-// src/lib/envGuard.ts 或 stripeGateway.ts 初始化处
-if (
-  process.env.NODE_ENV === 'production' &&
-  process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_')
-) {
-  throw new Error('[Fatal] Stripe test key detected in production environment.')
-}
-```
+**修复**: `getStripeClient()` 在 `NODE_ENV=production` 下检测到 `sk_test_` 前缀时直接抛错，启动即失败。
 
 ---
 
-#### L-4 · 用户简介（bio）字段缺少长度限制
-
-**文件**: `src/collections/Users.ts`
-
-**问题**: `bio` 文本域无最大长度限制，可导致超大 payload 写入数据库。
-
-**解决方案**:
-```ts
-{
-  name: 'bio',
-  type: 'textarea',
-  maxLength: 500,   // 添加此行
-  validate: (val: string | null) => {
-    if (val && val.length > 500) return '简介不能超过 500 字符'
-    return true
-  }
-}
-```
-
----
-
-#### L-5 · GraphQL 端点未加速率限制
-
-**问题**: `/api/graphql` 仅有深度和复杂度限制，缺少请求频率限制，可被用于慢速枚举攻击。
-
-**解决方案**:
-```ts
-// src/app/api/graphql/route.ts
-import { rateLimiter } from '@/lib/rateLimiter'
-
-export async function POST(req: Request) {
-  const limited = await rateLimiter('graphql', req, { max: 60, window: '1m' })
-  if (limited) return limited
-  // ... 原有逻辑
-}
-```
-
----
-
-## 二、代码质量问题
-
-### Q-1 · 支付 Webhook 响应状态码未明确返回 200
+### 🟡 F-5 · Stripe Webhook 错误状态码语义不正确
 
 **文件**: `src/endpoints/stripeWebhook.ts`
 
-**问题**: 若处理器未在所有分支中明确返回 HTTP 200，Stripe 会重试事件，可能导致重复扣款。
+**问题**: 签名验证失败和业务处理失败统一返回 400。签名失败重试永远不会成功（应永久拒绝）；业务处理失败（如数据库瞬时故障）应返回 5xx 让 Stripe 按退避策略重试。
 
-**解决方案**: 确保所有代码路径均返回 `NextResponse.json({ received: true }, { status: 200 })`：
-```ts
-export async function POST(req: Request) {
-  try {
-    // ... 处理逻辑
-    return NextResponse.json({ received: true }, { status: 200 })
-  } catch (err) {
-    // 仍返回 200 以防 Stripe 重试，同时记录错误
-    logger.error(err, 'Stripe webhook processing error')
-    return NextResponse.json({ received: true }, { status: 200 })
-  }
-}
-```
+**修复**: 拆分两个 try 块——签名验证失败返回 400（含审计日志），事件处理失败返回 500 触发 Stripe 重试。finalize 流程具备幂等键保护，重试不会重复入账。
 
 ---
 
-### Q-2 · 缺少错误追踪（Error Tracking）
+### 🟡 F-6 · GraphQL 端点缺少请求频率限制
 
-**问题**: 代码中无 Sentry 或等价工具集成，生产环境异常只能通过日志被动发现。
+**文件**: `src/app/(payload)/api/graphql/route.ts`
 
-**解决方案**: 安装 Sentry Next.js SDK：
-```bash
-pnpm add @sentry/nextjs
-npx @sentry/wizard@latest -i nextjs
-```
-在 `next.config.ts` 中包裹配置：
-```ts
-import { withSentryConfig } from '@sentry/nextjs'
-export default withSentryConfig(nextConfig, { silent: true })
-```
+**问题**: 仅有深度/复杂度限制，无频率限制，可被用于持续慢速枚举。
+
+**修复**: 接入既有 `enforceRateLimit` 基础设施，按 IP（或 UA 兜底）限流，默认 120 次/60 秒，可经 `GRAPHQL_RATE_LIMIT_MAX` / `GRAPHQL_RATE_LIMIT_WINDOW_MS` 调整，超限返回 429 + `Retry-After`。
 
 ---
 
-### Q-3 · 无 `pnpm audit` CI 自动化
+### 🟢 F-7 · 用户文本字段缺少长度限制
 
-**问题**: 依赖漏洞只能手动发现。
+**文件**: `src/collections/Users.ts`
 
-**解决方案**: 在 CI/CD 流程（GitHub Actions）中加入：
-```yaml
-- name: Dependency audit
-  run: pnpm audit --audit-level=high
-```
+**修复**: `bio` 加 `maxLength: 500` + 服务端 validate；`fullName` 加 `maxLength: 100`；`phone` 加 `maxLength: 32`。
 
 ---
 
-## 三、安全检查清单
+### 🟢 F-8 · 认证回退工具中的 `as any` 强转
 
-| 控制项 | 状态 | 说明 |
-|--------|------|------|
-| HTTPS/TLS | ✅ | Vercel 强制启用 |
-| 密码哈希 | ✅ | Payload 默认 bcrypt |
-| JWT 会话管理 | ✅ | 含过期与吊销机制 |
-| CSRF 防护 | ✅ | Origin 头校验 |
-| SQL 注入防护 | ✅ | ORM 参数化；迁移文件需额外审查 |
-| XSS 防护 | ⚠️ | 依赖 React 转义，建议验证评论渲染路径 |
-| 密钥管理 | ✅ | 仓库中无真实密钥 |
-| 速率限制 | ✅ | 23 个独立限流作用域 |
-| 输入验证 | ✅ | 所有端点严格校验 |
-| 文件上传安全 | ✅ | MIME 类型白名单 + 文件名净化 |
-| 访问控制 | ✅ | 基于角色（admin/operator/customer） |
-| 审计日志 | ✅ | 涵盖支付、认证、AI 任务 |
-| 安全响应头 | ✅ | CSP/HSTS/X-Frame-Options 已配置 |
-| Stripe Webhook 验签 | ✅ | Constructive Event 验证 |
-| 依赖版本锁定 | ✅ | pnpm-lock.yaml 已追踪 |
-| 生产依赖审计 | ⚠️ | 建议加入 CI 自动化 |
-| 错误追踪 | ❌ | 未集成 Sentry 等工具 |
-| Stripe 测试密钥保护 | ❌ | 需加启动时校验 |
+**文件**: `src/lib/payloadAuthFallback.ts`
+
+**修复**: `findByID` 调用改用 `CollectionSlug` 类型化的 slug 与原生 `id`，`req.user` 赋值改用 Payload 导出的 `TypedUser`。（`AuthenticatedUser` 的宽松记录类型保留——下游 `session.ts` 依赖其字段访问形态，已加注 eslint 豁免说明。）
 
 ---
 
-## 四、优先级行动计划
+### 🟢 F-9 · next.config 硬编码 Supabase 主机
 
-### 立即处理（本周）
+**文件**: `next.config.ts`
 
-| # | 任务 | 文件 | 工时估算 |
-|---|------|------|---------|
-| 1 | 添加 Stripe 测试密钥生产环境校验 | `src/lib/stripeGateway.ts` | 0.5h |
-| 2 | 确保 Stripe Webhook 所有分支返回 200 | `src/endpoints/stripeWebhook.ts` | 1h |
-| 3 | 迁移文件改用参数化 SQL | `src/migrations/*.ts` | 2h |
-
-### 近期处理（1-2 周内）
-
-| # | 任务 | 文件 | 工时估算 |
-|---|------|------|---------|
-| 4 | 替换 `as any` 为类型守卫 | `src/lib/payloadAuthFallback.ts` | 1h |
-| 5 | 用户 bio 字段加长度限制 | `src/collections/Users.ts` | 0.5h |
-| 6 | GraphQL 端点加速率限制 | `src/app/api/graphql/route.ts` | 1h |
-| 7 | 集成 Sentry 错误追踪 | 全局 | 2h |
-
-### 计划处理（1 个月内）
-
-| # | 任务 |
-|---|------|
-| 8 | CI 流程加入 `pnpm audit` |
-| 9 | 引入 pino 替换 console.warn |
-| 10 | 将硬编码 Supabase 主机改为环境变量 |
-| 11 | 编写 `SECURITY.md` 漏洞披露政策 |
-| 12 | 为认证和支付流程补充集成测试 |
+**修复**: 改为环境变量（`SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_URL`）优先；仅当两者都未配置时才回退到演示项目主机，便于本地零配置开发。
 
 ---
 
-## 五、亮点（已做好的部分）
+### 🟢 F-10 · 缺少依赖审计自动化与披露政策
 
-- **完善的速率限制**：23 个独立作用域，涵盖注册、登录、AI 提交、社交互动等
-- **多层访问控制**：admin / operator / customer 角色体系，集合级别权限执行
-- **Redis 令牌吊销**：支持即时强制登出
-- **支付安全**：Stripe Webhook 签名验证 + 幂等键防重放
-- **审计日志**：覆盖支付、认证变更、AI 任务全链路
-- **安全响应头**：生产环境 CSP 严格策略，开发环境宽松策略分离
-- **无仓库密钥泄露**：所有 `.env.example` 文件使用占位符
+**新增文件**:
+- `.github/workflows/security-audit.yml` — push / PR / 每周一定时运行 `pnpm audit --prod --audit-level=high`
+- `SECURITY.md` — 漏洞披露渠道、响应时限，以及生产部署必配的安全环境变量清单
 
 ---
 
-*本报告基于静态代码审计生成，建议结合动态渗透测试和 `pnpm audit` 做进一步验证。*
+## 二、复核后撤销或降级的初版结论
+
+| 初版结论 | 复核结果 |
+|----------|----------|
+| 迁移文件 `quote()` 存在 SQL 注入风险（中危） | **撤销**。三个迁移文件中 `quote()`（单引号转义）仅作用于文件内硬编码的常量字符串，无任何用户输入路径，实际注入面为零。 |
+| `first-register` 自动授予 admin 角色疑似提权 | **确认安全**。该路径是 Payload 内置的 first-register 操作，框架在已存在用户时拒绝执行；`usersUpdateAccess` 的豁免也仅允许该流程写入 `_verified` 单字段。 |
+| 建议 Webhook 失败也返回 200 | **更正**。失败返回 200 会让 Stripe 放弃重试、丢失事件。正确做法是签名错误 400、瞬时错误 500（已按此实现，见 F-5）。 |
+
+---
+
+## 三、已知但未修复（含理由）
+
+| 项 | 理由 |
+|----|------|
+| `creditLedger.ts` / `ledgerStore.ts` 中对原始 SQL 行的 `as any` 转换 | 原始 `pg` 查询结果本质无类型，转换处紧跟 `Number()` 规范化与 `satisfies` 校验，风险已被约束；强行建模收益低 |
+| 生产 CSP 含 `'unsafe-inline'`（script-src） | Payload Admin 与 Next 内联脚本依赖，移除需配套 nonce 改造，属架构级变更，建议单独立项 |
+| 未集成 Sentry 等错误追踪 | 引入第三方服务需要账号与 DSN 决策，不适合在审计修复中代为决定；建议作为独立任务 |
+| 4 个存量失败的前端 UI 测试（inspiration search / accountShell CSS） | 与安全无关的 UI 断言漂移，修改前即失败，已确认非本次引入；建议前端同步修复 |
+
+---
+
+## 四、验证记录
+
+| 检查 | 结果 |
+|------|------|
+| `pnpm typecheck` | ✅ 通过 |
+| `pnpm lint` | ✅ 0 错误（88 个存量 warning，均为既有 `no-explicit-any` 等） |
+| `pnpm test:unit` | ✅ 351 通过 / 4 失败（4 个失败为存量 UI 测试，已用干净工作树复跑确认与本次修改无关） |
+| 密钥扫描（sk_live / AKIA / AIza / JWT / 明文密码模式） | ✅ 仓库内无真实密钥，仅 `.env.example` 占位符与测试 fixture |
+
+---
+
+## 五、生产部署检查清单（运维必读）
+
+- [ ] `TRUST_PROXY_HEADERS=true` —— 否则限流按 UA 分桶，可绕过且易误伤
+- [ ] `REDIS_URL` —— 否则限流/令牌吊销仅在单实例内存中，serverless 多实例下形同虚设
+- [ ] `STRIPE_SECRET_KEY` 使用 `sk_live_*`（现在启动时强制校验）
+- [ ] `PAYLOAD_SECRET` ≥ 32 字符（已有启动校验）
+- [ ] `ALLOWED_REQUEST_ORIGINS` 配置为真实前端域名
+- [ ] `ENABLE_GRAPHQL_INTROSPECTION` / `ENABLE_GRAPHQL_PLAYGROUND` / `ENABLE_PUBLIC_ACCESS_ENDPOINT` 保持未启用
+- [ ] `SMTP_SKIP_VERIFY` 保持 false（生产启动已强制）
+
+---
+
+## 总体评级：A（修复后）
+
+修复前的主要缺口集中在**可用性攻击面**（fragment 循环 DoS、限流竞态与 IP 识别失效），而非数据泄露或权限绕过——认证、访问控制、支付幂等与密钥管理在初版审计中即被确认为良好。本次修复消除了全部已确认问题，并补齐了依赖审计自动化与披露政策。

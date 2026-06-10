@@ -1,6 +1,7 @@
-import type { Payload, PayloadRequest } from 'payload'
+import type { CollectionSlug, Payload, PayloadRequest, TypedUser } from 'payload'
 import { jwtVerify } from 'jose'
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- downstream session helpers rely on loose field access
 type AuthenticatedUser = Record<string, any> & {
   collection?: string
   email?: null | string
@@ -77,15 +78,16 @@ export async function resolvePayloadUserFromHeaders(args: { headers: Headers; pa
       return null
     }
 
-    const collection = payload.collections[tokenPayload.collection as keyof typeof payload.collections]
+    const collectionSlug = tokenPayload.collection as CollectionSlug
+    const collection = payload.collections[collectionSlug]
     if (!collection?.config?.auth) {
       return null
     }
 
     const user = (await payload.findByID({
-      collection: tokenPayload.collection as any,
+      collection: collectionSlug,
       depth: collection.config.auth.depth,
-      id: tokenPayload.id as any,
+      id: tokenPayload.id,
       overrideAccess: true,
     })) as AuthenticatedUser
 
@@ -125,7 +127,7 @@ export async function ensurePayloadRequestUser(req: PayloadRequest) {
   })
 
   if (user) {
-    req.user = user as any
+    req.user = user as TypedUser
   }
 
   return req.user || null

@@ -137,12 +137,29 @@ export const stripeWebhookEndpoint = {
       return Response.json({ message: 'Empty Stripe payload' }, { status: 400 })
     }
 
+    let event: Stripe.Event
     try {
-      const event = (stripeWebhookTestHooks?.constructStripeWebhookEvent || constructStripeWebhookEvent)({
+      event = (stripeWebhookTestHooks?.constructStripeWebhookEvent || constructStripeWebhookEvent)({
         payload: rawBody,
         signature,
       })
+    } catch (error) {
+      writeAuditLog({
+        details: {
+          message: getErrorMessage(error),
+        },
+        eventType: 'stripe.webhook',
+        level: 'error',
+        provider: 'stripe',
+        req,
+        status: 'failed',
+      })
 
+      // Invalid signature: reject permanently; a retry can never succeed.
+      return Response.json({ message: 'Invalid Stripe webhook signature.' }, { status: 400 })
+    }
+
+    try {
       const result = await handleStripeEvent({
         event,
         req,
@@ -182,7 +199,9 @@ export const stripeWebhookEndpoint = {
         msg: 'Stripe webhook processing failed',
       })
 
-      return Response.json({ message: getErrorMessage(error) }, { status: 400 })
+      // Transient processing failure: 500 prompts Stripe to retry the event.
+      // Finalize flows are idempotent, so retries cannot double-apply credits.
+      return Response.json({ message: getErrorMessage(error) }, { status: 500 })
     }
   },
 }

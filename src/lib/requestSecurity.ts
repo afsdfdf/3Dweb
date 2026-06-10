@@ -109,6 +109,10 @@ export function getRequestIP(headers: Headers) {
     const proxyHeaders = [
       headers.get('cf-connecting-ip'),
       headers.get('x-real-ip'),
+      // First hop of x-forwarded-for; required on platforms (e.g. Vercel)
+      // that do not set the headers above. Without an IP, rate limiting
+      // degrades to the shared user-agent bucket.
+      headers.get('x-forwarded-for'),
     ]
 
     for (const headerValue of proxyHeaders) {

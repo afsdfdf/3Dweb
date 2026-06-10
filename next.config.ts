@@ -9,7 +9,7 @@ const dirname = path.dirname(__filename)
 const allowedDevOrigins = getAllowedDevOrigins()
 
 const getSupabaseImageRemotePatterns = () => {
-  const hosts = new Set(['umxjtmlmxwjwnbivuxep.supabase.co'])
+  const hosts = new Set<string>()
 
   for (const value of [process.env.SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_URL]) {
     if (!value) continue
@@ -22,6 +22,11 @@ const getSupabaseImageRemotePatterns = () => {
     } catch {
       // Ignore malformed local env values; production env validation reports them separately.
     }
+  }
+
+  // Demo-bucket fallback so local development works without Supabase env vars.
+  if (hosts.size === 0) {
+    hosts.add('umxjtmlmxwjwnbivuxep.supabase.co')
   }
 
   return [...hosts].map((hostname) => ({

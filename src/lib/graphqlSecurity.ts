@@ -35,14 +35,18 @@ function buildFragmentMap(document: DocumentNode) {
   return map
 }
 
+// Hard ceiling so traversal terminates even when configured limits are very high.
+const ABSOLUTE_MAX_TRAVERSAL_DEPTH = 64
+
 function calculateDepthAndComplexity(document: DocumentNode) {
   const fragmentMap = buildFragmentMap(document)
   let maxDepth = 0
   let complexity = 0
   let maxTopLevelSelections = 0
 
-  const visitSelection = (selectionSet: any, depth: number) => {
-    if (!selectionSet?.selections) {
+  const visitSelection = (selectionSet: any, depth: number, activeFragments: ReadonlySet<string>) => {
+    if (!selectionSet?.selections || depth > ABSOLUTE_MAX_TRAVERSAL_DEPTH) {
+      maxDepth = Math.max(maxDepth, depth)
       return
     }
 
@@ -52,18 +56,26 @@ function calculateDepthAndComplexity(document: DocumentNode) {
       if (selection.kind === 'Field') {
         complexity += 1
         if (selection.selectionSet) {
-          visitSelection(selection.selectionSet, depth + 1)
+          visitSelection(selection.selectionSet, depth + 1, activeFragments)
         }
       }
 
       if (selection.kind === 'InlineFragment') {
-        visitSelection(selection.selectionSet, depth + 1)
+        visitSelection(selection.selectionSet, depth + 1, activeFragments)
       }
 
       if (selection.kind === 'FragmentSpread') {
-        const fragment = fragmentMap.get(selection.name.value)
+        const fragmentName = selection.name.value
+
+        // Cyclic fragment spreads (A -> B -> A) would otherwise recurse forever.
+        if (activeFragments.has(fragmentName)) {
+          maxDepth = Math.max(maxDepth, ABSOLUTE_MAX_TRAVERSAL_DEPTH + 1)
+          continue
+        }
+
+        const fragment = fragmentMap.get(fragmentName)
         if (fragment) {
-          visitSelection(fragment.selectionSet, depth + 1)
+          visitSelection(fragment.selectionSet, depth + 1, new Set(activeFragments).add(fragmentName))
         }
       }
     }
@@ -72,7 +84,7 @@ function calculateDepthAndComplexity(document: DocumentNode) {
   visit(document, {
     OperationDefinition(node) {
       maxTopLevelSelections = Math.max(maxTopLevelSelections, node.selectionSet.selections.length)
-      visitSelection(node.selectionSet, 1)
+      visitSelection(node.selectionSet, 1, new Set())
     },
   })
 

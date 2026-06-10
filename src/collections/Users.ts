@@ -126,7 +126,7 @@ export const Users: CollectionConfig = {
   },
   timestamps: true,
   fields: [
-    { name: 'fullName', type: 'text', label: 'Full name' },
+    { name: 'fullName', type: 'text', label: 'Full name', maxLength: 100 },
     {
       name: 'displayName',
       type: 'text',
@@ -138,6 +138,13 @@ export const Users: CollectionConfig = {
       name: 'bio',
       type: 'textarea',
       label: 'Bio',
+      maxLength: 500,
+      validate: (value: null | string | undefined) => {
+        if (value && value.length > 500) {
+          return 'Bio must be 500 characters or fewer.'
+        }
+        return true
+      },
       admin: {
         description: 'Short public profile introduction for creator pages and model detail sidebars.',
       },
@@ -211,7 +218,7 @@ export const Users: CollectionConfig = {
         { label: 'Public', value: 'public' },
       ],
     },
-    { name: 'phone', type: 'text', label: 'Phone' },
+    { name: 'phone', type: 'text', label: 'Phone', maxLength: 32 },
     {
       name: 'shopifyCustomerId',
       type: 'text',

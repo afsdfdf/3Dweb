@@ -13,11 +13,6 @@ type RateLimitResult = {
   resetAt: number
 }
 
-type RateLimitEntry = {
-  count: number
-  resetAt: number
-}
-
 const KV_PREFIX = 'ratelimit:'
 
 export async function enforceRateLimit(args: {
@@ -27,43 +22,29 @@ export async function enforceRateLimit(args: {
 }): Promise<RateLimitResult> {
   const store = getKVStore()
   const kvKey = `${KV_PREFIX}${args.key}`
-
-  // Periodically clean up expired keys in the active KV backend.
-  await store.cleanup()
-
-  const raw = await store.get(kvKey)
-  const existing: RateLimitEntry | null = raw ? JSON.parse(raw) : null
   const now = Date.now()
 
-  if (!existing || existing.resetAt <= now) {
-    const nextEntry: RateLimitEntry = {
-      count: 1,
-      resetAt: now + args.windowMs,
-    }
-    await store.set(kvKey, JSON.stringify(nextEntry), args.windowMs)
-    return {
-      allowed: true,
-      remaining: Math.max(0, args.limit - 1),
-      resetAt: nextEntry.resetAt,
-    }
-  }
+  // Periodically clean up expired keys in the active KV backend (throttled internally).
+  await store.cleanup()
 
-  if (existing.count >= args.limit) {
+  // Atomic increment prevents the read-modify-write race that previously let
+  // concurrent requests slip past the limit. The key's TTL bounds the window,
+  // so resetAt reported here is the conservative upper bound.
+  const count = await store.increment(kvKey, args.windowMs)
+  const resetAt = now + args.windowMs
+
+  if (count > args.limit) {
     return {
       allowed: false,
       remaining: 0,
-      resetAt: existing.resetAt,
+      resetAt,
     }
   }
 
-  existing.count += 1
-  const ttlMs = Math.max(1, existing.resetAt - now)
-  await store.set(kvKey, JSON.stringify(existing), ttlMs)
-
   return {
     allowed: true,
-    remaining: Math.max(0, args.limit - existing.count),
-    resetAt: existing.resetAt,
+    remaining: Math.max(0, args.limit - count),
+    resetAt,
   }
 }
 
