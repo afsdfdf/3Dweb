@@ -93,9 +93,10 @@
 }
 
 .heroThirdBanner {
-  height: 2226px;
+  height: auto;
   margin-top: 33px;
-  min-height: 2226px;
+  /* Tall enough for the frame ornaments and the empty state; grows with content. */
+  min-height: 760px;
 }
 
 .heroBottomBanner > :global([class*="content"]) {
@@ -121,7 +122,8 @@
   align-items: center;
   display: grid;
   gap: 16px;
-  grid-template-columns: 700px 360px 360px 340px;
+  /* 700/360/360/340 design ratios, fluid so cards are not cropped below 1920px. */
+  grid-template-columns: minmax(0, 1.94fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.94fr);
   height: 280px;
   left: 24px;
   overflow: hidden;
