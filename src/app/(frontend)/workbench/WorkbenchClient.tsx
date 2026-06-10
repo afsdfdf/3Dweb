@@ -32,7 +32,6 @@ import {
   type WorkbenchImageInput,
   type WorkbenchMode,
 } from "./WorkbenchLeftGenerationPanel";
-import { apiFetch } from "../_lib/apiFetch";
 import { selectWorkbenchSyncTasks } from "./_lib/workbenchPolling";
 import { getEstimatedWorkbenchProgress } from "./_lib/workbenchProgress";
 import styles from "./page.module.css";
@@ -69,7 +68,13 @@ type PendingGenerationTask = {
   title: string;
 };
 
-const syncIntervalMs = Math.max(1000, Number(process.env.NEXT_PUBLIC_TASK_SYNC_INTERVAL_MS || 5000));
+const SYNC_INTERVAL_FLOOR_MS = Math.max(1000, Number(process.env.NEXT_PUBLIC_TASK_SYNC_INTERVAL_MS || 3000));
+
+function getSyncDelayMs(elapsedMs: number): number {
+  if (elapsedMs < 30_000) return SYNC_INTERVAL_FLOOR_MS;
+  if (elapsedMs < 120_000) return Math.max(SYNC_INTERVAL_FLOOR_MS, 10_000);
+  return Math.max(SYNC_INTERVAL_FLOOR_MS, 30_000);
+}
 const configuredSyncBatchSize = Number(process.env.NEXT_PUBLIC_TASK_SYNC_BATCH_SIZE || 2);
 const syncBatchSize = Math.max(
   1,
@@ -467,6 +472,7 @@ export function WorkbenchClient({
 
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
+    const syncStartedAtMs = Date.now();
 
     const syncTask = async (task: PendingGenerationTask) => {
       if (!task.taskId || isTerminalGenerationStatus(task.status) || syncingTaskIdsRef.current.has(task.taskId)) {
@@ -480,7 +486,10 @@ export function WorkbenchClient({
           task.kind === "image"
             ? `/api/studio/ai/images/${task.taskId}/sync`
             : `/api/studio/ai/tasks/${task.taskId}/sync`;
-        const response = await apiFetch(syncEndpoint, { method: "POST" });
+        const response = await fetch(syncEndpoint, {
+          credentials: "include",
+          method: "POST",
+        });
         const json = await response.json().catch(() => ({}));
 
         if (!response.ok) {
@@ -620,15 +629,25 @@ export function WorkbenchClient({
       if (!cancelled && pendingTasksRef.current.some((task) => task.taskId && !isTerminalGenerationStatus(task.status))) {
         timer = setTimeout(() => {
           void syncOnce();
-        }, syncIntervalMs);
+        }, getSyncDelayMs(Date.now() - syncStartedAtMs));
       }
     };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        if (timer) { clearTimeout(timer); timer = null; }
+      } else {
+        if (!cancelled) void syncOnce();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     void syncOnce();
 
     return () => {
       cancelled = true;
       if (timer) clearTimeout(timer);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [activePendingCardId, hasSyncablePendingTasks, router]);
 
@@ -845,7 +864,7 @@ export function WorkbenchClient({
 
       const response =
         activeMode === "imageTools"
-          ? await apiFetch("/api/studio/ai/images", {
+          ? await fetch("/api/studio/ai/images", {
               body: JSON.stringify({
                 inputMode: sourceImageAsset ? "image" : "text",
                 parameterSnapshot: commonSnapshot,
@@ -853,10 +872,11 @@ export function WorkbenchClient({
                 sourceImageAsset,
                 sourceImageAssets,
               }),
+              credentials: "include",
               headers: { "Content-Type": "application/json" },
               method: "POST",
             })
-          : await apiFetch("/api/studio/ai/tasks", {
+          : await fetch("/api/studio/ai/tasks", {
               body: JSON.stringify({
                 inputMode: sourceImageAsset ? "hybrid" : "text",
                 parameterSnapshot: commonSnapshot,
@@ -864,6 +884,7 @@ export function WorkbenchClient({
                 sourceImageAsset,
                 sourceImageAssets,
               }),
+              credentials: "include",
               headers: { "Content-Type": "application/json" },
               method: "POST",
             });

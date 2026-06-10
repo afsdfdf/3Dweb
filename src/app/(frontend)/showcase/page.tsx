@@ -1,4 +1,15 @@
 /* eslint-disable @next/next/no-img-element */
+export const revalidate = 60
+
+export const metadata = {
+  title: 'Showcase — Thorns Tavern',
+  description: 'Explore 3D models created by the Thorns Tavern community.',
+  openGraph: {
+    title: 'Showcase — Thorns Tavern',
+    description: 'Explore 3D models created by the Thorns Tavern community.',
+  },
+}
+
 import Link from 'next/link'
 import type { Where } from 'payload'
 import { ArrowRight, Box, Eye, Sparkles } from 'lucide-react'

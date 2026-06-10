@@ -1,3 +1,5 @@
+export const metadata = { robots: { index: false, follow: false } }
+
 import Link from "next/link";
 
 import { BorderComboFrame2 } from "@/components/ui-lab/border-combo-frame-2";

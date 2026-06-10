@@ -10,8 +10,9 @@ export default function FrontendError({
   reset: () => void
 }) {
   useEffect(() => {
-    // Surfaces in the browser console and any client error reporting.
     console.error('Frontend route error:', error)
+    // Report to Sentry when configured (import is dynamic so it tree-shakes when DSN absent)
+    import('@sentry/nextjs').then(({ captureException }) => captureException(error)).catch(() => undefined)
   }, [error])
 
   return (

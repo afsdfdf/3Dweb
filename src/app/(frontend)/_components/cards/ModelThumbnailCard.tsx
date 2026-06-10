@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import Link from 'next/link'
 
 import { Eye, Heart, Star } from 'lucide-react'
@@ -64,8 +65,7 @@ function Avatar({
       }`}
     >
       {authorAvatarUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img alt={authorName || 'Author'} className="h-full w-full object-cover" src={authorAvatarUrl} />
+        <Image fill className="h-full w-full object-cover rounded-full" src={authorAvatarUrl} alt={authorName || 'Author'} sizes="44px" />
       ) : (
         buildInitials(authorName || 'Author')
       )}
@@ -134,12 +134,7 @@ export function ModelThumbnailCard({
           style={cardSize}
         >
           {previewSrc ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              alt={title}
-              className="absolute inset-0 h-full w-full object-cover"
-              src={previewSrc}
-            />
+            <Image fill className="object-cover" src={previewSrc} alt={title} sizes="(max-width:600px) 228px, 420px" />
           ) : (
             <div className="absolute inset-0 bg-[linear-gradient(180deg,#141519_0%,#0d0e11_100%)]" />
           )}
