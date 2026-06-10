@@ -1,0 +1,635 @@
+.page {
+  background: #181818;
+  min-height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  position: relative;
+}
+
+.boundTopNavigation {
+  left: 0;
+  position: relative;
+  right: 0;
+  top: 0;
+  z-index: 90;
+}
+
+.stage {
+  padding-top: 24px;
+}
+
+/* Same gutter as the homepage framed sections. */
+.framedSection {
+  --frame-gutter: 32px;
+  box-sizing: border-box;
+  padding-inline: var(--frame-gutter);
+  width: 100%;
+}
+
+/* ---------------------------------------------------------------- profile */
+
+.profileFrame {
+  --frame-border-width: 22px;
+  height: 208px;
+  width: 100%;
+}
+
+.profileFrameContent {
+  height: 100%;
+  min-height: 0;
+  padding: 0 !important;
+}
+
+.profileBanner {
+  background: #0c0c0e;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.profileMain {
+  align-items: center;
+  display: flex;
+  gap: 26px;
+  height: 100%;
+  padding-left: 40px;
+  position: relative;
+  z-index: 2;
+}
+
+.profileAvatarRing {
+  border: 3px solid #6c2c26;
+  border-radius: 999px;
+  box-sizing: border-box;
+  display: block;
+  flex: 0 0 auto;
+  height: 108px;
+  position: relative;
+  width: 108px;
+}
+
+.profileAvatarRingKick {
+  border-color: #00b871;
+}
+
+.profileAvatar {
+  border-radius: 999px;
+  display: block;
+  height: 92px;
+  left: 5px;
+  object-fit: cover;
+  position: absolute;
+  top: 5px;
+  width: 92px;
+}
+
+.profileKickBadge {
+  background: #0c0c0e;
+  border: 2px solid #00b871;
+  border-radius: 999px;
+  bottom: -12px;
+  color: #2ee5a0;
+  font-family: Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  left: 50%;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  padding: 3px 12px;
+  position: absolute;
+  transform: translateX(-50%);
+}
+
+.profileInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  max-width: 320px;
+  min-width: 0;
+}
+
+.profileName {
+  color: #ffffff;
+  font-family: Arial, sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.profileBio {
+  color: rgba(255, 255, 255, 0.5);
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  line-height: 18px;
+  margin: 0;
+}
+
+.profileStats {
+  align-items: center;
+  display: flex;
+  gap: 22px;
+}
+
+.profileStat {
+  align-items: center;
+  color: rgba(255, 255, 255, 0.72);
+  display: inline-flex;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  gap: 7px;
+}
+
+.profileStat img {
+  display: block;
+  height: 16px;
+  object-fit: contain;
+  width: 16px;
+}
+
+.profileFollowMount {
+  align-items: center;
+  display: flex;
+  gap: 18px;
+  margin-left: 44px;
+}
+
+.profileOrnament {
+  border: 2px solid rgba(255, 255, 255, 0.34);
+  display: block;
+  height: 12px;
+  transform: rotate(45deg);
+  width: 12px;
+}
+
+.profileArt {
+  background:
+    linear-gradient(90deg, #0c0c0e 0%, rgba(12, 12, 14, 0.65) 22%, rgba(12, 12, 14, 0) 52%),
+    url("/ui/workbench/model-detail/sketch-assets/rail-banner-bg.webp") right center / cover no-repeat;
+  bottom: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 46%;
+  z-index: 1;
+}
+
+/* ----------------------------------------------------------------- frame */
+
+.assetsFrame {
+  height: auto;
+  margin-bottom: 36px;
+  margin-top: 24px;
+  width: 100%;
+}
+
+.assetsFrame > :global([class*="content"]) {
+  min-height: 0;
+  padding: 0 var(--right-width) var(--bottom-height) var(--left-width);
+}
+
+.frameShell {
+  min-height: 0;
+  padding-top: 30px;
+  pointer-events: auto;
+  position: relative;
+}
+
+.toolbarRow {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 24px;
+  justify-content: space-between;
+  min-height: 32px;
+  padding-inline: 10px;
+}
+
+/* ------------------------------------------------------------------ tabs */
+
+.tabs {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.tab {
+  align-items: center;
+  background: #111113;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 2px;
+  box-sizing: border-box;
+  color: rgba(255, 255, 255, 0.62);
+  cursor: pointer;
+  display: inline-flex;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  gap: 8px;
+  height: 32px;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  padding: 0 16px;
+}
+
+.tab:hover {
+  background: #1a1a1f;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.tabActive,
+.tabActive:hover {
+  background: #1d1d22;
+  border-color: rgba(255, 255, 255, 0.6);
+  color: #ffffff;
+}
+
+/* --------------------------------------------------------------- toolbar */
+
+.toolbar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 0;
+  height: auto;
+  min-height: 32px;
+}
+
+.searchBox {
+  align-items: stretch;
+  display: flex;
+  height: 32px;
+  width: 255px;
+}
+
+.searchShell {
+  align-items: center;
+  background: #050505;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-right: 0;
+  box-sizing: border-box;
+  display: flex;
+  height: 32px;
+  min-width: 0;
+  width: 167px;
+}
+
+.searchIcon {
+  background-image: url("/ui-lab/model-detail-uicut/images/icon-search-white.png");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  display: block;
+  flex: 0 0 auto;
+  height: 22px;
+  margin-left: 14px;
+  width: 22px;
+}
+
+.searchInput {
+  background: transparent;
+  border: 0;
+  color: #ffffff;
+  flex: 1;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  height: 30px;
+  line-height: 30px;
+  min-width: 0;
+  outline: 0;
+  padding: 0 12px;
+}
+
+.searchInput::placeholder {
+  color: rgba(255, 255, 255, 0.36);
+  opacity: 1;
+}
+
+.searchButton {
+  background: #1c1c1f;
+  border: 1px solid rgba(255, 255, 255, 0.36);
+  box-sizing: border-box;
+  color: #ffffff;
+  cursor: pointer;
+  font-family: Arial, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  height: 32px;
+  line-height: 1;
+  padding: 0;
+  width: 88px;
+}
+
+.searchButton:hover {
+  background: #24242a;
+}
+
+.searchButton:active {
+  background: #121215;
+}
+
+.pager {
+  display: flex;
+  gap: 3px;
+  height: 32px;
+  margin-left: 18px;
+}
+
+.pager button,
+.pagerEllipsis {
+  align-items: center;
+  background: #111113;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 2px;
+  box-sizing: border-box;
+  color: #ffffff;
+  cursor: pointer;
+  display: inline-flex;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  height: 32px;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
+  width: 28px;
+}
+
+.pager button:disabled {
+  color: rgba(255, 255, 255, 0.28);
+  cursor: default;
+  pointer-events: none;
+}
+
+.pager .pagerCurrent {
+  background: #1d1d22;
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.pageSize {
+  align-items: center;
+  background: #111113;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 2px;
+  box-sizing: border-box;
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  height: 32px;
+  justify-content: center;
+  margin-left: 12px;
+  overflow: hidden;
+  padding: 0;
+  width: 132px;
+}
+
+.pageSize span:first-child {
+  display: block;
+  line-height: 30px;
+  max-width: 102px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pageSizeChevron {
+  border-bottom: 2px solid #ffffff;
+  border-right: 2px solid #ffffff;
+  display: block;
+  flex: 0 0 auto;
+  height: 8px;
+  margin-left: 8px;
+  transform: rotate(45deg) translateY(-2px);
+  width: 8px;
+}
+
+/* ------------------------------------------------------------------ grid */
+
+.gridDivider {
+  background: rgba(255, 255, 255, 0.15);
+  display: block;
+  height: 2px;
+  margin-left: -16px;
+  margin-top: 26px;
+  width: calc(100% + 34px);
+}
+
+.assetsGrid {
+  --card-width: 288px;
+  --card-height: 460px;
+  --inspiration-card-width: var(--card-width);
+  --inspiration-card-height: var(--card-height);
+  display: grid;
+  gap: 13.333px 9.2px;
+  grid-template-columns: repeat(auto-fit, var(--card-width));
+  justify-content: center;
+  margin-top: 36px;
+  width: 100%;
+}
+
+.emptyState {
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.58);
+  display: flex;
+  font-family: Arial, sans-serif;
+  font-size: 24px;
+  grid-column: 1 / -1;
+  height: 460px;
+  justify-content: center;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.bottomPagerMount {
+  display: flex;
+  justify-content: center;
+  margin-top: 40px;
+}
+
+/* ------------------------------------------------------------------ card */
+
+.cardShell {
+  cursor: default;
+}
+
+.visibilityChip {
+  background: #ffffff;
+  border-radius: 2px;
+  color: #16161a;
+  font-family: Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  left: 13px;
+  line-height: 1;
+  padding: 4px 9px;
+  position: absolute;
+  top: 78px;
+  /* ButtonBoxFrame establishes a stacking context at z-index 40, so card
+     overlays must sit above it. */
+  z-index: 45;
+}
+
+.moreButton {
+  align-items: center;
+  background: rgba(10, 10, 12, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 2px;
+  color: #ffffff;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 9px;
+  height: 18px;
+  justify-content: center;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  padding: 0;
+  position: absolute;
+  right: 13px;
+  top: 78px;
+  width: 26px;
+  z-index: 45;
+}
+
+.moreButton:hover {
+  background: rgba(28, 28, 32, 0.92);
+  border-color: rgba(255, 255, 255, 0.62);
+}
+
+.actionMenu {
+  background: #0c0c0f;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.55);
+  display: flex;
+  flex-direction: column;
+  padding: 5px;
+  position: absolute;
+  right: 13px;
+  top: 102px;
+  width: 178px;
+  z-index: 46;
+}
+
+.actionMenuItem {
+  background: transparent;
+  border: 0;
+  color: rgba(255, 255, 255, 0.86);
+  cursor: pointer;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  line-height: 1;
+  padding: 11px 12px;
+  text-align: left;
+}
+
+.actionMenuItem:hover {
+  background: #ffffff;
+  color: #101014;
+}
+
+.collectStar {
+  align-items: center;
+  background: rgba(10, 10, 12, 0.78);
+  border: 1px solid rgba(245, 218, 164, 0.5);
+  border-radius: 2px;
+  color: #f5da9a;
+  cursor: pointer;
+  display: inline-flex;
+  height: 26px;
+  justify-content: center;
+  padding: 0;
+  position: absolute;
+  right: 13px;
+  top: 78px;
+  width: 26px;
+  z-index: 45;
+}
+
+.collectStar:hover {
+  background: rgba(40, 34, 22, 0.92);
+  border-color: #f5da9a;
+}
+
+/* ---------------------------------------------------------------- footer */
+
+.footerMount {
+  background: #181818;
+  margin-top: 0;
+  padding: 0;
+  width: 100%;
+  z-index: 45;
+}
+
+.footerMount :global(footer) {
+  background: transparent;
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+.footerMount :global(footer > div) {
+  min-height: 176px;
+}
+
+/* ------------------------------------------------------------- responsive */
+
+@media (max-width: 1100px) {
+  .toolbarRow {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .toolbar {
+    flex-wrap: wrap;
+  }
+
+  .pager {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  .framedSection {
+    --frame-gutter: 12px;
+  }
+
+  .profileFrame {
+    height: auto;
+    min-height: 208px;
+  }
+
+  .profileMain {
+    flex-wrap: wrap;
+    gap: 18px;
+    padding: 22px 18px;
+  }
+
+  .profileFollowMount {
+    margin-left: 0;
+  }
+
+  .profileArt {
+    opacity: 0.4;
+    width: 100%;
+  }
+
+  .searchBox {
+    width: 100%;
+  }
+
+  .searchShell {
+    flex: 1;
+    width: auto;
+  }
+
+  .pageSize {
+    margin-left: 0;
+  }
+
+  .assetsGrid {
+    --card-width: min(288px, calc(100vw - 80px));
+  }
+}
