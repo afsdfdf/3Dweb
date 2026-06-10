@@ -154,6 +154,100 @@
 
 ---
 
+---
+
+# 第二轮审计：支付 / 业务 / 性能 / 可用性（2026-06-10）
+
+针对"支付、业务、前后端可用性"做了四个维度的深度复审，逐文件追踪资金流与生命周期。以下为**已确认并修复**的问题。
+
+## 六、支付 / 计费正确性
+
+### ✅ 已确认正确（无需修改）
+- 积分交易表 `idempotencyKey` 有**数据库级唯一约束**，配合 `SELECT ... FOR UPDATE` 行锁与 `BEGIN/COMMIT` 事务，双花防护扎实
+- Stripe 入账前校验 `payment_status === 'paid'`，金额全程用整数分（`Math.round(x*100)`），负数被 `Math.max(0, ...)` 拦截
+- 订阅按 `lastGrantedPeriodKey` 去重，每计费周期只发一次积分
+- 任务失败/超时在 `reserveOnSubmit + refundOnFailure` 下会退还预留积分
+
+### 🟠 P-1 · 支付记录"已付"与积分入账非原子（已修复）
+**文件**: `src/lib/creditTopupFlow.ts`、`src/lib/printOrderFlow.ts`
+
+原实现先把 `shopify-payments.status` 改为 `paid`，再调用 `purchaseCredits()`。若入账失败，支付显示已付但积分未到账，且 Webhook 不会重试该状态。
+
+**修复**: 调整顺序——**先**完成幂等的积分入账，**再**标记支付为 paid；并在入口加 `if (payment.status === 'paid') return`（订单流加 `&& order.status !== 'pending-payment'`）短路，使 sync 端点与重复 Webhook 的重放变为无操作。若标记 paid 的更新失败，Webhook 重试会重跑幂等入账后再次尝试，最终一致。
+
+## 七、业务逻辑
+
+### 🔴 B-1 · AI 任务无超时清扫，卡死任务永久锁定积分（已修复）
+**文件**: `src/lib/aiTaskFlow.ts`、`src/endpoints/aiTasks.ts`、`vercel.json`
+
+原本只有用户主动调用 sync 时才检测超时。若 serverless 函数中途死亡且用户不再打开页面，任务永远停留在 `processing`，预留积分永久冻结。
+
+**修复**: 新增 `reconcileStaleAITasks()`——扫描 `startedAt` 超过 `TASK_TIMEOUT_MS` 仍处于 queued/processing 的任务，复用 `updateTaskStatus({ status: 'timeout' })`（含退款路径）批量收尾；新增受 `CRON_SECRET` 保护的 `/studio/ai/tasks/cron-reconcile` 端点，并在 `vercel.json` 配置每 10 分钟运行。
+
+### 🟡 B-2 · 点赞 / 关注 check-then-create 竞态（已修复）
+**文件**: `src/lib/reactionService.ts`、`src/lib/followService.ts`
+
+并发的相同点赞/关注请求可能同时通过存在性检查再各自插入。**修复**: 插入包 try/catch，捕获后重查——若已存在则视为竞态成功（计数随后按实际行数重算），否则抛出原错误。
+
+## 八、性能
+
+### 🟡 PF-1 · 安全设置每请求查库（已修复）
+**文件**: `src/lib/securitySettings.ts`
+
+`getSecuritySettingsSnapshot` 在每次变更来源校验、远程资源白名单校验时都 `findGlobal` 查一次库。**修复**: 按 Payload 实例加 30 秒 TTL 的 `WeakMap` 缓存（与 `storageSettings.ts` 一致）。
+
+### 复审确认已做好的部分
+GLB 流式下发（非缓冲入内存）、Three.js 经 `next/dynamic` 懒加载不进主包、模型详情 LRU+TTL 缓存、首页 owner 资料请求内去重、连接池单例、`getCachedPayload` 单例。报告另记录了若干**建议项**（首页加 `revalidate`、`<img>` 换 `next/image`、owner 批量查询），属优化非缺陷，未改动。
+
+## 九、可用性 / 韧性
+
+### 🔴 A-1 · Redis 故障会挂起所有限流端点（已修复）
+**文件**: `src/lib/kvStore.ts`、`src/lib/rateLimit.ts`
+
+原 ioredis 客户端用默认配置——Redis 宕机时命令会无限排队，使 `enforceRateLimit` 挂起，进而拖垮所有受限端点直到函数超时。
+
+**修复**:
+- ioredis 配置 `maxRetriesPerRequest: 1`、`enableOfflineQueue: false`、`connectTimeout: 3000`、有界 `retryStrategy`，并监听 `error` 事件防止进程崩溃
+- `enforceRateLimit` 整体包 try/catch，KV 后端异常时**失败放行**（fail-open）——宁可短时不限流，也不阻断全站
+
+### 🟡 A-2 · 注册验证码邮件失败抛原始 500（已修复）
+**文件**: `src/lib/emailVerificationCodes.ts`
+
+**修复**: `sendEmail` 包 try/catch，记录日志并抛出用户友好提示，而非裸 500。
+
+### 🟡 A-3 · Payload 初始化失败退避过短（已修复）
+**文件**: `src/lib/getCachedPayload.ts`
+
+DB 短暂抖动时 1 秒退避会快速重试打爆数据库。**修复**: 默认退避 1s → 5s。
+
+### 🟡 A-4 · 前端无错误边界（已修复）
+**文件**: `src/app/(frontend)/error.tsx`（新增）
+
+数据获取失败会导致整页崩溃。**修复**: 新增前端路由组 `error.tsx`，展示友好错误页与"重试"按钮。
+
+## 十、第二轮验证记录
+
+| 检查 | 结果 |
+|------|------|
+| `pnpm typecheck` | ✅ 通过 |
+| `pnpm lint` | ✅ 0 错误（88 存量 warning） |
+| `pnpm test:unit` | ✅ 351 通过 / 4 失败（均为与本次无关的存量 UI 测试） |
+| 新增 cron 测试断言 | ✅ 已同步更新 `modelOptimizationEndpoint.test.ts` |
+
+## 十一、第二轮未修复（建议后续单独立项）
+
+| 项 | 理由 |
+|----|------|
+| 订单已付后仍可经 Payload Admin 被 staff 修改 | 需加集合级 `beforeChange` 状态守卫；属管理面策略，建议配合权限评审一起做 |
+| 计数器（关注/点赞/评论）外部删除导致漂移 | 当前每次操作按实际行数重算，已自愈常规路径；彻底解决需 cron 周期重算或 DB 触发器 |
+| 通知表无保留策略，长期无限增长 | 需新增清理 cron（如删除 90 天前已读通知） |
+| Meshy 并发上限在高速分发下存在窗口竞态 | 需 DB 级互斥或先占位再分发，改动较大 |
+| 图片生成任务同样缺独立超时清扫 | 可复用本次 reconcile 思路扩展，建议下一轮 |
+| Stripe/Supabase 调用未设显式超时 | 依赖 SDK 默认值；建议补充显式 timeout |
+| 客户端 fetch 无统一超时与退避 | 前端体验优化，建议统一封装 |
+
+---
+
 ## 总体评级：A（修复后）
 
 修复前的主要缺口集中在**可用性攻击面**（fragment 循环 DoS、限流竞态与 IP 识别失效），而非数据泄露或权限绕过——认证、访问控制、支付幂等与密钥管理在初版审计中即被确认为良好。本次修复消除了全部已确认问题，并补齐了依赖审计自动化与披露政策。

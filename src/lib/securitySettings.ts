@@ -29,17 +29,31 @@ const hasFindGlobal = (payload: unknown): payload is PayloadWithGlobals => {
   return payload !== null && typeof payload === 'object' && 'findGlobal' in payload && typeof payload.findGlobal === 'function'
 }
 
+const SECURITY_SETTINGS_CACHE_TTL_MS = 30_000
+const securitySettingsCache = new WeakMap<PayloadWithGlobals, { expiresAt: number; value: unknown }>()
+
 export async function readSecuritySettings(payload?: unknown) {
   if (!hasFindGlobal(payload)) {
     return null
   }
 
-  return payload
+  // Cache per Payload instance with a short TTL so security-sensitive paths
+  // (mutation origin checks, remote-asset allowlist) don't hit the DB on
+  // every request. Settings change rarely; 30s staleness is acceptable.
+  const cached = securitySettingsCache.get(payload)
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.value
+  }
+
+  const value = await payload
     .findGlobal({
       overrideAccess: true,
       slug: 'security-settings' as never,
     })
     .catch(() => null)
+
+  securitySettingsCache.set(payload, { expiresAt: Date.now() + SECURITY_SETTINGS_CACHE_TTL_MS, value })
+  return value
 }
 
 export function getConfiguredMutationOriginsFromValue(value: unknown) {

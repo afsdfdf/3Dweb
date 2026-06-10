@@ -116,15 +116,25 @@ async function createReaction(args: {
 
   const existing = await getExistingReaction(args)
   if (!existing) {
-    await args.req.payload.create({
-      collection: args.collection,
-      data: {
-        model: args.modelId,
-        user: args.req.user.id,
-      },
-      overrideAccess: INTERNAL_ACCESS,
-      req: args.req,
-    })
+    try {
+      await args.req.payload.create({
+        collection: args.collection,
+        data: {
+          model: args.modelId,
+          user: args.req.user.id,
+        },
+        overrideAccess: INTERNAL_ACCESS,
+        req: args.req,
+      })
+    } catch (error) {
+      // A concurrent identical reaction may insert between the check and create.
+      // Re-check rather than surfacing the race as an error; counts are
+      // recomputed from actual rows below so the result stays correct.
+      const raced = await getExistingReaction(args)
+      if (!raced) {
+        throw error
+      }
+    }
   }
 
   return syncModelReactionCounts({

@@ -161,7 +161,20 @@ export function getKVStore(): KVStore {
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const Redis = require('ioredis')
-      const client = new Redis(redisUrl)
+      const client = new Redis(redisUrl, {
+        // Fail fast instead of queueing commands forever when Redis is down.
+        // Without these, a Redis outage would hang every rate-limited endpoint
+        // until the serverless function times out.
+        maxRetriesPerRequest: 1,
+        enableOfflineQueue: false,
+        connectTimeout: 3000,
+        // Bound reconnection backoff so a flapping Redis cannot stall the client.
+        retryStrategy: (times: number) => Math.min(times * 200, 2000),
+      })
+      // Prevent unhandled 'error' events from crashing the process on outage.
+      client.on('error', (error: unknown) => {
+        console.warn('[kvStore] Redis client error:', error instanceof Error ? error.message : error)
+      })
       _instance = new RedisKVStore(client)
       return _instance
     } catch {

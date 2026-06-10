@@ -2,7 +2,7 @@ import type { PayloadRequest } from 'payload'
 
 import crypto from 'node:crypto'
 
-import { handleAIWebhook, handleMeshyWebhook, submitAITask, syncAITask } from '@/lib/aiTaskFlow'
+import { handleAIWebhook, handleMeshyWebhook, reconcileStaleAITasks, submitAITask, syncAITask } from '@/lib/aiTaskFlow'
 import { writeAuditLog } from '@/lib/auditLog'
 import { InsufficientCreditsError } from '@/lib/creditLedger'
 import { rejectRateLimitedEndpoint } from '@/lib/endpointRateLimit'
@@ -238,6 +238,24 @@ export const syncAITaskEndpoint = {
         : task
 
     return Response.json({ message: 'Task sync completed.', task: responseTask })
+  },
+}
+
+const verifyCronAuthorization = (req: PayloadRequest) => {
+  const expected = process.env.CRON_SECRET
+  const header = req.headers.get('authorization') || ''
+  return Boolean(expected) && header === `Bearer ${expected}`
+}
+
+export const cronReconcileAITasksEndpoint = {
+  path: '/studio/ai/tasks/cron-reconcile',
+  method: 'get' as const,
+  handler: async (req: PayloadRequest) => {
+    if (!verifyCronAuthorization(req)) {
+      return Response.json({ message: 'AI task reconciliation verification failed.' }, { status: 401 })
+    }
+
+    return Response.json(await reconcileStaleAITasks({ req }))
   },
 }
 

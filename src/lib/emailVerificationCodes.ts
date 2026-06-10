@@ -120,17 +120,27 @@ export async function sendRegistrationVerificationCode(args: { email: string; re
     req: args.req,
   })
 
-  await args.req.payload.sendEmail({
-    html: await generateRegistrationCodeEmailHTML({
-      code,
-      expiresMinutes: settings.registrationCodeExpiresMinutes,
-      req: args.req,
-    }),
-    subject: await generateRegistrationCodeEmailSubject({
-      req: args.req,
-    }),
-    to: email,
-  })
+  try {
+    await args.req.payload.sendEmail({
+      html: await generateRegistrationCodeEmailHTML({
+        code,
+        expiresMinutes: settings.registrationCodeExpiresMinutes,
+        req: args.req,
+      }),
+      subject: await generateRegistrationCodeEmailSubject({
+        req: args.req,
+      }),
+      to: email,
+    })
+  } catch (error) {
+    args.req.payload.logger?.error?.({
+      err: error,
+      msg: `Failed to send registration verification code to ${email}`,
+    })
+
+    // Surface a clear, user-facing error instead of a raw 500 from the mailer.
+    throw new Error('We could not send the verification email right now. Please try again in a few minutes.')
+  }
 
   return {
     email,

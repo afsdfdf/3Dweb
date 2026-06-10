@@ -23,28 +23,40 @@ export async function enforceRateLimit(args: {
   const store = getKVStore()
   const kvKey = `${KV_PREFIX}${args.key}`
   const now = Date.now()
-
-  // Periodically clean up expired keys in the active KV backend (throttled internally).
-  await store.cleanup()
-
-  // Atomic increment prevents the read-modify-write race that previously let
-  // concurrent requests slip past the limit. The key's TTL bounds the window,
-  // so resetAt reported here is the conservative upper bound.
-  const count = await store.increment(kvKey, args.windowMs)
   const resetAt = now + args.windowMs
 
-  if (count > args.limit) {
+  try {
+    // Periodically clean up expired keys in the active KV backend (throttled internally).
+    await store.cleanup()
+
+    // Atomic increment prevents the read-modify-write race that previously let
+    // concurrent requests slip past the limit. The key's TTL bounds the window,
+    // so resetAt reported here is the conservative upper bound.
+    const count = await store.increment(kvKey, args.windowMs)
+
+    if (count > args.limit) {
+      return {
+        allowed: false,
+        remaining: 0,
+        resetAt,
+      }
+    }
+
     return {
-      allowed: false,
-      remaining: 0,
+      allowed: true,
+      remaining: Math.max(0, args.limit - count),
       resetAt,
     }
-  }
-
-  return {
-    allowed: true,
-    remaining: Math.max(0, args.limit - count),
-    resetAt,
+  } catch (error) {
+    // Fail open: if the KV backend (e.g. Redis) is unavailable, allow the
+    // request rather than hanging or blocking every rate-limited endpoint.
+    // Availability is prioritized over strict limiting during an outage.
+    console.warn('[rateLimit] KV backend error, allowing request:', error instanceof Error ? error.message : error)
+    return {
+      allowed: true,
+      remaining: args.limit,
+      resetAt,
+    }
   }
 }
 

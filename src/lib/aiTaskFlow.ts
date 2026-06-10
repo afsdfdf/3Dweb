@@ -2577,3 +2577,64 @@ export async function handleAIWebhook(args: { payloadData: Record<string, unknow
 
   return { providerTaskId, status: updatedTask.status, taskId: task.id }
 }
+
+export async function reconcileStaleAITasks(args: { req: PayloadRequest; limit?: number }) {
+  const { req } = args
+  const taskTimeoutMs = Math.max(60_000, Number(process.env.TASK_TIMEOUT_MS || 900000))
+  const batchLimit = Math.min(50, Math.max(1, Number(args.limit || 25)))
+  const cutoffISO = new Date(Date.now() - taskTimeoutMs).toISOString()
+
+  // Find tasks that have been active past the timeout window. A serverless
+  // function dying mid-task (or a user never re-opening the page to trigger
+  // sync) would otherwise leave them stuck forever with credits reserved.
+  const staleTasks = await req.payload.find({
+    collection: 'generation-tasks',
+    depth: 0,
+    limit: batchLimit,
+    overrideAccess: true,
+    pagination: false,
+    req,
+    sort: 'startedAt',
+    where: {
+      and: [
+        { status: { in: ['queued', 'processing'] } },
+        { startedAt: { less_than: cutoffISO } },
+      ],
+    },
+  })
+
+  const results: Array<{ status: string; taskId: number }> = []
+
+  for (const task of staleTasks.docs) {
+    const userId = getTaskUserId(task)
+    const provider = getTaskProvider(task)
+
+    try {
+      const updated = await updateTaskStatus({
+        payloadData: {
+          failureReason: `Task timed out after ${taskTimeoutMs}ms (reconciliation sweep).`,
+          provider,
+          providerTaskId: task.providerTaskId,
+          status: 'timeout',
+        },
+        progress: 100,
+        req,
+        status: 'timeout',
+        task,
+        userId,
+      })
+      results.push({ status: updated.status, taskId: task.id })
+    } catch (error) {
+      req.payload.logger?.error?.({
+        err: error,
+        msg: `Failed to reconcile stale generation task ${task.id}.`,
+      })
+    }
+  }
+
+  return {
+    message: 'Stale AI task reconciliation completed.',
+    reconciled: results.length,
+    results,
+  }
+}

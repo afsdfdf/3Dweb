@@ -135,15 +135,35 @@ export async function followCreator(args: {
   })
 
   if (!existing.docs[0]) {
-    await req.payload.create({
-      collection: 'user-follows',
-      data: {
-        followee: targetUserId,
-        follower: followerId,
-      },
-      overrideAccess: INTERNAL_ACCESS,
-      req,
-    })
+    try {
+      await req.payload.create({
+        collection: 'user-follows',
+        data: {
+          followee: targetUserId,
+          follower: followerId,
+        },
+        overrideAccess: INTERNAL_ACCESS,
+        req,
+      })
+    } catch (error) {
+      // A concurrent identical follow may insert between the check and create.
+      // Re-check rather than surfacing the race as an error; counts are
+      // recomputed from actual rows below so the result stays correct.
+      const raced = await req.payload.find({
+        collection: 'user-follows',
+        depth: 0,
+        limit: 1,
+        overrideAccess: true,
+        pagination: false,
+        req,
+        where: {
+          and: [{ follower: { equals: followerId } }, { followee: { equals: targetUserId } }],
+        },
+      })
+      if (!raced.docs[0]) {
+        throw error
+      }
+    }
   }
 
   await Promise.all([

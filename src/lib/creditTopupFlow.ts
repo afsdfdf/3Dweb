@@ -272,35 +272,47 @@ export async function finalizeCreditTopupCheckoutSession(args: {
     throw new Error('The checkout session does not belong to the current user.')
   }
 
+  // Already finalized: payment is only marked paid after credits were granted,
+  // so replays from the sync endpoint or duplicate webhooks become no-ops.
+  if (payment.status === 'paid') {
+    return {
+      applied: false,
+      paymentId: payment.id,
+      status: 'paid',
+    }
+  }
+
   const existingPayload =
     payment.rawWebhookPayload && typeof payment.rawWebhookPayload === 'object' && !Array.isArray(payment.rawWebhookPayload)
       ? payment.rawWebhookPayload
       : {}
 
   const paid = checkoutSession.payment_status === 'paid'
-  await req.payload.update({
-    collection: 'shopify-payments',
-    id: payment.id,
-    data: {
-      rawWebhookPayload: {
-        ...existingPayload,
-        checkoutSessionCompletedAt: new Date().toISOString(),
-        paymentIntentId:
-          typeof checkoutSession.payment_intent === 'string'
-            ? checkoutSession.payment_intent
-            : checkoutSession.payment_intent?.id,
-        provider: 'stripe',
-        sessionId: checkoutSession.id,
-        sessionStatus: checkoutSession.status,
-        stage: paid ? 'paid' : 'pending',
-      },
-      status: paid ? 'paid' : payment.status,
-    },
-    overrideAccess: INTERNAL_ACCESS,
-    req,
-  })
+  const nextWebhookPayload = {
+    ...existingPayload,
+    checkoutSessionCompletedAt: new Date().toISOString(),
+    paymentIntentId:
+      typeof checkoutSession.payment_intent === 'string'
+        ? checkoutSession.payment_intent
+        : checkoutSession.payment_intent?.id,
+    provider: 'stripe',
+    sessionId: checkoutSession.id,
+    sessionStatus: checkoutSession.status,
+    stage: paid ? 'paid' : 'pending',
+  }
 
   if (!paid) {
+    await req.payload.update({
+      collection: 'shopify-payments',
+      id: payment.id,
+      data: {
+        rawWebhookPayload: nextWebhookPayload,
+        status: payment.status,
+      },
+      overrideAccess: INTERNAL_ACCESS,
+      req,
+    })
+
     return {
       applied: false,
       paymentId: payment.id,
@@ -323,6 +335,21 @@ export async function finalizeCreditTopupCheckoutSession(args: {
     notes: `Credit top-up purchase confirmed (${payment.checkoutReference}).`,
     req,
     userId: paymentUserId || checkoutUserId,
+  })
+
+  // Mark the payment record paid only after the ledger grant succeeded, so a
+  // 'paid' payment record always implies the credits were actually applied.
+  // If this update fails, the webhook retry re-runs the idempotent grant and
+  // then retries this update.
+  await req.payload.update({
+    collection: 'shopify-payments',
+    id: payment.id,
+    data: {
+      rawWebhookPayload: nextWebhookPayload,
+      status: 'paid',
+    },
+    overrideAccess: INTERNAL_ACCESS,
+    req,
   })
 
   writeAuditLog({
