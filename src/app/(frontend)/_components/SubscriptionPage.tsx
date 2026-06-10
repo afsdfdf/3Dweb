@@ -1,13 +1,14 @@
 import Link from 'next/link'
 
 import { BorderComboFrame1 } from '@/components/ui-lab/border-combo-frame-1'
-import { BorderComboFrame2Variant } from '@/components/ui-lab/border-combo-frame-2'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import type { CreditTopupProduct } from '@/lib/creditTopupProducts'
 import type { SubscriptionPlanDefinition } from '@/lib/subscriptionPlans'
 
 import { FooterBar } from './shell/FooterBar'
 import { CreditTopupButton } from './CreditTopupButton'
+import { CreditTopupPackPanel } from './CreditTopupPackPanel'
 import { CreditTopupStatusSync } from './CreditTopupStatusSync'
 import { ManageSubscriptionButton } from './ManageSubscriptionButton'
 import { PricingLoginButton } from './PricingLoginButton'
@@ -15,7 +16,6 @@ import { PricingSubscriptionPanel } from './PricingSubscriptionPanel'
 import { SubscribePlanButton } from './SubscribePlanButton'
 import { SubscriptionStatusSync } from './SubscriptionStatusSync'
 import type { FooterContent, MarketingPageContent, MarketingSection } from '../_lib/marketing-content'
-import { formatDateTime, formatSubscriptionStatus } from '../_lib/ui-text'
 
 type CurrentUser = {
   email?: string | null
@@ -27,16 +27,6 @@ type ActiveSubscription = {
   planKey?: string | null
   status?: string | null
 } | null
-
-type CreditTopupProduct = {
-  credits: number
-  currency: string
-  description?: null | string
-  id: number
-  price: number
-  slug: string
-  title: string
-}
 
 type SubscriptionPageProps = {
   activeSubscription: ActiveSubscription
@@ -123,31 +113,6 @@ function BillingComparison({ plan }: { plan: SubscriptionPlanDefinition }) {
           ${yearlyPrice}
           <span className="ml-1 text-xs font-normal text-[#a7a9b0]">/ year</span>
         </p>
-      </div>
-    </div>
-  )
-}
-
-function FreePlanSummary() {
-  return (
-    <div className="grid gap-3">
-      <div className="flex h-[84px] flex-col justify-center rounded-[8px] border border-[#403f46] bg-[#18181b] p-4">
-        <p className="text-xs uppercase tracking-[0.18em] text-[#8f7a4a]">Free allowance</p>
-        <p className="mt-1 text-2xl font-semibold tracking-tight text-[#f0d188]">0 credits</p>
-      </div>
-      <div className="grid min-h-[76px] gap-2 sm:grid-cols-2">
-        <div className="flex h-[76px] flex-col justify-center rounded-[8px] border border-[#8d5c25] bg-[#221d17] px-4 py-3">
-          <p className="text-xs uppercase tracking-[0.18em] text-[#d6ad61]">Monthly</p>
-          <p className="mt-1 text-xl font-semibold tracking-tight text-[#f5ead0]">
-            $0<span className="ml-1 text-xs font-normal text-[#a7a9b0]">/ month</span>
-          </p>
-        </div>
-        <div className="flex h-[76px] flex-col justify-center rounded-[8px] border border-[#403f46] bg-[#18181b] px-4 py-3">
-          <p className="text-xs uppercase tracking-[0.18em] text-[#8f7a4a]">Yearly</p>
-          <p className="mt-1 text-xl font-semibold tracking-tight text-[#f1e2bc]">
-            $0<span className="ml-1 text-xs font-normal text-[#a7a9b0]">/ year</span>
-          </p>
-        </div>
       </div>
     </div>
   )
@@ -311,7 +276,6 @@ export function SubscriptionPage(props: SubscriptionPageProps) {
     stripeCreditTopupsEnabled,
     stripeSubscriptionsEnabled,
     subscriptionPlans,
-    pageContent,
     supportEmail,
     syncSessionId,
     user,
@@ -319,9 +283,14 @@ export function SubscriptionPage(props: SubscriptionPageProps) {
 
   return (
     <div className="h-[1020px] overflow-y-auto bg-[radial-gradient(circle_at_50%_9%,rgba(45,64,126,0.34),transparent_34%),radial-gradient(circle_at_16%_18%,rgba(155,112,45,0.14),transparent_28%),linear-gradient(180deg,#111111_0%,#181818_46%,#111111_100%)]">
-      <section className="mx-auto flex min-h-[960px] max-w-[1600px] items-start justify-center px-4 pb-10 pt-[49px]">
+      <section className="mx-auto flex min-h-[960px] max-w-[1600px] flex-col items-center justify-start gap-4 px-4 pb-10 pt-[49px]">
         {shouldSync && syncSessionId ? <SubscriptionStatusSync enabled sessionId={syncSessionId} /> : null}
         {shouldSyncCreditTopup && syncSessionId ? <CreditTopupStatusSync enabled sessionId={syncSessionId} /> : null}
+        <CreditTopupPackPanel
+          products={creditTopupProducts}
+          stripeCreditTopupsEnabled={stripeCreditTopupsEnabled}
+          user={user}
+        />
         <PricingSubscriptionPanel
           activeSubscription={activeSubscription}
           isCancelled={isCancelled}

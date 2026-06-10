@@ -1,4 +1,5 @@
 import { getCachedPayload } from '@/lib/getCachedPayload'
+import { getCreditTopupProducts } from '@/lib/getCreditTopupProducts'
 import { getPaymentProviderSettings } from '@/lib/paymentProviders'
 import { getSubscriptionPlans } from '@/lib/subscriptionPlans'
 
@@ -7,57 +8,6 @@ import { SubscriptionMobilePage, SubscriptionPage } from '../_components/Subscri
 import { getMarketingPageContent } from '../_lib/formal-page-content'
 import { getMarketingSiteData } from '../_lib/marketing'
 import { getCurrentUser, getCurrentUserActiveSubscription } from '../_lib/session'
-
-type CreditTopupProduct = {
-  credits: number
-  currency: string
-  description?: null | string
-  id: number
-  price: number
-  slug: string
-  title: string
-}
-
-async function getCreditTopupProducts(payload: Awaited<ReturnType<typeof getCachedPayload>>): Promise<CreditTopupProduct[]> {
-  const result = await payload
-    .find({
-      collection: 'credit-products',
-      depth: 0,
-      limit: 12,
-      overrideAccess: true,
-      pagination: false,
-      sort: 'sortOrder',
-      where: {
-        and: [
-          {
-            productType: {
-              equals: 'credit-topup',
-            },
-          },
-          {
-            isActive: {
-              equals: true,
-            },
-          },
-        ],
-      },
-    })
-    .catch(() => ({
-      docs: [],
-    }))
-
-  return result.docs
-    .map((product) => ({
-      credits: Number(product.credits || 0),
-      currency: String(product.currency || 'USD').toUpperCase(),
-      description: product.description,
-      id: Number(product.id),
-      price: Number(product.price || 0),
-      slug: product.slug,
-      title: product.title,
-    }))
-    .filter((product) => product.credits > 0 && product.price > 0)
-}
 
 export default async function PricingPage({
   searchParams,

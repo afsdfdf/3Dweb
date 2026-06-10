@@ -5,7 +5,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 import { useAuthModal } from "@/components/auth/AuthModalProvider";
+import {
+  CreditTopupRedemptionDialog,
+  fetchCreditTopupProducts,
+} from "@/components/ui-lab/credit-topup-redemption-dialog";
 import { ButtonBoxFrame } from "@/components/ui-lab/button-box-frame";
+import type { CreditTopupProduct } from "@/lib/creditTopupProducts";
 import { publicNavigationItems } from "@/lib/publicNavigation";
 
 import styles from "./top-navigation.module.css";
@@ -13,6 +18,7 @@ import { formatTopNavigationUserLabel, getTopNavigationUserLabel } from "./user-
 import { TopNavigationUserMenu } from "./user-menu";
 
 const assetBase = "/ui-lab/top-navigation";
+const emptyCreditTopupProducts: CreditTopupProduct[] = [];
 
 export type TopNavigationItem = {
   href: string;
@@ -39,6 +45,7 @@ type TopNavigationProps = {
   active?: string;
   className?: string;
   credits?: number;
+  creditTopupProducts?: CreditTopupProduct[];
   fitViewport?: boolean;
   items?: readonly TopNavigationItem[];
   loginHref?: string;
@@ -354,6 +361,7 @@ export function TopNavigation({
   active = "WORKBENCH",
   className,
   credits = 560,
+  creditTopupProducts = emptyCreditTopupProducts,
   fitViewport = false,
   items = defaultNavItems,
   loginHref = "/login",
@@ -363,11 +371,28 @@ export function TopNavigation({
 }: TopNavigationProps) {
   const { closeAuthModal } = useAuthModal();
   const userMenuTriggerRef = useRef<HTMLDivElement>(null);
+  const [loadedDialogProducts, setLoadedDialogProducts] = useState<null | CreditTopupProduct[]>(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isCreditTopupOpen, setIsCreditTopupOpen] = useState(false);
+  const [hasRequestedDialogProducts, setHasRequestedDialogProducts] = useState(false);
   const displayName = user ? getTopNavigationUserLabel(user, userName) : null;
   const visibleDisplayName = displayName ? formatTopNavigationUserLabel(displayName) : null;
   const displayCredits = user ? getUserCredits(user, credits) : credits;
   const avatarUrl = user?.avatarUrl || `${assetBase}/icon-user-avatar-placeholder.png`;
+  const dialogProducts = creditTopupProducts.length > 0
+    ? creditTopupProducts
+    : loadedDialogProducts ?? emptyCreditTopupProducts;
+
+  const openCreditTopupDialog = () => {
+    setIsCreditTopupOpen(true);
+
+    if (hasRequestedDialogProducts || dialogProducts.length > 0) return;
+
+    setHasRequestedDialogProducts(true);
+    void fetchCreditTopupProducts().then((products) => {
+      setLoadedDialogProducts(products);
+    });
+  };
 
   const topNav = (
     <div className={[styles.topNav, fitViewport ? null : className].filter(Boolean).join(" ")} data-authenticated={user ? "true" : "false"}>
@@ -417,6 +442,7 @@ export function TopNavigation({
             </button>
           </div>
           <TopNavigationUserMenu
+            onPointRedemption={openCreditTopupDialog}
             onOpenChange={setIsUserMenuOpen}
             open={isUserMenuOpen}
             triggerRef={userMenuTriggerRef}
@@ -436,6 +462,13 @@ export function TopNavigation({
           ) : null}
         </>
       )}
+      {user ? (
+        <CreditTopupRedemptionDialog
+          onOpenChange={setIsCreditTopupOpen}
+          open={isCreditTopupOpen}
+          products={dialogProducts}
+        />
+      ) : null}
     </div>
   );
 

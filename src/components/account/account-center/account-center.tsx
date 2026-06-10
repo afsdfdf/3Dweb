@@ -26,7 +26,9 @@ import {
 
 import { AuthModalStage } from "@/components/auth/AuthModalStage";
 import { BorderComboFrame2 } from "@/components/ui-lab/border-combo-frame-2";
+import { CreditTopupRedemptionDialog } from "@/components/ui-lab/credit-topup-redemption-dialog";
 import { TopNavigation } from "@/components/ui-lab/top-navigation";
+import type { CreditTopupProduct } from "@/lib/creditTopupProducts";
 import {
   resolvePublicNavigationItems,
   type PublicNavigationInputItem,
@@ -90,6 +92,7 @@ export type AccountCenterData = {
 
 type AccountCenterProps = {
   accountData?: AccountCenterData;
+  creditTopupProducts?: CreditTopupProduct[];
   initialSection?: AccountSection;
   navigationItems?: null | PublicNavigationInputItem[];
   navUser?: null | {
@@ -150,6 +153,7 @@ const getBalanceValue = (row: RecordRow) => {
 
 export function AccountCenter({
   accountData,
+  creditTopupProducts = [],
   initialSection = "profile",
   navigationItems,
   navUser = null,
@@ -175,6 +179,7 @@ export function AccountCenter({
   const [recordPage, setRecordPage] = useState(1);
   const [recordPageSize, setRecordPageSize] = useState(defaultRecordPageSize);
   const [statusMessage, setStatusMessage] = useState("");
+  const [isCreditTopupOpen, setIsCreditTopupOpen] = useState(false);
   const [rowsData, setRowsData] = useState<
     Partial<Record<RowSection, RecordRow[]>>
   >(accountData?.rows ?? {});
@@ -192,12 +197,23 @@ export function AccountCenter({
   }, [initialSection, sectionParam]);
 
   useEffect(() => {
-    document.documentElement.classList.add("account-page-locked");
-    document.body.classList.add("account-page-locked");
+    const html = document.documentElement;
+    const body = document.body;
+    const previousHtmlHeight = html.style.height;
+    const previousHtmlOverflow = html.style.overflow;
+    const previousBodyHeight = body.style.height;
+    const previousBodyOverflow = body.style.overflow;
+
+    html.style.height = "100%";
+    html.style.overflow = "hidden";
+    body.style.height = "100%";
+    body.style.overflow = "hidden";
 
     return () => {
-      document.documentElement.classList.remove("account-page-locked");
-      document.body.classList.remove("account-page-locked");
+      html.style.height = previousHtmlHeight;
+      html.style.overflow = previousHtmlOverflow;
+      body.style.height = previousBodyHeight;
+      body.style.overflow = previousBodyOverflow;
     };
   }, []);
 
@@ -686,9 +702,15 @@ export function AccountCenter({
         <TopNavigation
           active="ACCOUNT"
           className={styles.boundTopNavigation}
+          creditTopupProducts={creditTopupProducts}
           fitViewport
           items={topNavigationItems}
           user={navUser}
+        />
+        <CreditTopupRedemptionDialog
+          onOpenChange={setIsCreditTopupOpen}
+          open={isCreditTopupOpen}
+          products={creditTopupProducts}
         />
 
         <input
@@ -961,7 +983,7 @@ export function AccountCenter({
                     <span>POINTS</span>
                   </div>
                   <em>BALANCE</em>
-                  <button onClick={() => router.push("/pricing")} type="button">
+                  <button onClick={() => setIsCreditTopupOpen(true)} type="button">
                     RECHARGE
                   </button>
                 </div>

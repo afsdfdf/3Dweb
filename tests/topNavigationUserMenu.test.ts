@@ -26,6 +26,8 @@ test("top navigation user menu is a standalone registered component wired to rea
   assert.match(source, /\/account/);
   assert.match(source, /\/account\?section=models/);
   assert.match(source, /\/pricing/);
+  assert.match(source, /onPointRedemption\?: \(\) => void/);
+  assert.match(source, /onPointRedemption\(\)/);
   assert.match(source, /user\.bio/);
   assert.match(source, /user\.followingCount/);
   assert.match(source, /user\.modelsCount/);
@@ -47,6 +49,9 @@ test("top navigation user menu is a standalone registered component wired to rea
   assert.match(cssSource, /\.profileMenuLanguageMenu\s*\{[\s\S]*?right:\s*19px[\s\S]*?top:\s*339px[\s\S]*?width:\s*130px/);
 
   assert.match(topNavigationSource, /TopNavigationUserMenu/);
+  assert.match(topNavigationSource, /CreditTopupRedemptionDialog/);
+  assert.match(topNavigationSource, /fetchCreditTopupProducts/);
+  assert.match(topNavigationSource, /onPointRedemption=\{openCreditTopupDialog\}/);
   assert.doesNotMatch(topNavigationSource, /href="\/account" className=\{styles\.avatar\}/);
   assert.match(topNavigationSource, /aria-expanded=\{isUserMenuOpen\}/);
 });

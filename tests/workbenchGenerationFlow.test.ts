@@ -307,7 +307,7 @@ test('Model library panel search and pagination operate on visible cards', () =>
 test('Workbench uses a moderate provider sync interval by default', () => {
   const source = readFileSync(workbenchClientPath, 'utf8')
 
-  assert.match(source, /NEXT_PUBLIC_TASK_SYNC_INTERVAL_MS \|\| 5000/)
+  assert.match(source, /NEXT_PUBLIC_TASK_SYNC_INTERVAL_MS \|\| 3000/)
 })
 
 test('Workbench sync polling batches pending tasks instead of syncing every task each tick', () => {

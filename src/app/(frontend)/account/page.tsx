@@ -4,6 +4,7 @@ import {
   type AccountSection,
 } from "@/components/account/account-center";
 import type { GenerationTask, Model, PrintOrder } from "@/payload-types";
+import { getCreditTopupProducts } from "@/lib/getCreditTopupProducts";
 
 import {
   getCurrentAccountProfileSummary,
@@ -124,6 +125,7 @@ export default async function AccountPage({
     models,
     orders,
     siteSettings,
+    creditTopupProducts,
   ] = await Promise.all([
     getCurrentNavUser(),
     getCurrentAccountProfileSummary(),
@@ -137,6 +139,7 @@ export default async function AccountPage({
     getCurrentUserModels({ limit: accountRecordLimit }),
     getCurrentUserOrders({ limit: accountRecordLimit }),
     getMarketingSiteSettings(),
+    getCreditTopupProducts(),
   ]);
 
   const activeTasks = tasks.docs.filter((task: GenerationTask) =>
@@ -237,6 +240,7 @@ export default async function AccountPage({
   return (
     <AccountCenter
       accountData={accountData}
+      creditTopupProducts={creditTopupProducts}
       initialSection={activeSection}
       navigationItems={siteSettings.headerNav}
       navUser={navUser}

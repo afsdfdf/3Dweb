@@ -7,14 +7,6 @@
   overflow: hidden;
 }
 
-@media (min-width: 981px) {
-  :global(html.account-page-locked),
-  :global(body.account-page-locked) {
-    height: 100%;
-    overflow: hidden;
-  }
-}
-
 .boundTopNavigation {
   inset: 0 0 auto;
   position: sticky;

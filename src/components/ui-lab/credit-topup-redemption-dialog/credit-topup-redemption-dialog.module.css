@@ -1,0 +1,250 @@
+.overlay {
+  align-items: center;
+  background:
+    radial-gradient(circle at 50% 47%, rgba(255, 236, 173, 0.08), transparent 18%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0.9));
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  left: 0;
+  padding: 24px;
+  position: fixed;
+  right: 0;
+  top: 0;
+  z-index: 1200;
+}
+
+.frame {
+  --frame-border-width: 34px;
+  color: #f6dfb1;
+  filter: drop-shadow(0 24px 48px rgba(0, 0, 0, 0.65));
+  pointer-events: auto;
+}
+
+.frame > span {
+  z-index: 6;
+}
+
+.frameContent {
+  height: 100%;
+  min-height: 0;
+  overflow: visible;
+  padding: 13px 17px !important;
+  z-index: 5;
+}
+
+.frameContent,
+.frameContent * {
+  box-sizing: border-box;
+}
+
+.panel {
+  background: #000000;
+  box-shadow: inset 0 2px 5px #000000;
+  display: flex;
+  flex-direction: column;
+  height: 520px;
+  align-items: center;
+  justify-content: flex-start;
+  overflow: hidden;
+  padding-top: 48px;
+  position: relative;
+  width: 560px;
+}
+
+.panel::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+}
+
+.panel::after {
+  background:
+    linear-gradient(90deg, transparent 0, rgba(160, 160, 168, 0.22) 50%, transparent 100%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent);
+  height: 86px;
+  left: 44px;
+  opacity: 0.55;
+  right: 44px;
+  top: 265px;
+}
+
+.closeButton {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  display: none;
+  height: 28px;
+  opacity: 0.42;
+  position: absolute;
+  right: 25px;
+  top: 24px;
+  width: 28px;
+  z-index: 4;
+}
+
+.closeButton::before,
+.closeButton::after {
+  background: #d9d9dd;
+  content: "";
+  height: 2px;
+  left: 5px;
+  position: absolute;
+  top: 13px;
+  width: 18px;
+}
+
+.closeButton::before {
+  transform: rotate(45deg);
+}
+
+.closeButton::after {
+  transform: rotate(-45deg);
+}
+
+.closeButton:hover,
+.closeButton:focus-visible {
+  opacity: 0.9;
+  outline: none;
+}
+
+.coin {
+  display: block;
+  height: 108px;
+  object-fit: contain;
+  width: 108px;
+  z-index: 2;
+}
+
+.title {
+  color: #f6dca1;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 28px;
+  margin: 20px 0 34px;
+  position: relative;
+  text-align: center;
+  z-index: 2;
+}
+
+.stepperShell {
+  align-items: center;
+  background:
+    url("/ui/nav/nav-ornament-left.png") left center / 210px 58px no-repeat,
+    url("/ui/nav/nav-ornament-right.png") right center / 210px 58px no-repeat;
+  border-bottom: 7px solid transparent;
+  border-image: none;
+  border-top: 7px solid transparent;
+  display: grid;
+  grid-template-columns: 42px 94px 42px;
+  height: 66px;
+  justify-content: center;
+  padding: 13px 0;
+  position: relative;
+  width: 394px;
+  z-index: 2;
+}
+
+.stepperButton,
+.stepperValue {
+  align-items: center;
+  background: rgba(20, 20, 22, 0.95);
+  border: 1px solid rgba(163, 165, 176, 0.68);
+  color: #ffffff;
+  display: flex;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 26px;
+  height: 40px;
+  justify-content: center;
+  line-height: 40px;
+  min-width: 0;
+}
+
+.stepperButton {
+  appearance: none;
+  cursor: pointer;
+  font-weight: 700;
+  padding: 0;
+}
+
+.stepperButton:hover:not(:disabled),
+.stepperButton:focus-visible:not(:disabled) {
+  border-color: rgba(246, 220, 161, 0.9);
+  color: #f6dca1;
+  outline: none;
+}
+
+.stepperButton:disabled {
+  color: rgba(255, 255, 255, 0.38);
+  cursor: not-allowed;
+}
+
+.stepperValue {
+  border-left: 0;
+  border-right: 0;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.helperText {
+  color: rgba(255, 255, 255, 0.72);
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 16px;
+  line-height: 22px;
+  margin: 17px 0 0;
+  position: relative;
+  z-index: 2;
+}
+
+.priceText {
+  color: rgba(246, 220, 161, 0.72);
+  display: none;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  height: 18px;
+  line-height: 18px;
+  margin: 7px 0 0;
+  position: relative;
+  text-align: center;
+  z-index: 2;
+}
+
+.buyButtonSlot {
+  height: 58px;
+  margin-top: 29px;
+  position: relative;
+  width: 126px;
+  z-index: 3;
+}
+
+.buyButtonSlot :global([data-medium-action-label]) {
+  font-size: 21px;
+  font-weight: 500;
+  line-height: 28px;
+}
+
+.error {
+  color: #ffb8aa;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  margin: 10px auto 0;
+  max-width: 370px;
+  position: relative;
+  text-align: center;
+  z-index: 3;
+}
+
+@media (max-width: 720px) {
+  .overlay {
+    padding: 10px;
+  }
+
+  .frame {
+    transform: scale(min(1, calc((100vw - 20px) / 640)));
+    transform-origin: center;
+  }
+}

@@ -36,6 +36,7 @@ const languageOptions: Array<{ label: string; locale: Locale }> = [
 
 type TopNavigationUserMenuProps = {
   defaultOpen?: boolean;
+  onPointRedemption?: () => void;
   onOpenChange?: (open: boolean) => void;
   open?: boolean;
   triggerRef?: RefObject<HTMLElement | null>;
@@ -77,6 +78,7 @@ const getCurrentRedirectPath = () => {
 
 export function TopNavigationUserMenu({
   defaultOpen = false,
+  onPointRedemption,
   onOpenChange,
   open,
   triggerRef,
@@ -205,12 +207,23 @@ export function TopNavigationUserMenu({
               <img alt="" className={styles.profileMenuLinkIcon} src={profileMenuIcons.account} />
               <span className={styles.profileMenuLinkText}>{text.personalCenter}</span>
             </Link>
-            <Link className={styles.profileMenuLink} href="/pricing" onClick={() => setOpen(false)}>
+            <button
+              className={styles.profileMenuLink}
+              onClick={() => {
+                setOpen(false);
+                if (onPointRedemption) {
+                  onPointRedemption();
+                  return;
+                }
+                router.push("/pricing");
+              }}
+              type="button"
+            >
               <span className={styles.profileMenuPointIcon} aria-hidden="true">
                 <Zap size={16} strokeWidth={2.3} />
               </span>
               <span className={styles.profileMenuLinkText}>{text.pointRedemption}</span>
-            </Link>
+            </button>
             <div className={styles.profileMenuLanguageRow}>
               <span className={styles.profileMenuLanguageLabel}>
                 <img alt="" className={styles.profileMenuLinkIcon} src={profileMenuIcons.language} />
