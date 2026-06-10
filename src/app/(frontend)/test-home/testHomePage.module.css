@@ -6,7 +6,7 @@
   background: #181818;
 }
 
-.boundTopNavigation {
+.boundTopNavigation.boundTopNavigation {
   left: 0;
   position: absolute;
   right: 0;
