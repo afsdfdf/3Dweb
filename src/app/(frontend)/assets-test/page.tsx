@@ -17,6 +17,23 @@ const assetsTestNavItems = [
   { href: "/assets-test", id: "ASSETS", label: "ASSETS" },
 ] as const;
 
+// Mirrors the logged-in navigation state from the reference design so the
+// mock page renders the avatar/credits cluster even without a session.
+const mockNavUser = {
+  avatarUrl: "/ui/workbench/model-detail/sketch-assets/creator-avatar.webp",
+  bio: null,
+  credits: 3650,
+  creditsBalance: 3650,
+  displayName: "Xing Mu",
+  email: "xingmu@example.com",
+  followersCount: 560,
+  followingCount: 12,
+  id: 0,
+  modelsCount: 23,
+  name: "Xing Mu",
+  role: "customer",
+};
+
 export default async function AssetsTestPage() {
   const [marketing, navUser] = await Promise.all([getMarketingSiteData(), getCurrentNavUser()]);
   const { siteSettings } = marketing;
@@ -44,7 +61,7 @@ export default async function AssetsTestPage() {
                   name: navUser.displayName,
                   role: navUser.role,
                 }
-              : null
+              : mockNavUser
           }
         />
 
