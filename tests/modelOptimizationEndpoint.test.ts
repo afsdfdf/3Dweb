@@ -252,5 +252,9 @@ test('Vercel cron invokes model optimization dispatch every minute', () => {
       path: '/api/platform/model-optimization/cron-dispatch',
       schedule: '* * * * *',
     },
+    {
+      path: '/api/studio/ai/tasks/cron-reconcile',
+      schedule: '*/10 * * * *',
+    },
   ])
 })

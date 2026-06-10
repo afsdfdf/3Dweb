@@ -43,13 +43,14 @@ export const Models: CollectionConfig = {
   timestamps: true,
   fields: [
     { name: 'title', type: 'text', required: true, label: 'Title' },
-    { name: 'owner', type: 'relationship', relationTo: 'users', required: true, label: 'Owner' },
+    { name: 'owner', type: 'relationship', relationTo: 'users', required: true, label: 'Owner', index: true },
     { name: 'sourceTask', type: 'relationship', relationTo: 'generation-tasks', label: 'Source task' },
     {
       name: 'status',
       type: 'select',
       defaultValue: 'ready',
       label: 'Status',
+      index: true,
       options: [
         { label: 'Draft', value: 'draft' },
         { label: 'Ready', value: 'ready' },
@@ -61,6 +62,7 @@ export const Models: CollectionConfig = {
       type: 'select',
       defaultValue: 'private',
       label: 'Visibility',
+      index: true,
       options: [
         { label: 'Private', value: 'private' },
         { label: 'Team', value: 'team' },

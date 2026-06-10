@@ -116,15 +116,25 @@ async function createReaction(args: {
 
   const existing = await getExistingReaction(args)
   if (!existing) {
-    await args.req.payload.create({
-      collection: args.collection,
-      data: {
-        model: args.modelId,
-        user: args.req.user.id,
-      },
-      overrideAccess: INTERNAL_ACCESS,
-      req: args.req,
-    })
+    try {
+      await args.req.payload.create({
+        collection: args.collection,
+        data: {
+          model: args.modelId,
+          user: args.req.user.id,
+        },
+        overrideAccess: INTERNAL_ACCESS,
+        req: args.req,
+      })
+    } catch (error) {
+      // A concurrent identical reaction may insert between the check and create.
+      // Re-check rather than surfacing the race as an error; counts are
+      // recomputed from actual rows below so the result stays correct.
+      const raced = await getExistingReaction(args)
+      if (!raced) {
+        throw error
+      }
+    }
   }
 
   return syncModelReactionCounts({
@@ -255,4 +265,35 @@ export async function listCurrentUserFavoriteModels(req: PayloadRequest) {
     sort: '-createdAt',
     user: req.user,
   })
+}
+
+const RECONCILE_PAGE_SIZE = 100
+
+export async function reconcileModelReactionCounts(args: { req: PayloadRequest }) {
+  let page = 1
+  let reconciled = 0
+
+  for (;;) {
+    const models = await args.req.payload.find({
+      collection: 'models',
+      depth: 0,
+      limit: RECONCILE_PAGE_SIZE,
+      overrideAccess: INTERNAL_ACCESS,
+      page,
+      pagination: true,
+      req: args.req,
+    })
+
+    for (const model of models.docs) {
+      const modelId = typeof model.id === 'number' ? model.id : Number(model.id)
+      if (!Number.isFinite(modelId)) continue
+      await syncModelReactionCounts({ req: args.req, modelId })
+      reconciled += 1
+    }
+
+    if (!models.hasNextPage) break
+    page += 1
+  }
+
+  return { reconciled }
 }

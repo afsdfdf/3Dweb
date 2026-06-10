@@ -1,5 +1,6 @@
 'use client'
 
+import { apiFetch } from '@/app/(frontend)/_lib/apiFetch'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
@@ -19,9 +20,9 @@ export function SubscriptionStatusSync({ enabled = false, sessionId }: Subscript
 
     const run = async () => {
       try {
-        const response = await fetch('/api/billing/subscriptions/sync', {
+        const response = await apiFetch('/api/billing/subscriptions/sync', {
           method: 'POST',
-          credentials: 'include',
+          
           headers: {
             'Content-Type': 'application/json',
           },

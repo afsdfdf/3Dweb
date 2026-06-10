@@ -1,6 +1,6 @@
 import { getPayload } from 'payload'
 
-const DEFAULT_FAILURE_BACKOFF_MS = 1000
+const DEFAULT_FAILURE_BACKOFF_MS = 5000
 
 type GetPayloadArgs = Parameters<typeof getPayload>[0]
 type GetPayloadResult = ReturnType<typeof getPayload>

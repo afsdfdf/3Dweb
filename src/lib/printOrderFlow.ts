@@ -126,6 +126,12 @@ async function finalizePrintOrderPayment(args: {
     req,
   })
 
+  // Already finalized: payment is only marked paid after the order transitioned,
+  // so replays from the sync endpoint or duplicate webhooks become no-ops.
+  if (payment.status === 'paid' && String(order.status) !== 'pending-payment') {
+    return order
+  }
+
   const rawPayload =
     payment.rawWebhookPayload && typeof payment.rawWebhookPayload === 'object' && !Array.isArray(payment.rawWebhookPayload)
       ? payment.rawWebhookPayload

@@ -855,6 +855,10 @@ export function ModelViewer({
       }
 
       try {
+        // Plain fetch on purpose: this request has its own progress-refreshing
+        // timeout (requestController + refreshTimeout), and the URL may be
+        // cross-origin Supabase storage where credentials: 'include' would
+        // fail CORS (ACAO: *). Do not route through apiFetch.
         const response = await fetch(fetchSrc, {
           cache: "force-cache",
           priority: "high",

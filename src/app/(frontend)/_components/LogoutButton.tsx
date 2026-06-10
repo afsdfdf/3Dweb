@@ -2,6 +2,7 @@
 
 import { useState, type ComponentProps } from 'react'
 
+import { apiFetch } from '@/app/(frontend)/_lib/apiFetch'
 import { Button } from '@/components/ui/button'
 
 type LogoutButtonProps = Pick<ComponentProps<typeof Button>, 'className' | 'size' | 'variant'>
@@ -15,10 +16,7 @@ export function LogoutButton({ className, size = 'sm', variant = 'outline' }: Lo
       disabled={loading}
       onClick={async () => {
         setLoading(true)
-        await fetch('/api/platform/session/logout', {
-          credentials: 'include',
-          method: 'POST',
-        })
+        await apiFetch('/api/platform/session/logout', { method: 'POST' })
         window.location.assign('/login')
       }}
       size={size}

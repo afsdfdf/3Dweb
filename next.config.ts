@@ -1,4 +1,5 @@
 import { withPayload } from '@payloadcms/next/withPayload'
+import { withSentryConfig } from '@sentry/nextjs'
 import type { NextConfig } from 'next'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -34,6 +35,28 @@ const getSupabaseImageRemotePatterns = () => {
 const nextConfig: NextConfig = {
   allowedDevOrigins,
   poweredByHeader: false,
+  async headers() {
+    return [
+      {
+        source: '/ui/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        source: '/ui-lab/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+    ]
+  },
   images: {
     localPatterns: [
       {
@@ -62,4 +85,15 @@ const nextConfig: NextConfig = {
   },
 }
 
-export default withPayload(nextConfig, { devBundleServerPackages: false })
+const payloadConfig = withPayload(nextConfig, { devBundleServerPackages: false })
+
+// Sentry wrapping is opt-in: only active when NEXT_PUBLIC_SENTRY_DSN is set.
+// When the env var is absent (local dev, CI) the build is unaffected.
+export default process.env.NEXT_PUBLIC_SENTRY_DSN
+  ? withSentryConfig(payloadConfig, {
+      silent: true,
+      telemetry: false,
+      // Upload source maps only in CI/production to keep local builds fast
+      sourcemaps: { disable: process.env.CI !== 'true' },
+    })
+  : payloadConfig

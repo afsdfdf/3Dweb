@@ -61,7 +61,7 @@ import {
   sendRegistrationVerificationCodeEndpoint,
   verifyEmailEndpoint,
 } from './endpoints/accountAuth'
-import { aiWebhookEndpoint, meshyWebhookEndpoint, submitAITaskEndpoint, syncAITaskEndpoint } from './endpoints/aiTasks'
+import { aiWebhookEndpoint, cronReconcileAITasksEndpoint, meshyWebhookEndpoint, submitAITaskEndpoint, syncAITaskEndpoint } from './endpoints/aiTasks'
 import { createCreditTopupCheckoutEndpoint, syncCreditTopupCheckoutEndpoint } from './endpoints/creditTopups'
 import { recordEngagementViewEndpoint } from './endpoints/engagement'
 import {
@@ -271,6 +271,7 @@ export default buildConfig({
     submitImageGenerationEndpoint,
     syncImageGenerationEndpoint,
     syncAITaskEndpoint,
+    cronReconcileAITasksEndpoint,
     meshyWebhookEndpoint,
     aiWebhookEndpoint,
     modelViewerEndpoint,

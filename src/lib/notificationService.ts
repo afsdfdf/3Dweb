@@ -321,57 +321,70 @@ export async function markAllNotificationsRead(args: { req: PayloadRequest; user
   const userId = toNumericId(args.userId)
   if (!userId) return { updated: 0 }
 
-  let updated = 0
-
-  while (true) {
-    const unread = await args.req.payload.find({
-      collection: 'user-notifications',
-      depth: 0,
-      limit: maxNotificationLimit,
-      overrideAccess: false,
-      pagination: false,
-      req: args.req,
-      sort: '-createdAt',
-      user: args.req.user,
-      where: {
-        and: [
-          {
-            user: {
-              equals: userId,
-            },
+  // Single bulk update instead of paging through documents one by one; a user
+  // with a large unread backlog previously triggered one UPDATE per row.
+  const result = await args.req.payload.update({
+    collection: 'user-notifications',
+    data: {
+      readAt: new Date().toISOString(),
+    },
+    overrideAccess: INTERNAL_ACCESS,
+    req: args.req,
+    where: {
+      and: [
+        {
+          user: {
+            equals: userId,
           },
-          {
-            readAt: {
-              exists: false,
-            },
+        },
+        {
+          readAt: {
+            exists: false,
           },
-        ],
-      },
-    })
-
-    if (!unread.docs.length) break
-
-    const readAt = new Date().toISOString()
-    await Promise.all(
-      unread.docs.map((notification) =>
-        args.req.payload.update({
-          collection: 'user-notifications',
-          data: {
-            readAt,
-          },
-          id: notification.id,
-          overrideAccess: INTERNAL_ACCESS,
-          req: args.req,
-        }),
-      ),
-    )
-
-    updated += unread.docs.length
-    if (unread.docs.length < maxNotificationLimit) break
-  }
+        },
+      ],
+    },
+  })
 
   return {
-    updated,
+    updated: result.docs.length,
+  }
+}
+
+const DEFAULT_NOTIFICATION_RETENTION_DAYS = 90
+
+/**
+ * Delete read notifications older than the retention window so the table
+ * cannot grow without bound. Unread notifications are kept regardless of age.
+ */
+export async function purgeExpiredNotifications(args: { req: PayloadRequest; retentionDays?: number }) {
+  const configured = Number(args.retentionDays ?? process.env.NOTIFICATION_RETENTION_DAYS ?? DEFAULT_NOTIFICATION_RETENTION_DAYS)
+  const retentionDays = Number.isFinite(configured) && configured > 0 ? configured : DEFAULT_NOTIFICATION_RETENTION_DAYS
+  const cutoffISO = new Date(Date.now() - retentionDays * 24 * 60 * 60 * 1000).toISOString()
+
+  const result = await args.req.payload.delete({
+    collection: 'user-notifications',
+    overrideAccess: INTERNAL_ACCESS,
+    req: args.req,
+    where: {
+      and: [
+        {
+          createdAt: {
+            less_than: cutoffISO,
+          },
+        },
+        {
+          readAt: {
+            exists: true,
+          },
+        },
+      ],
+    },
+  })
+
+  return {
+    deleted: result.docs.length,
+    retentionDays,
   }
 }
 

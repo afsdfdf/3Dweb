@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
+import { apiFetch } from '@/app/(frontend)/_lib/apiFetch'
 import { OrangeMediumActionButton } from '@/components/ui-lab/action-buttons'
 
 type SubscribePlanButtonProps = {
@@ -22,12 +23,9 @@ export function SubscribePlanButton({ disabled = false, planKey }: SubscribePlan
     setError('')
 
     try {
-      const response = await fetch('/api/billing/subscriptions/checkout', {
+      const response = await apiFetch('/api/billing/subscriptions/checkout', {
         method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ planKey }),
       })
 

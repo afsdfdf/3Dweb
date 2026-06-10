@@ -1,5 +1,6 @@
 'use client'
 
+import { apiFetch } from '@/app/(frontend)/_lib/apiFetch'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
@@ -19,8 +20,8 @@ export function OrderPaymentStatusSync({ enabled = false, orderId }: OrderPaymen
 
     const run = async () => {
       try {
-        const response = await fetch(`/api/commerce/print-orders/${orderId}/sync`, {
-          credentials: 'include',
+        const response = await apiFetch(`/api/commerce/print-orders/${orderId}/sync`, {
+          
           method: 'POST',
         })
         const json = await response.json()

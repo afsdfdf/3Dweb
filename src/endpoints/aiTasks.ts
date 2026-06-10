@@ -2,7 +2,11 @@ import type { PayloadRequest } from 'payload'
 
 import crypto from 'node:crypto'
 
-import { handleAIWebhook, handleMeshyWebhook, submitAITask, syncAITask } from '@/lib/aiTaskFlow'
+import { handleAIWebhook, handleMeshyWebhook, reconcileStaleAITasks, submitAITask, syncAITask } from '@/lib/aiTaskFlow'
+import { reconcileModelCommentCounts } from '@/lib/commentService'
+import { reconcileUserFollowCounts } from '@/lib/followService'
+import { purgeExpiredNotifications } from '@/lib/notificationService'
+import { reconcileModelReactionCounts } from '@/lib/reactionService'
 import { writeAuditLog } from '@/lib/auditLog'
 import { InsufficientCreditsError } from '@/lib/creditLedger'
 import { rejectRateLimitedEndpoint } from '@/lib/endpointRateLimit'
@@ -238,6 +242,72 @@ export const syncAITaskEndpoint = {
         : task
 
     return Response.json({ message: 'Task sync completed.', task: responseTask })
+  },
+}
+
+const verifyCronAuthorization = (req: PayloadRequest) => {
+  const expected = process.env.CRON_SECRET
+  const header = req.headers.get('authorization') || ''
+  return Boolean(expected) && header === `Bearer ${expected}`
+}
+
+export const cronReconcileAITasksEndpoint = {
+  path: '/studio/ai/tasks/cron-reconcile',
+  method: 'get' as const,
+  handler: async (req: PayloadRequest) => {
+    if (!verifyCronAuthorization(req)) {
+      return Response.json({ message: 'AI task reconciliation verification failed.' }, { status: 401 })
+    }
+
+    const reconciliation = await reconcileStaleAITasks({ req })
+
+    // Piggyback housekeeping on the same 10-minute cron: purge read
+    // notifications past the retention window so the table stays bounded.
+    let notificationCleanup: { deleted: number; retentionDays: number } | { error: string }
+    try {
+      notificationCleanup = await purgeExpiredNotifications({ req })
+    } catch (error) {
+      req.payload.logger?.error?.({
+        err: error,
+        msg: 'Failed to purge expired notifications during cron reconcile.',
+      })
+      notificationCleanup = { error: 'Notification cleanup failed; see logs.' }
+    }
+
+    // Counter-drift resync walks the full users and models tables, so it
+    // runs at most once per day: the cron fires every 10 minutes, and only
+    // the first tick inside the daily window (default 04:00 UTC) does the
+    // full-table work. Per-operation recounts self-heal normal paths in
+    // between.
+    const resyncHourUTC = Math.min(23, Math.max(0, Number(process.env.COUNTER_RESYNC_HOUR_UTC ?? 4)))
+    const now = new Date()
+    const inDailyResyncWindow = now.getUTCHours() === resyncHourUTC && now.getUTCMinutes() < 10
+
+    let counterReconciliation:
+      | { comments: number; follows: number; reactions: number }
+      | { error: string }
+      | { skipped: true }
+    if (inDailyResyncWindow) {
+      try {
+        const [follows, reactions, comments] = await Promise.all([
+          reconcileUserFollowCounts({ req }),
+          reconcileModelReactionCounts({ req }),
+          reconcileModelCommentCounts({ req }),
+        ])
+        counterReconciliation = { comments: comments.reconciled, follows: follows.reconciled, reactions: reactions.reconciled }
+      } catch (error) {
+        req.payload.logger?.error?.({ err: error, msg: 'Counter reconciliation failed during cron.' })
+        counterReconciliation = { error: 'Counter reconciliation failed; see logs.' }
+      }
+    } else {
+      counterReconciliation = { skipped: true }
+    }
+
+    return Response.json({
+      ...reconciliation,
+      counterReconciliation,
+      notificationCleanup,
+    })
   },
 }
 

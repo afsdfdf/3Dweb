@@ -1,3 +1,5 @@
+export const revalidate = 60
+
 import { AuthModalStage } from "@/components/auth/AuthModalStage";
 import { BorderComboFrame2, BorderComboFrame2Variant } from "@/components/ui-lab/border-combo-frame-2";
 import { HeroProductRibbon } from "@/components/ui-lab/hero-product-ribbon";

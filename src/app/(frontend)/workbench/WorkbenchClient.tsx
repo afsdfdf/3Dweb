@@ -68,7 +68,13 @@ type PendingGenerationTask = {
   title: string;
 };
 
-const syncIntervalMs = Math.max(1000, Number(process.env.NEXT_PUBLIC_TASK_SYNC_INTERVAL_MS || 5000));
+const SYNC_INTERVAL_FLOOR_MS = Math.max(1000, Number(process.env.NEXT_PUBLIC_TASK_SYNC_INTERVAL_MS || 3000));
+
+function getSyncDelayMs(elapsedMs: number): number {
+  if (elapsedMs < 30_000) return SYNC_INTERVAL_FLOOR_MS;
+  if (elapsedMs < 120_000) return Math.max(SYNC_INTERVAL_FLOOR_MS, 10_000);
+  return Math.max(SYNC_INTERVAL_FLOOR_MS, 30_000);
+}
 const configuredSyncBatchSize = Number(process.env.NEXT_PUBLIC_TASK_SYNC_BATCH_SIZE || 2);
 const syncBatchSize = Math.max(
   1,
@@ -466,6 +472,7 @@ export function WorkbenchClient({
 
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
+    const syncStartedAtMs = Date.now();
 
     const syncTask = async (task: PendingGenerationTask) => {
       if (!task.taskId || isTerminalGenerationStatus(task.status) || syncingTaskIdsRef.current.has(task.taskId)) {
@@ -606,31 +613,55 @@ export function WorkbenchClient({
       }
     };
 
+    // Guards against parallel sync chains: a visibilitychange firing while a
+    // sync is already in flight must not spawn a second self-rescheduling loop.
+    let syncInFlight = false;
+
     const syncOnce = async () => {
-      if (cancelled) return;
+      if (cancelled || syncInFlight) return;
+      syncInFlight = true;
 
-      const { nextCursor, selectedTasks } = selectWorkbenchSyncTasks({
-        activePendingCardId,
-        batchSize: syncBatchSize,
-        cursor: syncCursorRef.current,
-        tasks: pendingTasksRef.current,
-      });
-      syncCursorRef.current = nextCursor;
+      try {
+        const { nextCursor, selectedTasks } = selectWorkbenchSyncTasks({
+          activePendingCardId,
+          batchSize: syncBatchSize,
+          cursor: syncCursorRef.current,
+          tasks: pendingTasksRef.current,
+        });
+        syncCursorRef.current = nextCursor;
 
-      await Promise.all(selectedTasks.map(syncTask));
+        await Promise.all(selectedTasks.map(syncTask));
+      } finally {
+        syncInFlight = false;
+      }
 
-      if (!cancelled && pendingTasksRef.current.some((task) => task.taskId && !isTerminalGenerationStatus(task.status))) {
+      if (cancelled || document.hidden) return;
+
+      if (pendingTasksRef.current.some((task) => task.taskId && !isTerminalGenerationStatus(task.status))) {
         timer = setTimeout(() => {
           void syncOnce();
-        }, syncIntervalMs);
+        }, getSyncDelayMs(Date.now() - syncStartedAtMs));
       }
     };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        if (timer) { clearTimeout(timer); timer = null; }
+      } else if (!cancelled) {
+        // Clear any pending timer before kicking an immediate sync so only
+        // one reschedule chain exists at a time.
+        if (timer) { clearTimeout(timer); timer = null; }
+        void syncOnce();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     void syncOnce();
 
     return () => {
       cancelled = true;
       if (timer) clearTimeout(timer);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [activePendingCardId, hasSyncablePendingTasks, router]);
 

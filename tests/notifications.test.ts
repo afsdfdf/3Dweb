@@ -52,8 +52,8 @@ test('payload registers notification collection and account endpoints', () => {
   assert.match(serviceSource, /overrideAccess:\s*false/)
   assert.match(serviceSource, /sourceKey/)
   assert.match(serviceSource, /createGenerationTaskNotification/)
-  assert.match(serviceSource, /while \(true\)/)
-  assert.match(serviceSource, /updated \+= unread\.docs\.length/)
+  assert.match(serviceSource, /readAt:\s*\{\s*exists:\s*false,?\s*\}/)
+  assert.match(serviceSource, /purgeExpiredNotifications/)
 })
 
 test('top navigation bell uses real notification APIs instead of static badge data', () => {

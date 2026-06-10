@@ -15,6 +15,12 @@ export interface KVStore {
   set(key: string, value: string, ttlMs?: number): Promise<void>
   delete(key: string): Promise<void>
   has(key: string): Promise<boolean>
+  /**
+   * Atomically increment a counter key and return the new value.
+   * The TTL is applied only when the increment creates the key, so the
+   * window of an existing counter is never extended.
+   */
+  increment(key: string, ttlMs: number): Promise<number>
   /** Remove all expired entries. */
   cleanup(): Promise<void>
 }
@@ -26,8 +32,11 @@ type MemEntry = {
   expiresAt: number | null // null means no expiry
 }
 
+const MEMORY_CLEANUP_INTERVAL_MS = 60 * 1000
+
 export class MemoryKVStore implements KVStore {
   private store = new Map<string, MemEntry>()
+  private lastCleanupAt = 0
 
   async get(key: string): Promise<string | null> {
     const entry = this.store.get(key)
@@ -55,8 +64,30 @@ export class MemoryKVStore implements KVStore {
     return val !== null
   }
 
+  async increment(key: string, ttlMs: number): Promise<number> {
+    // Node is single-threaded, so read-modify-write within one tick is atomic.
+    const current = await this.get(key)
+    const next = (current ? Number(current) || 0 : 0) + 1
+
+    if (current === null) {
+      this.store.set(key, { value: String(next), expiresAt: Date.now() + ttlMs })
+    } else {
+      const entry = this.store.get(key)!
+      entry.value = String(next)
+    }
+
+    return next
+  }
+
   async cleanup(): Promise<void> {
     const now = Date.now()
+
+    // Full-map sweeps are O(n); throttle so hot paths do not pay the cost per request.
+    if (now - this.lastCleanupAt < MEMORY_CLEANUP_INTERVAL_MS) {
+      return
+    }
+    this.lastCleanupAt = now
+
     for (const [key, entry] of this.store.entries()) {
       if (entry.expiresAt && entry.expiresAt <= now) {
         this.store.delete(key)
@@ -96,6 +127,16 @@ export class RedisKVStore implements KVStore {
     return result === 1
   }
 
+  async increment(key: string, ttlMs: number): Promise<number> {
+    // INCR is atomic in Redis; apply the TTL only on first creation so the
+    // counting window is never extended by subsequent hits.
+    const next = await this.client.incr(key)
+    if (next === 1) {
+      await this.client.pexpire(key, ttlMs)
+    }
+    return next
+  }
+
   async cleanup(): Promise<void> {
     // Redis handles TTL expiry automatically.
   }
@@ -120,7 +161,20 @@ export function getKVStore(): KVStore {
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const Redis = require('ioredis')
-      const client = new Redis(redisUrl)
+      const client = new Redis(redisUrl, {
+        // Fail fast instead of queueing commands forever when Redis is down.
+        // Without these, a Redis outage would hang every rate-limited endpoint
+        // until the serverless function times out.
+        maxRetriesPerRequest: 1,
+        enableOfflineQueue: false,
+        connectTimeout: 3000,
+        // Bound reconnection backoff so a flapping Redis cannot stall the client.
+        retryStrategy: (times: number) => Math.min(times * 200, 2000),
+      })
+      // Prevent unhandled 'error' events from crashing the process on outage.
+      client.on('error', (error: unknown) => {
+        console.warn('[kvStore] Redis client error:', error instanceof Error ? error.message : error)
+      })
       _instance = new RedisKVStore(client)
       return _instance
     } catch {

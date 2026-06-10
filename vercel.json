@@ -3,6 +3,10 @@
     {
       "path": "/api/platform/model-optimization/cron-dispatch",
       "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/studio/ai/tasks/cron-reconcile",
+      "schedule": "*/10 * * * *"
     }
   ]
 }

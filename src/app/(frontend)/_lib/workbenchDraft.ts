@@ -1,5 +1,6 @@
 "use client";
 
+import { apiFetch } from "@/app/(frontend)/_lib/apiFetch";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 export type WorkbenchDraftMode = "image3d" | "text3d";
@@ -50,14 +51,14 @@ export function validateWorkbenchSourceImage(file: File) {
 export async function uploadWorkbenchSourceImage(file: File): Promise<WorkbenchSourceImageAsset> {
   validateWorkbenchSourceImage(file);
 
-  const configResp = await fetch("/api/media/upload-url", {
+  const configResp = await apiFetch("/api/media/upload-url", {
     body: JSON.stringify({
       contentType: file.type || "application/octet-stream",
       filename: file.name || "reference-image",
       purpose: "input",
       size: file.size,
     }),
-    credentials: "include",
+    
     headers: { "Content-Type": "application/json" },
     method: "POST",
   });

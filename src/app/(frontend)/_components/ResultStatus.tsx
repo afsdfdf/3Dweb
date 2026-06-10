@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
+import { apiFetch } from '@/app/(frontend)/_lib/apiFetch'
 import { Badge } from '@/components/ui/badge'
 
 type ResultStatusProps = {
@@ -34,8 +35,8 @@ export function ResultStatus({ taskId, taskStatus }: ResultStatusProps) {
       setBusy(true)
 
       try {
-        await fetch(`/api/studio/ai/tasks/${taskId}/sync`, {
-          credentials: 'include',
+        await apiFetch(`/api/studio/ai/tasks/${taskId}/sync`, {
+          
           method: 'POST',
         })
 

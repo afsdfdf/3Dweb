@@ -39,8 +39,16 @@ export function getStripeClient() {
     throw new Error('STRIPE_SECRET_KEY is not configured, so the Stripe client cannot be created.')
   }
 
+  if (process.env.NODE_ENV === 'production' && secretKey.startsWith('sk_test_')) {
+    throw new Error('A Stripe test key (sk_test_*) cannot be used in production. Configure a live key.')
+  }
+
   stripeClient = new Stripe(secretKey, {
     apiVersion: '2026-03-25.dahlia',
+    // Bound network calls so a hung Stripe request cannot stall a serverless
+    // function until its platform timeout. One retry covers transient blips.
+    maxNetworkRetries: 1,
+    timeout: 20_000,
   })
 
   return stripeClient

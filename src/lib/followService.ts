@@ -135,15 +135,35 @@ export async function followCreator(args: {
   })
 
   if (!existing.docs[0]) {
-    await req.payload.create({
-      collection: 'user-follows',
-      data: {
-        followee: targetUserId,
-        follower: followerId,
-      },
-      overrideAccess: INTERNAL_ACCESS,
-      req,
-    })
+    try {
+      await req.payload.create({
+        collection: 'user-follows',
+        data: {
+          followee: targetUserId,
+          follower: followerId,
+        },
+        overrideAccess: INTERNAL_ACCESS,
+        req,
+      })
+    } catch (error) {
+      // A concurrent identical follow may insert between the check and create.
+      // Re-check rather than surfacing the race as an error; counts are
+      // recomputed from actual rows below so the result stays correct.
+      const raced = await req.payload.find({
+        collection: 'user-follows',
+        depth: 0,
+        limit: 1,
+        overrideAccess: true,
+        pagination: false,
+        req,
+        where: {
+          and: [{ follower: { equals: followerId } }, { followee: { equals: targetUserId } }],
+        },
+      })
+      if (!raced.docs[0]) {
+        throw error
+      }
+    }
   }
 
   await Promise.all([
@@ -226,4 +246,36 @@ export async function listCurrentUserFollows(req: PayloadRequest) {
     sort: '-createdAt',
     user: req.user,
   })
+}
+
+const RECONCILE_PAGE_SIZE = 100
+
+export async function reconcileUserFollowCounts(args: { req: PayloadRequest; limit?: number }) {
+  const pageSize = RECONCILE_PAGE_SIZE
+  let page = 1
+  let reconciled = 0
+
+  for (;;) {
+    const users = await args.req.payload.find({
+      collection: 'users',
+      depth: 0,
+      limit: pageSize,
+      overrideAccess: INTERNAL_ACCESS,
+      page,
+      pagination: true,
+      req: args.req,
+    })
+
+    for (const user of users.docs) {
+      const userId = typeof user.id === 'number' ? user.id : Number(user.id)
+      if (!Number.isFinite(userId)) continue
+      await syncUserFollowCounts({ req: args.req, userId })
+      reconciled += 1
+    }
+
+    if (!users.hasNextPage) break
+    page += 1
+  }
+
+  return { reconciled }
 }
