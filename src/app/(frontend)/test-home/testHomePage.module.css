@@ -35,7 +35,7 @@
   z-index: 3;
 }
 
-.heroStage :global(.scroll-container) {
+.heroStage.heroStage :global(.scroll-container) {
   position: absolute;
   top: 0;
   left: 50%;
@@ -46,7 +46,7 @@
   transform-origin: top center;
 }
 
-.heroStage :global(.Pixso-frame-1_2877) > :global(:not(.Pixso-vector-1_2878)) {
+.heroStage.heroStage :global(.Pixso-frame-1_2877) > :global(:not(.Pixso-vector-1_2878)) {
   transform: none;
 }
 
