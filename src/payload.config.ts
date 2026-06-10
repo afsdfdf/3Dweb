@@ -118,12 +118,13 @@ import { SiteSettings } from './globals/SiteSettings'
 import { StorageSettings } from './globals/StorageSettings'
 import { assertRuntimeSecurityGuards, getValidatedPayloadSecret } from './lib/envGuard'
 import { resolveDatabaseRuntimeConfig } from './lib/databaseRuntimeConfig'
+import { getCanonicalAppURL } from './lib/getCanonicalAppURL'
 import { localizeCollectionAdminConfig, localizeGlobalAdminConfig } from './lib/payloadAdminI18n'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
-const appURL = process.env.NEXT_PUBLIC_APP_URL || 'http://127.0.0.1:3000'
+const appURL = getCanonicalAppURL()
 const defaultFromAddress = process.env.EMAIL_FROM_ADDRESS || 'no-reply@thornstavern.com'
 const defaultFromName = process.env.EMAIL_FROM_NAME || 'Thorns Tavern'
 const smtpSecure = process.env.SMTP_SECURE === 'true'

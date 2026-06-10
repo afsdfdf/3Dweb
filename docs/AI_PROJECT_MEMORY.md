@@ -90,6 +90,11 @@ Runtime database:
 - Prefer `DATABASE_URL`.
 - Do not reintroduce SQLite, libsql, or `payload.db` runtime fallback paths.
 
+## 2026-06-10 Auth Email Canonical URLs
+
+- Password reset, verification, welcome, subscription, and order emails must build links through `getCanonicalAppURL()`, not direct `NEXT_PUBLIC_APP_URL || localhost` fallbacks. This lets production use `CANONICAL_APP_URL` or `NEXT_PUBLIC_APP_URL`, trims trailing slashes, and fails startup in production when no valid public origin is configured.
+- Local reset links showing `http://localhost:3000/reset-password?...` are expected only when local env points `CANONICAL_APP_URL` / `NEXT_PUBLIC_APP_URL` at localhost. Remote deployments must set both values to the public domain in Vercel environment variables to avoid sending local links.
+
 ## Active Payload Surface
 
 Registered collections:

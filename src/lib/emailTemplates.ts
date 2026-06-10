@@ -1,8 +1,9 @@
 import type { PayloadRequest } from 'payload'
 
 import { getEmailSettings } from '@/lib/emailSettings'
+import { getCanonicalAppURL } from '@/lib/getCanonicalAppURL'
 
-const getAppURL = () => process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+const getAppURL = getCanonicalAppURL
 
 const renderEmailShell = (args: { body: string; footerText: string; title: string }) => {
   const { body, footerText, title } = args

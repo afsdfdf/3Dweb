@@ -1,8 +1,9 @@
 import type { PayloadRequest } from 'payload'
 
 import { getEmailSettings } from '@/lib/emailSettings'
+import { getCanonicalAppURL } from '@/lib/getCanonicalAppURL'
 
-const getAppURL = () => process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+const getAppURL = getCanonicalAppURL
 
 const renderShell = (title: string, content: string) => `
   <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #0f172a; max-width: 640px; margin: 0 auto; padding: 24px;">

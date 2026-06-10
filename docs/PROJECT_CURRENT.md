@@ -23,6 +23,7 @@ Active product surfaces:
 - PostgreSQL is the only runtime database. Prefer `DATABASE_URL`; do not restore SQLite, libsql, or `payload.db` runtime fallbacks.
 - Supabase Storage is the only runtime object-storage direction. Do not restore AWS S3 runtime media helpers, signing code, or plugins.
 - `PAYLOAD_SECRET`, `DATABASE_URL`, `NEXT_PUBLIC_APP_URL` or `CANONICAL_APP_URL`, Supabase service settings, Stripe keys, and provider keys are deployment configuration, not frontend source.
+- Auth and business emails build absolute links through `getCanonicalAppURL()`. In production, set `CANONICAL_APP_URL` and `NEXT_PUBLIC_APP_URL` to the public domain; missing or invalid values should fail instead of sending localhost links.
 - `.env` and local env backups are not versioned. Active examples are `.env.example`, `.env.vercel.preview.example`, and `.env.vercel.production.example`.
 
 ## Payload Rules

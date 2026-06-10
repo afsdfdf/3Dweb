@@ -1,6 +1,7 @@
 import type { CollectionAfterChangeHook } from 'payload'
 
 import { getEmailSettings } from '@/lib/emailSettings'
+import { getCanonicalAppURL } from '@/lib/getCanonicalAppURL'
 
 export const sendWelcomeEmail: CollectionAfterChangeHook = async ({ doc, operation, req }) => {
   if (operation !== 'create') {
@@ -12,7 +13,7 @@ export const sendWelcomeEmail: CollectionAfterChangeHook = async ({ doc, operati
   }
 
   try {
-    const appURL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const appURL = getCanonicalAppURL()
     const settings = await getEmailSettings(req)
     const displayName = typeof doc.fullName === 'string' && doc.fullName.trim() ? doc.fullName.trim() : doc.email
 
