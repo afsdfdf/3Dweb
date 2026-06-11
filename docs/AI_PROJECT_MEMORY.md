@@ -26,6 +26,10 @@ Do not leave durable project decisions only in chat history.
 - The production homepage uses `src/app/(frontend)/test-home/testHomePage.module.css` for `/` and `/test-home`. Its hero wraps the generated `Frame12877` component, whose own `frame12877.module.css` sets `.scroll-container { left: 0; top: 60px }` and translates non-background children upward. Homepage-level overrides for `.scroll-container` and `.Pixso-frame-1_2877 > :not(.Pixso-vector-1_2878)` must use higher specificity than the component CSS, because production CSS order can otherwise let the component `left: 0` win while the homepage `translateX(-50%)` still applies. That combination shifts the hero about half a viewport left and leaves the right side black.
 - Keep the regression assertions in `tests/testHomeResponsivePage.test.ts` when adjusting the homepage hero. Do not rely on local dev CSS injection order as proof that the production homepage is visually safe.
 
+## 2026-06-11 Frontend Route Loading UX
+
+- Do not add frontend `loading.tsx` route fallbacks for the public frontend unless explicitly requested. Most public pages still read cookies/session or Payload-backed content, so Vercel serves them dynamically and client route transitions can wait several seconds. Route loading fallbacks turn that wait into a visible spinner or skeleton during normal page navigation; the desired behavior is to stay on the current page until the destination is ready. Keep `tests/frontendLoadingUX.test.ts` guarding against reintroducing these page-switch loading animations.
+
 ## 2026-06-04 Frontend Shopping Cart
 
 - `/cart` is a front-end shopping cart modal route backed by `localStorage` through `src/app/(frontend)/_lib/cartStorage.ts`. It uses a dimmed/blurred backdrop, supports selected items, quantity edits, deletion, original/discounted price display, thumbnail links to `/model-detail?id=...`, and an internal scrollable item list.
