@@ -14,140 +14,84 @@
   z-index: 90;
 }
 
-.previewShell {
+.assetStage {
   box-sizing: border-box;
-  padding: 20px 32px 46px;
+  padding: 24px 32px 44px;
   width: 100%;
 }
 
-.assetsFrame {
-  --upper-height: calc(112px - var(--top-height) - (var(--middle-height) / 2));
-  --lower-height: calc(100% - var(--top-height) - var(--upper-height) - var(--middle-height) - var(--bottom-height));
-  height: 1446px;
-  min-height: 1446px;
+.assetsSection {
+  box-sizing: border-box;
   width: 100%;
 }
 
-.assetsFrame > :global([class*="content"]) {
-  height: 100%;
-  min-height: 0;
-  padding: 0 var(--right-width) 0 var(--left-width);
-}
-
-.frameShell {
-  height: 100%;
-  min-height: 0;
-  pointer-events: auto;
-  position: relative;
-}
-
-.assetsPanel {
-  --assets-card-height: clamp(377px, 24vw, 499px);
-  --assets-card-width: clamp(236px, 15vw, 312px);
-  --assets-grid-column-gap: clamp(9px, 0.86vw, 18px);
-  --assets-grid-row-gap: clamp(13px, 1.25vw, 26px);
-  --assets-grid-top: 296px;
-  --assets-panel-gutter: 24px;
-  --assets-profile-height: 166px;
-  --assets-toolbar-top: 214px;
-  background: #111114;
-  box-sizing: border-box;
-  inset: 0 0 42px 0;
-  min-height: 0;
+.profileHero {
+  background: #050505;
+  height: var(--assets-profile-height);
+  min-height: var(--assets-profile-height);
   overflow: hidden;
-  padding: 0;
-  position: absolute;
+  position: relative;
+  width: 100%;
 }
 
-.assetsPanel::before {
-  background: rgba(255, 255, 255, 0.12);
+.profileHero::after {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04));
+  bottom: 0;
   content: "";
   height: 1px;
   left: 0;
   pointer-events: none;
   position: absolute;
   right: 0;
-  top: var(--assets-profile-height);
-  z-index: 2;
-}
-
-.assetsPanel::after {
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
-  content: "";
-  inset: 0;
-  pointer-events: none;
-  position: absolute;
-  z-index: 1;
-}
-
-.profileHero {
-  align-items: center;
-  background:
-    linear-gradient(90deg, rgba(28, 28, 31, 0.98) 0%, rgba(28, 28, 31, 0.94) 29%, rgba(28, 28, 31, 0.36) 56%, rgba(28, 28, 31, 0.88) 100%),
-    #19191c;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  display: block;
-  height: var(--assets-profile-height);
-  left: 0;
-  min-height: var(--assets-profile-height);
-  overflow: hidden;
-  position: absolute;
-  right: 0;
-  top: 0;
-  z-index: 3;
+  z-index: 4;
 }
 
 .profileCopy {
   align-items: center;
   display: flex;
-  gap: 28px;
+  gap: 20px;
   height: 100%;
-  left: 32px;
+  left: 34px;
+  max-width: min(520px, 44vw);
   min-width: 0;
-  padding: 0;
   position: absolute;
   top: 0;
-  width: min(500px, 40vw);
-  z-index: 2;
+  z-index: 3;
 }
 
 .profileAvatarWrap {
   align-items: center;
-  background: #231d1c;
-  border: 7px solid #f0d188;
+  border: 3px solid #75312c;
   border-radius: 999px;
-  box-shadow: 0 0 0 7px #6c1f1d;
+  box-sizing: border-box;
   display: flex;
   flex: 0 0 auto;
-  height: 94px;
+  height: 82px;
   justify-content: center;
   position: relative;
-  width: 94px;
+  width: 82px;
 }
 
 .profileAvatar {
   border-radius: 999px;
   display: block;
-  height: 100%;
+  height: 70px;
   object-fit: cover;
-  width: 100%;
+  width: 70px;
 }
 
 .profileBadge {
-  align-items: center;
   background: #071612;
-  border: 3px solid #28cc89;
+  border: 2px solid #00b871;
   border-radius: 999px;
   bottom: -12px;
-  color: #8dffd3;
-  display: flex;
-  font-size: 18px;
+  color: #2ee5a0;
+  font-size: 11px;
   font-weight: 800;
-  height: 27px;
-  justify-content: center;
   left: 50%;
+  letter-spacing: 0;
   line-height: 1;
-  padding: 0 8px;
+  padding: 4px 12px;
   position: absolute;
   transform: translateX(-50%);
 }
@@ -158,7 +102,7 @@
 
 .profileText h1 {
   color: #ffffff;
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
   letter-spacing: 0;
   line-height: 1.2;
@@ -166,161 +110,162 @@
 }
 
 .profileText p {
-  color: rgba(255, 255, 255, 0.47);
+  color: rgba(255, 255, 255, 0.5);
   font-size: 12px;
-  line-height: 1.35;
-  margin: 12px 0 9px;
-  max-width: 320px;
+  line-height: 17px;
+  margin: 7px 0 8px;
+  max-width: 360px;
 }
 
 .profileStats {
   align-items: center;
   display: flex;
-  gap: 20px;
+  gap: 18px;
 }
 
 .profileStats span {
   align-items: center;
-  color: rgba(255, 255, 255, 0.58);
+  color: rgba(255, 255, 255, 0.72);
   display: inline-flex;
-  font-size: 12px;
-  gap: 5px;
+  font-size: 13px;
+  gap: 7px;
   line-height: 1;
 }
 
-.profileStats svg {
-  color: #858790;
+.profileStats img {
+  display: block;
+  height: 16px;
+  object-fit: contain;
+  width: 16px;
 }
 
 .creatorActionPlate {
   align-items: center;
   display: flex;
-  height: var(--assets-profile-height);
-  justify-content: flex-start;
-  left: clamp(500px, 33.5vw, 650px);
-  min-width: 0;
+  gap: 18px;
+  height: 100%;
+  left: clamp(440px, 32vw, 640px);
   position: absolute;
   top: 0;
-  width: 330px;
-  z-index: 2;
+  z-index: 3;
 }
 
-.creatorActionPlate::after {
-  border: 2px solid rgba(240, 209, 136, 0.16);
-  content: "";
-  height: 26px;
-  margin-left: 36px;
+.profileOrnament {
+  border: 2px solid rgba(255, 255, 255, 0.34);
+  display: block;
+  height: 14px;
   transform: rotate(45deg);
-  width: 26px;
-}
-
-.followButton,
-.followedButton {
-  background: linear-gradient(180deg, #5a5d6f 0%, #232531 100%);
-  border: 1px solid rgba(255, 255, 255, 0.32);
-  border-radius: 3px;
-  box-shadow:
-    inset 0 0 0 2px rgba(0, 0, 0, 0.42),
-    0 8px 18px rgba(0, 0, 0, 0.36);
-  color: #ffffff;
-  cursor: pointer;
-  font-size: 15px;
-  font-weight: 700;
-  height: 52px;
-  letter-spacing: 0;
-  min-width: 136px;
-  padding: 0 22px;
-  transition: border-color 160ms ease, filter 160ms ease;
-}
-
-.followButton:hover,
-.followButton:focus-visible,
-.followedButton:hover,
-.followedButton:focus-visible {
-  border-color: rgba(240, 209, 136, 0.78);
-  filter: brightness(1.09);
-  outline: none;
-}
-
-.followButton {
-  background: linear-gradient(180deg, #7a5b2b 0%, #2d2217 100%);
-  color: #ffe0aa;
+  width: 14px;
 }
 
 .profileBanner {
-  bottom: 0;
-  min-height: var(--assets-profile-height);
+  background-color: #050505;
+  background-position: right center;
+  background-repeat: repeat-x;
+  background-size: auto 100%;
+  height: 96px;
   overflow: hidden;
   position: absolute;
   right: 0;
-  top: 0;
-  width: min(920px, 53vw);
+  top: 50%;
+  transform: translateY(-50%);
+  width: min(980px, 58vw);
   z-index: 1;
 }
 
 .profileBanner::before {
-  background: linear-gradient(90deg, #19191c 0%, rgba(25, 25, 28, 0) 46%);
+  background:
+    linear-gradient(90deg, #050505 0%, rgba(5, 5, 5, 0.84) 18%, rgba(5, 5, 5, 0) 42%),
+    linear-gradient(180deg, #050505 0%, rgba(5, 5, 5, 0) 18%, rgba(5, 5, 5, 0) 82%, #050505 100%);
   content: "";
   inset: 0;
   position: absolute;
   z-index: 2;
 }
 
-.profileBanner img {
-  display: block;
-  height: 100%;
-  object-fit: cover;
-  object-position: center right;
+.mergedPanel {
+  --assets-grid-top: 0;
+  --assets-profile-height: 128px;
+  --inspiration-card-height: clamp(377px, 24vw, 460px);
+  --inspiration-card-width: clamp(236px, 15vw, 288px);
+  margin: 0 auto;
+  max-width: 1880px;
+  position: relative;
+  width: 100%;
+}
+
+.assetCenterFrame {
+  background: #050505;
+  border-radius: 4px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.32);
+  overflow: visible;
+  position: relative;
+  width: 100%;
+}
+
+.assetCenterContent {
+  background: #050505;
+  min-height: 0;
+}
+
+.assetsPanel {
+  background: #050505;
+  box-sizing: border-box;
+  min-height: 0;
+  overflow: visible;
+  padding: 0 0 32px;
+  position: relative;
   width: 100%;
 }
 
 .toolbar {
   align-items: center;
-  display: grid;
-  gap: 20px;
-  grid-template-columns: minmax(0, 1fr) auto;
-  left: var(--assets-panel-gutter);
-  padding: 0;
-  position: absolute;
-  right: var(--assets-panel-gutter);
-  top: var(--assets-toolbar-top);
-  z-index: 8;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 24px;
+  justify-content: space-between;
+  min-height: 33px;
+  margin-top: 22px;
+  position: relative;
+  z-index: 10;
 }
 
 .tabs {
+  align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 10px;
 }
 
-.toolbarSpacer {
-  height: 33px;
-  min-width: 1px;
-}
-
-.tabButton {
+.tabButton,
+.creatorViewTitle {
   align-items: center;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: #111113;
+  border: 1px solid rgba(255, 255, 255, 0.24);
   border-radius: 2px;
-  color: rgba(255, 255, 255, 0.48);
-  cursor: pointer;
+  box-sizing: border-box;
+  color: rgba(255, 255, 255, 0.66);
   display: inline-flex;
   font-size: 12px;
   font-weight: 700;
-  gap: 7px;
+  gap: 8px;
   height: 33px;
   letter-spacing: 0;
-  padding: 0 14px;
+  line-height: 1;
+  padding: 0 16px;
   text-transform: uppercase;
-  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
 }
 
+.tabButton {
+  cursor: pointer;
+}
+
+.creatorViewTitle,
 .tabButton:hover,
 .tabButton:focus-visible,
 .tabButton[aria-selected="true"] {
-  background: rgba(255, 255, 255, 0.07);
-  border-color: rgba(255, 255, 255, 0.42);
+  background: #1d1d22;
+  border-color: rgba(255, 255, 255, 0.54);
   color: #ffffff;
   outline: none;
 }
@@ -335,14 +280,15 @@
 
 .searchBox {
   align-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: #050505;
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-right: 0;
   box-sizing: border-box;
   display: inline-flex;
-  gap: 9px;
+  gap: 10px;
   height: 33px;
-  min-width: 244px;
-  padding: 0 10px;
+  min-width: 255px;
+  padding: 0 12px;
 }
 
 .searchBox svg {
@@ -354,40 +300,43 @@
   background: transparent;
   border: 0;
   color: #ffffff;
-  font-size: 12px;
+  font-size: 13px;
+  height: 31px;
+  line-height: 31px;
   min-width: 0;
   outline: 0;
+  padding: 0;
   width: 100%;
 }
 
 .searchBox input::placeholder {
-  color: rgba(255, 255, 255, 0.28);
+  color: rgba(255, 255, 255, 0.36);
 }
 
 .searchButton {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.32);
+  background: #1c1c1f;
+  border: 1px solid rgba(255, 255, 255, 0.36);
   color: #ffffff;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   height: 33px;
-  min-width: 64px;
-  padding: 0 14px;
+  min-width: 82px;
+  padding: 0 16px;
 }
 
 .searchButton:hover,
 .searchButton:focus-visible {
+  background: #24242a;
   border-color: rgba(240, 209, 136, 0.76);
-  color: #f0d188;
   outline: none;
 }
 
 .pagination {
   align-items: center;
   display: inline-flex;
-  gap: 4px;
-  margin-left: 24px;
+  gap: 3px;
+  margin-left: 18px;
 }
 
 .pageArrow,
@@ -395,11 +344,13 @@
 .pageEllipsis,
 .pageSizeSelect select {
   align-items: center;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  color: rgba(255, 255, 255, 0.76);
+  background: #111113;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 2px;
+  box-sizing: border-box;
+  color: rgba(255, 255, 255, 0.82);
   display: inline-flex;
-  font-size: 12px;
+  font-size: 13px;
   height: 33px;
   justify-content: center;
   min-width: 33px;
@@ -412,8 +363,8 @@
 }
 
 .pageArrow:disabled {
+  color: rgba(255, 255, 255, 0.28);
   cursor: default;
-  opacity: 0.38;
 }
 
 .pageButton[aria-current="page"],
@@ -421,7 +372,8 @@
 .pageButton:focus-visible,
 .pageArrow:not(:disabled):hover,
 .pageArrow:not(:disabled):focus-visible {
-  border-color: rgba(255, 255, 255, 0.42);
+  background: #1d1d22;
+  border-color: rgba(255, 255, 255, 0.5);
   color: #ffffff;
   outline: none;
 }
@@ -432,7 +384,7 @@
 
 .pageSizeSelect {
   display: inline-flex;
-  margin-left: 20px;
+  margin-left: 12px;
 }
 
 .pageSizeSelect select {
@@ -440,273 +392,107 @@
   background:
     linear-gradient(45deg, transparent 50%, rgba(255, 255, 255, 0.72) 50%) right 14px center / 6px 6px no-repeat,
     linear-gradient(135deg, rgba(255, 255, 255, 0.72) 50%, transparent 50%) right 10px center / 6px 6px no-repeat,
-    rgba(255, 255, 255, 0.02);
-  border-radius: 2px;
+    #111113;
   cursor: pointer;
   min-width: 138px;
   padding: 0 28px 0 14px;
 }
 
 .frameRule {
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.15);
   height: 2px;
-  left: var(--assets-panel-gutter);
-  margin: 0;
-  position: absolute;
-  right: var(--assets-panel-gutter);
-  top: calc(var(--assets-toolbar-top) + 55px);
+  margin: 22px 0 32px;
+  position: relative;
   z-index: 5;
 }
 
 .assetGrid {
   display: grid;
-  gap: var(--assets-grid-row-gap) var(--assets-grid-column-gap);
-  grid-template-columns: repeat(6, var(--assets-card-width));
+  gap: clamp(13px, 1.25vw, 26px) clamp(9px, 0.86vw, 18px);
+  grid-template-columns: repeat(auto-fit, var(--inspiration-card-width));
   justify-content: center;
-  left: 50%;
-  padding: 0;
-  position: absolute;
-  top: var(--assets-grid-top);
-  transform: translateX(-50%);
+  min-height: var(--inspiration-card-height);
+  position: relative;
   width: 100%;
   z-index: 6;
 }
 
-.assetCardFrame {
-  height: var(--assets-card-height, 460px);
-  pointer-events: none;
-  width: var(--assets-card-width, 288px);
-}
-
-.assetCardFrameContent {
-  height: 100%;
-  min-height: 0;
-  padding: 0 !important;
-  pointer-events: auto;
-}
-
-.assetCard {
-  --asset-card-accent: #f0d188;
-  background: #000000;
-  box-sizing: border-box;
-  color: #ffffff;
-  height: 100%;
-  overflow: hidden;
-  position: relative;
-  width: 100%;
-}
-
-.toneblue {
-  --asset-card-accent: #6aa4b8;
-}
-
-.toneamber {
-  --asset-card-accent: #b88356;
-}
-
-.tonesteel {
-  --asset-card-accent: #8a8f98;
-}
-
-.tonegreen {
-  --asset-card-accent: #89946c;
-}
-
-.cardHeader {
-  align-items: start;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
-  display: grid;
-  grid-template-columns: 42px minmax(0, 1fr) auto;
-  height: 67px;
-  padding: 18px 12px 9px 14px;
-  position: relative;
-  z-index: 6;
-}
-
-.cardAvatarButton {
-  background: transparent;
-  border: 0;
-  cursor: pointer;
-  height: 40px;
-  padding: 0;
-  position: relative;
-  width: 40px;
-}
-
-.cardAvatarButton::before {
-  border: 2px solid #f0a34d;
-  border-radius: 999px;
-  content: "";
-  inset: 0;
-  position: absolute;
-}
-
-.cardAvatarButton:hover::before,
-.cardAvatarButton:focus-visible::before {
-  border-color: #24d58d;
-  box-shadow: 0 0 10px rgba(36, 213, 141, 0.36);
-}
-
-.cardAvatarButton:focus-visible {
-  outline: none;
-}
-
-.cardAvatar,
-.avatarFallback {
-  border-radius: 999px;
-  height: 32px;
-  left: 4px;
-  position: absolute;
-  top: 4px;
-  width: 32px;
-}
-
-.cardAvatar {
+.assetCardShell {
+  cursor: default;
   display: block;
-  object-fit: cover;
+  height: var(--inspiration-card-height, 460px);
+  position: relative;
+  width: var(--inspiration-card-width, 288px);
 }
 
-.avatarFallback {
+.visibilityChip {
   align-items: center;
-  background: #20242a;
-  color: #f0d188;
-  display: flex;
-  font-size: 11px;
-  font-weight: 800;
-  justify-content: center;
-}
-
-.miniBadge {
-  background: #071612;
-  border: 1px solid #27c985;
-  border-radius: 999px;
-  bottom: -3px;
-  color: #77f9c4;
-  font-size: 8px;
-  font-weight: 800;
-  left: 50%;
-  line-height: 1;
-  padding: 1px 4px;
-  position: absolute;
-  transform: translateX(-50%);
-}
-
-.cardMeta {
-  min-width: 0;
-  padding-left: 8px;
-}
-
-.cardTitleRow {
-  align-items: center;
-  display: flex;
-  gap: 8px;
-  min-width: 0;
-}
-
-.cardTitleRow strong {
-  color: #ffffff;
-  flex: 0 1 auto;
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 18px;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.cardTitleRow span {
-  color: rgba(255, 255, 255, 0.28);
-  flex: 0 0 auto;
-  font-size: 11px;
-  line-height: 18px;
-  white-space: nowrap;
-}
-
-.cardStats {
-  display: flex;
-  gap: 4px;
-  margin-top: 2px;
-  min-width: 0;
-}
-
-.cardStats span,
-.favoriteStatButton {
-  align-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 3px;
-  color: rgba(255, 255, 255, 0.74);
+  background: #ffffff;
+  border-radius: 2px;
+  color: #16161a;
   display: inline-flex;
-  font-size: 10px;
-  gap: 3px;
-  height: 17px;
+  font-size: 11px;
+  font-weight: 700;
+  height: 22px;
+  justify-content: center;
+  left: 13px;
   line-height: 1;
-  min-width: 0;
-  padding: 0 5px;
-  white-space: nowrap;
+  min-width: 68px;
+  padding: 0 9px;
+  position: absolute;
+  top: 78px;
+  z-index: 45;
 }
 
-.favoriteStatButton {
-  background: rgba(0, 0, 0, 0.18);
-  cursor: pointer;
-}
-
-.cardStats svg {
-  color: #858790;
-}
-
-.favoriteStatButton svg {
-  color: #f3c064;
-}
-
-.favoriteStatButton:hover,
-.favoriteStatButton:focus-visible {
-  border-color: rgba(240, 209, 136, 0.7);
-  color: #ffffff;
-  outline: none;
+.visibilityChip[data-visibility="public"] {
+  background: #9b9ca0;
+  color: #121214;
 }
 
 .moreButton {
   align-items: center;
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.26);
-  border-radius: 3px;
+  background: rgba(10, 10, 12, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 2px;
   color: #ffffff;
   cursor: pointer;
   display: inline-flex;
-  height: 23px;
+  height: 24px;
   justify-content: center;
   padding: 0;
-  width: 23px;
+  position: absolute;
+  right: 13px;
+  top: 78px;
+  width: 28px;
+  z-index: 45;
 }
 
 .moreButton:hover,
 .moreButton:focus-visible {
-  border-color: #f0d188;
+  background: rgba(28, 28, 32, 0.94);
+  border-color: rgba(245, 218, 164, 0.7);
   outline: none;
 }
 
-.cardMenuWrap {
-  position: relative;
-}
-
 .cardMenu {
-  background: #070707;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  box-shadow: 0 16px 24px rgba(0, 0, 0, 0.45);
-  min-width: 178px;
-  padding: 6px;
+  background: #0c0c0f;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.55);
+  display: flex;
+  flex-direction: column;
+  padding: 5px;
   position: absolute;
-  right: 0;
-  top: 29px;
-  z-index: 20;
+  right: 13px;
+  top: 106px;
+  width: 184px;
+  z-index: 46;
 }
 
 .cardMenu button {
   align-items: center;
   background: transparent;
   border: 0;
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(255, 255, 255, 0.86);
   cursor: pointer;
   display: flex;
   font-size: 12px;
@@ -720,68 +506,49 @@
 
 .cardMenu button:hover,
 .cardMenu button:focus-visible {
-  background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
+  background: #ffffff;
+  color: #101014;
   outline: none;
 }
 
-.cardImagePlate {
-  background:
-    radial-gradient(ellipse at 50% 78%, color-mix(in srgb, var(--asset-card-accent) 44%, transparent), transparent 42%),
-    linear-gradient(180deg, #020202 0%, #101010 50%, color-mix(in srgb, var(--asset-card-accent) 72%, #1a1a1a) 100%);
-  height: calc(100% - 67px);
-  overflow: hidden;
-  position: relative;
-}
-
-.visibilityBadge {
+.collectStar {
   align-items: center;
-  background: #efefef;
+  background: rgba(10, 10, 12, 0.8);
+  border: 1px solid rgba(245, 218, 164, 0.5);
   border-radius: 2px;
-  color: #1e1e1e;
+  color: #f5da9a;
+  cursor: pointer;
   display: inline-flex;
-  font-size: 10px;
-  font-weight: 700;
-  height: 18px;
-  left: 10px;
-  line-height: 1;
-  padding: 0 8px;
+  height: 28px;
+  justify-content: center;
+  padding: 0;
   position: absolute;
-  top: 10px;
-  z-index: 4;
+  right: 13px;
+  top: 78px;
+  width: 28px;
+  z-index: 45;
 }
 
-.visibilityBadge[data-visibility="public"] {
-  background: #8d8e92;
-  color: #151515;
-}
-
-.cardImage {
-  display: block;
-  height: calc(100% - 28px);
-  left: 50%;
-  max-width: 96%;
-  object-fit: contain;
-  object-position: center bottom;
-  position: absolute;
-  top: 22px;
-  transform: translateX(-50%);
-  width: 96%;
-  z-index: 2;
+.collectStar:hover,
+.collectStar:focus-visible {
+  background: rgba(40, 34, 22, 0.94);
+  border-color: #f5da9a;
+  outline: none;
 }
 
 .emptyState {
   align-items: center;
-  color: rgba(255, 255, 255, 0.54);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.58);
   display: flex;
   flex-direction: column;
-  font-size: 14px;
+  font-size: 18px;
   gap: 12px;
+  grid-column: 1 / -1;
+  height: var(--inspiration-card-height);
   justify-content: center;
-  min-height: 460px;
-  position: absolute;
-  top: var(--assets-grid-top);
-  width: 100%;
+  letter-spacing: 0;
+  text-transform: uppercase;
 }
 
 .emptyState svg {
@@ -789,14 +556,10 @@
 }
 
 .bottomPager {
-  align-items: center;
   display: flex;
-  left: 0;
   justify-content: center;
-  padding: 0;
-  position: absolute;
-  right: 0;
-  top: calc(var(--assets-grid-top) + var(--assets-card-height) * 2 + var(--assets-grid-row-gap) + 50px);
+  margin-top: 40px;
+  position: relative;
   z-index: 7;
 }
 
@@ -813,130 +576,144 @@
 }
 
 .footerMount {
-  margin-top: 28px;
+  background: #181818;
+  margin-top: 0;
+  padding: 0;
+  width: 100%;
 }
 
-@media (min-width: 1440px) {
+.footerMount :global(footer) {
+  background: transparent;
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+@media (min-width: 1780px) {
   .assetGrid {
-    grid-template-columns: repeat(6, var(--assets-card-width));
+    grid-template-columns: repeat(6, var(--inspiration-card-width));
   }
 }
 
 @media (max-width: 1180px) {
-  .assetsPanel {
-    --assets-grid-top: 372px;
-    --assets-toolbar-top: 214px;
-    --assets-profile-height: 190px;
+  .assetStage {
+    padding-inline: 18px;
   }
 
-  .profileHero {
-    height: var(--assets-profile-height);
-  }
-
-  .creatorActionPlate {
-    justify-content: flex-start;
-    left: 32px;
-    top: 112px;
-    width: 260px;
-  }
-
-  .profileBanner {
-    opacity: 0.42;
-    width: 60%;
-  }
-
-  .toolbar {
-    align-items: start;
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .toolbarRight {
-    justify-content: flex-start;
-  }
-
-  .assetGrid {
-    grid-template-columns: repeat(auto-fit, var(--assets-card-width));
-  }
-}
-
-@media (max-width: 760px) {
-  .assetsPanel {
-    --assets-card-height: 377px;
-    --assets-card-width: 236px;
-    --assets-grid-top: 492px;
-    --assets-profile-height: 240px;
-    --assets-toolbar-top: 266px;
-    --assets-panel-gutter: 12px;
-  }
-
-  .previewShell {
-    padding: 16px 10px 34px;
-  }
-
-  .assetsFrame > :global([class*="content"]) {
-    padding: 0 var(--right-width) var(--bottom-height) var(--left-width);
+  .mergedPanel {
+    --assets-profile-height: 168px;
   }
 
   .profileCopy {
     align-items: flex-start;
     flex-direction: column;
-    gap: 22px;
-    height: auto;
-    left: 22px;
-    padding: 22px;
-    width: calc(100% - 44px);
+    gap: 16px;
+    justify-content: center;
+    left: 30px;
+    max-width: min(520px, calc(100% - 60px));
   }
 
-  .profileText p {
-    max-width: none;
+  .creatorActionPlate {
+    height: auto;
+    left: 160px;
+    top: 122px;
+  }
+
+  .profileBanner {
+    opacity: 0.52;
+    height: 90px;
+    width: 70%;
   }
 
   .toolbar {
-    left: var(--assets-panel-gutter);
-    right: var(--assets-panel-gutter);
+    align-items: flex-start;
+    flex-direction: column;
   }
 
-  .searchBox {
-    border-right: 1px solid rgba(255, 255, 255, 0.2);
-    min-width: 100%;
+  .toolbarRight {
+    justify-content: flex-start;
   }
 
-  .searchButton {
-    margin-top: 8px;
+  .pagination {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 760px) {
+  .assetStage {
+    padding: 16px 10px 32px;
+  }
+
+  .mergedPanel {
+    --assets-profile-height: 228px;
+  }
+
+  .profileCopy {
+    gap: 18px;
+    left: 0;
+    padding: 24px;
     width: 100%;
+  }
+
+  .profileAvatarWrap {
+    height: 84px;
+    width: 84px;
+  }
+
+  .profileAvatar {
+    height: 72px;
+    width: 72px;
+  }
+
+  .profileText p {
+    max-width: calc(100vw - 84px);
+  }
+
+  .creatorActionPlate {
+    left: 24px;
+    top: 168px;
+  }
+
+  .profileBanner {
+    opacity: 0.34;
+    height: 82px;
+    width: 100%;
+  }
+
+  .assetsPanel {
+    --inspiration-card-height: 377px;
+    --inspiration-card-width: min(236px, calc(100vw - 84px));
+    padding: 0 0 28px;
   }
 
   .toolbarRight {
     display: grid;
     gap: 8px;
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+  }
+
+  .searchBox {
+    border-right: 1px solid rgba(255, 255, 255, 0.3);
+    min-width: 0;
+    width: 100%;
+  }
+
+  .searchButton {
+    width: 100%;
   }
 
   .pagination {
     flex-wrap: wrap;
-    margin-left: 0;
   }
 
   .pageSizeSelect {
     margin-left: 0;
   }
 
-  .assetGrid {
-    grid-template-columns: repeat(auto-fit, var(--assets-card-width));
-  }
-
-  .cardHeader {
-    grid-template-columns: 38px minmax(0, 1fr) auto;
-    padding-inline: 9px;
-  }
-
-  .cardStats span,
-  .favoriteStatButton {
-    padding: 0 4px;
+  .frameRule {
+    margin-inline: 0;
   }
 
   .bottomPager {
     justify-content: flex-start;
-    padding-inline: 12px;
   }
 }

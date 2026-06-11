@@ -2,11 +2,11 @@
 
 ## Purpose
 
-Build a UI-only preview page for the future asset center. The first page is a static, interactive prototype that matches the provided references closely enough to review layout, card states, and tab behavior before connecting production data and mutations.
+Build the asset center UI. The reviewed prototype is now promoted to the formal `/assets` entry with read-only real Payload data, while `/assets-preview` remains available for visual review.
 
 ## Scope
 
-The first implementation creates `/assets-preview`.
+The first implementation created `/assets-preview`; the reviewed UI is promoted to `/assets` as the formal entry while `/assets-preview` remains available as a preview alias.
 
 It does:
 
@@ -14,6 +14,7 @@ It does:
 - Render a profile banner using the same visual language as the homepage third frame.
 - Render asset tabs for `My Assets`, `My Collections`, `My Follows`, and a simulated creator profile state.
 - Render a dense grid of model cards with the existing dark frame/card visual language.
+- Read real Payload data on `/assets` for current-user models, favorited models, followed creator models, and creator summaries.
 - Support UI-only interactions for permission menu state, favorite removal, follow/unfollow filtering, and creator profile switching.
 
 It does not:
@@ -22,17 +23,17 @@ It does not:
 - Delete real models.
 - Change real model visibility.
 - Create new collections or globals.
-- Add a production `/assets` route.
 
 ## Recommended Route
 
-Use `/assets-preview` rather than `/assets` or `/test-assets`.
+Use `/assets` for the formal user-facing entry and keep `/assets-preview` for review.
 
 Reasons:
 
-- It is clearly a preview surface, not production functionality.
+- `/assets` is the top-navigation entry users should click.
+- `/assets-preview` remains clearly marked as a preview surface, not production data functionality.
 - It avoids resurrecting the old removed `/test-*` route style.
-- It lets the final `/assets` route be introduced later with real data and access rules.
+- It lets mutation safety be introduced later without changing the visible navigation target.
 
 ## Visual Structure
 
@@ -42,16 +43,19 @@ The page uses the current public page chrome:
 - Current user data from the normal nav-user helper where available, with mock fallback data.
 - Existing footer component.
 
-The main panel uses `BorderComboFrame2`, matching the homepage third frame family. The inner body has:
+The preview uses one large `LineFrame` region so the layout uses the same 9-slice model-card frame family as `ModelThumbnailCard` without requiring a new irregular frame component:
 
-- A profile header strip with avatar, display name, short bio, follower/model stats, a right-side banner image, and optional follow button.
+- A lowered profile strip with avatar, display name, short bio, follower/model stats, a right-side tiled banner strip, and optional follow button.
+- A tab row, search, pagination, and grid content inside the same large frame.
+- The single `LineFrame` uses the original 96px model-card frame size. Do not add a separate frame around the profile strip.
+- The space between the profile strip and the asset toolbar should be tight; avoid a large empty black band. The banner strip should tile horizontally without distorting the source image ratio.
 - A tab row below the profile strip.
 - Search, pager, and page-size controls in the same row style shown in the references.
 - A two-row desktop grid of six columns at wide widths, then responsive fallbacks at narrower widths.
 
 ## Asset Card Design
 
-Create a focused preview-only card component for the assets page instead of modifying `InspirationGridCard` directly.
+Create a focused preview-only wrapper for the assets page that calls the homepage `InspirationGridCard` directly. The wrapper should not copy the homepage card frame or card internals; it only layers asset-center controls on top.
 
 Card content:
 
@@ -95,9 +99,9 @@ Avatar click behavior:
 - Clicking `Followed` toggles to `Follow`; clicking `Follow` toggles back.
 - When a creator is unfollowed, their models disappear from `My Follows`.
 
-## Data Model For Mock UI
+## Data Model
 
-The preview page owns static mock data in a local module or in the page component. The shape should mirror future production DTOs:
+The formal `/assets` route receives server-built DTOs from Payload. The preview route can still use static mock data. The shared client shape is:
 
 ```ts
 type AssetPreviewCreator = {
@@ -126,24 +130,26 @@ type AssetPreviewModel = {
 }
 ```
 
-The first implementation can use existing public UI assets and model preview images already present in the repository. It must not depend on files from the user's Downloads folder.
+Formal data sources:
+
+- `models` for current-user assets and public followed-creator models.
+- `model-favorites` for current-user collections.
+- `user-follows` for current-user followed creators.
+- `users` for profile summaries and tiled banner images, with non-current profile media shown only when the profile is public.
 
 ## Future Backend Plan
 
-Phase 1, UI preview:
+Phase 1, UI preview and formal shell:
 
-- `/assets-preview` route.
+- `/assets-preview` route and formal `/assets` entry.
 - Mock data.
 - Local-only interaction state.
 - Browser visual verification.
 
 Phase 2, read-only real data:
 
-- Add a server data helper for asset-center DTOs.
-- My Assets reads access-controlled current-user models.
-- My Collections uses existing `/api/account/favorites` service or equivalent server helper.
-- My Follows reads current follows and then public models from followed creators.
-- Creator Assets uses existing creator profile read path.
+- Done for `/assets`: server data helper maps current-user models, current-user favorites, followed creators, and public followed-creator models into the shared card DTOs.
+- `/assets-preview` keeps mock data for review.
 
 Phase 3, safe mutations:
 
@@ -154,30 +160,34 @@ Phase 3, safe mutations:
 
 Phase 4, production route:
 
-- Promote to `/assets` after real data and mutation safety are verified.
-- Add `ASSETS` to managed header navigation when product owners approve the permanent nav slot.
-- Preserve `/assets-preview` only if it remains useful for visual review, otherwise remove it.
+- Keep `/assets` as the formal route.
+- Keep `ASSETS` in the managed header navigation immediately after `WORKBENCH`.
+- Preserve `/assets-preview` only while it remains useful for visual review, otherwise remove it.
 
 ## Security And Access
 
-The preview page must not bypass backend access rules because it does not perform backend reads or writes.
+The formal page uses read-only Local API calls. When the current user is passed to Local API, calls use `overrideAccess: false`.
 
-For later production work:
+Current rules:
 
 - Current-user model reads must pass the user and `overrideAccess: false`.
+- Current-user favorites and follows must pass the user and `overrideAccess: false`.
 - Creator pages must show public creator profiles only.
 - Followed-feed assets must include only public models from creators the current user still follows.
+
+For later production mutation work:
+
 - Visibility changes must remain owner-or-staff scoped.
 - Delete or archive must be implemented as a dedicated account endpoint, not direct browser writes to Payload REST.
 
 ## Testing Strategy
 
-First UI-only page:
+Current checks:
 
-- Add focused source tests that assert the preview route exists, uses `BorderComboFrame2`, includes the four view modes, and keeps preview mutations local.
+- Assert the route uses the single `LineFrame` shell and direct `InspirationGridCard` calls, includes the four view modes, uses real DTO helper on `/assets`, and keeps preview mutations local.
 - Run TypeScript.
 - Run targeted unit tests.
-- Start the dev server and verify `/assets-preview` in browser at desktop and mobile widths.
+- Start the dev server and verify `/assets` and `/assets-preview` in browser at desktop and mobile widths.
 - Capture screenshots for review.
 
 Later production phases:

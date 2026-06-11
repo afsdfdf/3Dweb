@@ -6,8 +6,6 @@ import {
   Box,
   ChevronLeft,
   ChevronRight,
-  Eye,
-  Heart,
   MoreHorizontal,
   Search,
   Shield,
@@ -16,10 +14,13 @@ import {
   Users,
 } from 'lucide-react'
 
-import { ButtonBoxFrame } from '@/components/ui-lab/button-box-frame'
-import { BorderComboFrame2 } from '@/components/ui-lab/border-combo-frame-2'
+import { FrameButton } from '@/components/ui/frame-button'
+import { LineFrame } from '@/components/ui/line-frame'
+import { InspirationGridCard } from '@/components/ui-lab/home-test/inspiration-grid'
+import type { InspirationGridItem } from '@/components/ui-lab/home-test/inspiration-grid'
 import { TopNavigation } from '@/components/ui-lab/top-navigation'
 import type { TopNavigationItem, TopNavigationUser } from '@/components/ui-lab/top-navigation'
+import { publicNavigationItems } from '@/lib/publicNavigation'
 
 import {
   assetsPreviewCreators,
@@ -33,15 +34,23 @@ import styles from './page.module.css'
 type AssetsPreviewView = 'collections' | 'creator' | 'follows' | 'mine'
 
 type AssetsPreviewClientProps = {
+  initialData?: AssetsPreviewInitialData | null
   navUser: null | TopNavigationUser
 }
 
-const previewNavigationItems: TopNavigationItem[] = [
-  { href: '/', id: 'HOME', label: 'HOME' },
-  { href: '/workbench', id: 'WORKBENCH', label: 'WORKBENCH' },
-  { href: '/account', id: 'ACCOUNT', label: 'ACCOUNT' },
-  { href: '/assets-preview', id: 'ASSETS', label: 'ASSETS' },
-]
+export type AssetsPreviewInitialData = {
+  creators: AssetsPreviewCreator[]
+  currentCreatorId: string
+  models: AssetsPreviewModel[]
+}
+
+type TabItem = {
+  icon: typeof Box
+  id: Exclude<AssetsPreviewView, 'creator'>
+  label: string
+}
+
+const previewNavigationItems: readonly TopNavigationItem[] = publicNavigationItems
 
 const previewMockNavUser: TopNavigationUser = {
   avatarUrl: '/ui-lab/model-detail-uicut/images/face.png',
@@ -54,40 +63,26 @@ const previewMockNavUser: TopNavigationUser = {
 
 const creatorViewLabel = 'Creator Assets'
 
-const tabItems: Array<{
-  icon: typeof Box
-  id: Exclude<AssetsPreviewView, 'creator'>
-  label: string
-}> = [
+const tabItems: TabItem[] = [
   { icon: Box, id: 'mine', label: 'My Assets' },
   { icon: Star, id: 'collections', label: 'My Collections' },
   { icon: Users, id: 'follows', label: 'My Follows' },
 ]
 
-const creatorFallbackId = assetsPreviewCreators.find((creator) => creator.id !== assetsPreviewCurrentCreatorId)?.id
-  || assetsPreviewCurrentCreatorId
-
 function sortByCreatedAt(models: AssetsPreviewModel[]) {
   return [...models].sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
 }
 
-function getCreatorInitials(displayName: string) {
-  return displayName
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() || '')
-    .join('') || 'TT'
-}
-
 function getVisibleModels({
   creators,
+  currentCreatorId,
   models,
   query,
   selectedCreatorId,
   viewMode,
 }: {
   creators: AssetsPreviewCreator[]
+  currentCreatorId: string
   models: AssetsPreviewModel[]
   query: string
   selectedCreatorId: string
@@ -95,7 +90,7 @@ function getVisibleModels({
 }) {
   const followedCreatorIds = new Set(
     creators
-      .filter((creator) => creator.isFollowing && creator.id !== assetsPreviewCurrentCreatorId)
+      .filter((creator) => creator.isFollowing && creator.id !== currentCreatorId)
       .map((creator) => creator.id),
   )
   const normalizedQuery = query.trim().toLowerCase()
@@ -103,6 +98,7 @@ function getVisibleModels({
     if (viewMode === 'mine') return model.isOwned
     if (viewMode === 'collections') return model.isFavorited
     if (viewMode === 'follows') return model.visibility === 'public' && followedCreatorIds.has(model.creatorId)
+
     return model.visibility === 'public' && model.creatorId === selectedCreatorId
   })
 
@@ -120,18 +116,17 @@ function getVisibleModels({
 
 function ProfileHero({
   creator,
+  currentCreatorId,
   isCreatorView,
   onToggleFollow,
 }: {
   creator: AssetsPreviewCreator
+  currentCreatorId: string
   isCreatorView: boolean
   onToggleFollow: (creatorId: string) => void
 }) {
   return (
-    <section
-      className={styles.profileHero}
-      aria-label={isCreatorView ? creatorViewLabel : `${creator.displayName} assets profile`}
-    >
+    <section className={styles.profileHero} aria-label={isCreatorView ? creatorViewLabel : `${creator.displayName} assets profile`}>
       <div className={styles.profileCopy}>
         <div className={styles.profileAvatarWrap}>
           <img alt="" className={styles.profileAvatar} decoding="async" src={creator.avatarSrc} />
@@ -142,32 +137,38 @@ function ProfileHero({
           <p>{creator.bio}</p>
           <div className={styles.profileStats} aria-label="Creator statistics">
             <span>
-              <Users aria-hidden="true" size={22} />
+              <img alt="" decoding="async" src="/ui-lab/top-navigation/profile-menu-icon-users@2x.png" />
               {creator.followersLabel}
             </span>
             <span>
-              <Box aria-hidden="true" size={22} />
+              <img alt="" decoding="async" src="/ui-lab/top-navigation/profile-menu-icon-models@2x.png" />
               {creator.modelsLabel}
             </span>
           </div>
         </div>
       </div>
 
-      {isCreatorView && creator.id !== assetsPreviewCurrentCreatorId ? (
+      {isCreatorView && creator.id !== currentCreatorId ? (
         <div className={styles.creatorActionPlate}>
-          <button
-            className={creator.isFollowing ? styles.followedButton : styles.followButton}
+          <FrameButton
+            height={48}
             onClick={() => onToggleFollow(creator.id)}
+            selected={creator.isFollowing}
             type="button"
+            variant="slate"
+            width={188}
           >
             {creator.isFollowing ? 'Followed' : 'Follow'}
-          </button>
+          </FrameButton>
+          <span className={styles.profileOrnament} aria-hidden="true" />
         </div>
       ) : null}
 
-      <div className={styles.profileBanner} aria-hidden="true">
-        <img alt="" decoding="async" src={creator.bannerSrc} />
-      </div>
+      <div
+        className={styles.profileBanner}
+        aria-hidden="true"
+        style={{ backgroundImage: `url(${creator.bannerSrc})` }}
+      />
     </section>
   )
 }
@@ -282,19 +283,19 @@ function AssetToolbar({
                 role="tab"
                 type="button"
               >
-                <Icon aria-hidden="true" size={16} />
+                <Icon aria-hidden="true" size={15} />
                 {tab.label}
               </button>
             )
           })}
         </div>
       ) : (
-        <div className={styles.toolbarSpacer} />
+        <div className={styles.creatorViewTitle}>{creatorViewLabel}</div>
       )}
 
       <div className={styles.toolbarRight}>
         <label className={styles.searchBox}>
-          <Search aria-hidden="true" size={19} />
+          <Search aria-hidden="true" size={18} />
           <span className={styles.srOnly}>Search assets</span>
           <input
             onChange={(event) => onQueryChange(event.target.value)}
@@ -351,103 +352,64 @@ function AssetCard({
 }) {
   const showOwnerControls = viewMode === 'mine' && model.isOwned
   const showFavoriteControl = viewMode === 'collections'
-  const showVisibilityBadge = showOwnerControls
-  const initials = getCreatorInitials(creator.displayName)
+  const cardItem: InspirationGridItem = {
+    ageLabel: model.ageLabel,
+    authorName: creator.displayName,
+    avatarSrc: creator.avatarSrc,
+    favoritesLabel: model.favoritesLabel,
+    href: null,
+    id: model.id,
+    imageSrc: model.imageSrc,
+    likesLabel: model.likesLabel,
+    title: model.title,
+    viewsLabel: model.viewsLabel,
+  }
 
   return (
-    <ButtonBoxFrame
-      className={styles.assetCardFrame}
-      contentClassName={styles.assetCardFrameContent}
-      style={{
-        height: 'var(--assets-card-height, 460px)',
-        width: 'var(--assets-card-width, 288px)',
-      }}
-    >
-      <article className={[styles.assetCard, styles[`tone${model.tone}`]].join(' ')}>
-        <header className={styles.cardHeader}>
+    <article className={styles.assetCardShell} aria-label={model.title}>
+      <InspirationGridCard item={cardItem} onActivate={() => onAvatarClick(creator.id)} />
+
+      {showOwnerControls ? (
+        <>
+          <span className={styles.visibilityChip} data-visibility={model.visibility}>
+            {model.visibility === 'public' ? 'Public' : 'Private'}
+          </span>
           <button
-            aria-label={`Open ${creator.displayName} assets`}
-            className={styles.cardAvatarButton}
-            onClick={() => onAvatarClick(creator.id)}
+            aria-expanded={isMenuOpen}
+            aria-haspopup="menu"
+            aria-label={`Actions for ${model.title}`}
+            className={styles.moreButton}
+            onClick={() => onMenuToggle(model.id)}
             type="button"
           >
-            {creator.avatarSrc ? (
-              <img alt="" className={styles.cardAvatar} decoding="async" loading="lazy" src={creator.avatarSrc} />
-            ) : (
-              <span className={styles.avatarFallback}>{initials}</span>
-            )}
-            {creator.badgeLabel ? <span className={styles.miniBadge}>{creator.badgeLabel}</span> : null}
+            <MoreHorizontal aria-hidden="true" size={16} />
           </button>
-          <div className={styles.cardMeta}>
-            <div className={styles.cardTitleRow}>
-              <strong>{creator.displayName}</strong>
-              <span>{model.ageLabel}</span>
-            </div>
-            <div className={styles.cardStats}>
-              <span>
-                <Eye aria-hidden="true" size={12} />
-                {model.viewsLabel}
-              </span>
-              <span>
-                <Heart aria-hidden="true" size={12} />
-                {model.likesLabel}
-              </span>
-              {showFavoriteControl ? (
-                <button
-                  aria-label={`Remove ${model.title} from collections`}
-                  className={styles.favoriteStatButton}
-                  onClick={() => onFavoriteToggle(model.id)}
-                  type="button"
-                >
-                  <Star aria-hidden="true" fill="currentColor" size={12} />
-                  {model.favoritesLabel}
-                </button>
-              ) : (
-                <span>
-                  <Star aria-hidden="true" size={12} />
-                  {model.favoritesLabel}
-                </span>
-              )}
-            </div>
-          </div>
-
-          {showOwnerControls ? (
-            <div className={styles.cardMenuWrap}>
-              <button
-                aria-expanded={isMenuOpen}
-                aria-label="More asset actions"
-                className={styles.moreButton}
-                onClick={() => onMenuToggle(model.id)}
-                type="button"
-              >
-                <MoreHorizontal aria-hidden="true" size={17} />
+          {isMenuOpen ? (
+            <div className={styles.cardMenu} role="menu">
+              <button onClick={() => onVisibilityToggle(model.id)} role="menuitem" type="button">
+                <Shield aria-hidden="true" size={14} />
+                {model.visibility === 'public' ? 'Hide Current Model' : 'Show Current Model'}
               </button>
-              {isMenuOpen ? (
-                <div className={styles.cardMenu} role="menu">
-                  <button onClick={() => onVisibilityToggle(model.id)} role="menuitem" type="button">
-                    <Shield aria-hidden="true" size={14} />
-                    {model.visibility === 'public' ? 'Hide Current Model' : 'Show Current Model'}
-                  </button>
-                  <button onClick={() => onDelete(model.id)} role="menuitem" type="button">
-                    <Trash2 aria-hidden="true" size={14} />
-                    Delete Current Model
-                  </button>
-                </div>
-              ) : null}
+              <button onClick={() => onDelete(model.id)} role="menuitem" type="button">
+                <Trash2 aria-hidden="true" size={14} />
+                Delete Current Model
+              </button>
             </div>
           ) : null}
-        </header>
+        </>
+      ) : null}
 
-        <div className={styles.cardImagePlate}>
-          {showVisibilityBadge ? (
-            <span className={styles.visibilityBadge} data-visibility={model.visibility}>
-              {model.visibility === 'public' ? 'Public' : 'Private'}
-            </span>
-          ) : null}
-          <img alt={model.title} className={styles.cardImage} decoding="async" src={model.imageSrc} />
-        </div>
-      </article>
-    </ButtonBoxFrame>
+      {showFavoriteControl ? (
+        <button
+          aria-label={`Remove ${model.title} from collections`}
+          className={styles.collectStar}
+          onClick={() => onFavoriteToggle(model.id)}
+          type="button"
+        >
+          <Star aria-hidden="true" fill="currentColor" size={17} strokeWidth={1.8} />
+        </button>
+      ) : null}
+    </article>
   )
 }
 
@@ -498,28 +460,42 @@ function AssetGrid({
   )
 }
 
-export function AssetsPreviewClient({ navUser }: AssetsPreviewClientProps) {
-  const [creators, setCreators] = useState<AssetsPreviewCreator[]>(assetsPreviewCreators)
-  const [models, setModels] = useState<AssetsPreviewModel[]>(assetsPreviewModels)
+export function AssetsPreviewClient({ initialData, navUser }: AssetsPreviewClientProps) {
+  const hasInitialData = Boolean(initialData)
+  const initialCurrentCreatorId = initialData?.currentCreatorId || assetsPreviewCurrentCreatorId
+  const initialCreators = hasInitialData ? initialData?.creators || [] : assetsPreviewCreators
+  const initialModels = hasInitialData ? initialData?.models || [] : assetsPreviewModels
+  const initialCreatorFallbackId = initialCreators.find((creator) => creator.id !== initialCurrentCreatorId)?.id
+    || initialCurrentCreatorId
+  const [creators, setCreators] = useState<AssetsPreviewCreator[]>(initialCreators)
+  const [models, setModels] = useState<AssetsPreviewModel[]>(initialModels)
   const [openMenuId, setOpenMenuId] = useState<null | string>(null)
   const [pageSize, setPageSize] = useState<number>(20)
   const [query, setQuery] = useState('')
-  const [selectedCreatorId, setSelectedCreatorId] = useState(creatorFallbackId)
+  const [selectedCreatorId, setSelectedCreatorId] = useState(initialCreatorFallbackId)
   const [viewMode, setViewModeState] = useState<AssetsPreviewView>('mine')
   const [currentPage, setCurrentPage] = useState(1)
 
   const selectedCreator = creators.find((creator) => creator.id === selectedCreatorId)
-    || creators.find((creator) => creator.id !== assetsPreviewCurrentCreatorId)
+    || creators.find((creator) => creator.id !== initialCurrentCreatorId)
     || creators[0]
   const profileCreator = viewMode === 'creator'
     ? selectedCreator
-    : creators.find((creator) => creator.id === assetsPreviewCurrentCreatorId) || creators[0]
+    : creators.find((creator) => creator.id === initialCurrentCreatorId) || creators[0]
   const visibleModels = useMemo(
-    () => getVisibleModels({ creators, models, query, selectedCreatorId, viewMode }),
-    [creators, models, query, selectedCreatorId, viewMode],
+    () => getVisibleModels({
+      creators,
+      currentCreatorId: initialCurrentCreatorId,
+      models,
+      query,
+      selectedCreatorId,
+      viewMode,
+    }),
+    [creators, initialCurrentCreatorId, models, query, selectedCreatorId, viewMode],
   )
   const totalPages = Math.max(1, Math.ceil(visibleModels.length / pageSize))
-  const pageStartIndex = (Math.min(currentPage, totalPages) - 1) * pageSize
+  const safeCurrentPage = Math.min(currentPage, totalPages)
+  const pageStartIndex = (safeCurrentPage - 1) * pageSize
   const pagedModels = visibleModels.slice(pageStartIndex, pageStartIndex + pageSize)
 
   const setViewMode = (nextViewMode: AssetsPreviewView) => {
@@ -527,8 +503,8 @@ export function AssetsPreviewClient({ navUser }: AssetsPreviewClientProps) {
     setCurrentPage(1)
     setOpenMenuId(null)
 
-    if (nextViewMode === 'creator' && selectedCreatorId === assetsPreviewCurrentCreatorId) {
-      setSelectedCreatorId(creatorFallbackId)
+    if (nextViewMode === 'creator' && selectedCreatorId === initialCurrentCreatorId) {
+      setSelectedCreatorId(initialCreatorFallbackId)
     }
   }
 
@@ -538,7 +514,7 @@ export function AssetsPreviewClient({ navUser }: AssetsPreviewClientProps) {
   }
 
   const handleAvatarClick = (creatorId: string) => {
-    if (creatorId === assetsPreviewCurrentCreatorId) {
+    if (creatorId === initialCurrentCreatorId) {
       setViewMode('mine')
       return
     }
@@ -553,6 +529,7 @@ export function AssetsPreviewClient({ navUser }: AssetsPreviewClientProps) {
         creator.id === creatorId ? { ...creator, isFollowing: !creator.isFollowing } : creator,
       ),
     )
+    setCurrentPage(1)
   }
 
   const handleFavoriteToggle = (modelId: string) => {
@@ -595,52 +572,60 @@ export function AssetsPreviewClient({ navUser }: AssetsPreviewClientProps) {
         items={previewNavigationItems}
         user={navUser ?? previewMockNavUser}
       />
-      <section className={styles.previewShell} aria-label="Assets preview page">
-        <BorderComboFrame2 className={styles.assetsFrame}>
-          <div className={styles.frameShell}>
-            <div className={styles.assetsPanel}>
-              <ProfileHero
-                creator={profileCreator}
-                isCreatorView={viewMode === 'creator'}
-                onToggleFollow={handleToggleFollow}
-              />
-              <AssetToolbar
-                currentPage={Math.min(currentPage, totalPages)}
-                onPageChange={setCurrentPage}
-                onQueryChange={handleQueryChange}
-                pageSize={pageSize}
-                query={query}
-                setPageSize={handlePageSizeChange}
-                setViewMode={setViewMode}
-                showTabs={viewMode !== 'creator'}
-                totalPages={totalPages}
-                viewMode={viewMode}
-              />
-              <div className={styles.frameRule} />
-              <AssetGrid
-                creators={creators}
-                models={pagedModels}
-                onAvatarClick={handleAvatarClick}
-                onDelete={handleDelete}
-                onFavoriteToggle={handleFavoriteToggle}
-                onMenuToggle={(modelId) => setOpenMenuId((current) => (current === modelId ? null : modelId))}
-                onVisibilityToggle={handleVisibilityToggle}
-                openMenuId={openMenuId}
-                viewMode={viewMode}
-              />
-              <div className={styles.bottomPager}>
-                <PaginationStrip
-                  currentPage={Math.min(currentPage, totalPages)}
-                  onPageChange={setCurrentPage}
-                  pageSize={pageSize}
-                  setPageSize={handlePageSizeChange}
-                  totalPages={totalPages}
+      <div className={styles.assetStage}>
+        <section className={styles.assetsSection} aria-label="Assets preview page">
+          <div className={styles.mergedPanel}>
+            <LineFrame
+              className={styles.assetCenterFrame}
+              contentClassName={styles.assetCenterContent}
+              contentPadding={64}
+              frameSize={96}
+            >
+              <div className={styles.assetsPanel}>
+                <ProfileHero
+                  creator={profileCreator}
+                  currentCreatorId={initialCurrentCreatorId}
+                  isCreatorView={viewMode === 'creator'}
+                  onToggleFollow={handleToggleFollow}
                 />
+                <AssetToolbar
+                  currentPage={safeCurrentPage}
+                  onPageChange={setCurrentPage}
+                  onQueryChange={handleQueryChange}
+                  pageSize={pageSize}
+                  query={query}
+                  setPageSize={handlePageSizeChange}
+                  setViewMode={setViewMode}
+                  showTabs={viewMode !== 'creator'}
+                  totalPages={totalPages}
+                  viewMode={viewMode}
+                />
+                <div className={styles.frameRule} />
+                <AssetGrid
+                  creators={creators}
+                  models={pagedModels}
+                  onAvatarClick={handleAvatarClick}
+                  onDelete={handleDelete}
+                  onFavoriteToggle={handleFavoriteToggle}
+                  onMenuToggle={(modelId) => setOpenMenuId((current) => (current === modelId ? null : modelId))}
+                  onVisibilityToggle={handleVisibilityToggle}
+                  openMenuId={openMenuId}
+                  viewMode={viewMode}
+                />
+                <div className={styles.bottomPager}>
+                  <PaginationStrip
+                    currentPage={safeCurrentPage}
+                    onPageChange={setCurrentPage}
+                    pageSize={pageSize}
+                    setPageSize={handlePageSizeChange}
+                    totalPages={totalPages}
+                  />
+                </div>
               </div>
-            </div>
+            </LineFrame>
           </div>
-        </BorderComboFrame2>
-      </section>
+        </section>
+      </div>
     </>
   )
 }
