@@ -11,6 +11,14 @@ export type NavigationItem = {
   label: string
 }
 
+export type NavigationPromotionContent = {
+  buttonAriaLabel: string
+  buttonLabel: string
+  enabled: boolean
+  eyebrow: string
+  offerText: string
+}
+
 export type FooterContent = {
   aboutEyebrow: string
   aboutText: string
@@ -98,6 +106,7 @@ export type MarketingSiteSettings = {
     textCredits: number
   }
   headerNav: NavigationItem[]
+  navigationPromotion?: NavigationPromotionContent
   siteDescription: string
   siteName: string
   supportEmail: string
@@ -255,10 +264,17 @@ const siteSettings: MarketingSiteSettings = {
     { href: '/', label: 'HOME' },
     { href: '/workbench', label: 'WORKBENCH' },
     { href: '/showcase', label: 'SHOWCASE' },
-    { href: '/pricing', label: 'PLANS' },
+    { href: '/assets', label: 'ASSETS' },
     { href: '/blog', label: 'BLOG' },
     { href: '/about', label: 'ABOUT' },
   ],
+  navigationPromotion: {
+    buttonAriaLabel: 'Open subscription offers',
+    buttonLabel: 'SUB',
+    enabled: true,
+    eyebrow: 'NEW USER',
+    offerText: '30% OFF',
+  },
   siteDescription: 'An AI 3D product platform for character creation, asset management, and print fulfillment.',
   siteName: 'Thorns Tavern',
   supportEmail: 'support@example.com',

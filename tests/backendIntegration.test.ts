@@ -217,6 +217,142 @@ test('subscription credit grant stays idempotent across repeated syncs', async (
   }
 })
 
+test('incomplete Stripe subscriptions do not grant subscription credits', async () => {
+  let grantCalls = 0
+  let billingSubscription: Record<string, unknown> | null = null
+
+  __setSubscriptionFlowTestHooks({
+    getSubscriptionPlan: async () =>
+      ({
+        creditsPerMonth: 240,
+        key: 'starter',
+        name: 'Starter',
+      }) as never,
+    grantCredits: async () => {
+      grantCalls += 1
+      return {
+        account: {},
+        applied: true,
+      }
+    },
+    retrieveStripeSubscription: async () =>
+      ({
+        customer: 'cus_incomplete_123',
+        id: 'sub_incomplete_123',
+        items: {
+          data: [
+            {
+              current_period_end: 2000,
+              current_period_start: 1000,
+              price: {
+                id: 'price_test_123',
+                product: {
+                  metadata: {
+                    planKey: 'starter',
+                  },
+                },
+                recurring: {
+                  interval: 'month',
+                },
+              },
+            },
+          ],
+        },
+        metadata: {
+          planKey: 'starter',
+        },
+        status: 'incomplete',
+      }) as never,
+    sendSubscriptionSuccessEmail: async () => undefined as never,
+  })
+
+  const req = {
+    payload: {
+      create: async ({ collection, data }: { collection: string; data: Record<string, unknown> }) => {
+        assert.equal(collection, 'billing-subscriptions')
+        billingSubscription = {
+          id: 2,
+          ...data,
+        }
+        return billingSubscription
+      },
+      find: async ({
+        collection,
+        where,
+      }: {
+        collection: string
+        where: Record<string, { equals?: unknown } | undefined>
+      }) => {
+        if (collection === 'billing-subscriptions') {
+          if (where?.stripeSubscriptionId?.equals === 'sub_incomplete_123' && billingSubscription) {
+            return { docs: [billingSubscription] }
+          }
+
+          return { docs: [] }
+        }
+
+        if (collection === 'users') {
+          return {
+            docs: [
+              {
+                email: 'user@example.com',
+                id: 1,
+                stripeCustomerId: 'cus_incomplete_123',
+              },
+            ],
+          }
+        }
+
+        throw new Error(`Unsupported find collection: ${collection}`)
+      },
+      findByID: async ({ collection }: { collection: string }) => {
+        assert.equal(collection, 'users')
+        return {
+          email: 'user@example.com',
+          id: 1,
+          stripeCustomerId: 'cus_incomplete_123',
+        }
+      },
+      logger: createLogger(),
+      update: async ({ collection, data }: { collection: string; data: Record<string, unknown> }) => {
+        if (collection === 'billing-subscriptions') {
+          billingSubscription = {
+            ...(billingSubscription || { id: 2 }),
+            ...data,
+          }
+          return billingSubscription
+        }
+
+        if (collection === 'users') {
+          return {
+            email: 'user@example.com',
+            id: 1,
+            stripeCustomerId: 'cus_incomplete_123',
+            ...data,
+          }
+        }
+
+        throw new Error(`Unsupported update collection: ${collection}`)
+      },
+    },
+  } as never
+
+  try {
+    const result = await syncStripeSubscriptionState({
+      customerId: 'cus_incomplete_123',
+      req,
+      subscriptionId: 'sub_incomplete_123',
+      userIdHint: 1,
+    })
+
+    assert.equal(grantCalls, 0)
+    assert.equal(result.billingSubscription.status, 'incomplete')
+    assert.equal(result.billingSubscription.lastGrantedPeriodKey, '')
+  } finally {
+    __setSubscriptionFlowTestHooks(null)
+  }
+})
+
 test('model download failure triggers automatic credit refund', async () => {
   let refundCalls = 0
 

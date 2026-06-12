@@ -6,7 +6,7 @@ import { getFollowCreatorCardDataForOwner } from '@/components/ui-lab/follow-cre
 import type { FollowCreatorCardData } from '@/components/ui-lab/follow-creator-card'
 
 import { getMarketingSiteData } from '../_lib/marketing'
-import { defaultSiteSettings, type FooterContent } from '../_lib/marketing-content'
+import { defaultSiteSettings, type FooterContent, type NavigationPromotionContent } from '../_lib/marketing-content'
 import { getCurrentNavUser } from '../_lib/session'
 
 type ImageLike = {
@@ -131,11 +131,13 @@ export type HomeData = {
     email?: null | string
     followersCount?: null | number
     followingCount?: null | number
+    hasActiveSubscription?: boolean | null
     id?: number | string
     modelsCount?: null | number
     name: string
     role?: null | string
   } | null
+  navigationPromotion?: NavigationPromotionContent
   shelfItems: HomeShelfItem[]
 }
 
@@ -704,12 +706,14 @@ export async function getHomeData(args: HomeDataArgs = {}): Promise<HomeData> {
             email: navUser.email,
             followersCount: navUser.followersCount,
             followingCount: navUser.followingCount,
+            hasActiveSubscription: navUser.hasActiveSubscription,
             id: navUser.id,
             modelsCount: navUser.modelsCount,
             name: navUser.displayName,
             role: navUser.role,
           }
         : null,
+      navigationPromotion: marketing.siteSettings.navigationPromotion,
       shelfItems:
         managedItems.shelfItems.length > 0
           ? withBundleMoreItem(managedItems.shelfItems)
@@ -728,6 +732,7 @@ export async function getHomeData(args: HomeDataArgs = {}): Promise<HomeData> {
       inspirationPagination: emptyPagination(inspirationLimit),
       inspirationSearchQuery: inspirationQuery,
       navUser: null,
+      navigationPromotion: defaultSiteSettings.navigationPromotion,
       shelfItems: [],
     }
   }

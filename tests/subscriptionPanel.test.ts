@@ -23,12 +23,18 @@ test("subscription panel component uses the formal frame and design-sized header
   assert.match(source, /Studio/);
   assert.match(source, /button-orange-medium-normal\.png/);
   assert.match(source, /icon-coin-badge\.png/);
+  assert.match(source, /compact\?: boolean/);
+  assert.match(source, /data-subscription-panel-density=\{compact \? "compact" : "default"\}/);
 
   assert.match(css, /--subscription-panel-width:\s*1142px/);
+  assert.match(css, /--subscription-panel-height:\s*866px/);
   assert.match(css, /flex:\s*0 0 var\(--subscription-panel-width\)/);
   assert.match(css, /height:\s*78px/);
   assert.match(css, /width:\s*256px/);
   assert.match(css, /height:\s*58px/);
+  assert.match(css, /\.panel\[data-subscription-panel-density="compact"\]\s*\{[\s\S]*--subscription-panel-height:\s*min\(740px,\s*calc\(100vh\s*-\s*92px\)\)/);
+  assert.match(css, /\.panel\[data-subscription-panel-density="compact"\]\s+\.body\s*\{[\s\S]*overflow:\s*auto/);
+  assert.match(css, /\.panel\[data-subscription-panel-density="compact"\]\s+\.planGrid\s*\{[\s\S]*height:\s*calc\(100%\s*-\s*58px\)/);
   assert.match(css, /border-image-slice:\s*0 20 fill/);
   assert.match(css, /border-image-source:\s*var\(--subscribe-button-image\)/);
   assert.match(css, /grid-template-columns:\s*repeat\(3,\s*1fr\)/);

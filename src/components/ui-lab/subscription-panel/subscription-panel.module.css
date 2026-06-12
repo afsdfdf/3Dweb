@@ -418,3 +418,175 @@
     min-width: 1088px;
   }
 }
+
+.panel[data-subscription-panel-density="compact"] {
+  --frame-border-width: 20px;
+  --subscription-panel-height: min(740px, calc(100vh - 92px));
+  --subscription-panel-width: min(1040px, calc(100vw - 48px));
+  flex-basis: var(--subscription-panel-width);
+}
+
+@supports (height: 100dvh) {
+  .panel[data-subscription-panel-density="compact"] {
+    --subscription-panel-height: min(740px, calc(100dvh - 92px));
+  }
+}
+
+.panel[data-subscription-panel-density="compact"] .header {
+  height: 64px;
+  padding: 8px 24px;
+}
+
+.panel[data-subscription-panel-density="compact"] .logo {
+  height: 46px;
+  width: 46px;
+}
+
+.panel[data-subscription-panel-density="compact"] .titleRibbon {
+  height: 46px;
+  margin-left: 22px;
+  width: 204px;
+}
+
+.panel[data-subscription-panel-density="compact"] .headerRule {
+  margin-left: 18px;
+  margin-right: 32px;
+}
+
+.panel[data-subscription-panel-density="compact"] .closeButton {
+  height: 30px;
+  width: 30px;
+}
+
+.panel[data-subscription-panel-density="compact"] .closeButton::before,
+.panel[data-subscription-panel-density="compact"] .closeButton::after {
+  height: 22px;
+  left: 14px;
+  top: 4px;
+  width: 4px;
+}
+
+.panel[data-subscription-panel-density="compact"] .body {
+  height: calc(100% - 64px);
+  overflow: auto;
+  padding: 22px 24px 22px;
+}
+
+.panel[data-subscription-panel-density="compact"] .controls {
+  height: 46px;
+}
+
+.panel[data-subscription-panel-density="compact"] .currencyControl {
+  font-size: 12px;
+  top: 8px;
+}
+
+.panel[data-subscription-panel-density="compact"] .billingToggle {
+  height: 46px;
+  padding: 7px;
+  width: 280px;
+}
+
+.panel[data-subscription-panel-density="compact"] .billingTab,
+.panel[data-subscription-panel-density="compact"] .billingTabActive {
+  font-size: 15px;
+  height: 30px;
+  line-height: 30px;
+}
+
+.panel[data-subscription-panel-density="compact"] .billingTab b,
+.panel[data-subscription-panel-density="compact"] .billingTabActive b {
+  font-size: 11px;
+  height: 16px;
+  line-height: 16px;
+  margin-left: 9px;
+  min-width: 38px;
+}
+
+.panel[data-subscription-panel-density="compact"] .planGrid {
+  gap: 14px;
+  height: calc(100% - 58px);
+  margin-top: 12px;
+  min-height: 390px;
+}
+
+.panel[data-subscription-panel-density="compact"] .planCard {
+  padding: 16px 14px 18px;
+}
+
+.panel[data-subscription-panel-density="compact"] .planHeader {
+  height: 66px;
+  padding-bottom: 11px;
+}
+
+.panel[data-subscription-panel-density="compact"] .planHeader h3 {
+  font-size: 28px;
+  line-height: 34px;
+}
+
+.panel[data-subscription-panel-density="compact"] .planHeader p {
+  font-size: 12px;
+  line-height: 17px;
+}
+
+.panel[data-subscription-panel-density="compact"] .priceRibbon {
+  height: 56px;
+  margin-top: 12px;
+}
+
+.panel[data-subscription-panel-density="compact"] .priceCoin {
+  height: 34px;
+  margin-left: 14px;
+  width: 34px;
+}
+
+.panel[data-subscription-panel-density="compact"] .priceText {
+  margin-left: 12px;
+}
+
+.panel[data-subscription-panel-density="compact"] .priceText strong {
+  font-size: 28px;
+  line-height: 34px;
+}
+
+.panel[data-subscription-panel-density="compact"] .priceText span,
+.panel[data-subscription-panel-density="compact"] .priceText em {
+  font-size: 12px;
+}
+
+.panel[data-subscription-panel-density="compact"] .planBody {
+  padding-top: 14px;
+}
+
+.panel[data-subscription-panel-density="compact"] .description {
+  font-size: 13px;
+  line-height: 18px;
+  margin-bottom: 10px;
+}
+
+.panel[data-subscription-panel-density="compact"] .featureList {
+  gap: 6px;
+}
+
+.panel[data-subscription-panel-density="compact"] .featureList li {
+  font-size: 13px;
+  gap: 7px;
+  line-height: 18px;
+}
+
+.panel[data-subscription-panel-density="compact"] .featureList img {
+  height: 16px;
+  width: 16px;
+}
+
+.panel[data-subscription-panel-density="compact"] .planFooter {
+  height: 60px;
+  padding-top: 14px;
+}
+
+.panel[data-subscription-panel-density="compact"] .subscribeButton {
+  font-size: 14px;
+  height: 44px;
+  line-height: 20px;
+  width: min(260px, 100%);
+}

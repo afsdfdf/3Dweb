@@ -48,6 +48,46 @@ export const SiteSettings: GlobalConfig = {
               defaultValue: defaultSiteSettings.headerNav,
             },
             {
+              name: 'navigationPromotion',
+              type: 'group',
+              label: 'Top navigation subscription promotion',
+              admin: {
+                description: 'Shown in the top navigation for anonymous visitors and signed-in users without an active subscription.',
+              },
+              fields: [
+                {
+                  name: 'enabled',
+                  type: 'checkbox',
+                  defaultValue: defaultSiteSettings.navigationPromotion?.enabled ?? true,
+                  label: 'Show promotion',
+                },
+                {
+                  name: 'eyebrow',
+                  type: 'text',
+                  defaultValue: defaultSiteSettings.navigationPromotion?.eyebrow ?? 'NEW USER',
+                  label: 'Eyebrow',
+                },
+                {
+                  name: 'offerText',
+                  type: 'text',
+                  defaultValue: defaultSiteSettings.navigationPromotion?.offerText ?? '30% OFF',
+                  label: 'Offer text',
+                },
+                {
+                  name: 'buttonLabel',
+                  type: 'text',
+                  defaultValue: defaultSiteSettings.navigationPromotion?.buttonLabel ?? 'SUB',
+                  label: 'Button label',
+                },
+                {
+                  name: 'buttonAriaLabel',
+                  type: 'text',
+                  defaultValue: defaultSiteSettings.navigationPromotion?.buttonAriaLabel ?? 'Open subscription offers',
+                  label: 'Button accessibility label',
+                },
+              ],
+            },
+            {
               name: 'footer',
               type: 'group',
               label: 'Footer',
@@ -202,6 +242,10 @@ export const SiteSettings: GlobalConfig = {
               name: 'subscriptionPlans',
               type: 'group',
               label: 'Subscription plans',
+              admin: {
+                description:
+                  'Plan display values and new checkout pricing are managed here. Changing a monthly price automatically creates a replacement Stripe Price for future checkout sessions; existing subscriptions keep their current Stripe Price until explicitly migrated.',
+              },
               fields: [
                 {
                   name: 'starter',
@@ -210,7 +254,15 @@ export const SiteSettings: GlobalConfig = {
                   fields: [
                     { name: 'name', type: 'text', defaultValue: 'Starter', label: 'Plan name' },
                     { name: 'shortLabel', type: 'text', defaultValue: 'Starter plan', label: 'Short label' },
-                    { name: 'monthlyPrice', type: 'number', defaultValue: 19, label: 'Monthly price (USD)' },
+                    {
+                      name: 'monthlyPrice',
+                      type: 'number',
+                      defaultValue: 19,
+                      label: 'Monthly price (USD)',
+                      admin: {
+                        description: 'Used for display and for automatic Stripe Price rotation on new subscription checkout sessions.',
+                      },
+                    },
                     { name: 'creditsPerMonth', type: 'number', defaultValue: 240, label: 'Credits per month' },
                     {
                       name: 'description',
@@ -238,7 +290,15 @@ export const SiteSettings: GlobalConfig = {
                   fields: [
                     { name: 'name', type: 'text', defaultValue: 'Pro', label: 'Plan name' },
                     { name: 'shortLabel', type: 'text', defaultValue: 'Pro plan', label: 'Short label' },
-                    { name: 'monthlyPrice', type: 'number', defaultValue: 49, label: 'Monthly price (USD)' },
+                    {
+                      name: 'monthlyPrice',
+                      type: 'number',
+                      defaultValue: 49,
+                      label: 'Monthly price (USD)',
+                      admin: {
+                        description: 'Used for display and for automatic Stripe Price rotation on new subscription checkout sessions.',
+                      },
+                    },
                     { name: 'creditsPerMonth', type: 'number', defaultValue: 760, label: 'Credits per month' },
                     {
                       name: 'description',
@@ -266,7 +326,15 @@ export const SiteSettings: GlobalConfig = {
                   fields: [
                     { name: 'name', type: 'text', defaultValue: 'Studio', label: 'Plan name' },
                     { name: 'shortLabel', type: 'text', defaultValue: 'Studio plan', label: 'Short label' },
-                    { name: 'monthlyPrice', type: 'number', defaultValue: 99, label: 'Monthly price (USD)' },
+                    {
+                      name: 'monthlyPrice',
+                      type: 'number',
+                      defaultValue: 99,
+                      label: 'Monthly price (USD)',
+                      admin: {
+                        description: 'Used for display and for automatic Stripe Price rotation on new subscription checkout sessions.',
+                      },
+                    },
                     { name: 'creditsPerMonth', type: 'number', defaultValue: 1680, label: 'Credits per month' },
                     {
                       name: 'description',

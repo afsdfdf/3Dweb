@@ -138,7 +138,14 @@ export function BlogShell({
   return (
     <main className={styles.page}>
       <AuthModalStage>
-        <TopNavigation active={getPublicNavigationActiveID('/blog', navigationItems)} className={styles.topNavigation} fitViewport items={navigationItems} user={navUser} />
+        <TopNavigation
+          active={getPublicNavigationActiveID('/blog', navigationItems)}
+          className={styles.topNavigation}
+          fitViewport
+          items={navigationItems}
+          subscriptionPromotion={siteSettings.navigationPromotion}
+          user={navUser}
+        />
         <header className={styles.mobileHeader}>
           <Link href="/" aria-label={`${siteName} home`}>
             <img alt={siteName} src="/ui-lab/top-navigation/logo-wordmark.png" />

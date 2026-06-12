@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import ModelDetailNative from "./ModelDetailNative";
 import { notFound } from "next/navigation";
+import { getMarketingSiteSettings } from "../_lib/marketing";
 import { getCurrentNavUser, getCurrentUser } from "../_lib/session";
 import { getModelDetailData } from "./_lib/modelDetailData";
 
@@ -30,7 +31,12 @@ export async function generateMetadata({ searchParams }: ModelDetailPageProps): 
 }
 
 export default async function ModelDetailPage({ searchParams }: ModelDetailPageProps) {
-  const [{ id }, navUser, user] = await Promise.all([searchParams, getCurrentNavUser(), getCurrentUser()]);
+  const [{ id }, navUser, user, siteSettings] = await Promise.all([
+    searchParams,
+    getCurrentNavUser(),
+    getCurrentUser(),
+    getMarketingSiteSettings(),
+  ]);
   const data = await getModelDetailData({
     currentUser: user,
     id,
@@ -40,5 +46,5 @@ export default async function ModelDetailPage({ searchParams }: ModelDetailPageP
     notFound();
   }
 
-  return <ModelDetailNative data={data} navUser={navUser} />;
+  return <ModelDetailNative data={data} navUser={navUser} navigationPromotion={siteSettings.navigationPromotion} />;
 }

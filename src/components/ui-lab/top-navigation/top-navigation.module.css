@@ -1,7 +1,27 @@
 .topNav {
+  --avatar-right: 139px;
+  --cart-right: 203px;
+  --nav-center-width: 920px;
+  --notification-right: 251px;
+  --subscription-button-right: 302px;
+  --subscription-promotion-right: 404px;
+  --wallet-right: 310px;
   position: relative;
   width: 100%;
   height: 60px;
+}
+
+.topNav[data-authenticated="true"][data-subscription-promotion-visible="true"] {
+  --avatar-right: 113px;
+  --cart-right: 178px;
+  --notification-right: 223px;
+  --subscription-button-right: 270px;
+  --subscription-promotion-right: 438px;
+  --wallet-right: 342px;
+}
+
+.topNav[data-subscription-promotion-visible="true"] {
+  --nav-center-width: 920px;
 }
 
 .scaledTopNav {
@@ -56,7 +76,7 @@
 .navCenter {
   left: 50%;
   top: 1px;
-  width: 1000px;
+  width: var(--nav-center-width);
   height: 58px;
   transform: translateX(-50%);
 }
@@ -66,7 +86,7 @@
   left: 50%;
   top: 18px;
   display: flex;
-  gap: clamp(34px, 3.1vw, 58px);
+  gap: clamp(30px, 2.65vw, 50px);
   align-items: start;
   color: rgba(244, 188, 96, 0.54);
   font-size: 16px;
@@ -142,7 +162,7 @@
 
 .wallet {
   position: absolute;
-  right: 310px;
+  right: var(--wallet-right);
   top: 12px;
   width: 86px;
   height: 31px;
@@ -187,7 +207,7 @@
 }
 
 .notificationBellWrap {
-  right: 251px;
+  right: var(--notification-right);
   z-index: 30;
 }
 
@@ -209,15 +229,15 @@
 }
 
 .cartIconButton {
-  right: 203px;
+  right: var(--cart-right);
 }
 
 .topNav[data-authenticated="false"] .notificationBellWrap {
-  right: 251px;
+  right: var(--notification-right);
 }
 
 .topNav[data-authenticated="false"] .cartIconButton {
-  right: 203px;
+  right: var(--cart-right);
 }
 
 .navActionIcon,
@@ -545,7 +565,7 @@
 
 .avatar {
   position: absolute;
-  right: 139px;
+  right: var(--avatar-right);
   top: 10px;
   display: block;
   width: 40px;
@@ -572,7 +592,7 @@
 
 .authAvatar {
   position: absolute;
-  right: 139px;
+  right: var(--avatar-right);
   top: 10px;
   display: block;
   width: 40px;
@@ -611,6 +631,141 @@
   text-decoration: none;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.topNav[data-authenticated="true"][data-subscription-promotion-visible="true"] .userName {
+  width: 84px;
+}
+
+.subscriptionPromotion {
+  align-content: center;
+  color: #ffffff;
+  display: grid;
+  font-family: Arial, sans-serif;
+  height: 36px;
+  justify-items: start;
+  line-height: 15px;
+  position: absolute;
+  right: var(--subscription-promotion-right);
+  text-align: left;
+  text-transform: uppercase;
+  top: 12px;
+  width: 112px;
+}
+
+.subscriptionPromotion strong,
+.subscriptionPromotion span {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.subscriptionPromotion strong {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.subscriptionPromotion span {
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.subscriptionButton {
+  align-items: center;
+  appearance: none;
+  background: linear-gradient(180deg, #ffe09d 0%, #e7a84f 50%, #bd7832 100%);
+  border: 1px solid rgba(255, 229, 173, 0.88);
+  border-radius: 4px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    0 0 10px rgba(238, 172, 79, 0.22);
+  color: #171008;
+  cursor: pointer;
+  display: flex;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 900;
+  gap: 5px;
+  height: 28px;
+  justify-content: center;
+  line-height: 28px;
+  padding: 0 8px;
+  position: absolute;
+  right: var(--subscription-button-right);
+  text-transform: uppercase;
+  top: 16px;
+  width: 66px;
+}
+
+.subscriptionButton img {
+  display: block;
+  flex: 0 0 auto;
+  height: 14px;
+  object-fit: contain;
+  width: 14px;
+}
+
+.subscriptionButton span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.subscriptionButton:hover,
+.subscriptionButton:focus-visible {
+  filter: drop-shadow(0 0 8px rgba(244, 189, 96, 0.62));
+  outline: none;
+}
+
+.subscriptionDialogOverlay {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.64);
+  backdrop-filter: blur(6px);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 16px;
+  position: fixed;
+  z-index: 1000;
+}
+
+.subscriptionDialogPanel {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: calc(100vh - 32px);
+  max-width: calc(100vw - 32px);
+}
+
+.subscriptionDialogFrame {
+  flex-shrink: 1;
+}
+
+@supports (height: 100dvh) {
+  .subscriptionDialogPanel {
+    max-height: calc(100dvh - 32px);
+  }
+}
+
+.subscriptionDialogMessage {
+  color: rgba(255, 255, 255, 0.72);
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  line-height: 20px;
+  margin: 0;
+  max-width: 720px;
+  text-align: center;
+}
+
+.subscriptionDialogMessageError {
+  color: #ffb3a8;
 }
 
 .authEntry {

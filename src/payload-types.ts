@@ -1837,6 +1837,16 @@ export interface SiteSetting {
         id?: string | null;
       }[]
     | null;
+  /**
+   * Shown in the top navigation for anonymous visitors and signed-in users without an active subscription.
+   */
+  navigationPromotion?: {
+    enabled?: boolean | null;
+    eyebrow?: string | null;
+    offerText?: string | null;
+    buttonLabel?: string | null;
+    buttonAriaLabel?: string | null;
+  };
   footer?: {
     /**
      * Optional replacement for the public footer wordmark. Use guest-readable media so anonymous visitors can see it.
@@ -1886,10 +1896,16 @@ export interface SiteSetting {
     orderProvider?: ('stripe' | 'shopify') | null;
     providerNotice?: string | null;
   };
+  /**
+   * Plan display values and new checkout pricing are managed here. Changing a monthly price automatically creates a replacement Stripe Price for future checkout sessions; existing subscriptions keep their current Stripe Price until explicitly migrated.
+   */
   subscriptionPlans?: {
     starter?: {
       name?: string | null;
       shortLabel?: string | null;
+      /**
+       * Used for display and for automatic Stripe Price rotation on new subscription checkout sessions.
+       */
       monthlyPrice?: number | null;
       creditsPerMonth?: number | null;
       description?: string | null;
@@ -1903,6 +1919,9 @@ export interface SiteSetting {
     pro?: {
       name?: string | null;
       shortLabel?: string | null;
+      /**
+       * Used for display and for automatic Stripe Price rotation on new subscription checkout sessions.
+       */
       monthlyPrice?: number | null;
       creditsPerMonth?: number | null;
       description?: string | null;
@@ -1916,6 +1935,9 @@ export interface SiteSetting {
     studio?: {
       name?: string | null;
       shortLabel?: string | null;
+      /**
+       * Used for display and for automatic Stripe Price rotation on new subscription checkout sessions.
+       */
       monthlyPrice?: number | null;
       creditsPerMonth?: number | null;
       description?: string | null;
@@ -2520,6 +2542,15 @@ export interface SiteSettingsSelect<T extends boolean = true> {
         label?: T;
         href?: T;
         id?: T;
+      };
+  navigationPromotion?:
+    | T
+    | {
+        enabled?: T;
+        eyebrow?: T;
+        offerText?: T;
+        buttonLabel?: T;
+        buttonAriaLabel?: T;
       };
   footer?:
     | T

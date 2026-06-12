@@ -1008,6 +1008,8 @@ export const models = pgTable(
   (columns) => [
     index("models_owner_idx").on(columns.owner),
     index("models_source_task_idx").on(columns.sourceTask),
+    index("models_status_idx").on(columns.status),
+    index("models_visibility_idx").on(columns.visibility),
     index("models_preview_image_idx").on(columns.previewImage),
     index("models_viewer_optimization_viewer_optimization_source_fi_idx").on(
       columns.viewerOptimization_sourceFile,
@@ -3153,6 +3155,21 @@ export const site_settings = pgTable(
     announcement: varchar("announcement").default(
       "The beta now supports the marketing site, generation workspace, order flow, and credits. Public launch polish is in progress.",
     ),
+    navigationPromotion_enabled: boolean(
+      "navigation_promotion_enabled",
+    ).default(true),
+    navigationPromotion_eyebrow: varchar(
+      "navigation_promotion_eyebrow",
+    ).default("NEW USER"),
+    navigationPromotion_offerText: varchar(
+      "navigation_promotion_offer_text",
+    ).default("30% OFF"),
+    navigationPromotion_buttonLabel: varchar(
+      "navigation_promotion_button_label",
+    ).default("SUB"),
+    navigationPromotion_buttonAriaLabel: varchar(
+      "navigation_promotion_button_aria_label",
+    ).default("Open subscription offers"),
     footer_brandLogo: integer("footer_brand_logo_id").references(
       () => media.id,
       {

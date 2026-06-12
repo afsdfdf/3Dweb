@@ -1,7 +1,8 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 
 import { useAuthModal } from "@/components/auth/AuthModalProvider";
@@ -10,8 +11,10 @@ import {
   fetchCreditTopupProducts,
 } from "@/components/ui-lab/credit-topup-redemption-dialog";
 import { ButtonBoxFrame } from "@/components/ui-lab/button-box-frame";
+import { SubscriptionPanel, type SubscriptionPanelPlan } from "@/components/ui-lab/subscription-panel";
 import type { CreditTopupProduct } from "@/lib/creditTopupProducts";
 import { publicNavigationItems } from "@/lib/publicNavigation";
+import type { SubscriptionPlanDefinition } from "@/lib/subscriptionPlans";
 
 import styles from "./top-navigation.module.css";
 import { formatTopNavigationUserLabel, getTopNavigationUserLabel } from "./user-label";
@@ -19,6 +22,63 @@ import { TopNavigationUserMenu } from "./user-menu";
 
 const assetBase = "/ui-lab/top-navigation";
 const emptyCreditTopupProducts: CreditTopupProduct[] = [];
+type TopNavigationSubscriptionPlan = Omit<SubscriptionPlanDefinition, "lookupKey">;
+
+const emptySubscriptionPlans: TopNavigationSubscriptionPlan[] = [];
+
+export type TopNavigationPromotion = {
+  buttonAriaLabel?: null | string;
+  buttonLabel?: null | string;
+  enabled?: boolean | null;
+  eyebrow?: null | string;
+  offerText?: null | string;
+};
+
+type ResolvedTopNavigationPromotion = {
+  buttonAriaLabel: string;
+  buttonLabel: string;
+  enabled: boolean;
+  eyebrow: string;
+  offerText: string;
+};
+
+const defaultSubscriptionPromotion: ResolvedTopNavigationPromotion = {
+  buttonAriaLabel: "Open subscription offers",
+  buttonLabel: "SUB",
+  enabled: true,
+  eyebrow: "NEW USER",
+  offerText: "30% OFF",
+};
+
+const fallbackSubscriptionPlans: TopNavigationSubscriptionPlan[] = [
+  {
+    creditsPerMonth: 240,
+    description: "Designed for individual creators who need steady character generation, fast downloads, and lightweight sampling.",
+    features: ["240 credits per month", "Supports image, text, and hybrid generation", "Standard model downloads and result archiving"],
+    key: "starter",
+    monthlyPrice: 19,
+    name: "Starter",
+    shortLabel: "Starter plan",
+  },
+  {
+    creditsPerMonth: 760,
+    description: "Designed for high-frequency creation, repeated iteration, and smaller teams that need more stable output capacity.",
+    features: ["760 credits per month", "Better suited to frequent character iteration", "Supports generation, downloads, and sampling workflows"],
+    key: "pro",
+    monthlyPrice: 49,
+    name: "Pro",
+    shortLabel: "Pro plan",
+  },
+  {
+    creditsPerMonth: 1680,
+    description: "Designed for teams that need generation, asset retention, and physical sampling inside one operating rhythm.",
+    features: ["1680 credits per month", "Built for stable commercial throughput", "Supports continuous generation, downloads, and print fulfillment"],
+    key: "studio",
+    monthlyPrice: 99,
+    name: "Studio",
+    shortLabel: "Studio plan",
+  },
+];
 
 export type TopNavigationItem = {
   href: string;
@@ -35,6 +95,7 @@ export type TopNavigationUser = {
   email?: null | string;
   followersCount?: null | number;
   followingCount?: null | number;
+  hasActiveSubscription?: boolean | null;
   id?: number | string;
   modelsCount?: null | number;
   name?: null | string;
@@ -49,8 +110,12 @@ type TopNavigationProps = {
   fitViewport?: boolean;
   items?: readonly TopNavigationItem[];
   loginHref?: string;
+  paymentProviderNotice?: null | string;
   registerHref?: string;
   showAuthEntry?: boolean;
+  stripeSubscriptionsEnabled?: boolean;
+  subscriptionPlans?: TopNavigationSubscriptionPlan[];
+  subscriptionPromotion?: null | TopNavigationPromotion;
   user?: null | TopNavigationUser;
   userName?: null | string;
 };
@@ -81,6 +146,96 @@ const notificationTabs: Array<{ id: NotificationTab; label: string }> = [
   { id: "message", label: "Message" },
   { id: "notification", label: "Notification" },
 ];
+
+type SubscriptionPlansResponse = {
+  paymentProviderNotice?: unknown;
+  plans?: unknown[];
+  stripeSubscriptionsEnabled?: unknown;
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> => {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+};
+
+const normalizePromotionText = (value: unknown, fallback: string) => {
+  return typeof value === "string" && value.trim() ? value.trim() : fallback;
+};
+
+const resolveSubscriptionPromotion = (promotion?: null | TopNavigationPromotion) => {
+  if (promotion?.enabled === false) return null;
+
+  return {
+    buttonAriaLabel: normalizePromotionText(promotion?.buttonAriaLabel, defaultSubscriptionPromotion.buttonAriaLabel),
+    buttonLabel: normalizePromotionText(promotion?.buttonLabel, defaultSubscriptionPromotion.buttonLabel),
+    enabled: true,
+    eyebrow: normalizePromotionText(promotion?.eyebrow, defaultSubscriptionPromotion.eyebrow),
+    offerText: normalizePromotionText(promotion?.offerText, defaultSubscriptionPromotion.offerText),
+  };
+};
+
+const normalizeSubscriptionPlan = (value: unknown): null | TopNavigationSubscriptionPlan => {
+  if (!isRecord(value)) return null;
+  if (value.key !== "starter" && value.key !== "pro" && value.key !== "studio") return null;
+
+  const monthlyPrice = Number(value.monthlyPrice);
+  const creditsPerMonth = Number(value.creditsPerMonth);
+  const features = Array.isArray(value.features)
+    ? value.features.map((feature) => (typeof feature === "string" ? feature.trim() : "")).filter(Boolean)
+    : [];
+
+  return {
+    creditsPerMonth: Number.isFinite(creditsPerMonth) ? creditsPerMonth : 0,
+    description: normalizePromotionText(value.description, `${creditsPerMonth || 0} credits per month`),
+    features: features.length > 0 ? features : [`${creditsPerMonth || 0} credits per month`],
+    key: value.key,
+    monthlyPrice: Number.isFinite(monthlyPrice) ? monthlyPrice : 0,
+    name: normalizePromotionText(value.name, value.key),
+    shortLabel: normalizePromotionText(value.shortLabel, `${value.key} plan`),
+  };
+};
+
+async function fetchSubscriptionPlans(): Promise<{
+  paymentProviderNotice: string;
+  plans: TopNavigationSubscriptionPlan[];
+  stripeSubscriptionsEnabled: boolean;
+}> {
+  const response = await fetch("/api/billing/subscriptions/plans", {
+    cache: "no-store",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    return {
+      paymentProviderNotice: "",
+      plans: [],
+      stripeSubscriptionsEnabled: true,
+    };
+  }
+
+  const data = (await response.json()) as SubscriptionPlansResponse;
+  const plans = Array.isArray(data.plans)
+    ? data.plans.map(normalizeSubscriptionPlan).filter((plan): plan is TopNavigationSubscriptionPlan => Boolean(plan))
+    : [];
+
+  return {
+    paymentProviderNotice: typeof data.paymentProviderNotice === "string" ? data.paymentProviderNotice : "",
+    plans,
+    stripeSubscriptionsEnabled: data.stripeSubscriptionsEnabled !== false,
+  };
+}
+
+const formatPanelPrice = (value: number) => {
+  const amount = Number.isFinite(value) ? value : 0;
+  return `$ ${amount.toLocaleString("en-US", {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: amount % 1 === 0 ? 0 : 2,
+  })}`;
+};
+
+const normalizePlanFeatures = (plan: TopNavigationSubscriptionPlan) => {
+  const features = plan.features.filter((feature) => feature.trim());
+  return features.length > 0 ? features : [`${plan.creditsPerMonth} credits per month`];
+};
 
 const formatNotificationTime = (value: string) => {
   const timestamp = new Date(value).getTime();
@@ -336,6 +491,233 @@ function CartIconButton() {
   );
 }
 
+function SubscriptionPromotionButton({
+  onClick,
+  promotion,
+}: {
+  onClick: () => void;
+  promotion: ResolvedTopNavigationPromotion;
+}) {
+  return (
+    <>
+      <div className={styles.subscriptionPromotion} aria-label={`${promotion.eyebrow} ${promotion.offerText}`}>
+        <strong>{promotion.eyebrow}</strong>
+        <span>{promotion.offerText}</span>
+      </div>
+      <button
+        aria-label={promotion.buttonAriaLabel}
+        className={styles.subscriptionButton}
+        onClick={onClick}
+        type="button"
+      >
+        <img alt="" aria-hidden="true" decoding="async" src={`${assetBase}/icon-crown-subscribe.png`} />
+        <span>{promotion.buttonLabel}</span>
+      </button>
+    </>
+  );
+}
+
+function SubscriptionOfferDialog({
+  authenticated,
+  initialPaymentProviderNotice = "",
+  initialPlans = emptySubscriptionPlans,
+  initialStripeSubscriptionsEnabled = true,
+  onOpenChange,
+  open,
+}: {
+  authenticated: boolean;
+  initialPaymentProviderNotice?: null | string;
+  initialPlans?: TopNavigationSubscriptionPlan[];
+  initialStripeSubscriptionsEnabled?: boolean;
+  onOpenChange: (open: boolean) => void;
+  open: boolean;
+}) {
+  const { openAuthModal } = useAuthModal();
+  const [mounted, setMounted] = useState(false);
+  const [loadedPlans, setLoadedPlans] = useState<null | TopNavigationSubscriptionPlan[]>(null);
+  const [hasRequestedPlans, setHasRequestedPlans] = useState(false);
+  const [loadingPlanKey, setLoadingPlanKey] = useState<null | string>(null);
+  const [message, setMessage] = useState("");
+  const [messageTone, setMessageTone] = useState<"error" | "info">("info");
+  const [paymentProviderNotice, setPaymentProviderNotice] = useState(initialPaymentProviderNotice || "");
+  const [stripeSubscriptionsEnabled, setStripeSubscriptionsEnabled] = useState(initialStripeSubscriptionsEnabled);
+  const visiblePlans = initialPlans.length > 0 ? initialPlans : loadedPlans && loadedPlans.length > 0 ? loadedPlans : fallbackSubscriptionPlans;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    setPaymentProviderNotice(initialPaymentProviderNotice || "");
+  }, [initialPaymentProviderNotice]);
+
+  useEffect(() => {
+    setStripeSubscriptionsEnabled(initialStripeSubscriptionsEnabled);
+  }, [initialStripeSubscriptionsEnabled]);
+
+  useEffect(() => {
+    if (!open || hasRequestedPlans || initialPlans.length > 0) return;
+
+    setHasRequestedPlans(true);
+    void fetchSubscriptionPlans()
+      .then((result) => {
+        setLoadedPlans(result.plans);
+        setPaymentProviderNotice(result.paymentProviderNotice);
+        setStripeSubscriptionsEnabled(result.stripeSubscriptionsEnabled);
+      })
+      .catch(() => {
+        setLoadedPlans([]);
+        setMessageTone("info");
+        setMessage("Showing default subscription offers.");
+      });
+  }, [hasRequestedPlans, initialPlans.length, open]);
+
+  useEffect(() => {
+    if (!open) {
+      setMessage("");
+      setMessageTone("info");
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !loadingPlanKey) {
+        onOpenChange(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [loadingPlanKey, onOpenChange, open]);
+
+  const panelPlans = useMemo<SubscriptionPanelPlan[]>(() => {
+    return visiblePlans.map((plan) => {
+      const isLoading = loadingPlanKey === plan.key;
+      const isDisabled = Boolean(authenticated && !stripeSubscriptionsEnabled) || Boolean(loadingPlanKey && !isLoading);
+
+      return {
+        ctaDisabled: isDisabled,
+        ctaLabel: !authenticated
+          ? "Sign In"
+          : isLoading
+            ? "Redirecting"
+            : stripeSubscriptionsEnabled
+              ? "Subscribe Now"
+              : "Unavailable",
+        description: plan.description,
+        features: normalizePlanFeatures(plan),
+        id: plan.key,
+        price: formatPanelPrice(plan.monthlyPrice),
+        subtitle: plan.shortLabel,
+        title: plan.name,
+      };
+    });
+  }, [authenticated, loadingPlanKey, stripeSubscriptionsEnabled, visiblePlans]);
+
+  const handleSubscribe = async (plan: SubscriptionPanelPlan) => {
+    if (loadingPlanKey) return;
+
+    if (!authenticated) {
+      onOpenChange(false);
+      openAuthModal("login");
+      return;
+    }
+
+    const selectedPlan = visiblePlans.find((item) => item.key === plan.id);
+    if (!selectedPlan) return;
+
+    if (!stripeSubscriptionsEnabled) {
+      setMessageTone("error");
+      setMessage(paymentProviderNotice || "Subscription checkout is unavailable.");
+      return;
+    }
+
+    setLoadingPlanKey(selectedPlan.key);
+    setMessage("");
+
+    try {
+      const response = await fetch("/api/billing/subscriptions/checkout", {
+        body: JSON.stringify({ planKey: selectedPlan.key }),
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+      });
+      const json = (await response.json().catch(() => ({}))) as {
+        checkoutUrl?: unknown;
+        message?: unknown;
+      };
+
+      if (response.status === 401) {
+        onOpenChange(false);
+        openAuthModal("login");
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(typeof json.message === "string" && json.message ? json.message : "Failed to create subscription checkout.");
+      }
+
+      if (typeof json.checkoutUrl === "string" && json.checkoutUrl && typeof window !== "undefined") {
+        window.location.assign(json.checkoutUrl);
+        return;
+      }
+
+      setMessageTone("info");
+      setMessage("Subscription checkout started.");
+      onOpenChange(false);
+    } catch (error) {
+      setMessageTone("error");
+      setMessage(error instanceof Error ? error.message : "Failed to create subscription checkout.");
+    } finally {
+      setLoadingPlanKey(null);
+    }
+  };
+
+  if (!mounted || !open) return null;
+
+  return createPortal(
+    <div
+      aria-label="Subscription offers"
+      aria-modal="true"
+      className={styles.subscriptionDialogOverlay}
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget && !loadingPlanKey) {
+          onOpenChange(false);
+        }
+      }}
+      role="dialog"
+    >
+      <div className={styles.subscriptionDialogPanel}>
+        <SubscriptionPanel
+          className={styles.subscriptionDialogFrame}
+          compact
+          currencies={["USD"]}
+          onClose={() => onOpenChange(false)}
+          onSubscribe={handleSubscribe}
+          plans={panelPlans}
+        />
+        {paymentProviderNotice || message ? (
+          <p
+            aria-live="polite"
+            className={[
+              styles.subscriptionDialogMessage,
+              messageTone === "error" ? styles.subscriptionDialogMessageError : "",
+            ].filter(Boolean).join(" ")}
+            role="status"
+          >
+            {message || paymentProviderNotice}
+          </p>
+        ) : null}
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 function AuthEntryButtons({
   loginHref,
 }: {
@@ -365,7 +747,11 @@ export function TopNavigation({
   fitViewport = false,
   items = defaultNavItems,
   loginHref = "/login",
+  paymentProviderNotice = "",
   showAuthEntry = true,
+  stripeSubscriptionsEnabled = true,
+  subscriptionPlans = emptySubscriptionPlans,
+  subscriptionPromotion,
   user = null,
   userName = null,
 }: TopNavigationProps) {
@@ -374,11 +760,18 @@ export function TopNavigation({
   const [loadedDialogProducts, setLoadedDialogProducts] = useState<null | CreditTopupProduct[]>(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isCreditTopupOpen, setIsCreditTopupOpen] = useState(false);
+  const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
   const [hasRequestedDialogProducts, setHasRequestedDialogProducts] = useState(false);
   const displayName = user ? getTopNavigationUserLabel(user, userName) : null;
   const visibleDisplayName = displayName ? formatTopNavigationUserLabel(displayName) : null;
   const displayCredits = user ? getUserCredits(user, credits) : credits;
   const avatarUrl = user?.avatarUrl || `${assetBase}/icon-user-avatar-placeholder.png`;
+  const resolvedSubscriptionPromotion = resolveSubscriptionPromotion(subscriptionPromotion);
+  const showSubscriptionPromotion = Boolean(
+    resolvedSubscriptionPromotion &&
+      resolvedSubscriptionPromotion.enabled &&
+      (!user || user?.hasActiveSubscription !== true),
+  );
   const dialogProducts = creditTopupProducts.length > 0
     ? creditTopupProducts
     : loadedDialogProducts ?? emptyCreditTopupProducts;
@@ -395,7 +788,11 @@ export function TopNavigation({
   };
 
   const topNav = (
-    <div className={[styles.topNav, fitViewport ? null : className].filter(Boolean).join(" ")} data-authenticated={user ? "true" : "false"}>
+    <div
+      className={[styles.topNav, fitViewport ? null : className].filter(Boolean).join(" ")}
+      data-authenticated={user ? "true" : "false"}
+      data-subscription-promotion-visible={showSubscriptionPromotion ? "true" : "false"}
+    >
       <img alt="" className={styles.navBg} decoding="async" fetchPriority="high" src={`${assetBase}/nav-background.png`} />
       <img alt="Thorns Tavern" className={styles.logo} decoding="async" fetchPriority="high" src={`${assetBase}/logo-wordmark.png`} />
       <img alt="" className={styles.navCenter} decoding="async" src={`${assetBase}/nav-center-separator.png`} />
@@ -411,6 +808,12 @@ export function TopNavigation({
           </Link>
         ))}
       </div>
+      {showSubscriptionPromotion && resolvedSubscriptionPromotion ? (
+        <SubscriptionPromotionButton
+          onClick={() => setIsSubscriptionDialogOpen(true)}
+          promotion={resolvedSubscriptionPromotion}
+        />
+      ) : null}
       {user ? (
         <>
           <button aria-label="Wallet balance" className={styles.wallet} type="button">
@@ -467,6 +870,16 @@ export function TopNavigation({
           onOpenChange={setIsCreditTopupOpen}
           open={isCreditTopupOpen}
           products={dialogProducts}
+        />
+      ) : null}
+      {showSubscriptionPromotion ? (
+        <SubscriptionOfferDialog
+          authenticated={Boolean(user)}
+          initialPaymentProviderNotice={paymentProviderNotice}
+          initialPlans={subscriptionPlans}
+          initialStripeSubscriptionsEnabled={stripeSubscriptionsEnabled}
+          onOpenChange={setIsSubscriptionDialogOpen}
+          open={isSubscriptionDialogOpen}
         />
       ) : null}
     </div>

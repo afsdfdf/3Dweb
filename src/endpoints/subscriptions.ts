@@ -7,12 +7,15 @@ import {
   createSubscriptionPortal,
   syncSubscriptionCheckout,
 } from '@/lib/subscriptionFlow'
+import { getPaymentProviderSettings } from '@/lib/paymentProviders'
+import { getSubscriptionPlans, type SubscriptionPlanDefinition } from '@/lib/subscriptionPlans'
 import { rejectDisallowedMutationOrigin } from '@/lib/requestSecurity'
 
 const unauthorized = () => Response.json({ message: 'Please sign in first.' }, { status: 401 })
 
 const VALID_PLAN_KEYS = ['starter', 'pro', 'studio'] as const
 type ValidPlanKey = (typeof VALID_PLAN_KEYS)[number]
+type PublicSubscriptionPlan = Omit<SubscriptionPlanDefinition, 'lookupKey'>
 
 const getErrorMessage = (error: unknown) => {
   if (error instanceof Error) {
@@ -20,6 +23,32 @@ const getErrorMessage = (error: unknown) => {
   }
 
   return 'Subscription request failed.'
+}
+
+const toPublicSubscriptionPlan = (plan: SubscriptionPlanDefinition): PublicSubscriptionPlan => {
+  const { lookupKey: _lookupKey, ...publicPlan } = plan
+  return publicPlan
+}
+
+export const listSubscriptionPlansEndpoint = {
+  path: '/billing/subscriptions/plans',
+  method: 'get' as const,
+  handler: async (req: PayloadRequest) => {
+    try {
+      const [plans, paymentProviders] = await Promise.all([
+        getSubscriptionPlans(req),
+        getPaymentProviderSettings(req),
+      ])
+
+      return Response.json({
+        paymentProviderNotice: paymentProviders.providerNotice,
+        plans: plans.map(toPublicSubscriptionPlan),
+        stripeSubscriptionsEnabled: paymentProviders.subscriptionProvider === 'stripe',
+      })
+    } catch (error) {
+      return Response.json({ message: getErrorMessage(error) }, { status: 400 })
+    }
+  },
 }
 
 export const createSubscriptionCheckoutEndpoint = {

@@ -33,7 +33,7 @@ export const zhSiteSettings: MarketingSiteSettings = {
   headerNav: [
     { href: '/', label: '首页' },
     { href: '/workbench', label: '工作台' },
-    { href: '/pricing', label: '方案' },
+    { href: '/assets', label: '资产' },
     { href: '/about', label: '关于' },
   ],
   siteDescription: '面向角色创作、资产管理和打印履约的 AI 3D 产品平台。',

@@ -2,6 +2,7 @@ import type { ModelLibraryPanelCard } from "@/components/ui-lab/model-library-pa
 import { getCachedPayload } from "@/lib/getCachedPayload";
 import { getTaskBillingSettingsForPayload } from "@/lib/taskBilling";
 
+import { getMarketingSiteSettings } from "../_lib/marketing";
 import { getCurrentNavUser, getCurrentUser } from "../_lib/session";
 import {
   formatVisibilityBadge,
@@ -14,10 +15,11 @@ import { WorkbenchClient } from "./WorkbenchClient";
 export default async function WorkbenchPage() {
   const user = await getCurrentUser();
   const payload = await getCachedPayload();
-  const [navUser, allVisibleModels, generationTaskState] = await Promise.all([
+  const [navUser, allVisibleModels, generationTaskState, siteSettings] = await Promise.all([
     user ? getCurrentNavUser() : Promise.resolve(null),
     getWorkbenchModels(user),
     getWorkbenchGenerationTaskState(user),
+    getMarketingSiteSettings(),
   ]);
   const { imageAssets, pendingGenerationTasks } = generationTaskState;
   const { generationPricing, meshyPricing } =
@@ -71,6 +73,7 @@ export default async function WorkbenchPage() {
       initialPendingTasks={pendingGenerationTasks}
       libraryCards={libraryCards}
       navUser={navUser}
+      navigationPromotion={siteSettings.navigationPromotion}
     />
   );
 }

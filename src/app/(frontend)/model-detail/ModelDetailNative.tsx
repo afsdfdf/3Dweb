@@ -14,6 +14,7 @@ import { ModelAuthorCard } from "@/components/ui-lab/model-author-card";
 import { ModelDetailAdBanner } from "@/components/ui-lab/model-detail-ad-banner";
 import { ModelDownloadConfirmation } from "@/components/ui-lab/model-download-confirmation";
 import type { TopNavigationUser } from "@/components/ui-lab/top-navigation";
+import type { NavigationPromotionContent } from "@/app/(frontend)/_lib/marketing-content";
 import { getSupabasePreviewImageURL } from "@/lib/supabase/imageTransform";
 import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
@@ -47,6 +48,7 @@ const mobileViewportMediaQuery = "(max-width: 767px)";
 type ModelDetailNativeProps = {
   data: ModelDetailData;
   navUser?: null | TopNavigationUser;
+  navigationPromotion?: NavigationPromotionContent | null;
 };
 
 type ActiveModel = {
@@ -189,6 +191,7 @@ function useMobileDetailViewport() {
 export default function ModelDetailNative({
   data,
   navUser = null,
+  navigationPromotion,
 }: ModelDetailNativeProps) {
   const detail = data;
   const { openAuthModal } = useAuthModal();
@@ -772,7 +775,7 @@ export default function ModelDetailNative({
         ) : null}
       </div>
       <div className={styles.scaleViewport}>
-        <ModelDetailHeader navUser={navUser} />
+        <ModelDetailHeader navUser={navUser} navigationPromotion={navigationPromotion} />
 
         <div className={styles.scaleStage}>
           <AuthModalStage fitViewport topOffset={60}>

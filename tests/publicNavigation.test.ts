@@ -65,7 +65,7 @@ test('public pages share one canonical navigation contract', () => {
     "{ href: '/', id: 'HOME', label: 'HOME' }",
     "{ href: '/workbench', id: 'WORKBENCH', label: 'WORKBENCH' }",
     "{ href: '/showcase', id: 'SHOWCASE', label: 'SHOWCASE' }",
-    "{ href: '/pricing', id: 'PLANS', label: 'PLANS' }",
+    "{ href: '/assets', id: 'ASSETS', label: 'ASSETS' }",
     "{ href: '/blog', id: 'BLOG', label: 'BLOG' }",
     "{ href: '/about', id: 'ABOUT', label: 'ABOUT' }",
   ]) {
@@ -92,6 +92,7 @@ test('backend header navigation resolves to stable top navigation items', () => 
   ])
   assert.equal(getPublicNavigationActiveID('/showcase?q=dragon', items), 'SHOWCASE')
   assert.equal(getPublicNavigationActiveID('/account?section=models', items), 'ACCOUNT')
+  assert.equal(getPublicNavigationActiveID('/assets/library'), 'ASSETS')
   assert.equal(resolvePublicNavigationItems([]).length, publicNavigationItems.length)
 })
 

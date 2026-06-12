@@ -33,6 +33,7 @@ import {
   resolvePublicNavigationItems,
   type PublicNavigationInputItem,
 } from "@/lib/publicNavigation";
+import type { NavigationPromotionContent } from "@/app/(frontend)/_lib/marketing-content";
 import { getSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 import styles from "./account-center.module.css";
@@ -95,12 +96,14 @@ type AccountCenterProps = {
   creditTopupProducts?: CreditTopupProduct[];
   initialSection?: AccountSection;
   navigationItems?: null | PublicNavigationInputItem[];
+  navigationPromotion?: NavigationPromotionContent | null;
   navUser?: null | {
     avatarUrl?: null | string;
     credits?: null | number;
     creditsBalance?: null | number;
     displayName?: null | string;
     email?: null | string;
+    hasActiveSubscription?: boolean | null;
     name?: null | string;
   };
 };
@@ -156,6 +159,7 @@ export function AccountCenter({
   creditTopupProducts = [],
   initialSection = "profile",
   navigationItems,
+  navigationPromotion,
   navUser = null,
 }: AccountCenterProps) {
   const router = useRouter();
@@ -705,6 +709,7 @@ export function AccountCenter({
           creditTopupProducts={creditTopupProducts}
           fitViewport
           items={topNavigationItems}
+          subscriptionPromotion={navigationPromotion}
           user={navUser}
         />
         <CreditTopupRedemptionDialog

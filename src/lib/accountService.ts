@@ -2,6 +2,7 @@ import type { PayloadRequest } from 'payload'
 
 import { getFollowState } from '@/lib/followService'
 import { isGuestReadableMedia } from '@/lib/mediaVisibility'
+import { hasSubscriptionEntitlementStatus } from '@/lib/subscriptionStatus'
 
 type AccountProfileUpdateInput = {
   avatar?: number | null
@@ -407,7 +408,7 @@ export async function getAccountDashboard(req: PayloadRequest) {
     recentModels: models.docs,
     recentTasks: tasks.docs,
     subscription:
-      subscriptions.docs.find((item) => ['active', 'trialing', 'past_due', 'incomplete'].includes(String(item.status))) ||
+      subscriptions.docs.find((item) => hasSubscriptionEntitlementStatus(item.status)) ||
       subscriptions.docs[0] ||
       null,
     transactions: transactions.docs,

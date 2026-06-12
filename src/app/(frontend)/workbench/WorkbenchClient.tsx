@@ -11,6 +11,7 @@ import { useAuthModal } from "@/components/auth/AuthModalProvider";
 import { ModelLibraryPanel, type ModelLibraryPanelCard } from "@/components/ui-lab/model-library-panel";
 import { TopNavigation, migrationTestNavItems } from "@/components/ui-lab/top-navigation";
 import type { TopNavigationUser } from "@/components/ui-lab/top-navigation";
+import type { NavigationPromotionContent } from "@/app/(frontend)/_lib/marketing-content";
 import { getSupabasePreviewImageURL } from "@/lib/supabase/imageTransform";
 
 const ModelViewer = dynamic(
@@ -42,6 +43,7 @@ type WorkbenchClientProps = {
   initialPendingTasks?: PendingGenerationTask[];
   libraryCards: ModelLibraryPanelCard[];
   navUser: null | TopNavigationUser;
+  navigationPromotion?: NavigationPromotionContent | null;
 };
 
 type GenerationCreditCosts = {
@@ -273,6 +275,7 @@ export function WorkbenchClient({
   initialPendingTasks = [],
   libraryCards,
   navUser,
+  navigationPromotion,
 }: WorkbenchClientProps) {
   const router = useRouter();
   const { openAuthModal } = useAuthModal();
@@ -1227,6 +1230,7 @@ export function WorkbenchClient({
           className={styles.boundTopNavigation}
           fitViewport
           items={migrationTestNavItems}
+          subscriptionPromotion={navigationPromotion}
           user={navUser}
         />
 

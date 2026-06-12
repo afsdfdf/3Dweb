@@ -24,7 +24,14 @@ export default async function AboutPage() {
   return (
     <main className={styles.page}>
       <AuthModalStage>
-        <TopNavigation active={getPublicNavigationActiveID('/about', navigationItems)} className={styles.topNavigation} fitViewport items={navigationItems} user={navUser} />
+        <TopNavigation
+          active={getPublicNavigationActiveID('/about', navigationItems)}
+          className={styles.topNavigation}
+          fitViewport
+          items={navigationItems}
+          subscriptionPromotion={marketing.siteSettings.navigationPromotion}
+          user={navUser}
+        />
         <header className={styles.mobileHeader}>
           <Link href="/" aria-label="Thorns Tavern home">
             <img alt="Thorns Tavern" src="/ui-lab/top-navigation/logo-wordmark.png" />

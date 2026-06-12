@@ -38,6 +38,7 @@ export type SubscriptionPanelPlan = {
 export type SubscriptionPanelProps = {
   billingCycle?: SubscriptionBillingCycle;
   className?: string;
+  compact?: boolean;
   currencies?: string[];
   currency?: string;
   onBillingCycleChange?: (cycle: SubscriptionBillingCycle) => void;
@@ -209,6 +210,7 @@ function SubscriptionPlanCard({
 export function SubscriptionPanel({
   billingCycle,
   className,
+  compact = false,
   currencies = ["USD"],
   currency,
   onBillingCycleChange,
@@ -236,6 +238,7 @@ export function SubscriptionPanel({
     <ButtonBoxFrame
       className={[styles.panel, className].filter(Boolean).join(" ")}
       contentClassName={styles.panelContent}
+      data-subscription-panel-density={compact ? "compact" : "default"}
       data-subscription-panel-frame
       style={{ height: "var(--subscription-panel-height)", width: "var(--subscription-panel-width)" }}
     >

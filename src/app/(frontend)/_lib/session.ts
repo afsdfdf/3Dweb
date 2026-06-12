@@ -6,6 +6,7 @@ import { cache } from "react";
 import { getCachedPayload } from "@/lib/getCachedPayload";
 import { resolvePayloadUserFromHeaders } from "@/lib/payloadAuthFallback";
 import { getSafeInternalRedirect } from "@/lib/safeRedirect";
+import { hasSubscriptionEntitlementStatus, subscriptionEntitlementStatuses } from "@/lib/subscriptionStatus";
 
 const getPayloadWithUser = cache(async () => {
   noStore();
@@ -31,7 +32,6 @@ type CurrentUserListOptions = {
 };
 
 const defaultCurrentUserListLimit = 20;
-
 function getCurrentUserScopedWhere(
   relationField: "owner" | "user",
   userId: string | number,
@@ -112,6 +112,35 @@ const getCurrentCreditAccountDocument = cache(async () => {
   return json.docs?.[0] ?? null;
 });
 
+const getCurrentActiveSubscriptionDocument = cache(async () => {
+  const { payload, user } = await getPayloadWithUser();
+  if (!user) return null;
+
+  const json = await payload.find({
+    collection: "billing-subscriptions",
+    depth: 0,
+    limit: 1,
+    overrideAccess: false,
+    pagination: false,
+    sort: "-updatedAt",
+    user,
+    where: {
+      and: [
+        {
+          user: {
+            equals: user.id,
+          },
+        },
+        {
+          status: { in: [...subscriptionEntitlementStatuses] },
+        },
+      ],
+    },
+  });
+
+  return json.docs?.[0] ?? null;
+});
+
 function getMediaUrl(value: unknown) {
   if (!value || typeof value !== "object") return null;
   const record = value as Record<string, unknown>;
@@ -132,8 +161,9 @@ export async function getCurrentNavUser() {
   const { payload, user, userDoc } = await getCurrentUserDocument();
   if (!userDoc) return null;
 
-  const [creditAccount, modelsCountResult] = await Promise.all([
+  const [creditAccount, activeSubscription, modelsCountResult] = await Promise.all([
     getCurrentCreditAccountDocument(),
+    getCurrentActiveSubscriptionDocument(),
     payload.count({
       collection: "models",
       overrideAccess: false,
@@ -160,6 +190,7 @@ export async function getCurrentNavUser() {
     email: typeof userDoc.email === "string" ? userDoc.email : null,
     followersCount: Number(userDoc.followersCount || 0),
     followingCount: Number(userDoc.followingCount || 0),
+    hasActiveSubscription: Boolean(activeSubscription),
     id: Number(userDoc.id),
     modelsCount: Number(modelsCountResult.totalDocs || 0),
     role: typeof userDoc.role === "string" ? userDoc.role : "customer",
@@ -321,9 +352,7 @@ export async function getCurrentUserActiveSubscription() {
 
   return (
     subscriptions.docs.find((item) =>
-      ["active", "trialing", "past_due", "incomplete"].includes(
-        String(item.status),
-      ),
+      hasSubscriptionEntitlementStatus(item.status),
     ) ??
     subscriptions.docs[0] ??
     null

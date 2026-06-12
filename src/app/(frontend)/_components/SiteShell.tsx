@@ -4,7 +4,7 @@ import { AuthModalStage } from '@/components/auth/AuthModalStage'
 import { TopNavigation } from '@/components/ui-lab/top-navigation'
 import { getPublicNavigationActiveID, resolvePublicNavigationItems } from '@/lib/publicNavigation'
 
-import type { FooterContent, NavigationItem } from '../_lib/marketing-content'
+import type { FooterContent, NavigationItem, NavigationPromotionContent } from '../_lib/marketing-content'
 import { getDefaultFooter, getDefaultSiteSettings } from '../_lib/marketing-content'
 import { getCurrentLocale } from '../_lib/locale-server'
 import { getCurrentNavUser } from '../_lib/session'
@@ -18,6 +18,7 @@ type SiteShellProps = {
   layoutMode?: 'document' | 'fixed'
   mobileChildren?: ReactNode
   navigation?: NavigationItem[] | null
+  navigationPromotion?: NavigationPromotionContent | null
   siteDescription?: null | string
   showAuthEntry?: boolean
   showFooter?: boolean
@@ -38,6 +39,7 @@ export async function SiteShell({
   layoutMode = 'fixed',
   mobileChildren,
   navigation,
+  navigationPromotion,
   showAuthEntry = true,
   showFooter = true,
   showLocaleSwitcher = true,
@@ -68,6 +70,7 @@ export async function SiteShell({
           className="z-[60]"
           fitViewport
           items={navigationItems}
+          subscriptionPromotion={navigationPromotion ?? defaultSiteSettings.navigationPromotion}
           showAuthEntry={showAuthEntry}
           user={navigationUser}
         />
@@ -95,6 +98,7 @@ export async function SiteShell({
           className="z-[60]"
           fitViewport
           items={navigationItems}
+          subscriptionPromotion={navigationPromotion ?? defaultSiteSettings.navigationPromotion}
           showAuthEntry={showAuthEntry}
           user={navigationUser}
         />

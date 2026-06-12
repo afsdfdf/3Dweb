@@ -13,6 +13,7 @@ import {
   retrieveStripeSubscription,
 } from '@/lib/stripeBilling'
 import { getSubscriptionPlan, type SubscriptionPlanKey } from '@/lib/subscriptionPlans'
+import { hasSubscriptionCreditGrantStatus, subscriptionCheckoutBlockingStatuses } from '@/lib/subscriptionStatus'
 
 type SubscriptionFlowTestHooks = {
   getSubscriptionPlan?: typeof getSubscriptionPlan
@@ -28,7 +29,6 @@ export function __setSubscriptionFlowTestHooks(hooks: SubscriptionFlowTestHooks 
   subscriptionFlowTestHooks = hooks
 }
 
-const ACTIVE_SUBSCRIPTION_STATUSES = ['active', 'trialing', 'past_due', 'incomplete']
 const INTERNAL_ACCESS = true
 
 type ResolvedUser = {
@@ -222,7 +222,7 @@ async function grantSubscriptionCreditsIfNeeded(args: {
   const currentPeriodEnd = stripeSubscription.items.data[0]?.current_period_end
   const periodKey = currentPeriodEnd ? `${stripeSubscription.id}:${currentPeriodEnd}` : ''
 
-  if (!periodKey || !ACTIVE_SUBSCRIPTION_STATUSES.includes(stripeSubscription.status)) {
+  if (!periodKey || !hasSubscriptionCreditGrantStatus(stripeSubscription.status)) {
     return billingSubscription
   }
 
@@ -337,7 +337,7 @@ export async function createSubscriptionCheckout(args: { planKey: SubscriptionPl
         },
         {
           status: {
-            in: ACTIVE_SUBSCRIPTION_STATUSES,
+            in: [...subscriptionCheckoutBlockingStatuses],
           },
         },
       ],

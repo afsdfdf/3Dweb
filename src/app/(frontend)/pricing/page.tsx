@@ -60,6 +60,7 @@ export default async function PricingPage({
       footer={siteSettings.footer}
       mobileChildren={<SubscriptionMobilePage {...subscriptionPageProps} />}
       navigation={siteSettings.headerNav}
+      navigationPromotion={siteSettings.navigationPromotion}
       showFooter={false}
       user={user}
     >

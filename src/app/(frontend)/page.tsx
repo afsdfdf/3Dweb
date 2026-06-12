@@ -30,7 +30,14 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   return (
     <main className={styles.page}>
       <AuthModalStage clipContent={false} fitViewport>
-        <TopNavigation active="HOME" className={styles.boundTopNavigation} items={migrationTestNavItems} user={data.navUser} />
+        <TopNavigation
+          active="HOME"
+          className={styles.boundTopNavigation}
+          fitViewport
+          items={migrationTestNavItems}
+          subscriptionPromotion={data.navigationPromotion}
+          user={data.navUser}
+        />
         <section className={styles.heroStage} aria-label="Responsive home hero">
           <Frame12877 />
         </section>

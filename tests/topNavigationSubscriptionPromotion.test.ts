@@ -1,0 +1,131 @@
+import assert from 'node:assert/strict'
+import { existsSync, readFileSync } from 'node:fs'
+import path from 'node:path'
+import test from 'node:test'
+
+import { listSubscriptionPlansEndpoint } from '../src/endpoints/subscriptions.ts'
+import {
+  hasSubscriptionCreditGrantStatus,
+  hasSubscriptionEntitlementStatus,
+  subscriptionCheckoutBlockingStatuses,
+} from '../src/lib/subscriptionStatus.ts'
+
+const rootDir = process.cwd()
+const topNavigationPath = path.join(rootDir, 'src', 'components', 'ui-lab', 'top-navigation', 'top-navigation.tsx')
+const topNavigationCssPath = path.join(rootDir, 'src', 'components', 'ui-lab', 'top-navigation', 'top-navigation.module.css')
+const siteSettingsPath = path.join(rootDir, 'src', 'globals', 'SiteSettings.ts')
+const marketingContentPath = path.join(rootDir, 'src', 'app', '(frontend)', '_lib', 'marketing-content.ts')
+const marketingPath = path.join(rootDir, 'src', 'app', '(frontend)', '_lib', 'marketing.ts')
+const sessionPath = path.join(rootDir, 'src', 'app', '(frontend)', '_lib', 'session.ts')
+const subscriptionsEndpointPath = path.join(rootDir, 'src', 'endpoints', 'subscriptions.ts')
+const payloadConfigPath = path.join(rootDir, 'src', 'payload.config.ts')
+const crownAssetPath = path.join(rootDir, 'public', 'ui-lab', 'top-navigation', 'icon-crown-subscribe.png')
+const homePagePath = path.join(rootDir, 'src', 'app', '(frontend)', 'page.tsx')
+
+test('site settings owns editable top-navigation subscription promotion copy', () => {
+  const settingsSource = readFileSync(siteSettingsPath, 'utf8')
+  const marketingSource = readFileSync(marketingContentPath, 'utf8')
+  const marketingMergeSource = readFileSync(marketingPath, 'utf8')
+
+  assert.match(settingsSource, /name:\s*['"]navigationPromotion['"]/)
+  for (const fieldName of ['enabled', 'eyebrow', 'offerText', 'buttonLabel', 'buttonAriaLabel']) {
+    assert.match(settingsSource, new RegExp(`name:\\s*['"]${fieldName}['"]`))
+    assert.match(marketingSource, new RegExp(`${fieldName}[:?]`))
+  }
+
+  assert.match(marketingSource, /navigationPromotion:/)
+  assert.match(marketingMergeSource, /navigationPromotionInput/)
+  assert.match(marketingMergeSource, /defaultSiteSettings\.navigationPromotion/)
+})
+
+test('top navigation summarizes subscription promotion state and opens the subscription dialog', () => {
+  assert.equal(existsSync(crownAssetPath), true)
+
+  const source = readFileSync(topNavigationPath, 'utf8')
+  const cssSource = readFileSync(topNavigationCssPath, 'utf8')
+
+  assert.match(source, /SubscriptionPanel/)
+  assert.match(source, /TopNavigationPromotion/)
+  assert.match(source, /hasActiveSubscription/)
+  assert.match(source, /data-subscription-promotion-visible/)
+  assert.match(source, /icon-crown-subscribe\.png/)
+  assert.match(source, /\/api\/billing\/subscriptions\/plans/)
+  assert.match(source, /\/api\/billing\/subscriptions\/checkout/)
+  assert.match(source, /openAuthModal\(['"]login['"]\)/)
+  assert.match(source, /user\?\.hasActiveSubscription !== true/)
+
+  assert.match(cssSource, /\.subscriptionPromotion/)
+  assert.match(cssSource, /\.subscriptionButton/)
+  assert.match(cssSource, /\.subscriptionDialogOverlay/)
+  assert.match(cssSource, /\.topNav\[data-subscription-promotion-visible=["']true["']\]/)
+  assert.match(cssSource, /\.topNav\[data-authenticated=["']true["']\]\[data-subscription-promotion-visible=["']true["']\]\s+\.userName\s*\{[\s\S]*?width:\s*84px/)
+  assert.match(cssSource, /--nav-center-width:\s*920px/)
+})
+
+test('homepage uses viewport-fitted top navigation so the promo state does not crush the header', () => {
+  const homePageSource = readFileSync(homePagePath, 'utf8')
+
+  assert.match(homePageSource, /<TopNavigation[\s\S]*fitViewport[\s\S]*subscriptionPromotion=\{data\.navigationPromotion\}/)
+})
+
+test('navigation session and subscription endpoints expose only safe summary data', () => {
+  const sessionSource = readFileSync(sessionPath, 'utf8')
+  const endpointsSource = readFileSync(subscriptionsEndpointPath, 'utf8')
+  const payloadConfigSource = readFileSync(payloadConfigPath, 'utf8')
+
+  assert.match(sessionSource, /collection:\s*["']billing-subscriptions["']/)
+  assert.match(sessionSource, /overrideAccess:\s*false/)
+  assert.match(sessionSource, /hasActiveSubscription/)
+  assert.match(sessionSource, /subscriptionEntitlementStatuses/)
+  assert.match(sessionSource, /hasSubscriptionEntitlementStatus/)
+
+  assert.match(endpointsSource, /listSubscriptionPlansEndpoint/)
+  assert.match(endpointsSource, /path:\s*['"]\/billing\/subscriptions\/plans['"]/)
+  assert.match(endpointsSource, /getSubscriptionPlans/)
+  assert.match(endpointsSource, /toPublicSubscriptionPlan/)
+  assert.match(endpointsSource, /Omit<SubscriptionPlanDefinition,\s*['"]lookupKey['"]>/)
+  assert.match(endpointsSource, /getPaymentProviderSettings/)
+  assert.match(endpointsSource, /stripeSubscriptionsEnabled/)
+  assert.match(payloadConfigSource, /listSubscriptionPlansEndpoint/)
+})
+
+test('public subscription plans endpoint returns editable prices without Stripe lookup keys', async () => {
+  const response = await listSubscriptionPlansEndpoint.handler({
+    payload: {
+      findGlobal: async () => ({
+        paymentProviders: {
+          providerNotice: 'Stripe is live.',
+          subscriptionProvider: 'stripe',
+        },
+        subscriptionPlans: {
+          pro: {
+            creditsPerMonth: 880,
+            monthlyPrice: 59,
+            name: 'Pro Plus',
+          },
+        },
+      }),
+    },
+  } as never)
+
+  const body = await response.json()
+  const proPlan = body.plans.find((plan: Record<string, unknown>) => plan.key === 'pro')
+
+  assert.equal(response.status, 200)
+  assert.equal(body.stripeSubscriptionsEnabled, true)
+  assert.equal(body.paymentProviderNotice, 'Stripe is live.')
+  assert.equal(proPlan.monthlyPrice, 59)
+  assert.equal(proPlan.creditsPerMonth, 880)
+  assert.equal(proPlan.name, 'Pro Plus')
+  assert.equal('lookupKey' in proPlan, false)
+})
+
+test('subscription status helpers separate checkout blocking from paid entitlement and credit grants', () => {
+  assert.equal(subscriptionCheckoutBlockingStatuses.includes('incomplete'), true)
+  assert.equal(hasSubscriptionEntitlementStatus('active'), true)
+  assert.equal(hasSubscriptionEntitlementStatus('past_due'), true)
+  assert.equal(hasSubscriptionEntitlementStatus('incomplete'), false)
+  assert.equal(hasSubscriptionCreditGrantStatus('trialing'), true)
+  assert.equal(hasSubscriptionCreditGrantStatus('past_due'), false)
+  assert.equal(hasSubscriptionCreditGrantStatus('incomplete'), false)
+})

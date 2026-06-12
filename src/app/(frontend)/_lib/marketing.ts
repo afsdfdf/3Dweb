@@ -1,5 +1,5 @@
 import { getCachedPayload } from '@/lib/getCachedPayload'
-import type { FooterContent } from './marketing-content'
+import type { FooterContent, NavigationPromotionContent } from './marketing-content'
 import { getDefaultFooterLinkGroups, getDefaultFooterSocialLinks, getDefaultHomepageContent, getDefaultSiteSettings } from './marketing-content'
 import { getCurrentLocale } from './locale-server'
 
@@ -9,6 +9,7 @@ type SiteSettingsInput = {
   footer?: unknown
   generationPricing?: unknown
   headerNav?: unknown
+  navigationPromotion?: unknown
   supportEmail?: unknown
 }
 
@@ -51,9 +52,25 @@ function mergeSiteSettings(
     siteSettings?.generationPricing && typeof siteSettings.generationPricing === 'object' && !Array.isArray(siteSettings.generationPricing)
       ? siteSettings.generationPricing
       : null
+  const navigationPromotionInput =
+    siteSettings?.navigationPromotion && typeof siteSettings.navigationPromotion === 'object' && !Array.isArray(siteSettings.navigationPromotion)
+      ? (siteSettings.navigationPromotion as NullablePartial<NavigationPromotionContent>)
+      : null
   const footer = mergeNullableObject<FooterContent>(defaultSiteSettings.footer, footerInput)
   const footerLinkGroups = pickArray(footer.linkGroups, getDefaultFooterLinkGroups(supportEmail))
   const footerSocialLinks = pickArray(footer.socialLinks, getDefaultFooterSocialLinks())
+  const fallbackNavigationPromotion =
+    defaultSiteSettings.navigationPromotion ?? {
+      buttonAriaLabel: 'Open subscription offers',
+      buttonLabel: 'SUB',
+      enabled: true,
+      eyebrow: 'NEW USER',
+      offerText: '30% OFF',
+    }
+  const navigationPromotion = mergeNullableObject<NavigationPromotionContent>(
+    fallbackNavigationPromotion,
+    navigationPromotionInput,
+  )
 
   return {
     ...defaultSiteSettings,
@@ -80,6 +97,10 @@ function mergeSiteSettings(
         : null,
       defaultSiteSettings.headerNav,
     ),
+    navigationPromotion: {
+      ...navigationPromotion,
+      enabled: navigationPromotion.enabled !== false,
+    },
   }
 }
 

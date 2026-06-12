@@ -107,6 +107,7 @@ import { stripeWebhookEndpoint } from './endpoints/stripeWebhook'
 import {
   createSubscriptionCheckoutEndpoint,
   createSubscriptionPortalEndpoint,
+  listSubscriptionPlansEndpoint,
   syncSubscriptionCheckoutEndpoint,
 } from './endpoints/subscriptions'
 import { AIProviderSettings } from './globals/AIProviderSettings'
@@ -286,6 +287,7 @@ export default buildConfig({
     syncPrintOrderEndpoint,
     createCreditTopupCheckoutEndpoint,
     syncCreditTopupCheckoutEndpoint,
+    listSubscriptionPlansEndpoint,
     createSubscriptionCheckoutEndpoint,
     syncSubscriptionCheckoutEndpoint,
     createSubscriptionPortalEndpoint,

@@ -180,6 +180,7 @@ Do not add Next route handlers that shadow Payload REST roots such as `/api/medi
 - `posts`: public blog and Tavern Journal content.
 - `model-bundles`: public curated bundle merchandising and bundle detail content.
 - `site-settings.headerNav`: backend-managed public navigation labels/order.
+- `site-settings.navigationPromotion`: backend-managed top-navigation subscription promo switch, copy, and button accessibility label.
 - `site-settings.footer.linkGroups` and `site-settings.footer.socialLinks`: shared footer groups and public media links.
 
 Avoid adding new hardcoded page copy when the page is already backed by Payload-managed content.
@@ -191,6 +192,11 @@ Avoid adding new hardcoded page copy when the page is already backed by Payload-
 - Credit mutations belong in the Payload credit ledger service.
 - Stripe checkout/webhook flows must remain idempotent.
 - `shopify-payments` is the neutral payment record table despite the historical name.
+- Public plan summaries for the top-navigation subscription dialog come from `GET /api/billing/subscriptions/plans`; subscription checkout remains authenticated through `POST /api/billing/subscriptions/checkout`.
+- Public plan summaries intentionally omit Stripe `lookupKey` values; checkout accepts only the fixed plan keys (`starter`, `pro`, `studio`) and resolves Stripe Price IDs server-side.
+- Subscription checkout treats Payload Site Settings as the operational plan source. If a plan's configured monthly price differs from the active Stripe Price behind its lookup key, checkout creates a replacement Stripe Price, transfers the lookup key, and archives the old active Price so new checkout sessions charge the Payload-configured amount. Existing subscriptions keep their current Stripe Price until an explicit migration is designed.
+- Subscription status policy is centralized in `src/lib/subscriptionStatus.ts`: `active`, `trialing`, and `past_due` count as user entitlement; only `active` and `trialing` grant monthly credits; `incomplete` blocks duplicate checkout flows but does not hide subscriber promos or grant credits.
+- One-time credit packs are edited through `credit-products`. Checkout revalidates active product type, credits, and price server-side, then paid Stripe sessions grant credits through the idempotent Payload credit ledger key `credit-topup:<sessionId>`.
 
 ## AI Generation
 

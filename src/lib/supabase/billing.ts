@@ -2,6 +2,7 @@ import { queryPostgres } from '@/lib/postgres'
 import { getCanonicalAppURL } from '@/lib/getCanonicalAppURL'
 import { getStripeClient } from '@/lib/stripeGateway'
 import { getSubscriptionPlan } from '@/lib/subscriptionPlans'
+import { ensureStripePlanPrice } from '@/lib/stripeBilling'
 import type { AppUser } from '@/lib/supabase/queries'
 
 // Legacy Supabase/Stripe compatibility path. This file may sync Stripe customer,
@@ -14,6 +15,12 @@ type StripeCustomerRow = {
   id: string
   phone: string | null
   stripe_customer_id: string | null
+}
+
+type SubscriptionPlanKey = 'starter' | 'pro' | 'studio'
+
+const normalizeSubscriptionPlanKey = (value: unknown): SubscriptionPlanKey | '' => {
+  return value === 'starter' || value === 'pro' || value === 'studio' ? value : ''
 }
 
 async function getProfileForBilling(userId: string): Promise<StripeCustomerRow | null> {
@@ -63,50 +70,17 @@ export async function ensureStripeCustomerForUser(userId: string) {
   return customer.id
 }
 
-export async function ensureStripeSubscriptionPrice(planKey: 'starter' | 'pro' | 'studio') {
+export async function ensureStripeSubscriptionPrice(planKey: SubscriptionPlanKey) {
   const plan = await getSubscriptionPlan(planKey)
   if (!plan) {
     throw new Error('Subscription plan not found.')
   }
 
-  const stripe = getStripeClient()
-  const matched = await stripe.prices.list({
-    active: true,
-    limit: 1,
-    lookup_keys: [plan.lookupKey],
-  })
-
-  if (matched.data[0]) {
-    return matched.data[0]
-  }
-
-  const product = await stripe.products.create({
-    description: plan.description,
-    metadata: {
-      creditsPerMonth: String(plan.creditsPerMonth),
-      planKey: plan.key,
-    },
-    name: `Thorns Tavern ${plan.name} Monthly`,
-  })
-
-  return stripe.prices.create({
-    currency: 'usd',
-    lookup_key: plan.lookupKey,
-    metadata: {
-      creditsPerMonth: String(plan.creditsPerMonth),
-      planKey: plan.key,
-    },
-    nickname: `${plan.name} Monthly`,
-    product: product.id,
-    recurring: {
-      interval: 'month',
-    },
-    unit_amount: Math.round(plan.monthlyPrice * 100),
-  })
+  return ensureStripePlanPrice(plan)
 }
 
 export async function createStripeSubscriptionCheckout(args: {
-  planKey: 'starter' | 'pro' | 'studio'
+  planKey: SubscriptionPlanKey
   user: AppUser
 }) {
   const { planKey, user } = args
@@ -169,15 +143,16 @@ export async function syncStripeSubscriptionFromCheckout(sessionId: string, user
     price?.product && typeof price.product !== 'string' && !('deleted' in price.product && price.product.deleted)
       ? price.product
       : null
-  const planKey =
-    subscription.metadata?.planKey ||
-    price?.lookup_key?.includes('starter')
+  const metadataPlanKey = normalizeSubscriptionPlanKey(subscription.metadata?.planKey)
+  const lookupPlanKey = price?.lookup_key?.includes('starter')
     ? 'starter'
     : price?.lookup_key?.includes('pro')
       ? 'pro'
       : price?.lookup_key?.includes('studio')
         ? 'studio'
-        : product?.metadata?.planKey || 'starter'
+        : ''
+  const productPlanKey = normalizeSubscriptionPlanKey(product?.metadata?.planKey)
+  const planKey = metadataPlanKey || lookupPlanKey || productPlanKey || 'starter'
 
   const monthlyCredits = Number(product?.metadata?.creditsPerMonth || subscription.metadata?.creditsPerMonth || 0)
 

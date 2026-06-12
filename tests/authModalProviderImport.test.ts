@@ -170,6 +170,6 @@ test('height-scaled desktop stages keep top navigation on the viewport scale', (
 
   assert.match(workbenchSource, /<div className=\{styles\.stageViewport\}>\s*<TopNavigation[\s\S]*fitViewport[\s\S]*<section className=\{styles\.stage\}/)
   assert.doesNotMatch(workbenchSource, /<section className=\{styles\.stage\}[\s\S]*<TopNavigation/)
-  assert.match(modelDetailNativeSource, /<div className=\{styles\.scaleViewport\}>\s*<ModelDetailHeader navUser=\{navUser\} \/>[\s\S]*<div className=\{styles\.scaleStage\}>/)
+  assert.match(modelDetailNativeSource, /<div className=\{styles\.scaleViewport\}>\s*<ModelDetailHeader[\s\S]*navUser=\{navUser\}[\s\S]*navigationPromotion=\{navigationPromotion\}[\s\S]*\/>[\s\S]*<div className=\{styles\.scaleStage\}>/)
   assert.match(modelDetailHeaderSource, /<TopNavigation[\s\S]*fitViewport/)
 })

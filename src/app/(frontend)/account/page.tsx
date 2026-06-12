@@ -243,6 +243,7 @@ export default async function AccountPage({
       creditTopupProducts={creditTopupProducts}
       initialSection={activeSection}
       navigationItems={siteSettings.headerNav}
+      navigationPromotion={siteSettings.navigationPromotion}
       navUser={navUser}
     />
   );

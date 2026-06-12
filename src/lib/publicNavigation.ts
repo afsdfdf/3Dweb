@@ -2,7 +2,7 @@ export const publicNavigationItems = [
   { href: '/', id: 'HOME', label: 'HOME' },
   { href: '/workbench', id: 'WORKBENCH', label: 'WORKBENCH' },
   { href: '/showcase', id: 'SHOWCASE', label: 'SHOWCASE' },
-  { href: '/pricing', id: 'PLANS', label: 'PLANS' },
+  { href: '/assets', id: 'ASSETS', label: 'ASSETS' },
   { href: '/blog', id: 'BLOG', label: 'BLOG' },
   { href: '/about', id: 'ABOUT', label: 'ABOUT' },
 ] as const

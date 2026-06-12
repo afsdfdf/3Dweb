@@ -140,6 +140,7 @@ export async function FormalInfoPage({ page }: FormalInfoPageProps) {
       currentPath={page.currentPath}
       footer={siteSettings.footer}
       navigation={siteSettings.headerNav}
+      navigationPromotion={siteSettings.navigationPromotion}
       showFooter={false}
       mobileChildren={<FormalMobilePage page={page} siteDescription={siteDescription} siteSettings={siteSettings} supportEmail={supportEmail} />}
       user={user}
