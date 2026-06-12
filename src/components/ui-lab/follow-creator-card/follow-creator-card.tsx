@@ -7,6 +7,7 @@ import { MoreHorizontal } from "lucide-react";
 
 import { FrameButton } from "@/components/ui/frame-button";
 import { BorderComboFrame1 } from "@/components/ui-lab/border-combo-frame-1";
+import { getSupabasePreviewImageURL } from "@/lib/supabase/imageTransform";
 
 import styles from "./follow-creator-card.module.css";
 
@@ -123,7 +124,7 @@ export function FollowCreatorCard({
           <div className={styles.thumbStrip}>
             {items.slice(0, 3).map((item) => (
               <button aria-label={item.alt} className={styles.thumb} key={item.id} type="button">
-                <img alt="" className={styles.thumbImage} decoding="async" src={item.imageSrc} />
+                <img alt="" className={styles.thumbImage} decoding="async" src={getSupabasePreviewImageURL(item.imageSrc, "model-card")} />
               </button>
             ))}
           </div>

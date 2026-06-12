@@ -27,6 +27,8 @@ test("follow creator card reuses the lined frame, button, stats, and carousel as
   const source = readFileSync(componentPath, "utf8");
   const css = readFileSync(cssPath, "utf8");
 
+  assert.match(source, /getSupabasePreviewImageURL/);
+  assert.match(source, /src=\{getSupabasePreviewImageURL\(item\.imageSrc,\s*"model-card"\)\}/);
   assert.match(source, /BorderComboFrame1/);
   assert.doesNotMatch(source, /ButtonBoxFrame/);
   assert.match(source, /FrameButton/);

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { ButtonBoxFrame } from "@/components/ui-lab/button-box-frame";
+import { getSupabasePreviewImageURL } from "@/lib/supabase/imageTransform";
 import {
   buildCheckoutQuery,
   calculateSelectedSubtotal,
@@ -113,7 +114,11 @@ export default function CartPageClient() {
                         </label>
 
                         <Link className={styles.thumbnail} href={getDetailHref(item.modelId)}>
-                          {item.imageSrc ? <img alt={item.title} src={item.imageSrc} /> : <span>{item.title.slice(0, 1)}</span>}
+                          {item.imageSrc ? (
+                            <img alt={item.title} src={getSupabasePreviewImageURL(item.imageSrc, "model-card")} />
+                          ) : (
+                            <span>{item.title.slice(0, 1)}</span>
+                          )}
                         </Link>
 
                         <div className={styles.itemMeta}>
