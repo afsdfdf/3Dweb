@@ -1,7 +1,6 @@
 export const publicNavigationItems = [
   { href: '/', id: 'HOME', label: 'HOME' },
   { href: '/workbench', id: 'WORKBENCH', label: 'WORKBENCH' },
-  { href: '/assets', id: 'ASSETS', label: 'ASSETS' },
   { href: '/showcase', id: 'SHOWCASE', label: 'SHOWCASE' },
   { href: '/pricing', id: 'PLANS', label: 'PLANS' },
   { href: '/blog', id: 'BLOG', label: 'BLOG' },

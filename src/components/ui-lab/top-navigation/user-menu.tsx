@@ -199,7 +199,7 @@ export function TopNavigationUserMenu({
           <div className={styles.profileMenuDivider} />
 
           <nav className={styles.profileMenuLinks} aria-label="Account quick links">
-            <Link className={styles.profileMenuLink} href="/account?section=models" onClick={() => setOpen(false)}>
+            <Link className={styles.profileMenuLink} href="/assets" onClick={() => setOpen(false)}>
               <img alt="" className={styles.profileMenuLinkIcon} src={profileMenuIcons.assetLibrary} />
               <span className={styles.profileMenuLinkText}>{text.assetLibrary}</span>
             </Link>

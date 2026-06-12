@@ -11,10 +11,10 @@ const dataPath = path.join(routeDir, 'assetsPreviewData.ts')
 const cssPath = path.join(routeDir, 'page.module.css')
 const assetsRoutePath = path.join(rootDir, 'src', 'app', '(frontend)', 'assets', 'page.tsx')
 const assetsDataPath = path.join(rootDir, 'src', 'app', '(frontend)', 'assets', '_lib', 'assetsData.ts')
-const publicNavigationPath = path.join(rootDir, 'src', 'lib', 'publicNavigation.ts')
+const userMenuPath = path.join(rootDir, 'src', 'components', 'ui-lab', 'top-navigation', 'user-menu.tsx')
 
 test('assets preview route is UI-only and uses the asset-center frame', () => {
-  for (const filePath of [pagePath, clientPath, dataPath, cssPath, assetsRoutePath, assetsDataPath, publicNavigationPath]) {
+  for (const filePath of [pagePath, clientPath, dataPath, cssPath, assetsRoutePath, assetsDataPath, userMenuPath]) {
     assert.equal(existsSync(filePath), true, `${path.basename(filePath)} should exist`)
   }
 
@@ -24,7 +24,7 @@ test('assets preview route is UI-only and uses the asset-center frame', () => {
   const cssSource = readFileSync(cssPath, 'utf8')
   const assetsRouteSource = readFileSync(assetsRoutePath, 'utf8')
   const assetsDataSource = readFileSync(assetsDataPath, 'utf8')
-  const publicNavigationSource = readFileSync(publicNavigationPath, 'utf8')
+  const userMenuSource = readFileSync(userMenuPath, 'utf8')
 
   assert.match(pageSource, /AssetsPreviewClient/)
   assert.match(clientSource, /LineFrame/)
@@ -97,8 +97,7 @@ test('assets preview route is UI-only and uses the asset-center frame', () => {
   assert.match(assetsDataSource, /collection:\s*'user-follows'/)
   assert.match(assetsDataSource, /overrideAccess:\s*false/)
   assert.match(assetsDataSource, /user:\s*currentUser/)
-  assert.match(publicNavigationSource, /href:\s*'\/assets'/)
-  assert.match(publicNavigationSource, /id:\s*'ASSETS'/)
+  assert.match(userMenuSource, /href="\/assets"/)
   assert.doesNotMatch(clientSource, /\/api\/account\/models/)
   assert.doesNotMatch(clientSource, /\/api\/social\/models/)
   assert.doesNotMatch(clientSource, /\/api\/creators/)

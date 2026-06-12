@@ -23,8 +23,9 @@ test("top navigation user menu is a standalone registered component wired to rea
   assert.match(source, /router\.refresh\(\)/);
   assert.match(source, /document\.addEventListener\("pointerdown"/);
   assert.match(source, /document\.addEventListener\("keydown"/);
+  assert.match(source, /href="\/assets"/);
   assert.match(source, /\/account/);
-  assert.match(source, /\/account\?section=models/);
+  assert.doesNotMatch(source, /\/account\?section=models/);
   assert.match(source, /\/pricing/);
   assert.match(source, /onPointRedemption\?: \(\) => void/);
   assert.match(source, /onPointRedemption\(\)/);
@@ -39,6 +40,8 @@ test("top navigation user menu is a standalone registered component wired to rea
   assert.match(cssSource, /\.profileMenuReferenceFrameContent\s*\{[\s\S]*?padding:\s*13px\s+9px\s+5px\s*!important/);
   assert.match(cssSource, /\.profileMenuReferencePanel\s*\{[\s\S]*?width:\s*302px/);
   assert.match(cssSource, /\.profileMenuReferencePanel\s*\{[\s\S]*?height:\s*396px/);
+  assert.match(cssSource, /\.profileMenuReferencePanel\s*\{[\s\S]*?rgba\(0,\s*0,\s*0,\s*0\.94\)/);
+  assert.match(cssSource, /\.profileMenuReferencePanel\s*\{[\s\S]*?backdrop-filter:\s*blur\(10px\)/);
   assert.match(cssSource, /\.profileMenuAvatar\s*\{[\s\S]*?height:\s*80px[\s\S]*?width:\s*80px/);
   assert.match(cssSource, /\.profileMenuNamePlate\s*\{[\s\S]*?left:\s*64px[\s\S]*?top:\s*29px/);
   assert.match(cssSource, /\.profileMenuDivider\s*\{[\s\S]*?left:\s*15px[\s\S]*?width:\s*272px/);
