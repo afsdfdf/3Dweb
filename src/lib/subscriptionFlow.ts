@@ -483,7 +483,7 @@ async function grantSubscriptionCreditsIfNeeded(args: {
     req,
   })) as BillingSubscription
 
-  if (user.email) {
+  if (grantResult.applied && user.email) {
     await (subscriptionFlowTestHooks?.sendSubscriptionSuccessEmail || sendSubscriptionSuccessEmail)({
       currentPeriodEnd: updated.currentPeriodEnd,
       email: user.email,

@@ -58,10 +58,6 @@ export async function verifyWebhookSignature(args: {
   const store = getKVStore()
   const replayKey = `${REPLAY_PREFIX}${timestamp}:${signature}`
 
-  if (await store.has(replayKey)) {
-    return { code: 'REPLAY', ok: false }
-  }
-
   const expected = signWebhookPayload({
     payload,
     secret,
@@ -79,7 +75,14 @@ export async function verifyWebhookSignature(args: {
     return { code: 'SIGNATURE_MISMATCH', ok: false }
   }
 
-  // Record the consumed signature for the tolerance window duration.
-  await store.set(replayKey, String(now), tolerance * 1000)
+  // Atomically claim the signature for the tolerance window. Only the first caller
+  // for a given (timestamp, signature) wins; concurrent replays of the same valid
+  // payload lose the race and are rejected. This closes the check-then-set gap that
+  // a plain has()+set() left open under concurrency / multiple instances.
+  const claimed = await store.setIfAbsent(replayKey, String(now), tolerance * 1000)
+  if (!claimed) {
+    return { code: 'REPLAY', ok: false }
+  }
+
   return { ok: true }
 }

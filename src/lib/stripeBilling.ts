@@ -83,15 +83,34 @@ export async function ensureStripeCustomer(req: PayloadRequest) {
     return existingCustomerId
   }
 
-  const customer = await stripe.customers.create({
-    email: getUserStringField(req, 'email'),
-    metadata: {
-      source: 'thornstavern-app',
-      userId: String(req.user.id),
-    },
-    name: getUserStringField(req, 'fullName'),
-    phone: getUserStringField(req, 'phone'),
+  // Re-read the latest user record to catch a customer created by a concurrent
+  // request (e.g. subscription checkout and credit top-up firing together)
+  // before we issue another Stripe customer create.
+  const freshUser = await req.payload.findByID({
+    collection: 'users',
+    depth: 0,
+    id: req.user.id,
+    overrideAccess: INTERNAL_ACCESS,
+    req,
   })
+  const freshCustomerId = typeof freshUser?.stripeCustomerId === 'string' ? freshUser.stripeCustomerId : ''
+  if (freshCustomerId) {
+    return freshCustomerId
+  }
+
+  const customer = await stripe.customers.create(
+    {
+      email: getUserStringField(req, 'email'),
+      metadata: {
+        source: 'thornstavern-app',
+        userId: String(req.user.id),
+      },
+      name: getUserStringField(req, 'fullName'),
+      phone: getUserStringField(req, 'phone'),
+    },
+    // Scope idempotency to the user so retries/concurrent calls reuse one customer.
+    { idempotencyKey: `stripe-customer:user:${req.user.id}` },
+  )
 
   await req.payload.update({
     collection: 'users',

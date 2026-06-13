@@ -155,6 +155,10 @@ export const Users: CollectionConfig = {
       required: true,
       defaultValue: 'customer',
       label: 'Role',
+      // RBAC across Local API, custom endpoints, and Payload access checks all read
+      // req.user.role. Persist it in the JWT so the role is always present on the
+      // authenticated user payload regardless of how the session is resolved.
+      saveToJWT: true,
       access: {
         create: adminFieldAccess,
         update: adminFieldAccess,

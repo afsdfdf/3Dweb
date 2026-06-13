@@ -13,6 +13,12 @@
 export interface KVStore {
   get(key: string): Promise<string | null>
   set(key: string, value: string, ttlMs?: number): Promise<void>
+  /**
+   * Atomically set a key only if it does not already exist.
+   * Returns true when this call created the key, false when it was already present.
+   * Used for replay/once-only guards where check-then-set must not race.
+   */
+  setIfAbsent(key: string, value: string, ttlMs?: number): Promise<boolean>
   delete(key: string): Promise<void>
   has(key: string): Promise<boolean>
   /**
@@ -53,6 +59,21 @@ export class MemoryKVStore implements KVStore {
       value,
       expiresAt: ttlMs ? Date.now() + ttlMs : null,
     })
+  }
+
+  async setIfAbsent(key: string, value: string, ttlMs?: number): Promise<boolean> {
+    // The check-and-set must run with no intervening await: an `await this.get()`
+    // would yield to the microtask queue and let concurrent claims all observe an
+    // empty key. Operate on the Map directly so the whole guard completes in one
+    // synchronous tick, which is atomic on Node's single-threaded event loop.
+    const now = Date.now()
+    const entry = this.store.get(key)
+    const alive = entry && (!entry.expiresAt || entry.expiresAt > now)
+    if (alive) {
+      return false
+    }
+    this.store.set(key, { value, expiresAt: ttlMs ? now + ttlMs : null })
+    return true
   }
 
   async delete(key: string): Promise<void> {
@@ -116,6 +137,15 @@ export class RedisKVStore implements KVStore {
     } else {
       await this.client.set(key, value)
     }
+  }
+
+  async setIfAbsent(key: string, value: string, ttlMs?: number): Promise<boolean> {
+    // SET key value NX [PX ttl] is atomic in Redis and returns 'OK' only when the
+    // key was created, giving us a multi-instance-safe once-only guard.
+    const result = ttlMs
+      ? await this.client.set(key, value, 'PX', ttlMs, 'NX')
+      : await this.client.set(key, value, 'NX')
+    return result === 'OK'
   }
 
   async delete(key: string): Promise<void> {

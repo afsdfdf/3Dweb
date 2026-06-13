@@ -118,7 +118,11 @@ async function createStripeCheckoutSession(args: {
   const credits = Number(product.credits || 0)
 
   return stripe.checkout.sessions.create({
-    allow_promotion_codes: true,
+    // Credits are a fixed-value hard currency: the granted amount is locked to the
+    // package at creation time, so an arbitrary promotion code would let a buyer
+    // receive the full credits for a reduced (or zero) payment. Disable promo codes
+    // on one-time credit purchases until a deliberate discount strategy exists.
+    allow_promotion_codes: false,
     cancel_url: `${origin}/pricing?credits_checkout=cancelled`,
     client_reference_id: String(req.user?.id || ''),
     customer: customerId,
