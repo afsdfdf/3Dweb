@@ -1072,7 +1072,7 @@
   left: 12px;
 }
 
-@media (max-width: 767px) {
+@media (max-width: 980px) {
   .pageRoot {
     width: 100%;
     min-width: 0;

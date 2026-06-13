@@ -43,7 +43,7 @@ const detailBottomActionButtonStyle = {
 } as const;
 
 const commentLimit = 3;
-const mobileViewportMediaQuery = "(max-width: 767px)";
+const mobileViewportMediaQuery = "(max-width: 980px)";
 
 type ModelDetailNativeProps = {
   data: ModelDetailData;

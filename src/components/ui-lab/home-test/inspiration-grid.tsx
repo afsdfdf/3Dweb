@@ -216,7 +216,13 @@ export function InspirationGridCard({ item, onActivate }: InspirationGridCardPro
                 loading="lazy"
                 src={getSupabasePreviewImageURL(item.imageSrc, "model-card")}
               />
-            ) : null}
+            ) : (
+              <div className={styles.previewFallback}>
+                <span className={styles.previewFallbackLogo} />
+                <strong>Preview Pending</strong>
+                <em>Artwork will appear after publishing</em>
+              </div>
+            )}
           </div>
         </article>
       </ButtonBoxFrame>

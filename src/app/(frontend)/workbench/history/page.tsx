@@ -8,7 +8,7 @@ import { getWorkbenchModels, formatWorkbenchDate } from "../_lib/workbenchData";
 import { PanelFrame, WorkbenchLibrary } from "../_components/WorkbenchPanels";
 
 export default async function WorkbenchHistoryPage() {
-  const user = await requireUser();
+  const user = await requireUser("/workbench/history");
   const models = await getWorkbenchModels(user);
 
   return (

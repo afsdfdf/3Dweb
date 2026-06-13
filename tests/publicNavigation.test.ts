@@ -135,7 +135,8 @@ test('shell-rendered pages use the same top navigation template as UI-lab pages'
   assert.match(siteShellSource, /<TopNavigation/)
   assert.match(siteShellSource, /items=\{navigationItems\}/)
   assert.match(siteShellSource, /user=\{navigationUser\}/)
-  assert.match(siteShellSource, /--app-stage-scale['"]:\s*['"]clamp\(1,\s*calc\(100vw\s*\/\s*2240px\),\s*1\.15\)/)
+  assert.match(siteShellSource, /--app-stage-scale['"]:\s*['"]min\(1,\s*calc\(100vw\s*\/\s*1920px\)\)/)
+  assert.doesNotMatch(siteShellSource, /--app-stage-scale['"]:\s*['"]clamp\(1,/)
   assert.doesNotMatch(siteShellSource, /avatarUrl:\s*navUser\.avatarUrl/)
   assert.doesNotMatch(siteShellSource, /modelsCount:\s*undefined/)
   assert.doesNotMatch(siteShellSource, /items=\{publicNavigationItems\}/)
@@ -233,8 +234,6 @@ test('formal content pages use standard wide-page proportions with wider inner c
   const resultsTitleRule = resultsSource.match(/\.heroCopy h1,\s*[\s\S]*?\.notFoundPanel h1\s*\{[\s\S]*?\}/)?.[0] ?? ''
   const resultsNotFoundRule = resultsSource.match(/\.notFoundPanel\s*\{[\s\S]*?margin:\s*80px\s+auto\s+0[\s\S]*?\}/)?.[0] ?? ''
   const accountShellRule = accountSource.match(/\.accountShell\s*\{[\s\S]*?\}/)?.[0] ?? ''
-  const accountHeroTitleRule = accountSource.match(/\.accountHeroCopy h1\s*\{[\s\S]*?\}/)?.[0] ?? ''
-  const accountHeroTextRule = accountSource.match(/\.accountHeroCopy p\s*\{[\s\S]*?\}/)?.[0] ?? ''
 
   for (const rule of [aboutShellRule, blogArticleShellRule, bundlesShellRule, bundleDetailShellRule, showcaseShellRule, marketingShellRule, resultsShellRule, accountShellRule]) {
     assert.match(rule, /max-width:\s*var\(--content-page-max-width\)/)
@@ -267,8 +266,6 @@ test('formal content pages use standard wide-page proportions with wider inner c
     marketingSummaryRule,
     resultsTitleRule,
     resultsNotFoundRule,
-    accountHeroTitleRule,
-    accountHeroTextRule,
   ]) {
     assert.match(rule, /max-width:\s*var\(--content-subject-max-width\)/)
   }

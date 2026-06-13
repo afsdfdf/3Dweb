@@ -603,7 +603,7 @@
 
   .inspirationSearchMount :global([class*="toolbar"]) {
     margin-left: auto;
-    width: min(35.729vw, 100%);
+    width: min(48vw, 100%);
     justify-content: flex-end;
   }
 

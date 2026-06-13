@@ -19,9 +19,12 @@
 }
 
 .accountShell {
+  --account-readable-text: 15px;
   box-sizing: border-box;
   height: calc(100svh - 60px);
-  padding: 27px 28px 30px;
+  margin: 0 auto;
+  max-width: var(--content-page-max-width);
+  padding: 18px var(--content-page-gutter) 72px;
   width: 100%;
 }
 

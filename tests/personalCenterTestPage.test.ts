@@ -150,7 +150,8 @@ test("account center keeps fixed UI while restoring personal center sections", (
     /fetch\(\s*["']\/api\/account\/profile-media\/complete["']/,
   );
   assert.match(source, /router\.refresh\(\)/);
-  assert.match(source, /router\.push\("\/pricing"\)/);
+  assert.match(source, /CreditTopupRedemptionDialog/);
+  assert.match(source, /setIsCreditTopupOpen\(true\)/);
   assert.match(source, /openRecordHref/);
   assert.match(source, /toggleModelVisibility/);
   assert.match(source, /\/api\/account\/models\/\$\{encodeURIComponent\(row\.id\)\}\/visibility/);
@@ -160,7 +161,8 @@ test("account center keeps fixed UI while restoring personal center sections", (
   assert.match(source, /EyeOff/);
   assert.match(source, /useSearchParams/);
   assert.match(source, /normalizeAccountSection\(sectionParam, initialSection\)/);
-  assert.match(source, /account-page-locked/);
+  assert.match(accountRouteSource, /requireUser\(["']\/account["']\)/);
+  assert.doesNotMatch(source, /account-page-locked/);
   assert.doesNotMatch(source, /downloadCsv/);
   assert.doesNotMatch(source, /Export CSV/);
   assert.doesNotMatch(source, /publicAccess:/);
@@ -343,7 +345,7 @@ test("account center keeps fixed UI while restoring personal center sections", (
   assert.match(cssSource, /banner-label-bg\.png/);
   assert.match(cssSource, /width:\s*240px/);
   assert.doesNotMatch(cssSource, /linear-gradient\(90deg, #8f5639/);
-  assert.match(cssSource, /account-page-locked/);
+  assert.doesNotMatch(cssSource, /account-page-locked/);
   assert.match(cssSource, /toggle-bar-dark-alt\.png/);
   assert.match(cssSource, /--account-tab-border/);
   assert.match(

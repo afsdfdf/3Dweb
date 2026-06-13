@@ -20,8 +20,10 @@ test('homepage inspiration search and pager return users to the results section 
 
   assert.match(homePageSource, /id="inspiration"/)
   assert.match(searchBoxSource, /const INSPIRATION_SECTION_ID = "inspiration"/)
-  assert.match(searchBoxSource, /return `\/\$\{search \? `\?\$\{search\}` : ""\}#\$\{INSPIRATION_SECTION_ID\}`/)
-  assert.match(searchBoxSource, /action=\{`\/#\$\{INSPIRATION_SECTION_ID\}`\}/)
+  assert.match(searchBoxSource, /function normalizeBasePath/)
+  assert.match(searchBoxSource, /const normalizedBasePath = normalizeBasePath\(basePath\)/)
+  assert.match(searchBoxSource, /return `\$\{normalizedBasePath\}\$\{search \? `\?\$\{search\}` : ""\}#\$\{INSPIRATION_SECTION_ID\}`/)
+  assert.match(searchBoxSource, /action=\{`\$\{normalizeBasePath\(basePath\)\}#\$\{INSPIRATION_SECTION_ID\}`\}/)
 })
 
 test('homepage inspiration search resets results when an active query is cleared', () => {
@@ -32,7 +34,7 @@ test('homepage inspiration search resets results when an active query is cleared
   assert.match(searchBoxSource, /const \[searchText, setSearchText\] = useState\(query\)/)
   assert.match(searchBoxSource, /query\.trim\(\)\.length === 0/)
   assert.match(searchBoxSource, /searchText\.trim\(\)\.length > 0/)
-  assert.match(searchBoxSource, /router\.replace\(`\/#\$\{INSPIRATION_SECTION_ID\}`\)/)
+  assert.match(searchBoxSource, /router\.replace\(`\$\{normalizeBasePath\(basePath\)\}#\$\{INSPIRATION_SECTION_ID\}`\)/)
   assert.match(searchBoxSource, /value=\{searchText\}/)
   assert.match(searchBoxSource, /onChange=\{\(event\) => setSearchText\(event\.target\.value\)\}/)
 })

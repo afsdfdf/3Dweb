@@ -57,7 +57,7 @@ export async function SiteShell({
   const fixedStageStyle = {
     '--app-nav-scale': 'calc(100vw / 1920px)',
     '--app-nav-height': 'calc(60px * var(--app-nav-scale))',
-    '--app-stage-scale': 'clamp(1, calc(100vw / 2240px), 1.15)',
+    '--app-stage-scale': 'min(1, calc(100vw / 1920px))',
   } as React.CSSProperties
   void announcement
   void showLocaleSwitcher
@@ -91,8 +91,8 @@ export async function SiteShell({
 
   return (
     <>
-      {mobileChildren ? <div className="h-screen w-screen overflow-y-auto bg-[#181818] text-[#ededee] md:hidden">{mobileChildren}</div> : null}
-      <div className={`${mobileChildren ? 'hidden md:block' : ''} relative h-screen w-screen overflow-hidden bg-[#181818] text-[#ededee]`} style={fixedStageStyle}>
+      {mobileChildren ? <div className="h-screen w-screen overflow-y-auto bg-[#181818] text-[#ededee] lg:hidden">{mobileChildren}</div> : null}
+      <div className={`${mobileChildren ? 'hidden lg:block' : ''} relative h-screen w-screen overflow-hidden bg-[#181818] text-[#ededee]`} style={fixedStageStyle}>
         <TopNavigation
           active={getPublicNavigationActiveID(currentPath, navigationItems)}
           className="z-[60]"

@@ -77,7 +77,7 @@ test('Workbench model viewers do not render the display base', () => {
 test('model detail mounts the viewer only for the active responsive branch', () => {
   const source = readFileSync(modelDetailNativePath, 'utf8')
 
-  assert.match(source, /mobileViewportMediaQuery = "\(max-width: 767px\)"/)
+  assert.match(source, /mobileViewportMediaQuery = "\(max-width: 980px\)"/)
   assert.match(source, /shouldRenderMobileViewer = isMobileViewport === true/)
   assert.match(source, /shouldRenderDesktopViewer = isMobileViewport === false/)
   assert.match(source, /activeModel\.viewerURL && shouldRenderMobileViewer/)
