@@ -1,5 +1,6 @@
 import type { Payload, PayloadRequest } from 'payload'
 
+export type SubscriptionBillingCycle = 'monthly' | 'yearly'
 export type SubscriptionPlanKey = 'starter' | 'pro' | 'studio'
 
 export type SubscriptionPlanDefinition = {
@@ -11,6 +12,8 @@ export type SubscriptionPlanDefinition = {
   monthlyPrice: number
   name: string
   shortLabel: string
+  yearlyLookupKey: string
+  yearlyPrice: number
 }
 
 const defaultPlans: Record<SubscriptionPlanKey, SubscriptionPlanDefinition> = {
@@ -23,6 +26,8 @@ const defaultPlans: Record<SubscriptionPlanKey, SubscriptionPlanDefinition> = {
     monthlyPrice: 19,
     name: 'Starter',
     shortLabel: 'Starter plan',
+    yearlyLookupKey: 'miniforge_starter_yearly',
+    yearlyPrice: 182.4,
   },
   pro: {
     creditsPerMonth: 760,
@@ -33,6 +38,8 @@ const defaultPlans: Record<SubscriptionPlanKey, SubscriptionPlanDefinition> = {
     monthlyPrice: 49,
     name: 'Pro',
     shortLabel: 'Pro plan',
+    yearlyLookupKey: 'miniforge_pro_yearly',
+    yearlyPrice: 470.4,
   },
   studio: {
     creditsPerMonth: 1680,
@@ -43,7 +50,13 @@ const defaultPlans: Record<SubscriptionPlanKey, SubscriptionPlanDefinition> = {
     monthlyPrice: 99,
     name: 'Studio',
     shortLabel: 'Studio plan',
+    yearlyLookupKey: 'miniforge_studio_yearly',
+    yearlyPrice: 950.4,
   },
+}
+
+type ReadOptions = {
+  strict?: boolean
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> => {
@@ -77,16 +90,65 @@ async function getPayloadLike(input?: Payload | PayloadRequest) {
   return 'findGlobal' in input ? input : input.payload
 }
 
-export async function getSubscriptionPlans(input?: Payload | PayloadRequest): Promise<SubscriptionPlanDefinition[]> {
+const getDefaultYearlyPrice = (monthlyPrice: number) => {
+  return Math.round(monthlyPrice * 12 * 0.8 * 100) / 100
+}
+
+export function normalizeSubscriptionBillingCycle(value: unknown): SubscriptionBillingCycle {
+  return value === 'yearly' ? 'yearly' : 'monthly'
+}
+
+export function getSubscriptionPlanPricing(plan: SubscriptionPlanDefinition, billingCycle: SubscriptionBillingCycle) {
+  if (billingCycle === 'yearly') {
+    return {
+      billingCycle,
+      interval: 'year' as const,
+      intervalLabel: 'Year',
+      lookupKey: plan.yearlyLookupKey,
+      price: plan.yearlyPrice,
+    }
+  }
+
+  return {
+    billingCycle,
+    interval: 'month' as const,
+    intervalLabel: 'Month',
+    lookupKey: plan.lookupKey,
+    price: plan.monthlyPrice,
+  }
+}
+
+export function getSubscriptionCreditsForBillingCycle(
+  plan: SubscriptionPlanDefinition,
+  billingCycle: SubscriptionBillingCycle,
+) {
+  return billingCycle === 'yearly' ? plan.creditsPerMonth * 12 : plan.creditsPerMonth
+}
+
+export async function getSubscriptionPlans(
+  input?: Payload | PayloadRequest,
+  options: ReadOptions = {},
+): Promise<SubscriptionPlanDefinition[]> {
   const payload = await getPayloadLike(input)
-  const siteSettings = payload
-    ? await payload
-        .findGlobal({
-          slug: 'site-settings',
-          overrideAccess: true,
-        })
-        .catch(() => null)
-    : null
+  let siteSettings: unknown = null
+
+  if (!payload && options.strict) {
+    throw new Error('Subscription plan settings are temporarily unavailable.')
+  }
+
+  if (payload) {
+    try {
+      siteSettings = await payload.findGlobal({
+        slug: 'site-settings',
+        overrideAccess: true,
+      })
+    } catch {
+      if (options.strict) {
+        throw new Error('Subscription plan settings are temporarily unavailable.')
+      }
+      siteSettings = null
+    }
+  }
 
   const subscriptionPlans = isRecord((siteSettings as unknown as Record<string, unknown> | null)?.subscriptionPlans)
     ? ((siteSettings as unknown as Record<string, unknown>).subscriptionPlans as Record<string, unknown>)
@@ -95,6 +157,8 @@ export async function getSubscriptionPlans(input?: Payload | PayloadRequest): Pr
   return (['starter', 'pro', 'studio'] as const).map((key) => {
     const source = isRecord(subscriptionPlans[key]) ? subscriptionPlans[key] : {}
     const fallback = defaultPlans[key]
+    const monthlyPrice = pickNumber(source.monthlyPrice, fallback.monthlyPrice)
+    const yearlyPrice = pickNumber(source.yearlyPrice, getDefaultYearlyPrice(monthlyPrice))
 
     return {
       creditsPerMonth: pickNumber(source.creditsPerMonth, fallback.creditsPerMonth),
@@ -102,14 +166,16 @@ export async function getSubscriptionPlans(input?: Payload | PayloadRequest): Pr
       features: pickFeatures(source.features, fallback.features),
       key,
       lookupKey: fallback.lookupKey,
-      monthlyPrice: pickNumber(source.monthlyPrice, fallback.monthlyPrice),
+      monthlyPrice,
       name: pickString(source.name, fallback.name),
       shortLabel: pickString(source.shortLabel, fallback.shortLabel),
+      yearlyLookupKey: fallback.yearlyLookupKey,
+      yearlyPrice,
     } satisfies SubscriptionPlanDefinition
   })
 }
 
-export async function getSubscriptionPlan(planKey: string, input?: Payload | PayloadRequest) {
-  const plans = await getSubscriptionPlans(input)
+export async function getSubscriptionPlan(planKey: string, input?: Payload | PayloadRequest, options: ReadOptions = {}) {
+  const plans = await getSubscriptionPlans(input, options)
   return plans.find((plan) => plan.key === planKey) ?? null
 }

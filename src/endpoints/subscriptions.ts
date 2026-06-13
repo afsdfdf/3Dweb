@@ -8,14 +8,18 @@ import {
   syncSubscriptionCheckout,
 } from '@/lib/subscriptionFlow'
 import { getPaymentProviderSettings } from '@/lib/paymentProviders'
-import { getSubscriptionPlans, type SubscriptionPlanDefinition } from '@/lib/subscriptionPlans'
+import {
+  normalizeSubscriptionBillingCycle,
+  getSubscriptionPlans,
+  type SubscriptionPlanDefinition,
+} from '@/lib/subscriptionPlans'
 import { rejectDisallowedMutationOrigin } from '@/lib/requestSecurity'
 
 const unauthorized = () => Response.json({ message: 'Please sign in first.' }, { status: 401 })
 
 const VALID_PLAN_KEYS = ['starter', 'pro', 'studio'] as const
 type ValidPlanKey = (typeof VALID_PLAN_KEYS)[number]
-type PublicSubscriptionPlan = Omit<SubscriptionPlanDefinition, 'lookupKey'>
+type PublicSubscriptionPlan = Omit<SubscriptionPlanDefinition, 'lookupKey' | 'yearlyLookupKey'>
 
 const getErrorMessage = (error: unknown) => {
   if (error instanceof Error) {
@@ -26,7 +30,7 @@ const getErrorMessage = (error: unknown) => {
 }
 
 const toPublicSubscriptionPlan = (plan: SubscriptionPlanDefinition): PublicSubscriptionPlan => {
-  const { lookupKey: _lookupKey, ...publicPlan } = plan
+  const { lookupKey: _lookupKey, yearlyLookupKey: _yearlyLookupKey, ...publicPlan } = plan
   return publicPlan
 }
 
@@ -36,8 +40,8 @@ export const listSubscriptionPlansEndpoint = {
   handler: async (req: PayloadRequest) => {
     try {
       const [plans, paymentProviders] = await Promise.all([
-        getSubscriptionPlans(req),
-        getPaymentProviderSettings(req),
+        getSubscriptionPlans(req, { strict: true }),
+        getPaymentProviderSettings(req, { strict: true }),
       ])
 
       return Response.json({
@@ -45,8 +49,12 @@ export const listSubscriptionPlansEndpoint = {
         plans: plans.map(toPublicSubscriptionPlan),
         stripeSubscriptionsEnabled: paymentProviders.subscriptionProvider === 'stripe',
       })
-    } catch (error) {
-      return Response.json({ message: getErrorMessage(error) }, { status: 400 })
+    } catch {
+      return Response.json({
+        message: 'Subscription plans are temporarily unavailable.',
+        plans: [],
+        stripeSubscriptionsEnabled: false,
+      }, { status: 503 })
     }
   },
 }
@@ -73,8 +81,10 @@ export const createSubscriptionCheckoutEndpoint = {
       if (!planKey) {
         return Response.json({ message: 'Invalid plan key.' }, { status: 400 })
       }
+      const billingCycle = normalizeSubscriptionBillingCycle(body.billingCycle)
 
       const checkout = await createSubscriptionCheckout({
+        billingCycle,
         planKey: planKey as ValidPlanKey,
         req,
       })

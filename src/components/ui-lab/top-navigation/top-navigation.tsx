@@ -11,7 +11,11 @@ import {
   fetchCreditTopupProducts,
 } from "@/components/ui-lab/credit-topup-redemption-dialog";
 import { ButtonBoxFrame } from "@/components/ui-lab/button-box-frame";
-import { SubscriptionPanel, type SubscriptionPanelPlan } from "@/components/ui-lab/subscription-panel";
+import {
+  SubscriptionPanel,
+  type SubscriptionBillingCycle,
+  type SubscriptionPanelPlan,
+} from "@/components/ui-lab/subscription-panel";
 import type { CreditTopupProduct } from "@/lib/creditTopupProducts";
 import { publicNavigationItems } from "@/lib/publicNavigation";
 import type { SubscriptionPlanDefinition } from "@/lib/subscriptionPlans";
@@ -22,7 +26,7 @@ import { TopNavigationUserMenu } from "./user-menu";
 
 const assetBase = "/ui-lab/top-navigation";
 const emptyCreditTopupProducts: CreditTopupProduct[] = [];
-type TopNavigationSubscriptionPlan = Omit<SubscriptionPlanDefinition, "lookupKey">;
+type TopNavigationSubscriptionPlan = Omit<SubscriptionPlanDefinition, "lookupKey" | "yearlyLookupKey">;
 
 const emptySubscriptionPlans: TopNavigationSubscriptionPlan[] = [];
 
@@ -49,36 +53,6 @@ const defaultSubscriptionPromotion: ResolvedTopNavigationPromotion = {
   eyebrow: "NEW USER",
   offerText: "30% OFF",
 };
-
-const fallbackSubscriptionPlans: TopNavigationSubscriptionPlan[] = [
-  {
-    creditsPerMonth: 240,
-    description: "Designed for individual creators who need steady character generation, fast downloads, and lightweight sampling.",
-    features: ["240 credits per month", "Supports image, text, and hybrid generation", "Standard model downloads and result archiving"],
-    key: "starter",
-    monthlyPrice: 19,
-    name: "Starter",
-    shortLabel: "Starter plan",
-  },
-  {
-    creditsPerMonth: 760,
-    description: "Designed for high-frequency creation, repeated iteration, and smaller teams that need more stable output capacity.",
-    features: ["760 credits per month", "Better suited to frequent character iteration", "Supports generation, downloads, and sampling workflows"],
-    key: "pro",
-    monthlyPrice: 49,
-    name: "Pro",
-    shortLabel: "Pro plan",
-  },
-  {
-    creditsPerMonth: 1680,
-    description: "Designed for teams that need generation, asset retention, and physical sampling inside one operating rhythm.",
-    features: ["1680 credits per month", "Built for stable commercial throughput", "Supports continuous generation, downloads, and print fulfillment"],
-    key: "studio",
-    monthlyPrice: 99,
-    name: "Studio",
-    shortLabel: "Studio plan",
-  },
-];
 
 export type TopNavigationItem = {
   href: string;
@@ -178,6 +152,7 @@ const normalizeSubscriptionPlan = (value: unknown): null | TopNavigationSubscrip
   if (value.key !== "starter" && value.key !== "pro" && value.key !== "studio") return null;
 
   const monthlyPrice = Number(value.monthlyPrice);
+  const yearlyPrice = Number(value.yearlyPrice);
   const creditsPerMonth = Number(value.creditsPerMonth);
   const features = Array.isArray(value.features)
     ? value.features.map((feature) => (typeof feature === "string" ? feature.trim() : "")).filter(Boolean)
@@ -191,6 +166,7 @@ const normalizeSubscriptionPlan = (value: unknown): null | TopNavigationSubscrip
     monthlyPrice: Number.isFinite(monthlyPrice) ? monthlyPrice : 0,
     name: normalizePromotionText(value.name, value.key),
     shortLabel: normalizePromotionText(value.shortLabel, `${value.key} plan`),
+    yearlyPrice: Number.isFinite(yearlyPrice) ? yearlyPrice : Math.round((Number.isFinite(monthlyPrice) ? monthlyPrice : 0) * 12 * 0.8 * 100) / 100,
   };
 };
 
@@ -206,9 +182,9 @@ async function fetchSubscriptionPlans(): Promise<{
 
   if (!response.ok) {
     return {
-      paymentProviderNotice: "",
+      paymentProviderNotice: "Subscription plans are temporarily unavailable.",
       plans: [],
-      stripeSubscriptionsEnabled: true,
+      stripeSubscriptionsEnabled: false,
     };
   }
 
@@ -541,7 +517,9 @@ function SubscriptionOfferDialog({
   const [messageTone, setMessageTone] = useState<"error" | "info">("info");
   const [paymentProviderNotice, setPaymentProviderNotice] = useState(initialPaymentProviderNotice || "");
   const [stripeSubscriptionsEnabled, setStripeSubscriptionsEnabled] = useState(initialStripeSubscriptionsEnabled);
-  const visiblePlans = initialPlans.length > 0 ? initialPlans : loadedPlans && loadedPlans.length > 0 ? loadedPlans : fallbackSubscriptionPlans;
+  const [billingCycle, setBillingCycle] = useState<SubscriptionBillingCycle>("yearly");
+  const visiblePlans = initialPlans.length > 0 ? initialPlans : loadedPlans ?? emptySubscriptionPlans;
+  const plansUnavailable = visiblePlans.length === 0 || !stripeSubscriptionsEnabled;
 
   useEffect(() => {
     setMounted(true);
@@ -567,8 +545,10 @@ function SubscriptionOfferDialog({
       })
       .catch(() => {
         setLoadedPlans([]);
-        setMessageTone("info");
-        setMessage("Showing default subscription offers.");
+        setStripeSubscriptionsEnabled(false);
+        setPaymentProviderNotice("Subscription plans are temporarily unavailable.");
+        setMessageTone("error");
+        setMessage("Subscription plans are temporarily unavailable.");
       });
   }, [hasRequestedPlans, initialPlans.length, open]);
 
@@ -595,7 +575,11 @@ function SubscriptionOfferDialog({
   const panelPlans = useMemo<SubscriptionPanelPlan[]>(() => {
     return visiblePlans.map((plan) => {
       const isLoading = loadingPlanKey === plan.key;
-      const isDisabled = Boolean(authenticated && !stripeSubscriptionsEnabled) || Boolean(loadingPlanKey && !isLoading);
+      const isDisabled = plansUnavailable || Boolean(loadingPlanKey && !isLoading);
+      const cyclePrice = billingCycle === "yearly" ? plan.yearlyPrice : plan.monthlyPrice;
+      const yearlyOriginalPrice = plan.monthlyPrice * 12;
+      const originalPrice =
+        billingCycle === "yearly" && yearlyOriginalPrice > cyclePrice ? formatPanelPrice(yearlyOriginalPrice) : undefined;
 
       return {
         ctaDisabled: isDisabled,
@@ -609,12 +593,14 @@ function SubscriptionOfferDialog({
         description: plan.description,
         features: normalizePlanFeatures(plan),
         id: plan.key,
-        price: formatPanelPrice(plan.monthlyPrice),
+        originalPrice,
+        price: formatPanelPrice(cyclePrice),
+        priceIntervalLabel: billingCycle === "yearly" ? "Year" : "Month",
         subtitle: plan.shortLabel,
         title: plan.name,
       };
     });
-  }, [authenticated, loadingPlanKey, stripeSubscriptionsEnabled, visiblePlans]);
+  }, [authenticated, billingCycle, loadingPlanKey, plansUnavailable, stripeSubscriptionsEnabled, visiblePlans]);
 
   const handleSubscribe = async (plan: SubscriptionPanelPlan) => {
     if (loadingPlanKey) return;
@@ -639,7 +625,7 @@ function SubscriptionOfferDialog({
 
     try {
       const response = await fetch("/api/billing/subscriptions/checkout", {
-        body: JSON.stringify({ planKey: selectedPlan.key }),
+        body: JSON.stringify({ billingCycle, planKey: selectedPlan.key }),
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
@@ -694,9 +680,12 @@ function SubscriptionOfferDialog({
       <div className={styles.subscriptionDialogPanel}>
         <SubscriptionPanel
           className={styles.subscriptionDialogFrame}
+          billingCycle={billingCycle}
           compact
           currencies={["USD"]}
+          emptyMessage="Subscription plans are temporarily unavailable."
           onClose={() => onOpenChange(false)}
+          onBillingCycleChange={setBillingCycle}
           onSubscribe={handleSubscribe}
           plans={panelPlans}
         />

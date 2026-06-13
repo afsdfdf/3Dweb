@@ -27,6 +27,8 @@ test("pricing subscription bridge keeps auth, checkout, and portal functionality
   assert.match(source, /SubscriptionPanel/);
   assert.match(source, /openAuthModal\('login'\)/);
   assert.match(source, /\/api\/billing\/subscriptions\/checkout/);
+  assert.match(source, /billingCycle/);
+  assert.match(source, /onBillingCycleChange/);
   assert.match(source, /\/api\/billing\/subscriptions\/portal/);
   assert.match(source, /window\.location\.assign/);
   assert.match(source, /ctaDisabled/);

@@ -4,6 +4,7 @@ export const adminEn = {
     announcements: { plural: 'Announcements', singular: 'Announcement', description: 'Manage homepage announcements, system notices, and short-form prompts.' },
     avatarFrameStyles: { plural: 'Avatar Frame Styles', singular: 'Avatar Frame Style', description: 'Manage user-selectable avatar frame metadata, thumbnails, unlock rules, and ordering.' },
     auditLogs: { plural: 'Audit Logs', singular: 'Audit Log', description: 'Centralized record of high-risk admin actions, financial operations, webhook handling, and config changes.' },
+    billingCheckouts: { plural: 'Billing Checkouts', singular: 'Billing Checkout', description: 'Track open Stripe subscription checkout sessions and idempotency locks.' },
     billingSubscriptions: { plural: 'Subscriptions', singular: 'Subscription', description: 'Track Stripe subscriptions, billing periods, and credit grant status.' },
     creditProducts: { plural: 'Credit Products', singular: 'Credit Product' },
     credits: { plural: 'Credit Accounts', singular: 'Credit Account', description: 'Manage user credit balances, reserved credits, and lifetime usage.' },

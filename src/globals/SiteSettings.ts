@@ -244,7 +244,7 @@ export const SiteSettings: GlobalConfig = {
               label: 'Subscription plans',
               admin: {
                 description:
-                  'Plan display values and new checkout pricing are managed here. Changing a monthly price automatically creates a replacement Stripe Price for future checkout sessions; existing subscriptions keep their current Stripe Price until explicitly migrated.',
+                  'Plan display values and new checkout pricing are managed here. Changing a monthly or yearly price automatically creates a replacement Stripe Price for future checkout sessions; existing subscriptions keep their current Stripe Price until explicitly migrated.',
               },
               fields: [
                 {
@@ -261,6 +261,15 @@ export const SiteSettings: GlobalConfig = {
                       label: 'Monthly price (USD)',
                       admin: {
                         description: 'Used for display and for automatic Stripe Price rotation on new subscription checkout sessions.',
+                      },
+                    },
+                    {
+                      name: 'yearlyPrice',
+                      type: 'number',
+                      defaultValue: 182.4,
+                      label: 'Yearly price (USD)',
+                      admin: {
+                        description: 'Used for yearly display and automatic Stripe yearly Price rotation on new subscription checkout sessions.',
                       },
                     },
                     { name: 'creditsPerMonth', type: 'number', defaultValue: 240, label: 'Credits per month' },
@@ -299,6 +308,15 @@ export const SiteSettings: GlobalConfig = {
                         description: 'Used for display and for automatic Stripe Price rotation on new subscription checkout sessions.',
                       },
                     },
+                    {
+                      name: 'yearlyPrice',
+                      type: 'number',
+                      defaultValue: 470.4,
+                      label: 'Yearly price (USD)',
+                      admin: {
+                        description: 'Used for yearly display and automatic Stripe yearly Price rotation on new subscription checkout sessions.',
+                      },
+                    },
                     { name: 'creditsPerMonth', type: 'number', defaultValue: 760, label: 'Credits per month' },
                     {
                       name: 'description',
@@ -333,6 +351,15 @@ export const SiteSettings: GlobalConfig = {
                       label: 'Monthly price (USD)',
                       admin: {
                         description: 'Used for display and for automatic Stripe Price rotation on new subscription checkout sessions.',
+                      },
+                    },
+                    {
+                      name: 'yearlyPrice',
+                      type: 'number',
+                      defaultValue: 950.4,
+                      label: 'Yearly price (USD)',
+                      admin: {
+                        description: 'Used for yearly display and automatic Stripe yearly Price rotation on new subscription checkout sessions.',
                       },
                     },
                     { name: 'creditsPerMonth', type: 'number', defaultValue: 1680, label: 'Credits per month' },

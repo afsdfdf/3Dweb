@@ -88,6 +88,7 @@ export interface Config {
     'credit-transactions': CreditTransaction;
     'credit-products': CreditProduct;
     'engagement-views': EngagementView;
+    'billing-checkouts': BillingCheckout;
     'billing-subscriptions': BillingSubscription;
     addresses: Address;
     'print-orders': PrintOrder;
@@ -120,6 +121,7 @@ export interface Config {
     'credit-transactions': CreditTransactionsSelect<false> | CreditTransactionsSelect<true>;
     'credit-products': CreditProductsSelect<false> | CreditProductsSelect<true>;
     'engagement-views': EngagementViewsSelect<false> | EngagementViewsSelect<true>;
+    'billing-checkouts': BillingCheckoutsSelect<false> | BillingCheckoutsSelect<true>;
     'billing-subscriptions': BillingSubscriptionsSelect<false> | BillingSubscriptionsSelect<true>;
     addresses: AddressesSelect<false> | AddressesSelect<true>;
     'print-orders': PrintOrdersSelect<false> | PrintOrdersSelect<true>;
@@ -947,6 +949,41 @@ export interface EngagementView {
   createdAt: string;
 }
 /**
+ * Track open Stripe subscription checkout sessions and idempotency locks.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "billing-checkouts".
+ */
+export interface BillingCheckout {
+  id: number;
+  user: number | User;
+  planKey: string;
+  billingCycle: 'monthly' | 'yearly';
+  status: 'open' | 'completed' | 'expired' | 'failed';
+  /**
+   * Internal uniqueness guard. Open subscription checkouts use one lock per user.
+   */
+  openLockKey?: string | null;
+  stripeCheckoutSessionId?: string | null;
+  stripeCustomerId?: string | null;
+  stripePriceId?: string | null;
+  checkoutUrl?: string | null;
+  expiresAt?: string | null;
+  completedAt?: string | null;
+  failedReason?: string | null;
+  metadata?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Track Stripe subscriptions, billing periods, and credit grant status.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1143,6 +1180,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'engagement-views';
         value: number | EngagementView;
+      } | null)
+    | ({
+        relationTo: 'billing-checkouts';
+        value: number | BillingCheckout;
       } | null)
     | ({
         relationTo: 'billing-subscriptions';
@@ -1693,6 +1734,27 @@ export interface EngagementViewsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "billing-checkouts_select".
+ */
+export interface BillingCheckoutsSelect<T extends boolean = true> {
+  user?: T;
+  planKey?: T;
+  billingCycle?: T;
+  status?: T;
+  openLockKey?: T;
+  stripeCheckoutSessionId?: T;
+  stripeCustomerId?: T;
+  stripePriceId?: T;
+  checkoutUrl?: T;
+  expiresAt?: T;
+  completedAt?: T;
+  failedReason?: T;
+  metadata?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "billing-subscriptions_select".
  */
 export interface BillingSubscriptionsSelect<T extends boolean = true> {
@@ -1897,7 +1959,7 @@ export interface SiteSetting {
     providerNotice?: string | null;
   };
   /**
-   * Plan display values and new checkout pricing are managed here. Changing a monthly price automatically creates a replacement Stripe Price for future checkout sessions; existing subscriptions keep their current Stripe Price until explicitly migrated.
+   * Plan display values and new checkout pricing are managed here. Changing a monthly or yearly price automatically creates a replacement Stripe Price for future checkout sessions; existing subscriptions keep their current Stripe Price until explicitly migrated.
    */
   subscriptionPlans?: {
     starter?: {
@@ -1907,6 +1969,10 @@ export interface SiteSetting {
        * Used for display and for automatic Stripe Price rotation on new subscription checkout sessions.
        */
       monthlyPrice?: number | null;
+      /**
+       * Used for yearly display and automatic Stripe yearly Price rotation on new subscription checkout sessions.
+       */
+      yearlyPrice?: number | null;
       creditsPerMonth?: number | null;
       description?: string | null;
       features?:
@@ -1923,6 +1989,10 @@ export interface SiteSetting {
        * Used for display and for automatic Stripe Price rotation on new subscription checkout sessions.
        */
       monthlyPrice?: number | null;
+      /**
+       * Used for yearly display and automatic Stripe yearly Price rotation on new subscription checkout sessions.
+       */
+      yearlyPrice?: number | null;
       creditsPerMonth?: number | null;
       description?: string | null;
       features?:
@@ -1939,6 +2009,10 @@ export interface SiteSetting {
        * Used for display and for automatic Stripe Price rotation on new subscription checkout sessions.
        */
       monthlyPrice?: number | null;
+      /**
+       * Used for yearly display and automatic Stripe yearly Price rotation on new subscription checkout sessions.
+       */
+      yearlyPrice?: number | null;
       creditsPerMonth?: number | null;
       description?: string | null;
       features?:
@@ -2605,6 +2679,7 @@ export interface SiteSettingsSelect<T extends boolean = true> {
               name?: T;
               shortLabel?: T;
               monthlyPrice?: T;
+              yearlyPrice?: T;
               creditsPerMonth?: T;
               description?: T;
               features?:
@@ -2620,6 +2695,7 @@ export interface SiteSettingsSelect<T extends boolean = true> {
               name?: T;
               shortLabel?: T;
               monthlyPrice?: T;
+              yearlyPrice?: T;
               creditsPerMonth?: T;
               description?: T;
               features?:
@@ -2635,6 +2711,7 @@ export interface SiteSettingsSelect<T extends boolean = true> {
               name?: T;
               shortLabel?: T;
               monthlyPrice?: T;
+              yearlyPrice?: T;
               creditsPerMonth?: T;
               description?: T;
               features?:

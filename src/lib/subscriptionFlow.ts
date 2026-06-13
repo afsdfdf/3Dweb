@@ -12,10 +12,17 @@ import {
   retrieveBillingCheckoutSession,
   retrieveStripeSubscription,
 } from '@/lib/stripeBilling'
-import { getSubscriptionPlan, type SubscriptionPlanKey } from '@/lib/subscriptionPlans'
+import {
+  getSubscriptionCreditsForBillingCycle,
+  getSubscriptionPlan,
+  normalizeSubscriptionBillingCycle,
+  type SubscriptionBillingCycle,
+  type SubscriptionPlanKey,
+} from '@/lib/subscriptionPlans'
 import { hasSubscriptionCreditGrantStatus, subscriptionCheckoutBlockingStatuses } from '@/lib/subscriptionStatus'
 
 type SubscriptionFlowTestHooks = {
+  createStripeSubscriptionCheckout?: typeof createStripeSubscriptionCheckout
   getSubscriptionPlan?: typeof getSubscriptionPlan
   grantCredits?: typeof grantCredits
   retrieveBillingCheckoutSession?: typeof retrieveBillingCheckoutSession
@@ -30,6 +37,8 @@ export function __setSubscriptionFlowTestHooks(hooks: SubscriptionFlowTestHooks 
 }
 
 const INTERNAL_ACCESS = true
+const SUBSCRIPTION_CHECKOUT_LOCK_PREFIX = 'subscription-checkout'
+const IN_FLIGHT_CHECKOUT_LOCK_MS = 10 * 60 * 1000
 
 type ResolvedUser = {
   email?: string
@@ -39,6 +48,212 @@ type ResolvedUser = {
 
 const toPlainJson = <T,>(value: T): Record<string, unknown> => {
   return JSON.parse(JSON.stringify(value)) as Record<string, unknown>
+}
+
+const getErrorMessage = (error: unknown) => {
+  return error instanceof Error ? error.message : 'Subscription checkout failed.'
+}
+
+type BillingCheckoutRecord = {
+  billingCycle?: null | string
+  checkoutUrl?: null | string
+  createdAt?: null | string
+  expiresAt?: null | string
+  id: number | string
+  openLockKey?: null | string
+  planKey?: null | string
+  status?: null | string
+  stripeCheckoutSessionId?: null | string
+}
+
+const getSubscriptionCheckoutLockKey = (userId: number | string) => `${SUBSCRIPTION_CHECKOUT_LOCK_PREFIX}-${userId}`
+
+const getInFlightCheckoutExpiresAt = () => new Date(Date.now() + IN_FLIGHT_CHECKOUT_LOCK_MS).toISOString()
+
+const getCheckoutExpiryTime = (checkout: BillingCheckoutRecord) => {
+  if (checkout.expiresAt) {
+    const expiresAt = new Date(checkout.expiresAt).getTime()
+    if (Number.isFinite(expiresAt)) return expiresAt
+  }
+
+  if (checkout.createdAt) {
+    const createdAt = new Date(checkout.createdAt).getTime()
+    if (Number.isFinite(createdAt)) return createdAt + IN_FLIGHT_CHECKOUT_LOCK_MS
+  }
+
+  return 0
+}
+
+const isCheckoutExpired = (checkout: BillingCheckoutRecord, now = Date.now()) => {
+  const expiresAt = getCheckoutExpiryTime(checkout)
+  return Boolean(expiresAt && expiresAt <= now)
+}
+
+const isOpenCheckoutReusable = (
+  checkout: BillingCheckoutRecord | null | undefined,
+  now = Date.now(),
+): checkout is BillingCheckoutRecord & { checkoutUrl: string } => {
+  if (!checkout || checkout.status !== 'open' || !checkout.checkoutUrl) return false
+  return !isCheckoutExpired(checkout, now)
+}
+
+const getSessionExpiresAt = (session: Awaited<ReturnType<typeof createStripeSubscriptionCheckout>>) => {
+  return typeof session.expires_at === 'number'
+    ? new Date(session.expires_at * 1000).toISOString()
+    : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+}
+
+async function findOpenSubscriptionCheckout(args: { req: PayloadRequest; userId: number | string }) {
+  const result = await args.req.payload.find({
+    collection: 'billing-checkouts',
+    depth: 0,
+    limit: 1,
+    overrideAccess: INTERNAL_ACCESS,
+    pagination: false,
+    req: args.req,
+    where: {
+      openLockKey: {
+        equals: getSubscriptionCheckoutLockKey(args.userId),
+      },
+    },
+  })
+
+  return (result.docs[0] as BillingCheckoutRecord | undefined) ?? null
+}
+
+async function releaseSubscriptionCheckoutLock(args: {
+  checkout: BillingCheckoutRecord
+  data?: Record<string, unknown>
+  req: PayloadRequest
+  status: 'completed' | 'expired' | 'failed'
+}) {
+  const { checkout, data = {}, req, status } = args
+
+  return req.payload.update({
+    collection: 'billing-checkouts',
+    id: checkout.id,
+    data: {
+      ...data,
+      openLockKey: null,
+      status,
+    },
+    overrideAccess: INTERNAL_ACCESS,
+    req,
+  })
+}
+
+async function createOpenSubscriptionCheckoutLock(args: {
+  billingCycle: SubscriptionBillingCycle
+  planKey: SubscriptionPlanKey
+  req: PayloadRequest
+  userId: number | string
+}): Promise<{ checkout: BillingCheckoutRecord; reused: boolean }> {
+  const { billingCycle, planKey, req, userId } = args
+  const openLockKey = getSubscriptionCheckoutLockKey(userId)
+  const existing = await findOpenSubscriptionCheckout({ req, userId })
+
+  if (isOpenCheckoutReusable(existing)) {
+    return { checkout: existing, reused: true }
+  }
+
+  if (existing) {
+    if (!isCheckoutExpired(existing)) {
+      return { checkout: existing, reused: true }
+    }
+
+    await releaseSubscriptionCheckoutLock({
+      checkout: existing,
+      data: {
+        failedReason: 'Open checkout expired before completion.',
+      },
+      req,
+      status: 'expired',
+    })
+  }
+
+  try {
+    const checkout = (await req.payload.create({
+      collection: 'billing-checkouts',
+      data: {
+        billingCycle,
+        expiresAt: getInFlightCheckoutExpiresAt(),
+        metadata: {
+          requestedAt: new Date().toISOString(),
+        },
+        openLockKey,
+        planKey,
+        status: 'open',
+        user: Number(userId),
+      },
+      overrideAccess: INTERNAL_ACCESS,
+      req,
+    })) as BillingCheckoutRecord
+
+    return { checkout, reused: false }
+  } catch (error) {
+    const racingCheckout = await findOpenSubscriptionCheckout({ req, userId })
+    if (racingCheckout && !isCheckoutExpired(racingCheckout)) {
+      return { checkout: racingCheckout, reused: true }
+    }
+
+    throw error
+  }
+}
+
+async function attachStripeSessionToCheckout(args: {
+  checkout: BillingCheckoutRecord
+  req: PayloadRequest
+  session: Awaited<ReturnType<typeof createStripeSubscriptionCheckout>>
+}) {
+  const { checkout, req, session } = args
+  const customerId = typeof session.customer === 'string' ? session.customer : session.customer?.id
+
+  return (await req.payload.update({
+    collection: 'billing-checkouts',
+    id: checkout.id,
+    data: {
+      checkoutUrl: session.url,
+      expiresAt: getSessionExpiresAt(session),
+      metadata: toPlainJson(session),
+      stripeCheckoutSessionId: session.id,
+      stripeCustomerId: customerId || undefined,
+    },
+    overrideAccess: INTERNAL_ACCESS,
+    req,
+  })) as BillingCheckoutRecord
+}
+
+async function markSubscriptionCheckoutCompleted(args: {
+  req: PayloadRequest
+  session: Awaited<ReturnType<typeof retrieveBillingCheckoutSession>>
+}) {
+  const { req, session } = args
+  const result = await req.payload.find({
+    collection: 'billing-checkouts',
+    depth: 0,
+    limit: 1,
+    overrideAccess: INTERNAL_ACCESS,
+    pagination: false,
+    req,
+    where: {
+      stripeCheckoutSessionId: {
+        equals: session.id,
+      },
+    },
+  })
+
+  const checkout = result.docs[0] as BillingCheckoutRecord | undefined
+  if (!checkout) return
+
+  await releaseSubscriptionCheckoutLock({
+    checkout,
+    data: {
+      completedAt: new Date().toISOString(),
+      metadata: toPlainJson(session),
+    },
+    req,
+    status: 'completed',
+  })
 }
 
 const getPlanKeyFromSubscription = (subscription: Awaited<ReturnType<typeof retrieveStripeSubscription>>) => {
@@ -309,14 +524,29 @@ async function grantSubscriptionCreditsIfNeeded(args: {
   return updated
 }
 
-export async function createSubscriptionCheckout(args: { planKey: SubscriptionPlanKey; req: PayloadRequest }) {
+const getBillingCycleFromSubscription = (
+  subscription: Awaited<ReturnType<typeof retrieveStripeSubscription>>,
+): SubscriptionBillingCycle => {
+  const direct = normalizeSubscriptionBillingCycle(subscription.metadata?.billingCycle)
+  if (direct === 'yearly') return direct
+
+  const interval = subscription.items.data[0]?.price.recurring?.interval
+  return interval === 'year' ? 'yearly' : 'monthly'
+}
+
+export async function createSubscriptionCheckout(args: {
+  billingCycle?: SubscriptionBillingCycle
+  planKey: SubscriptionPlanKey
+  req: PayloadRequest
+}) {
   const { planKey, req } = args
+  const billingCycle = normalizeSubscriptionBillingCycle(args.billingCycle)
 
   if (!req.user) {
     throw new Error('Unauthorized')
   }
 
-  const providers = await getPaymentProviderSettings(req)
+  const providers = await getPaymentProviderSettings(req, { strict: true })
   if (providers.subscriptionProvider !== 'stripe') {
     throw new Error('The current site configuration uses Shopify reserved mode for subscriptions, so online subscription checkout is disabled.')
   }
@@ -348,7 +578,58 @@ export async function createSubscriptionCheckout(args: { planKey: SubscriptionPl
     throw new Error('You already have an active subscription flow in progress.')
   }
 
-  return createStripeSubscriptionCheckout({ planKey, req })
+  const { checkout, reused } = await createOpenSubscriptionCheckoutLock({
+    billingCycle,
+    planKey,
+    req,
+    userId: req.user.id,
+  })
+
+  if (reused) {
+    if (checkout.checkoutUrl) {
+      return {
+        id: checkout.stripeCheckoutSessionId || '',
+        url: checkout.checkoutUrl,
+      }
+    }
+
+    throw new Error('A subscription checkout is already being prepared. Please try again shortly.')
+  }
+
+  try {
+    const session = await (subscriptionFlowTestHooks?.createStripeSubscriptionCheckout || createStripeSubscriptionCheckout)({
+      billingCycle,
+      idempotencyKey: getSubscriptionCheckoutLockKey(req.user.id),
+      planKey,
+      req,
+    })
+
+    if (!session.url) {
+      throw new Error('Stripe did not return a checkout URL.')
+    }
+
+    await attachStripeSessionToCheckout({
+      checkout,
+      req,
+      session,
+    })
+
+    return {
+      id: session.id,
+      url: session.url,
+    }
+  } catch (error) {
+    await releaseSubscriptionCheckoutLock({
+      checkout,
+      data: {
+        failedReason: getErrorMessage(error),
+      },
+      req,
+      status: 'failed',
+    }).catch(() => undefined)
+
+    throw error
+  }
 }
 
 export async function finalizeSubscriptionCheckoutSession(args: {
@@ -373,6 +654,8 @@ export async function finalizeSubscriptionCheckoutSession(args: {
   if (!subscriptionId || !customerId) {
     throw new Error('Stripe did not return subscription metadata.')
   }
+
+  await markSubscriptionCheckoutCompleted({ req, session })
 
   return syncStripeSubscriptionState({
     customerId,
@@ -403,8 +686,12 @@ export async function syncStripeSubscriptionState(args: {
   }
 
   const planKey = getPlanKeyFromSubscription(stripeSubscription)
-  const plan = await (subscriptionFlowTestHooks?.getSubscriptionPlan || getSubscriptionPlan)(String(planKey), req)
+  const plan = await (subscriptionFlowTestHooks?.getSubscriptionPlan || getSubscriptionPlan)(String(planKey), req, {
+    strict: true,
+  })
   const priceId = stripeSubscription.items.data[0]?.price.id
+  const billingCycle = getBillingCycleFromSubscription(stripeSubscription)
+  const creditsPerPeriod = plan ? getSubscriptionCreditsForBillingCycle(plan, billingCycle) : 0
 
   if (!plan || !priceId) {
     throw new Error('Unable to resolve the Stripe subscription plan.')
@@ -431,7 +718,7 @@ export async function syncStripeSubscriptionState(args: {
   let billingSubscription = await upsertBillingSubscription({
     customerId: resolvedCustomerId,
     lastCheckoutSessionId,
-    monthlyCredits: plan.creditsPerMonth,
+    monthlyCredits: creditsPerPeriod,
     planKey: plan.key,
     req,
     stripePriceId: priceId,
@@ -441,7 +728,7 @@ export async function syncStripeSubscriptionState(args: {
 
   billingSubscription = await grantSubscriptionCreditsIfNeeded({
     billingSubscription,
-    planCredits: plan.creditsPerMonth,
+    planCredits: creditsPerPeriod,
     planKey: plan.key,
     planLabel: plan.name,
     req,
@@ -477,7 +764,7 @@ export async function createSubscriptionPortal(args: { req: PayloadRequest }) {
     throw new Error('Unauthorized')
   }
 
-  const providers = await getPaymentProviderSettings(req)
+  const providers = await getPaymentProviderSettings(req, { strict: true })
   if (providers.subscriptionProvider !== 'stripe') {
     throw new Error('The current site configuration does not enable the Stripe subscription management portal.')
   }

@@ -3,7 +3,15 @@ import type Stripe from 'stripe'
 
 import { getCanonicalAppURL } from '@/lib/getCanonicalAppURL'
 import { getPaymentProviderSettings } from '@/lib/paymentProviders'
-import { getSubscriptionPlan, type SubscriptionPlanDefinition, type SubscriptionPlanKey } from '@/lib/subscriptionPlans'
+import {
+  getSubscriptionCreditsForBillingCycle,
+  getSubscriptionPlan,
+  getSubscriptionPlanPricing,
+  normalizeSubscriptionBillingCycle,
+  type SubscriptionBillingCycle,
+  type SubscriptionPlanDefinition,
+  type SubscriptionPlanKey,
+} from '@/lib/subscriptionPlans'
 import { getStripeClient } from '@/lib/stripeGateway'
 
 const INTERNAL_ACCESS = true
@@ -98,10 +106,11 @@ export async function ensureStripeCustomer(req: PayloadRequest) {
   return customer.id
 }
 
-const getPlanUnitAmount = (plan: SubscriptionPlanDefinition) => {
-  const unitAmount = Math.round(Number(plan.monthlyPrice) * 100)
+const getPlanUnitAmount = (plan: SubscriptionPlanDefinition, billingCycle: SubscriptionBillingCycle) => {
+  const pricing = getSubscriptionPlanPricing(plan, billingCycle)
+  const unitAmount = Math.round(Number(pricing.price) * 100)
   if (!Number.isFinite(unitAmount) || unitAmount < 0) {
-    throw new Error(`Invalid monthly price for subscription plan ${plan.key}.`)
+    throw new Error(`Invalid ${billingCycle} price for subscription plan ${plan.key}.`)
   }
 
   return unitAmount
@@ -120,46 +129,68 @@ const getStripePlanMetadata = (plan: SubscriptionPlanDefinition) => ({
   planKey: plan.key,
 })
 
-const stripePriceMatchesPlan = (price: Stripe.Price, plan: SubscriptionPlanDefinition) => {
+const getStripePlanCycleMetadata = (plan: SubscriptionPlanDefinition, billingCycle: SubscriptionBillingCycle) => ({
+  ...getStripePlanMetadata(plan),
+  billingCycle,
+  creditsPerPeriod: String(getSubscriptionCreditsForBillingCycle(plan, billingCycle)),
+})
+
+const stripePriceMatchesPlan = (
+  price: Stripe.Price,
+  plan: SubscriptionPlanDefinition,
+  billingCycle: SubscriptionBillingCycle,
+) => {
+  const pricing = getSubscriptionPlanPricing(plan, billingCycle)
+
   return (
     price.active &&
     price.currency.toLowerCase() === SUBSCRIPTION_CURRENCY &&
-    price.recurring?.interval === 'month' &&
-    price.unit_amount === getPlanUnitAmount(plan)
+    price.recurring?.interval === pricing.interval &&
+    price.unit_amount === getPlanUnitAmount(plan, billingCycle)
   )
 }
 
-async function createStripePlanProduct(stripe: Stripe, plan: SubscriptionPlanDefinition) {
+async function createStripePlanProduct(
+  stripe: Stripe,
+  plan: SubscriptionPlanDefinition,
+  billingCycle: SubscriptionBillingCycle,
+) {
+  const pricing = getSubscriptionPlanPricing(plan, billingCycle)
+
   return stripe.products.create({
     description: plan.description,
-    metadata: getStripePlanMetadata(plan),
-    name: `Thorns Tavern ${plan.name} Monthly Subscription`,
+    metadata: getStripePlanCycleMetadata(plan, billingCycle),
+    name: `Thorns Tavern ${plan.name} ${pricing.intervalLabel}ly Subscription`,
   })
 }
 
-export async function ensureStripePlanPrice(plan: SubscriptionPlanDefinition) {
+export async function ensureStripePlanPrice(
+  plan: SubscriptionPlanDefinition,
+  billingCycle: SubscriptionBillingCycle = 'monthly',
+) {
   const stripe = getBillingStripeClient()
+  const pricing = getSubscriptionPlanPricing(plan, billingCycle)
   const matched = await stripe.prices.list({
     limit: 1,
-    lookup_keys: [plan.lookupKey],
+    lookup_keys: [pricing.lookupKey],
   })
 
   const current = matched.data[0] ?? null
-  if (current && stripePriceMatchesPlan(current, plan)) {
+  if (current && stripePriceMatchesPlan(current, plan, billingCycle)) {
     return current
   }
 
-  const productId = getPriceProductID(current) ?? (await createStripePlanProduct(stripe, plan)).id
+  const productId = getPriceProductID(current) ?? (await createStripePlanProduct(stripe, plan, billingCycle)).id
   const createParams: Stripe.PriceCreateParams = {
     currency: SUBSCRIPTION_CURRENCY,
-    lookup_key: plan.lookupKey,
-    metadata: getStripePlanMetadata(plan),
-    nickname: `${plan.name} Monthly`,
+    lookup_key: pricing.lookupKey,
+    metadata: getStripePlanCycleMetadata(plan, billingCycle),
+    nickname: `${plan.name} ${pricing.intervalLabel}ly`,
     product: productId,
     recurring: {
-      interval: 'month',
+      interval: pricing.interval,
     },
-    unit_amount: getPlanUnitAmount(plan),
+    unit_amount: getPlanUnitAmount(plan, billingCycle),
   }
 
   if (current) {
@@ -175,15 +206,21 @@ export async function ensureStripePlanPrice(plan: SubscriptionPlanDefinition) {
   return replacement
 }
 
-export async function createSubscriptionCheckout(args: { planKey: SubscriptionPlanKey; req: PayloadRequest }) {
-  const { planKey, req } = args
-  const providers = await getPaymentProviderSettings(req)
+export async function createSubscriptionCheckout(args: {
+  billingCycle?: SubscriptionBillingCycle
+  idempotencyKey?: string
+  planKey: SubscriptionPlanKey
+  req: PayloadRequest
+}) {
+  const { idempotencyKey, planKey, req } = args
+  const billingCycle = normalizeSubscriptionBillingCycle(args.billingCycle)
+  const providers = await getPaymentProviderSettings(req, { strict: true })
 
   if (providers.subscriptionProvider !== 'stripe') {
     throw new Error('The active subscription provider is set to Shopify reserved mode, so Stripe subscription checkout is currently disabled.')
   }
 
-  const plan = await getSubscriptionPlan(planKey, req)
+  const plan = await getSubscriptionPlan(planKey, req, { strict: true })
   if (!plan) {
     throw new Error('Subscription plan not found.')
   }
@@ -194,35 +231,43 @@ export async function createSubscriptionCheckout(args: { planKey: SubscriptionPl
 
   const stripe = getBillingStripeClient()
   const customerId = await ensureStripeCustomer(req)
-  const price = await ensureStripePlanPrice(plan)
+  const price = await ensureStripePlanPrice(plan, billingCycle)
+  const creditsPerPeriod = getSubscriptionCreditsForBillingCycle(plan, billingCycle)
   const origin = getCanonicalAppURL()
 
-  return stripe.checkout.sessions.create({
-    allow_promotion_codes: true,
-    cancel_url: `${origin}/pricing?checkout=cancelled`,
-    client_reference_id: String(req.user.id),
-    customer: customerId,
-    line_items: [
-      {
-        price: price.id,
-        quantity: 1,
-      },
-    ],
-    metadata: {
-      creditsPerMonth: String(plan.creditsPerMonth),
-      planKey: plan.key,
-      userId: String(req.user.id),
-    },
-    mode: 'subscription',
-    subscription_data: {
+  return stripe.checkout.sessions.create(
+    {
+      allow_promotion_codes: true,
+      cancel_url: `${origin}/pricing?checkout=cancelled`,
+      client_reference_id: String(req.user.id),
+      customer: customerId,
+      line_items: [
+        {
+          price: price.id,
+          quantity: 1,
+        },
+      ],
       metadata: {
+        billingCycle,
         creditsPerMonth: String(plan.creditsPerMonth),
+        creditsPerPeriod: String(creditsPerPeriod),
         planKey: plan.key,
         userId: String(req.user.id),
       },
+      mode: 'subscription',
+      subscription_data: {
+        metadata: {
+          billingCycle,
+          creditsPerMonth: String(plan.creditsPerMonth),
+          creditsPerPeriod: String(creditsPerPeriod),
+          planKey: plan.key,
+          userId: String(req.user.id),
+        },
+      },
+      success_url: `${origin}/pricing?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
     },
-    success_url: `${origin}/pricing?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-  })
+    idempotencyKey ? { idempotencyKey } : undefined,
+  )
 }
 
 export async function retrieveBillingCheckoutSession(sessionId: string) {
@@ -243,7 +288,7 @@ export async function retrieveStripeSubscription(subscriptionId: string) {
 
 export async function createBillingPortalSession(args: { customerId: string; req: PayloadRequest }) {
   const { customerId, req } = args
-  const providers = await getPaymentProviderSettings(req)
+  const providers = await getPaymentProviderSettings(req, { strict: true })
 
   if (providers.subscriptionProvider !== 'stripe') {
     throw new Error('The active subscription provider is not Stripe, so Stripe Billing Portal is unavailable.')

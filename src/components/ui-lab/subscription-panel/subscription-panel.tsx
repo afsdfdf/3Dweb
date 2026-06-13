@@ -31,6 +31,7 @@ export type SubscriptionPanelPlan = {
   id: string;
   originalPrice?: string;
   price: string;
+  priceIntervalLabel?: string;
   title: string;
   subtitle: string;
 };
@@ -41,6 +42,7 @@ export type SubscriptionPanelProps = {
   compact?: boolean;
   currencies?: string[];
   currency?: string;
+  emptyMessage?: string;
   onBillingCycleChange?: (cycle: SubscriptionBillingCycle) => void;
   onClose?: () => void;
   onCurrencyChange?: (currency: string) => void;
@@ -181,7 +183,7 @@ function SubscriptionPlanCard({
         <img alt="" className={styles.priceCoin} src={coinAsset} />
         <div className={styles.priceText}>
           <strong>{plan.price}</strong>
-          <span>/ Month</span>
+          <span>/ {plan.priceIntervalLabel ?? "Month"}</span>
           {plan.originalPrice ? <em>{plan.originalPrice}</em> : null}
         </div>
       </div>
@@ -213,6 +215,7 @@ export function SubscriptionPanel({
   compact = false,
   currencies = ["USD"],
   currency,
+  emptyMessage = "Subscription plans are temporarily unavailable.",
   onBillingCycleChange,
   onClose,
   onCurrencyChange,
@@ -267,9 +270,18 @@ export function SubscriptionPanel({
           </div>
 
           <div className={styles.planGrid} data-subscription-plan-grid>
-            {plans.map((plan) => (
-              <SubscriptionPlanCard key={plan.id} onSubscribe={onSubscribe} plan={plan} />
-            ))}
+            {plans.length > 0 ? (
+              plans.map((plan) => {
+                const resolvedPlan = {
+                  ...plan,
+                  priceIntervalLabel: plan.priceIntervalLabel ?? (selectedCycle === "yearly" ? "Year" : "Month"),
+                };
+
+                return <SubscriptionPlanCard key={plan.id} onSubscribe={onSubscribe} plan={resolvedPlan} />;
+              })
+            ) : (
+              <div className={styles.planState}>{emptyMessage}</div>
+            )}
           </div>
         </div>
       </section>

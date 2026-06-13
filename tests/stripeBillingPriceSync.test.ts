@@ -13,6 +13,8 @@ const basePlan = {
   monthlyPrice: 49,
   name: 'Pro',
   shortLabel: 'Pro plan',
+  yearlyLookupKey: 'miniforge_pro_yearly',
+  yearlyPrice: 470.4,
 } satisfies SubscriptionPlanDefinition
 
 function createStripeMock(args: {
@@ -137,7 +139,9 @@ test('subscription checkout rotates the Stripe lookup key when Payload price cha
     assert.equal(createPriceParams?.product, 'prod_current')
     assert.equal(createPriceParams?.unit_amount, 5900)
     assert.deepEqual(createPriceParams?.metadata, {
+      billingCycle: 'monthly',
       creditsPerMonth: '760',
+      creditsPerPeriod: '760',
       planKey: 'pro',
     })
     assert.deepEqual(archivedPrice, {

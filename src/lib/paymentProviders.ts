@@ -8,6 +8,10 @@ export type PaymentProviderSettings = {
   subscriptionProvider: PaymentProviderKey
 }
 
+type ReadOptions = {
+  strict?: boolean
+}
+
 const defaults: PaymentProviderSettings = {
   orderProvider: 'stripe',
   providerNotice:
@@ -28,16 +32,30 @@ async function getPayloadLike(input?: Payload | PayloadRequest) {
   return 'findGlobal' in input ? input : input.payload
 }
 
-export async function getPaymentProviderSettings(input?: Payload | PayloadRequest): Promise<PaymentProviderSettings> {
+export async function getPaymentProviderSettings(
+  input?: Payload | PayloadRequest,
+  options: ReadOptions = {},
+): Promise<PaymentProviderSettings> {
   const payload = await getPayloadLike(input)
-  const siteSettings = payload
-    ? await payload
-        .findGlobal({
-          slug: 'site-settings',
-          overrideAccess: true,
-        })
-        .catch(() => null)
-    : null
+  let siteSettings: unknown = null
+
+  if (!payload && options.strict) {
+    throw new Error('Payment provider settings are temporarily unavailable.')
+  }
+
+  if (payload) {
+    try {
+      siteSettings = await payload.findGlobal({
+        slug: 'site-settings',
+        overrideAccess: true,
+      })
+    } catch {
+      if (options.strict) {
+        throw new Error('Payment provider settings are temporarily unavailable.')
+      }
+      siteSettings = null
+    }
+  }
 
   const paymentProviders = isRecord((siteSettings as unknown as Record<string, unknown> | null)?.paymentProviders)
     ? ((siteSettings as unknown as Record<string, unknown>).paymentProviders as Record<string, unknown>)

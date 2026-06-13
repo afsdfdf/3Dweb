@@ -10,6 +10,7 @@ import sharp from 'sharp'
 
 import { Addresses } from './collections/Addresses'
 import { AvatarFrameStyles } from './collections/AvatarFrameStyles'
+import { BillingCheckouts } from './collections/BillingCheckouts'
 import { BillingSubscriptions } from './collections/BillingSubscriptions'
 import { Announcements } from './collections/Announcements'
 import { CreditProducts } from './collections/CreditProducts'
@@ -206,6 +207,7 @@ export default buildConfig({
     CreditTransactions,
     CreditProducts,
     EngagementViews,
+    BillingCheckouts,
     BillingSubscriptions,
     Addresses,
     PrintOrders,

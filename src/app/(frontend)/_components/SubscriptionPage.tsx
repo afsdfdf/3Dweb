@@ -68,7 +68,12 @@ function PlanAction({
     return <ManageSubscriptionButton label="Manage current plan" variant="secondary" />
   }
 
-  return <SubscribePlanButton disabled={!stripeSubscriptionsEnabled} planKey={plan.key} />
+  return (
+    <div className="grid gap-2 sm:grid-cols-2">
+      <SubscribePlanButton billingCycle="monthly" disabled={!stripeSubscriptionsEnabled} label="Monthly" planKey={plan.key} />
+      <SubscribePlanButton billingCycle="yearly" disabled={!stripeSubscriptionsEnabled} label="Yearly" planKey={plan.key} />
+    </div>
+  )
 }
 
 function CreditTopupAction({
@@ -96,8 +101,6 @@ function formatMoney(amount: number, currency: string) {
 }
 
 function BillingComparison({ plan }: { plan: SubscriptionPlanDefinition }) {
-  const yearlyPrice = plan.monthlyPrice * 12
-
   return (
     <div className="grid min-h-[76px] gap-2 sm:grid-cols-2">
       <div className="flex h-[76px] flex-col justify-center rounded-[8px] border border-[#8d5c25] bg-[#221d17] px-4 py-3">
@@ -108,9 +111,9 @@ function BillingComparison({ plan }: { plan: SubscriptionPlanDefinition }) {
         </p>
       </div>
       <div className="flex h-[76px] flex-col justify-center rounded-[8px] border border-[#403f46] bg-[#18181b] px-4 py-3">
-        <p className="text-xs uppercase tracking-[0.18em] text-[#8f7a4a]">Yearly</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-[#8f7a4a]">Yearly</p>
         <p className="mt-1 text-xl font-semibold tracking-tight text-[#f1e2bc]">
-          ${yearlyPrice}
+          ${plan.yearlyPrice}
           <span className="ml-1 text-xs font-normal text-[#a7a9b0]">/ year</span>
         </p>
       </div>

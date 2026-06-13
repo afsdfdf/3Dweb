@@ -300,6 +300,14 @@ export const enum_engagement_views_target_type = pgEnum(
   "enum_engagement_views_target_type",
   ["creator-profile", "model"],
 );
+export const enum_billing_checkouts_billing_cycle = pgEnum(
+  "enum_billing_checkouts_billing_cycle",
+  ["monthly", "yearly"],
+);
+export const enum_billing_checkouts_status = pgEnum(
+  "enum_billing_checkouts_status",
+  ["open", "completed", "expired", "failed"],
+);
 export const enum_billing_subscriptions_status = pgEnum(
   "enum_billing_subscriptions_status",
   [
@@ -2389,6 +2397,65 @@ export const engagement_views = pgTable(
   ],
 );
 
+export const billing_checkouts = pgTable(
+  "billing_checkouts",
+  {
+    id: serial("id").primaryKey(),
+    user: integer("user_id")
+      .notNull()
+      .references(() => users.id, {
+        onDelete: "set null",
+      }),
+    planKey: varchar("plan_key").notNull(),
+    billingCycle: enum_billing_checkouts_billing_cycle("billing_cycle")
+      .notNull()
+      .default("monthly"),
+    status: enum_billing_checkouts_status("status").notNull().default("open"),
+    openLockKey: varchar("open_lock_key"),
+    stripeCheckoutSessionId: varchar("stripe_checkout_session_id"),
+    stripeCustomerId: varchar("stripe_customer_id"),
+    stripePriceId: varchar("stripe_price_id"),
+    checkoutUrl: varchar("checkout_url"),
+    expiresAt: timestamp("expires_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    completedAt: timestamp("completed_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    failedReason: varchar("failed_reason"),
+    metadata: jsonb("metadata"),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    })
+      .defaultNow()
+      .notNull(),
+  },
+  (columns) => [
+    index("billing_checkouts_user_idx").on(columns.user),
+    index("billing_checkouts_status_idx").on(columns.status),
+    uniqueIndex("billing_checkouts_open_lock_key_idx").on(columns.openLockKey),
+    uniqueIndex("billing_checkouts_stripe_checkout_session_id_idx").on(
+      columns.stripeCheckoutSessionId,
+    ),
+    index("billing_checkouts_expires_at_idx").on(columns.expiresAt),
+    index("billing_checkouts_updated_at_idx").on(columns.updatedAt),
+    index("billing_checkouts_created_at_idx").on(columns.createdAt),
+  ],
+);
+
 export const billing_subscriptions = pgTable(
   "billing_subscriptions",
   {
@@ -2670,6 +2737,7 @@ export const payload_locked_documents_rels = pgTable(
     "credit-transactionsID": integer("credit_transactions_id"),
     "credit-productsID": integer("credit_products_id"),
     "engagement-viewsID": integer("engagement_views_id"),
+    "billing-checkoutsID": integer("billing_checkouts_id"),
     "billing-subscriptionsID": integer("billing_subscriptions_id"),
     addressesID: integer("addresses_id"),
     "print-ordersID": integer("print_orders_id"),
@@ -2731,6 +2799,9 @@ export const payload_locked_documents_rels = pgTable(
     ),
     index("payload_locked_documents_rels_engagement_views_id_idx").on(
       columns["engagement-viewsID"],
+    ),
+    index("payload_locked_documents_rels_billing_checkouts_id_idx").on(
+      columns["billing-checkoutsID"],
     ),
     index("payload_locked_documents_rels_billing_subscriptions_id_idx").on(
       columns["billing-subscriptionsID"],
@@ -2853,6 +2924,11 @@ export const payload_locked_documents_rels = pgTable(
       columns: [columns["engagement-viewsID"]],
       foreignColumns: [engagement_views.id],
       name: "payload_locked_documents_rels_engagement_views_fk",
+    }).onDelete("cascade"),
+    foreignKey({
+      columns: [columns["billing-checkoutsID"]],
+      foreignColumns: [billing_checkouts.id],
+      name: "payload_locked_documents_rels_billing_checkouts_fk",
     }).onDelete("cascade"),
     foreignKey({
       columns: [columns["billing-subscriptionsID"]],
@@ -3223,6 +3299,10 @@ export const site_settings = pgTable(
       "subscription_plans_starter_monthly_price",
       { mode: "number" },
     ).default(19),
+    subscriptionPlans_starter_yearlyPrice: numeric(
+      "subscription_plans_starter_yearly_price",
+      { mode: "number" },
+    ).default(182.4),
     subscriptionPlans_starter_creditsPerMonth: numeric(
       "subscription_plans_starter_credits_per_month",
       { mode: "number" },
@@ -3242,6 +3322,10 @@ export const site_settings = pgTable(
       "subscription_plans_pro_monthly_price",
       { mode: "number" },
     ).default(49),
+    subscriptionPlans_pro_yearlyPrice: numeric(
+      "subscription_plans_pro_yearly_price",
+      { mode: "number" },
+    ).default(470.4),
     subscriptionPlans_pro_creditsPerMonth: numeric(
       "subscription_plans_pro_credits_per_month",
       { mode: "number" },
@@ -3261,6 +3345,10 @@ export const site_settings = pgTable(
       "subscription_plans_studio_monthly_price",
       { mode: "number" },
     ).default(99),
+    subscriptionPlans_studio_yearlyPrice: numeric(
+      "subscription_plans_studio_yearly_price",
+      { mode: "number" },
+    ).default(950.4),
     subscriptionPlans_studio_creditsPerMonth: numeric(
       "subscription_plans_studio_credits_per_month",
       { mode: "number" },
@@ -5001,6 +5089,16 @@ export const relations_engagement_views = relations(
     }),
   }),
 );
+export const relations_billing_checkouts = relations(
+  billing_checkouts,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [billing_checkouts.user],
+      references: [users.id],
+      relationName: "user",
+    }),
+  }),
+);
 export const relations_billing_subscriptions = relations(
   billing_subscriptions,
   ({ one }) => ({
@@ -5163,6 +5261,11 @@ export const relations_payload_locked_documents_rels = relations(
       fields: [payload_locked_documents_rels["engagement-viewsID"]],
       references: [engagement_views.id],
       relationName: "engagement-views",
+    }),
+    "billing-checkoutsID": one(billing_checkouts, {
+      fields: [payload_locked_documents_rels["billing-checkoutsID"]],
+      references: [billing_checkouts.id],
+      relationName: "billing-checkouts",
     }),
     "billing-subscriptionsID": one(billing_subscriptions, {
       fields: [payload_locked_documents_rels["billing-subscriptionsID"]],
@@ -5660,6 +5763,8 @@ type DatabaseSchema = {
   enum_credit_transactions_type: typeof enum_credit_transactions_type;
   enum_credit_products_product_type: typeof enum_credit_products_product_type;
   enum_engagement_views_target_type: typeof enum_engagement_views_target_type;
+  enum_billing_checkouts_billing_cycle: typeof enum_billing_checkouts_billing_cycle;
+  enum_billing_checkouts_status: typeof enum_billing_checkouts_status;
   enum_billing_subscriptions_status: typeof enum_billing_subscriptions_status;
   enum_print_orders_status: typeof enum_print_orders_status;
   enum_print_orders_payment_status: typeof enum_print_orders_payment_status;
@@ -5724,6 +5829,7 @@ type DatabaseSchema = {
   credit_transactions: typeof credit_transactions;
   credit_products: typeof credit_products;
   engagement_views: typeof engagement_views;
+  billing_checkouts: typeof billing_checkouts;
   billing_subscriptions: typeof billing_subscriptions;
   addresses: typeof addresses;
   print_orders: typeof print_orders;
@@ -5808,6 +5914,7 @@ type DatabaseSchema = {
   relations_credit_transactions: typeof relations_credit_transactions;
   relations_credit_products: typeof relations_credit_products;
   relations_engagement_views: typeof relations_engagement_views;
+  relations_billing_checkouts: typeof relations_billing_checkouts;
   relations_billing_subscriptions: typeof relations_billing_subscriptions;
   relations_addresses: typeof relations_addresses;
   relations_print_orders: typeof relations_print_orders;

@@ -5,7 +5,11 @@ import { useMemo, useState } from 'react'
 
 import { apiFetch } from '@/app/(frontend)/_lib/apiFetch'
 import { useAuthModal } from '@/components/auth/AuthModalProvider'
-import { SubscriptionPanel, type SubscriptionPanelPlan } from '@/components/ui-lab/subscription-panel'
+import {
+  SubscriptionPanel,
+  type SubscriptionBillingCycle,
+  type SubscriptionPanelPlan,
+} from '@/components/ui-lab/subscription-panel'
 import type { SubscriptionPlanDefinition } from '@/lib/subscriptionPlans'
 
 type CurrentUser = {
@@ -54,12 +58,17 @@ export function PricingSubscriptionPanel({
   const [loadingPlanKey, setLoadingPlanKey] = useState<null | string>(null)
   const [message, setMessage] = useState('')
   const [messageTone, setMessageTone] = useState<'error' | 'info'>('info')
+  const [billingCycle, setBillingCycle] = useState<SubscriptionBillingCycle>('yearly')
 
   const panelPlans = useMemo<SubscriptionPanelPlan[]>(() => {
     return subscriptionPlans.map((plan) => {
       const isCurrentPlan = activeSubscription?.planKey === plan.key
       const isLoading = loadingPlanKey === plan.key
       const isDisabled = Boolean(user && !isCurrentPlan && !stripeSubscriptionsEnabled) || Boolean(loadingPlanKey && !isLoading)
+      const cyclePrice = billingCycle === 'yearly' ? plan.yearlyPrice : plan.monthlyPrice
+      const yearlyOriginalPrice = plan.monthlyPrice * 12
+      const originalPrice =
+        billingCycle === 'yearly' && yearlyOriginalPrice > cyclePrice ? formatPanelPrice(yearlyOriginalPrice) : undefined
 
       return {
         ctaDisabled: isDisabled,
@@ -77,12 +86,14 @@ export function PricingSubscriptionPanel({
         description: plan.description,
         features: normalizeFeatures(plan),
         id: plan.key,
-        price: formatPanelPrice(plan.monthlyPrice),
+        originalPrice,
+        price: formatPanelPrice(cyclePrice),
+        priceIntervalLabel: billingCycle === 'yearly' ? 'Year' : 'Month',
         subtitle: plan.shortLabel,
         title: plan.name,
       }
     })
-  }, [activeSubscription?.planKey, loadingPlanKey, stripeSubscriptionsEnabled, subscriptionPlans, user])
+  }, [activeSubscription?.planKey, billingCycle, loadingPlanKey, stripeSubscriptionsEnabled, subscriptionPlans, user])
 
   const openPortal = async (planKey: string) => {
     setLoadingPlanKey(planKey)
@@ -119,7 +130,7 @@ export function PricingSubscriptionPanel({
 
     try {
       const response = await apiFetch('/api/billing/subscriptions/checkout', {
-        body: JSON.stringify({ planKey }),
+        body: JSON.stringify({ billingCycle, planKey }),
         
         headers: {
           'Content-Type': 'application/json',
@@ -176,8 +187,10 @@ export function PricingSubscriptionPanel({
   return (
     <div className="grid justify-items-center gap-3">
       <SubscriptionPanel
+        billingCycle={billingCycle}
         currencies={['USD']}
         onClose={() => router.push('/')}
+        onBillingCycleChange={setBillingCycle}
         onSubscribe={handleSubscribe}
         plans={panelPlans}
       />

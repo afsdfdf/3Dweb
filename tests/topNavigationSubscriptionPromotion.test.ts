@@ -51,6 +51,8 @@ test('top navigation summarizes subscription promotion state and opens the subsc
   assert.match(source, /icon-crown-subscribe\.png/)
   assert.match(source, /\/api\/billing\/subscriptions\/plans/)
   assert.match(source, /\/api\/billing\/subscriptions\/checkout/)
+  assert.match(source, /billingCycle/)
+  assert.doesNotMatch(source, /fallbackSubscriptionPlans/)
   assert.match(source, /openAuthModal\(['"]login['"]\)/)
   assert.match(source, /user\?\.hasActiveSubscription !== true/)
 
@@ -83,7 +85,7 @@ test('navigation session and subscription endpoints expose only safe summary dat
   assert.match(endpointsSource, /path:\s*['"]\/billing\/subscriptions\/plans['"]/)
   assert.match(endpointsSource, /getSubscriptionPlans/)
   assert.match(endpointsSource, /toPublicSubscriptionPlan/)
-  assert.match(endpointsSource, /Omit<SubscriptionPlanDefinition,\s*['"]lookupKey['"]>/)
+  assert.match(endpointsSource, /Omit<SubscriptionPlanDefinition,\s*['"]lookupKey['"]\s*\|\s*['"]yearlyLookupKey['"]>/)
   assert.match(endpointsSource, /getPaymentProviderSettings/)
   assert.match(endpointsSource, /stripeSubscriptionsEnabled/)
   assert.match(payloadConfigSource, /listSubscriptionPlansEndpoint/)
@@ -102,6 +104,7 @@ test('public subscription plans endpoint returns editable prices without Stripe 
             creditsPerMonth: 880,
             monthlyPrice: 59,
             name: 'Pro Plus',
+            yearlyPrice: 470.4,
           },
         },
       }),
@@ -115,9 +118,29 @@ test('public subscription plans endpoint returns editable prices without Stripe 
   assert.equal(body.stripeSubscriptionsEnabled, true)
   assert.equal(body.paymentProviderNotice, 'Stripe is live.')
   assert.equal(proPlan.monthlyPrice, 59)
+  assert.equal(proPlan.yearlyPrice, 470.4)
   assert.equal(proPlan.creditsPerMonth, 880)
   assert.equal(proPlan.name, 'Pro Plus')
   assert.equal('lookupKey' in proPlan, false)
+  assert.equal('yearlyLookupKey' in proPlan, false)
+})
+
+test('public subscription plans endpoint fails closed when billing settings cannot be read', async () => {
+  const response = await listSubscriptionPlansEndpoint.handler({
+    payload: {
+      findGlobal: async () => {
+        throw new Error('site settings unavailable')
+      },
+    },
+  } as never)
+
+  const body = await response.json()
+
+  assert.equal(response.status, 503)
+  assert.equal(body.stripeSubscriptionsEnabled, false)
+  assert.equal(Array.isArray(body.plans), true)
+  assert.equal(body.plans.length, 0)
+  assert.match(body.message, /temporarily unavailable/i)
 })
 
 test('subscription status helpers separate checkout blocking from paid entitlement and credit grants', () => {

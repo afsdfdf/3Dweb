@@ -159,7 +159,7 @@ export type PublicSiteSettings = {
   }
   siteDescription: string
   siteName: string
-  subscriptionPlans: Record<string, { creditsPerMonth: number; description: string; features: Array<{ label: string }>; monthlyPrice: number; name: string; shortLabel: string }>
+  subscriptionPlans: Record<string, { creditsPerMonth: number; description: string; features: Array<{ label: string }>; monthlyPrice: number; name: string; shortLabel: string; yearlyPrice: number }>
   supportEmail: string
 }
 
@@ -577,6 +577,7 @@ export async function getSiteSettings(): Promise<PublicSiteSettings | null> {
       monthlyPrice: toNumber(row.monthly_price),
       name: String(row.name || key),
       shortLabel: String(row.short_label || key),
+      yearlyPrice: toNumber(row.yearly_price),
     }
   }
 

@@ -24,6 +24,8 @@ test("subscription panel component uses the formal frame and design-sized header
   assert.match(source, /button-orange-medium-normal\.png/);
   assert.match(source, /icon-coin-badge\.png/);
   assert.match(source, /compact\?: boolean/);
+  assert.match(source, /emptyMessage\?: string/);
+  assert.match(source, /priceIntervalLabel\?: string/);
   assert.match(source, /data-subscription-panel-density=\{compact \? "compact" : "default"\}/);
 
   assert.match(css, /--subscription-panel-width:\s*1142px/);
@@ -38,6 +40,7 @@ test("subscription panel component uses the formal frame and design-sized header
   assert.match(css, /border-image-slice:\s*0 20 fill/);
   assert.match(css, /border-image-source:\s*var\(--subscribe-button-image\)/);
   assert.match(css, /grid-template-columns:\s*repeat\(3,\s*1fr\)/);
+  assert.match(css, /\.planState\s*\{/);
 });
 
 test("formal component registry exposes the subscription panel preview", () => {

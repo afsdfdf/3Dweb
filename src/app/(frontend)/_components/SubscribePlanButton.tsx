@@ -7,11 +7,13 @@ import { apiFetch } from '@/app/(frontend)/_lib/apiFetch'
 import { OrangeMediumActionButton } from '@/components/ui-lab/action-buttons'
 
 type SubscribePlanButtonProps = {
+  billingCycle?: 'monthly' | 'yearly'
   disabled?: boolean
+  label?: string
   planKey: 'starter' | 'pro' | 'studio'
 }
 
-export function SubscribePlanButton({ disabled = false, planKey }: SubscribePlanButtonProps) {
+export function SubscribePlanButton({ billingCycle = 'monthly', disabled = false, label, planKey }: SubscribePlanButtonProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -26,7 +28,7 @@ export function SubscribePlanButton({ disabled = false, planKey }: SubscribePlan
       const response = await apiFetch('/api/billing/subscriptions/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planKey }),
+        body: JSON.stringify({ billingCycle, planKey }),
       })
 
       const json = await response.json()
@@ -48,13 +50,13 @@ export function SubscribePlanButton({ disabled = false, planKey }: SubscribePlan
     }
   }
 
-  const label = disabled ? 'Unavailable' : loading ? 'Redirecting' : 'Subscribe'
+  const buttonLabel = disabled ? 'Unavailable' : loading ? 'Redirecting' : label || 'Subscribe'
 
   return (
     <div className="flex flex-col items-center gap-2">
       <div className="flex h-[58px] w-full items-center justify-center">
         <div className="relative h-[36.54px] w-[95.21px]">
-          <OrangeMediumActionButton disabled={disabled || loading} label={label} onClick={onSubscribe} type="button" />
+          <OrangeMediumActionButton disabled={disabled || loading} label={buttonLabel} onClick={onSubscribe} type="button" />
         </div>
       </div>
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
