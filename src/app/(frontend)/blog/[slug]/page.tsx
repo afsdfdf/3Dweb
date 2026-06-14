@@ -68,7 +68,14 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         <RelatedPosts labels={blogPage.articleLabels} posts={post.relatedPosts} siteName={siteName} />
         <BlogCTA cta={blogPage.articleCTA} />
       </div>
-      <script type="application/ld+json">{JSON.stringify(post.jsonLd)}</script>
+      <script
+        dangerouslySetInnerHTML={{
+          // Escape `<` so a `</script>` sequence in CMS content cannot break out of
+          // the tag, while keeping the JSON-LD valid for crawlers.
+          __html: JSON.stringify(post.jsonLd).replace(/</g, '\\u003c'),
+        }}
+        type="application/ld+json"
+      />
     </BlogShell>
   )
 }

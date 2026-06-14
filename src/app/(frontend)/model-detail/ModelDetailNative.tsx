@@ -364,8 +364,8 @@ export default function ModelDetailNative({
   }, [detail.id, detail.viewCount]);
 
   useEffect(() => {
-    if (!detail.commentsEnabled) return;
-
+    // View tracking is independent of whether comments are enabled; gating it on
+    // commentsEnabled previously dropped view counts for models with comments off.
     const controller = new AbortController();
 
     void apiFetch("/api/engagement/view", {
@@ -394,7 +394,7 @@ export default function ModelDetailNative({
       });
 
     return () => controller.abort();
-  }, [detail.commentsEnabled, detail.id]);
+  }, [detail.id]);
 
   const primeSideModelImage = (item: ModelDetailSideModel) => {
     if (typeof window === "undefined" || !item.imageSrc) return;
@@ -555,6 +555,35 @@ export default function ModelDetailNative({
     window.setTimeout(() => {
       setCartStatus(null);
     }, 1800);
+  };
+
+  const handleFavoriteModel = async () => {
+    if (!navUser) {
+      openAuthModal("login", { redirectTo: getCurrentRedirect() });
+      return;
+    }
+
+    try {
+      const response = await apiFetch(`/api/social/models/${activeModel.id}/favorite`, {
+        credentials: "same-origin",
+        method: "POST",
+      });
+
+      if (response.status === 401) {
+        openAuthModal("login", { redirectTo: getCurrentRedirect() });
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(await getResponseMessage(response, "Failed to update favorites."));
+      }
+
+      setCartStatus("Added to favorites.");
+    } catch (error) {
+      setCartStatus(error instanceof Error ? error.message : "Failed to update favorites.");
+    } finally {
+      window.setTimeout(() => setCartStatus(null), 1800);
+    }
   };
 
   return (
@@ -1031,14 +1060,14 @@ export default function ModelDetailNative({
                         <div className="time">{activeModel.updatedLabel}</div>
                         <div className="tags">
                           {activeModel.tags.map((tag) => (
-                            <a
-                              href="#"
+                            <Link
+                              href={`/showcase?q=${encodeURIComponent(tag)}`}
                               className="uc-tag"
                               key={tag}
                               title={`# ${tag}`}
                             >
                               # {tag}
-                            </a>
+                            </Link>
                           ))}
                         </div>
                       </div>
@@ -1196,30 +1225,30 @@ export default function ModelDetailNative({
                   </div>
                   <div className="txt">{detail.chargeDownloadCredits ? "POINTS" : "NO CHARGE"}</div>
                 </div>
-                <a href="#" className="btn">
+                <span className="btn" aria-label={`${viewCountLabel} views`}>
                   <img
                     src={asset("detail-bottom-icon-2.png")}
                     alt=""
                     decoding="async"
                   />
                   {viewCountLabel}
-                </a>
-                <a href="#" className="btn">
+                </span>
+                <span className="btn" aria-label={`${detail.likesLabel} likes`}>
                   <img
                     src={asset("detail-bottom-icon-3.png")}
                     alt=""
                     decoding="async"
                   />
                   {detail.likesLabel}
-                </a>
-                <a href="#" className="btn">
+                </span>
+                <span className="btn" aria-label={`${detail.favoritesLabel} favorites`}>
                   <img
                     src={asset("detail-bottom-icon-4.png")}
                     alt=""
                     decoding="async"
                   />
                   {detail.favoritesLabel}
-                </a>
+                </span>
               </div>
               <div className="center">
                 <div className="btn2-slot">
@@ -1304,9 +1333,9 @@ export default function ModelDetailNative({
                   >
                     Use As Reference
                   </Link>
-                  <a href="#" className="item">
+                  <button className="item" onClick={handleFavoriteModel} type="button">
                     Favorite Model
-                  </a>
+                  </button>
                   <Link
                     href={activeModel.id ? `/model-detail?id=${activeModel.id}` : "#"}
                     className="item"
