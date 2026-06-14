@@ -2104,6 +2104,10 @@ export interface HomepageContent {
     eyebrow?: string | null;
     title?: string | null;
     subtitle?: string | null;
+    /**
+     * Optional override for the homepage hero header background. Choose preview or public media for anonymous visitors.
+     */
+    headerBackground?: (number | null) | Media;
     primaryCTA?: {
       label?: string | null;
       href?: string | null;
@@ -2823,6 +2827,7 @@ export interface HomepageContentSelect<T extends boolean = true> {
         eyebrow?: T;
         title?: T;
         subtitle?: T;
+        headerBackground?: T;
         primaryCTA?:
           | T
           | {

@@ -3579,90 +3579,111 @@ export const homepage_content_faq = pgTable(
   ],
 );
 
-export const homepage_content = pgTable("homepage_content", {
-  id: serial("id").primaryKey(),
-  hero_eyebrow: varchar("hero_eyebrow").default("Thorns Tavern Studio"),
-  hero_title: varchar("hero_title").default(
-    "An AI 3D product site built for character creation, delivery, and print fulfillment.",
-  ),
-  hero_subtitle: varchar("hero_subtitle").default(
-    "This is a complete product experience that moves naturally from discovery to generation, downloads, print orders, and delivery.",
-  ),
-  hero_primaryCTA_label: varchar("hero_primary_c_t_a_label").default(
-    "Open Studio",
-  ),
-  hero_primaryCTA_href: varchar("hero_primary_c_t_a_href").default("/generate"),
-  hero_secondaryCTA_label: varchar("hero_secondary_c_t_a_label").default(
-    "View showcase",
-  ),
-  hero_secondaryCTA_href: varchar("hero_secondary_c_t_a_href").default(
-    "/showcase",
-  ),
-  introBand_eyebrow: varchar("intro_band_eyebrow").default("Site positioning"),
-  introBand_title: varchar("intro_band_title").default(
-    "A real product website should explain value before it explains operations.",
-  ),
-  introBand_text: varchar("intro_band_text").default(
-    "The homepage should sell the work, services, and use cases first, then support action. It should not feel like an instruction sheet.",
-  ),
-  featuredRail_eyebrow: varchar("featured_rail_eyebrow").default(
-    "Featured images",
-  ),
-  featuredRail_title: varchar("featured_rail_title").default("New Product"),
-  featuredRail_searchLabel: varchar("featured_rail_search_label").default(
-    "Search",
-  ),
-  featuredRail_moreLabel: varchar("featured_rail_more_label").default("More"),
-  serviceIntro_eyebrow: varchar("service_intro_eyebrow").default("What we do"),
-  serviceIntro_title: varchar("service_intro_title").default(
-    "Bring character creation, 3D outputs, and print delivery into one product surface.",
-  ),
-  serviceIntro_text: varchar("service_intro_text").default(
-    "Externally, this should feel like a digital product brand website. Internally, the job is to help visitors understand what they can complete here.",
-  ),
-  collectionShelf_title: varchar("collection_shelf_title").default("Followed"),
-  collectionShelf_hotLabel: varchar("collection_shelf_hot_label").default(
-    "Hot",
-  ),
-  collectionShelf_newLabel: varchar("collection_shelf_new_label").default(
-    "New",
-  ),
-  collectionShelf_moreLabel: varchar("collection_shelf_more_label").default(
-    "More",
-  ),
-  collectionShelf_allLabel: varchar("collection_shelf_all_label").default(
-    "All Followed",
-  ),
-  processSection_eyebrow: varchar("process_section_eyebrow").default(
-    "Workflow",
-  ),
-  processSection_title: varchar("process_section_title").default(
-    "From creative input to delivery, and then to physical production.",
-  ),
-  entrySection_eyebrow: varchar("entry_section_eyebrow").default(
-    "Entry points",
-  ),
-  entrySection_title: varchar("entry_section_title").default(
-    "Build trust first, then guide users into the workflow.",
-  ),
-  entrySection_text: varchar("entry_section_text").default(
-    "Once visitors understand the product value, they should move naturally into generation, downloads, and print workflows without first decoding internal admin language.",
-  ),
-  faqSection_eyebrow: varchar("faq_section_eyebrow").default("FAQ"),
-  faqSection_title: varchar("faq_section_title").default(
-    "Clarify the product boundary, delivery model, and use cases.",
-  ),
-  updatedAt: timestamp("updated_at", {
-    mode: "string",
-    withTimezone: true,
-    precision: 3,
-  }),
-  createdAt: timestamp("created_at", {
-    mode: "string",
-    withTimezone: true,
-    precision: 3,
-  }),
-});
+export const homepage_content = pgTable(
+  "homepage_content",
+  {
+    id: serial("id").primaryKey(),
+    hero_eyebrow: varchar("hero_eyebrow").default("Thorns Tavern Studio"),
+    hero_title: varchar("hero_title").default(
+      "An AI 3D product site built for character creation, delivery, and print fulfillment.",
+    ),
+    hero_subtitle: varchar("hero_subtitle").default(
+      "This is a complete product experience that moves naturally from discovery to generation, downloads, print orders, and delivery.",
+    ),
+    hero_headerBackground: integer("hero_header_background_id").references(
+      () => media.id,
+      {
+        onDelete: "set null",
+      },
+    ),
+    hero_primaryCTA_label: varchar("hero_primary_c_t_a_label").default(
+      "Open Studio",
+    ),
+    hero_primaryCTA_href: varchar("hero_primary_c_t_a_href").default(
+      "/generate",
+    ),
+    hero_secondaryCTA_label: varchar("hero_secondary_c_t_a_label").default(
+      "View showcase",
+    ),
+    hero_secondaryCTA_href: varchar("hero_secondary_c_t_a_href").default(
+      "/showcase",
+    ),
+    introBand_eyebrow:
+      varchar("intro_band_eyebrow").default("Site positioning"),
+    introBand_title: varchar("intro_band_title").default(
+      "A real product website should explain value before it explains operations.",
+    ),
+    introBand_text: varchar("intro_band_text").default(
+      "The homepage should sell the work, services, and use cases first, then support action. It should not feel like an instruction sheet.",
+    ),
+    featuredRail_eyebrow: varchar("featured_rail_eyebrow").default(
+      "Featured images",
+    ),
+    featuredRail_title: varchar("featured_rail_title").default("New Product"),
+    featuredRail_searchLabel: varchar("featured_rail_search_label").default(
+      "Search",
+    ),
+    featuredRail_moreLabel: varchar("featured_rail_more_label").default("More"),
+    serviceIntro_eyebrow: varchar("service_intro_eyebrow").default(
+      "What we do",
+    ),
+    serviceIntro_title: varchar("service_intro_title").default(
+      "Bring character creation, 3D outputs, and print delivery into one product surface.",
+    ),
+    serviceIntro_text: varchar("service_intro_text").default(
+      "Externally, this should feel like a digital product brand website. Internally, the job is to help visitors understand what they can complete here.",
+    ),
+    collectionShelf_title: varchar("collection_shelf_title").default(
+      "Followed",
+    ),
+    collectionShelf_hotLabel: varchar("collection_shelf_hot_label").default(
+      "Hot",
+    ),
+    collectionShelf_newLabel: varchar("collection_shelf_new_label").default(
+      "New",
+    ),
+    collectionShelf_moreLabel: varchar("collection_shelf_more_label").default(
+      "More",
+    ),
+    collectionShelf_allLabel: varchar("collection_shelf_all_label").default(
+      "All Followed",
+    ),
+    processSection_eyebrow: varchar("process_section_eyebrow").default(
+      "Workflow",
+    ),
+    processSection_title: varchar("process_section_title").default(
+      "From creative input to delivery, and then to physical production.",
+    ),
+    entrySection_eyebrow: varchar("entry_section_eyebrow").default(
+      "Entry points",
+    ),
+    entrySection_title: varchar("entry_section_title").default(
+      "Build trust first, then guide users into the workflow.",
+    ),
+    entrySection_text: varchar("entry_section_text").default(
+      "Once visitors understand the product value, they should move naturally into generation, downloads, and print workflows without first decoding internal admin language.",
+    ),
+    faqSection_eyebrow: varchar("faq_section_eyebrow").default("FAQ"),
+    faqSection_title: varchar("faq_section_title").default(
+      "Clarify the product boundary, delivery model, and use cases.",
+    ),
+    updatedAt: timestamp("updated_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+    createdAt: timestamp("created_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
+  },
+  (columns) => [
+    index("homepage_content_hero_hero_header_background_idx").on(
+      columns.hero_headerBackground,
+    ),
+  ],
+);
 
 export const formal_pages_info_pages_summary_cards = pgTable(
   "formal_pages_info_pages_summary_cards",
@@ -5493,7 +5514,12 @@ export const relations_homepage_content_faq = relations(
 );
 export const relations_homepage_content = relations(
   homepage_content,
-  ({ many }) => ({
+  ({ one, many }) => ({
+    hero_headerBackground: one(media, {
+      fields: [homepage_content.hero_headerBackground],
+      references: [media.id],
+      relationName: "hero_headerBackground",
+    }),
     featuredWorks: many(homepage_content_featured_works, {
       relationName: "featuredWorks",
     }),

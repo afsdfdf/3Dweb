@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import type { CSSProperties } from "react";
 import { useEffect, useRef, useState } from "react";
 import { GenerateCtaButton } from "@/components/ui-lab/action-buttons";
 import {
@@ -15,6 +16,18 @@ type ModeTabsProps = {
     showTextState: boolean;
     onImageMode: () => void;
     onTextMode: () => void;
+};
+
+type Frame12877Props = {
+    heroHeaderBackgroundSrc?: null | string;
+};
+
+type Frame12877Style = CSSProperties & {
+    "--home-hero-header-background"?: string;
+};
+
+const toCSSImageURL = (value: string) => {
+    return `url("${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}")`;
 };
 
 const ModeTabs = ({ showTextState, onImageMode, onTextMode }: ModeTabsProps) => (
@@ -77,7 +90,7 @@ const ModeTabs = ({ showTextState, onImageMode, onTextMode }: ModeTabsProps) => 
         </button>
     </div>
 );
-const Frame12877 = () => {
+const Frame12877 = ({ heroHeaderBackgroundSrc }: Frame12877Props) => {
     const router = useRouter();
     const [showProgressState, setShowProgressState] = useState(false);
     const [showTextState, setShowTextState] = useState(false);
@@ -89,6 +102,9 @@ const Frame12877 = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const promptTextareaRef = useRef<HTMLTextAreaElement>(null);
     const isTextMode = showTextState || showPromptState || showInputState;
+    const heroStyle: Frame12877Style | undefined = heroHeaderBackgroundSrc
+        ? { "--home-hero-header-background": toCSSImageURL(heroHeaderBackgroundSrc) }
+        : undefined;
 
     useEffect(() => {
         if (promptEditing) {
@@ -151,7 +167,7 @@ const Frame12877 = () => {
 
     return (
         <div className={styles.scope}>
-        <div className="scroll-container">
+        <div className="scroll-container" style={heroStyle}>
             <div id="1_2877" className="Pixso-frame-1_2877">
                 <div id="1_2878" className="Pixso-vector-1_2878"></div>
                 <div id="1_2879" className="Pixso-group-1_2879">

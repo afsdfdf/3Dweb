@@ -19,18 +19,20 @@ export type NavigationPromotionContent = {
   offerText: string
 }
 
+export type MarketingMediaAsset = {
+  alt?: null | string
+  filename?: null | string
+  publicAccess?: boolean | null
+  purpose?: null | string
+  thumbnailURL?: null | string
+  url?: null | string
+}
+
 export type FooterContent = {
   aboutEyebrow: string
   aboutText: string
   aboutTitle: string
-  brandLogo?: null | number | {
-    alt?: null | string
-    filename?: null | string
-    publicAccess?: boolean | null
-    purpose?: null | string
-    thumbnailURL?: null | string
-    url?: null | string
-  }
+  brandLogo?: null | number | MarketingMediaAsset
   brandLogoAlt?: null | string
   brandSummary?: null | string
   directionEyebrow: string
@@ -147,6 +149,7 @@ export type MarketingHomepageContent = {
   }[]
   hero: {
     eyebrow: string
+    headerBackground?: null | number | MarketingMediaAsset
     primaryCTA: {
       href: string
       label: string

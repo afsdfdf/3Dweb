@@ -43,7 +43,7 @@ background-color: #252126;
         width: 100%;
 height: calc(100% + 2px);
 background-color: #252126;
-background-image: url(/home-test-assets/images/Rectangle_2_background.webp);
+background-image: var(--home-hero-header-background, url(/home-test-assets/images/home-hero-header-background.jpg));
 background-size: 100% 100%;
 background-repeat: no-repeat;
 position: absolute;

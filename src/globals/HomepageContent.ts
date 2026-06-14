@@ -3,6 +3,7 @@ import type { GlobalConfig } from 'payload'
 import { defaultHomepageContent } from '@/app/(frontend)/_lib/marketing-content'
 import { isStaff } from '@/access'
 import { adminTextKey } from '@/lib/adminText'
+import { buildGuestReadableMediaWhere } from '@/lib/mediaVisibility'
 
 export const HomepageContent: GlobalConfig = {
   slug: 'homepage-content',
@@ -23,6 +24,16 @@ export const HomepageContent: GlobalConfig = {
         { name: 'eyebrow', type: 'text', defaultValue: defaultHomepageContent.hero.eyebrow, label: 'Eyebrow' },
         { name: 'title', type: 'text', defaultValue: defaultHomepageContent.hero.title, label: 'Title' },
         { name: 'subtitle', type: 'textarea', defaultValue: defaultHomepageContent.hero.subtitle, label: 'Subtitle' },
+        {
+          name: 'headerBackground',
+          type: 'upload',
+          relationTo: 'media',
+          label: 'Header background',
+          admin: {
+            description: 'Optional override for the homepage hero header background. Choose preview or public media for anonymous visitors.',
+          },
+          filterOptions: () => buildGuestReadableMediaWhere(),
+        },
         {
           name: 'primaryCTA',
           type: 'group',

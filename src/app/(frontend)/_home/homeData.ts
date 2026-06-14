@@ -111,6 +111,7 @@ export type HomeData = {
     siteDescription: string
     supportEmail: string
   }
+  heroHeaderBackgroundSrc?: null | string
   inspirationFilter: HomeInspirationFilter | 'all'
   inspirationItems: HomeInspirationItem[]
   inspirationPagination: {
@@ -185,6 +186,15 @@ const getImageURL = (value: unknown) => {
   const url = typeof value.url === 'string' && value.url ? value.url : null
 
   return thumbnailURL || url
+}
+
+const getOriginalImageURL = (value: unknown) => {
+  if (!isRecord(value)) return null
+
+  const url = typeof value.url === 'string' && value.url ? value.url : null
+  const thumbnailURL = typeof value.thumbnailURL === 'string' && value.thumbnailURL ? value.thumbnailURL : null
+
+  return url || thumbnailURL
 }
 
 const getCallbackThumbnailURL = (model: ModelLike) => {
@@ -672,6 +682,10 @@ export async function getHomeData(args: HomeDataArgs = {}): Promise<HomeData> {
       imageSrc: item.imageSrc as string,
       title: item.title,
     }))
+    const heroHeaderBackgroundSrc = await resolveMediaAccessURL(
+      payload,
+      getOriginalImageURL(marketing.homepageContent.hero?.headerBackground),
+    )
 
     return {
       featuredItems:
@@ -692,6 +706,7 @@ export async function getHomeData(args: HomeDataArgs = {}): Promise<HomeData> {
         siteDescription: marketing.siteSettings.siteDescription || 'An AI 3D product platform for character creation, asset management, and print fulfillment.',
         supportEmail: marketing.siteSettings.supportEmail || 'service@thornstavern.com',
       },
+      heroHeaderBackgroundSrc,
       inspirationFilter: 'all',
       inspirationItems: paginatedModels.items.filter((item) => Boolean(item.imageSrc)),
       inspirationPagination: paginatedModels.pagination,
@@ -727,6 +742,7 @@ export async function getHomeData(args: HomeDataArgs = {}): Promise<HomeData> {
         siteDescription: defaultSiteSettings.siteDescription,
         supportEmail: defaultSiteSettings.supportEmail,
       },
+      heroHeaderBackgroundSrc: null,
       inspirationFilter: 'all',
       inspirationItems: [],
       inspirationPagination: emptyPagination(inspirationLimit),
