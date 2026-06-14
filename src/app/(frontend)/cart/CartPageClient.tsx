@@ -137,7 +137,9 @@ export default function CartPageClient() {
                           <div className={styles.priceBadge}>
                             <strong>{formatPrice(item.discountedPrice)}</strong>
                           </div>
-                          <del>{formatPrice(item.originalPrice)}</del>
+                          {item.originalPrice > item.discountedPrice ? (
+                            <del>{formatPrice(item.originalPrice)}</del>
+                          ) : null}
                         </div>
 
                         <div className={styles.quantityStepper} aria-label={`Quantity for ${item.title}`}>

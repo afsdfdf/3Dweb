@@ -20,6 +20,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { PrintOrderDialog } from "../_components/PrintOrderDialog";
 import { addModelToCart } from "../_lib/cartStorage";
+import { printBasePrice, printBaseServiceLabel } from "../_lib/printPricing";
 
 const ModelViewer = dynamic(
   () => import("../_components/ModelViewer").then((m) => m.ModelViewer),
@@ -537,13 +538,15 @@ export default function ModelDetailNative({
   };
 
   const handleAddToCart = () => {
+    // Use the real base print price (Standard + Plastic) from the shared pricing
+    // source instead of a placeholder, so the cart matches the print dialog.
     addModelToCart({
-      discountedPrice: 22.5,
+      discountedPrice: printBasePrice,
       imageSrc: activeModel.imageSrc,
       modelId: activeModel.id,
-      originalPrice: 25,
+      originalPrice: printBasePrice,
       quantity: 1,
-      serviceType: "3D Printing Service",
+      serviceType: printBaseServiceLabel,
       tags: activeModel.tags,
       title: activeModel.title,
     });
@@ -640,7 +643,19 @@ export default function ModelDetailNative({
         </section>
 
         <section className={styles.mobileActions} aria-label="Model actions">
-          <button className={styles.mobilePrimaryAction} onClick={handleDownloadConfirm} type="button">
+          <button
+            className={styles.mobilePrimaryAction}
+            onClick={() => {
+              // Charged downloads must confirm before spending credits, mirroring
+              // the desktop flow. Free downloads proceed immediately.
+              if (downloadIsCharged) {
+                setShowDownloadConfirm(true);
+              } else {
+                void handleDownloadConfirm();
+              }
+            }}
+            type="button"
+          >
             Download GLB
           </button>
           {canPrintActiveModel ? (
@@ -657,6 +672,59 @@ export default function ModelDetailNative({
           <button onClick={handleAddToCart} type="button">
             Add To Cart
           </button>
+          {showDownloadConfirm ? (
+            <div
+              aria-label="Confirm download"
+              aria-modal="true"
+              role="dialog"
+              style={{
+                background: "#1b1b20",
+                border: "1px solid #d7a45b",
+                borderRadius: 8,
+                color: "#ededee",
+                display: "grid",
+                gap: 12,
+                marginTop: 12,
+                padding: 16,
+              }}
+            >
+              <p style={{ fontSize: 14, lineHeight: 1.5, margin: 0 }}>{downloadMessage}</p>
+              <div style={{ display: "flex", gap: 12 }}>
+                <button
+                  onClick={() => setShowDownloadConfirm(false)}
+                  style={{
+                    background: "transparent",
+                    border: "1px solid #4a4a52",
+                    borderRadius: 6,
+                    color: "#ededee",
+                    flex: 1,
+                    padding: "10px 12px",
+                  }}
+                  type="button"
+                >
+                  Cancel
+                </button>
+                <button
+                  disabled={isDownloading}
+                  onClick={() => {
+                    if (!isDownloading) void handleDownloadConfirm();
+                  }}
+                  style={{
+                    background: "#c85b23",
+                    border: "none",
+                    borderRadius: 6,
+                    color: "#fff",
+                    flex: 1,
+                    fontWeight: 600,
+                    padding: "10px 12px",
+                  }}
+                  type="button"
+                >
+                  {isDownloading ? "Working…" : "Confirm download"}
+                </button>
+              </div>
+            </div>
+          ) : null}
         </section>
         {visibleStatus ? <div className={styles.mobileStatus}>{visibleStatus}</div> : null}
 

@@ -6,6 +6,7 @@ import { getRequestRateLimitKey } from '@/lib/requestSecurity'
 type RateLimitScope =
   | 'auth-email'
   | 'auth-login'
+  | 'auth-password-change'
   | 'auth-register'
   | 'auth-reset-password'
   | 'account-model-write'
@@ -48,6 +49,12 @@ const scopeConfigs: Record<RateLimitScope, ScopeConfig> = {
     fallbackWindowMs: 10 * 60 * 1000,
     limitEnv: 'AUTH_LOGIN_RATE_LIMIT_MAX',
     windowEnv: 'AUTH_LOGIN_RATE_LIMIT_WINDOW_MS',
+  },
+  'auth-password-change': {
+    fallbackLimit: 5,
+    fallbackWindowMs: 10 * 60 * 1000,
+    limitEnv: 'AUTH_PASSWORD_CHANGE_RATE_LIMIT_MAX',
+    windowEnv: 'AUTH_PASSWORD_CHANGE_RATE_LIMIT_WINDOW_MS',
   },
   'auth-register': {
     fallbackLimit: 5,
@@ -186,6 +193,7 @@ const scopeConfigs: Record<RateLimitScope, ScopeConfig> = {
 const scopeMessages: Record<RateLimitScope, string> = {
   'auth-email': 'Too many email verification requests. Please try again later.',
   'auth-login': 'Too many login attempts. Please try again later.',
+  'auth-password-change': 'Too many password change attempts. Please try again later.',
   'auth-register': 'Too many registration attempts. Please try again later.',
   'auth-reset-password': 'Too many password reset attempts. Please try again later.',
   'account-model-write': 'Too many model updates. Please try again later.',
