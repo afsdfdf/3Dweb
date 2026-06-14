@@ -4,6 +4,7 @@ import { InsufficientCreditsError, refundDownloadCredits, spendDownloadCredits }
 import { queryPostgres } from '@/lib/postgres'
 import { isAllowedRemoteAssetURL } from '@/lib/remoteAssetSecurity'
 import { getMediaAccessURL } from '@/lib/mediaAccessURL'
+import { isGuestReadableMedia } from '@/lib/mediaVisibility'
 import { ensurePayloadRequestUser } from '@/lib/payloadAuthFallback'
 
 type ModelDownloadEndpointTestHooks = {
@@ -30,6 +31,8 @@ const isRecord = (value: unknown): value is Record<string, unknown> => {
 type ResolvedModelFormatAsset = {
   filename: null | string
   mimeType: null | string
+  publicAccess?: boolean | null
+  purpose?: null | string
   url: null | string
 }
 
@@ -47,6 +50,17 @@ function readPositiveNumber(value: unknown) {
   const numeric = Number(value)
   if (!Number.isFinite(numeric) || numeric <= 0) return 0
   return numeric
+}
+
+function isPublicDownloadAssetGuestReadable(asset: ResolvedModelFormatAsset) {
+  if (!('publicAccess' in asset) && !('purpose' in asset)) {
+    return true
+  }
+
+  return isGuestReadableMedia({
+    publicAccess: asset.publicAccess,
+    purpose: asset.purpose,
+  })
 }
 
 async function getDownloadAccessPolicy(req: PayloadRequest): Promise<DownloadAccessPolicy> {
@@ -74,6 +88,8 @@ async function resolveModelFormatAsset(modelId: number, format: string): Promise
       select
         media.filename as "filename",
         media.mime_type as "mimeType",
+        media.public_access as "publicAccess",
+        media.purpose,
         media.url
       from models_formats mf
       left join media on media.id = mf.file_id
@@ -155,6 +171,10 @@ export const modelDownloadEndpoint = {
         const publicURL = publicFormatAsset?.url
 
         if (!publicFormatAsset) return unauthorized()
+
+        if (!isPublicDownloadAssetGuestReadable(publicFormatAsset)) {
+          return Response.json({ message: 'No public downloadable model asset is available for this format.' }, { status: 404 })
+        }
 
         if (!publicURL) {
           return Response.json({ message: 'No downloadable model asset is available for this format.' }, { status: 404 })

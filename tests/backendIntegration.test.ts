@@ -1366,3 +1366,56 @@ test('model download allows anonymous public downloads when charging is disabled
     __setModelDownloadEndpointTestHooks(null)
   }
 })
+
+test('model download blocks anonymous public downloads when the media is not guest-readable', async () => {
+  let findByIDCalls = 0
+  let accessURLCalls = 0
+
+  __setModelDownloadEndpointTestHooks({
+    getMediaAccessURL: async ({ url }) => {
+      accessURLCalls += 1
+      return url
+    },
+    isAllowedRemoteAssetURL: async () => true,
+    resolvePublicModelFormatAsset: async () => ({
+      filename: 'private.glb',
+      mimeType: 'model/gltf-binary',
+      publicAccess: false,
+      purpose: 'asset',
+      url: 'https://cdn.example.com/private.glb',
+    }),
+  })
+
+  try {
+    const response = await modelDownloadEndpoint.handler({
+      payload: {
+        findByID: async () => {
+          findByIDCalls += 1
+          throw new Error('anonymous public fast path should not fall through to model reads')
+        },
+        findGlobal: async () => ({
+          modelAccessPolicy: {
+            chargeDownloadCredits: false,
+            downloadCredits: 8,
+          },
+        }),
+        logger: createLogger(),
+      },
+      query: {
+        format: 'glb',
+      },
+      routeParams: {
+        modelId: '45',
+      },
+    } as never)
+
+    const body = await response.json()
+
+    assert.equal(response.status, 404)
+    assert.equal(findByIDCalls, 0)
+    assert.equal(accessURLCalls, 0)
+    assert.match(body.message, /public.*asset/i)
+  } finally {
+    __setModelDownloadEndpointTestHooks(null)
+  }
+})

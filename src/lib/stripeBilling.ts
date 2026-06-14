@@ -13,12 +13,18 @@ import {
   type SubscriptionPlanKey,
 } from '@/lib/subscriptionPlans'
 import { getStripeClient } from '@/lib/stripeGateway'
+import { getKVStore, type KVStore } from '@/lib/kvStore'
 
 const INTERNAL_ACCESS = true
 const SUBSCRIPTION_CURRENCY = 'usd'
+const STRIPE_PRICE_ROTATION_LOCK_TTL_MS = 30 * 1000
+const STRIPE_PRICE_ROTATION_RETRY_ATTEMPTS = 8
+const STRIPE_PRICE_ROTATION_RETRY_MS = 150
 
 type StripeBillingTestHooks = {
+  getKVStore?: typeof getKVStore
   getStripeClient?: typeof getStripeClient
+  wait?: (ms: number) => Promise<void>
 }
 
 let stripeBillingTestHooks: StripeBillingTestHooks | null = null
@@ -29,6 +35,14 @@ export function __setStripeBillingTestHooks(hooks: StripeBillingTestHooks | null
 
 const getBillingStripeClient = () => {
   return stripeBillingTestHooks?.getStripeClient?.() ?? getStripeClient()
+}
+
+const getBillingKVStore = () => {
+  return stripeBillingTestHooks?.getKVStore?.() ?? getKVStore()
+}
+
+const waitForStripeBilling = (ms: number) => {
+  return stripeBillingTestHooks?.wait?.(ms) ?? new Promise<void>((resolve) => setTimeout(resolve, ms))
 }
 
 const getUserStringField = (req: PayloadRequest, key: 'email' | 'fullName' | 'phone' | 'stripeCustomerId') => {
@@ -169,6 +183,51 @@ const stripePriceMatchesPlan = (
   )
 }
 
+async function findStripeLookupKeyPrice(stripe: Stripe, lookupKey: string) {
+  const matched = await stripe.prices.list({
+    limit: 1,
+    lookup_keys: [lookupKey],
+  })
+
+  return matched.data[0] ?? null
+}
+
+async function waitForMatchingStripePlanPrice(args: {
+  billingCycle: SubscriptionBillingCycle
+  lookupKey: string
+  plan: SubscriptionPlanDefinition
+  stripe: Stripe
+}) {
+  const { billingCycle, lookupKey, plan, stripe } = args
+
+  for (let attempt = 0; attempt < STRIPE_PRICE_ROTATION_RETRY_ATTEMPTS; attempt += 1) {
+    await waitForStripeBilling(STRIPE_PRICE_ROTATION_RETRY_MS)
+
+    const current = await findStripeLookupKeyPrice(stripe, lookupKey)
+    if (current && stripePriceMatchesPlan(current, plan, billingCycle)) {
+      return current
+    }
+  }
+
+  return null
+}
+
+async function acquireStripePriceRotationLock(kvStore: KVStore, lookupKey: string) {
+  const lockKey = `stripe-price-rotation:${lookupKey}`
+  const lockValue = `${Date.now()}:${Math.random().toString(36).slice(2)}`
+
+  const acquired = await kvStore.setIfAbsent(lockKey, lockValue, STRIPE_PRICE_ROTATION_LOCK_TTL_MS)
+
+  return {
+    acquired,
+    release: async () => {
+      if (acquired) {
+        await kvStore.delete(lockKey).catch(() => null)
+      }
+    },
+  }
+}
+
 async function createStripePlanProduct(
   stripe: Stripe,
   plan: SubscriptionPlanDefinition,
@@ -189,40 +248,65 @@ export async function ensureStripePlanPrice(
 ) {
   const stripe = getBillingStripeClient()
   const pricing = getSubscriptionPlanPricing(plan, billingCycle)
-  const matched = await stripe.prices.list({
-    limit: 1,
-    lookup_keys: [pricing.lookupKey],
-  })
-
-  const current = matched.data[0] ?? null
+  const current = await findStripeLookupKeyPrice(stripe, pricing.lookupKey)
   if (current && stripePriceMatchesPlan(current, plan, billingCycle)) {
     return current
   }
 
-  const productId = getPriceProductID(current) ?? (await createStripePlanProduct(stripe, plan, billingCycle)).id
-  const createParams: Stripe.PriceCreateParams = {
-    currency: SUBSCRIPTION_CURRENCY,
-    lookup_key: pricing.lookupKey,
-    metadata: getStripePlanCycleMetadata(plan, billingCycle),
-    nickname: `${plan.name} ${pricing.intervalLabel}ly`,
-    product: productId,
-    recurring: {
-      interval: pricing.interval,
-    },
-    unit_amount: getPlanUnitAmount(plan, billingCycle),
+  const kvStore = getBillingKVStore()
+  let lock = await acquireStripePriceRotationLock(kvStore, pricing.lookupKey)
+
+  if (!lock.acquired) {
+    const settledPrice = await waitForMatchingStripePlanPrice({
+      billingCycle,
+      lookupKey: pricing.lookupKey,
+      plan,
+      stripe,
+    })
+
+    if (settledPrice) {
+      return settledPrice
+    }
+
+    lock = await acquireStripePriceRotationLock(kvStore, pricing.lookupKey)
+    if (!lock.acquired) {
+      throw new Error(`Stripe Price rotation for ${pricing.lookupKey} is already in progress. Please retry checkout.`)
+    }
   }
 
-  if (current) {
-    createParams.transfer_lookup_key = true
+  try {
+    const latest = await findStripeLookupKeyPrice(stripe, pricing.lookupKey)
+    if (latest && stripePriceMatchesPlan(latest, plan, billingCycle)) {
+      return latest
+    }
+
+    const productId = getPriceProductID(latest) ?? (await createStripePlanProduct(stripe, plan, billingCycle)).id
+    const createParams: Stripe.PriceCreateParams = {
+      currency: SUBSCRIPTION_CURRENCY,
+      lookup_key: pricing.lookupKey,
+      metadata: getStripePlanCycleMetadata(plan, billingCycle),
+      nickname: `${plan.name} ${pricing.intervalLabel}ly`,
+      product: productId,
+      recurring: {
+        interval: pricing.interval,
+      },
+      unit_amount: getPlanUnitAmount(plan, billingCycle),
+    }
+
+    if (latest) {
+      createParams.transfer_lookup_key = true
+    }
+
+    const replacement = await stripe.prices.create(createParams)
+
+    if (latest?.active && latest.id !== replacement.id) {
+      await stripe.prices.update(latest.id, { active: false }).catch(() => null)
+    }
+
+    return replacement
+  } finally {
+    await lock.release()
   }
-
-  const replacement = await stripe.prices.create(createParams)
-
-  if (current?.active && current.id !== replacement.id) {
-    await stripe.prices.update(current.id, { active: false }).catch(() => null)
-  }
-
-  return replacement
 }
 
 export async function createSubscriptionCheckout(args: {

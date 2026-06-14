@@ -24,6 +24,7 @@ Active product surfaces:
 - Supabase Storage is the only runtime object-storage direction. Do not restore AWS S3 runtime media helpers, signing code, or plugins.
 - `PAYLOAD_SECRET`, `DATABASE_URL`, `NEXT_PUBLIC_APP_URL` or `CANONICAL_APP_URL`, Supabase service settings, Stripe keys, and provider keys are deployment configuration, not frontend source.
 - Auth and business emails build absolute links through `getCanonicalAppURL()`. In production, set `CANONICAL_APP_URL` and `NEXT_PUBLIC_APP_URL` to the public domain; missing or invalid values should fail instead of sending localhost links.
+- Redis/KV is optional unless `REQUIRE_REDIS_IN_PRODUCTION=true`. Without that flag, production can run on in-memory KV for single-instance/simple deployments; with the flag, `REDIS_URL` is required so rate limits, webhook replay guards, and Stripe price-rotation locks do not silently downgrade.
 - `.env` and local env backups are not versioned. Active examples are `.env.example`, `.env.vercel.preview.example`, and `.env.vercel.production.example`.
 
 ## Payload Rules
@@ -155,6 +156,7 @@ Do not add Next route handlers that shadow Payload REST roots such as `/api/medi
 - Public model preview means anonymous model read access, not admin access.
 - Guest-readable media requires `purpose = preview` or `publicAccess = true`.
 - Public `models.visibility = public` does not make linked private media public.
+- Anonymous model viewer/download endpoints must only serve guest-readable media and must not fall through to deep private media reads when the public fast path finds no public asset.
 - Workbench user libraries stay scoped to the current user. Other users' public models may be used as references, not editable personal assets.
 - Direct Payload REST writes are blocked for service-owned social/engagement/task-event surfaces: `model-likes`, `model-favorites`, `model-comments`, `user-follows`, `engagement-views`, and `task-events`.
 - Mutation endpoints must keep origin checks and rate limits.

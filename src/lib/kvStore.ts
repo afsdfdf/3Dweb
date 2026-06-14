@@ -2,7 +2,8 @@
  * Shared KV storage abstraction used by rate limits, token revocation, and webhook replay protection.
  *
  * Default behavior uses in-memory storage. Production deployments can switch to Redis
- * through REDIS_URL.
+ * through REDIS_URL. Set REQUIRE_REDIS_IN_PRODUCTION=true to fail closed when Redis
+ * is required for multi-instance safety.
  *
  * Design principles:
  * - keep the interface minimal: get / set / delete / has / cleanup
@@ -176,6 +177,10 @@ export class RedisKVStore implements KVStore {
 
 let _instance: KVStore | null = null
 
+function shouldRequireRedisInProduction() {
+  return process.env.NODE_ENV === 'production' && process.env.REQUIRE_REDIS_IN_PRODUCTION === 'true'
+}
+
 /**
  * Return the shared KV store instance.
  * - without REDIS_URL: use the in-memory implementation
@@ -187,6 +192,11 @@ export function getKVStore(): KVStore {
   if (_instance) return _instance
 
   const redisUrl = process.env.REDIS_URL?.trim()
+  const redisRequired = shouldRequireRedisInProduction()
+  if (!redisUrl && redisRequired) {
+    throw new Error('REDIS_URL is required when REQUIRE_REDIS_IN_PRODUCTION=true in production.')
+  }
+
   if (redisUrl) {
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -207,7 +217,15 @@ export function getKVStore(): KVStore {
       })
       _instance = new RedisKVStore(client)
       return _instance
-    } catch {
+    } catch (error) {
+      if (redisRequired) {
+        throw new Error(
+          `REDIS_URL could not be initialized while REQUIRE_REDIS_IN_PRODUCTION=true: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        )
+      }
+
       console.warn(
         '[kvStore] REDIS_URL is set but ioredis is not installed. Falling back to memory store. Run `pnpm add ioredis` to enable Redis-backed storage.',
       )

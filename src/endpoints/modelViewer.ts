@@ -5,6 +5,7 @@ import { getModelGLBSourceURL } from "@/lib/modelAssetURL";
 import { queryPostgres } from "@/lib/postgres";
 import { isAllowedRemoteAssetURL } from "@/lib/remoteAssetSecurity";
 import { getMediaAccessURL } from "@/lib/mediaAccessURL";
+import { isGuestReadableMedia } from "@/lib/mediaVisibility";
 import { ensurePayloadRequestUser } from "@/lib/payloadAuthFallback";
 
 const defaultMimeTypeByFormat: Record<string, string> = {
@@ -144,8 +145,42 @@ type ResolvedModelFormatAsset = {
   mimeType: null | string;
   optimizedFileId?: number | null;
   optimizedMimeType?: null | string;
+  optimizedPublicAccess?: boolean | null;
+  optimizedPurpose?: null | string;
   optimizedUrl?: null | string;
+  publicAccess?: boolean | null;
+  purpose?: null | string;
   url: null | string;
+};
+
+const hasPublicAssetVisibilityMetadata = (
+  asset: ResolvedModelFormatAsset,
+  kind: "optimized" | "original",
+) => {
+  return kind === "optimized"
+    ? "optimizedPublicAccess" in asset || "optimizedPurpose" in asset
+    : "publicAccess" in asset || "purpose" in asset;
+};
+
+const isPublicFormatAssetGuestReadable = (
+  asset: ResolvedModelFormatAsset,
+  kind: "optimized" | "original",
+) => {
+  if (!hasPublicAssetVisibilityMetadata(asset, kind)) {
+    return true;
+  }
+
+  return isGuestReadableMedia(
+    kind === "optimized"
+      ? {
+          publicAccess: asset.optimizedPublicAccess,
+          purpose: asset.optimizedPurpose,
+        }
+      : {
+          publicAccess: asset.publicAccess,
+          purpose: asset.purpose,
+        },
+  );
 };
 
 async function resolvePublicModelFormatAsset(
@@ -157,7 +192,11 @@ async function resolvePublicModelFormatAsset(
     mimeType: string | null;
     optimizedFileId: number | null;
     optimizedMimeType: string | null;
+    optimizedPublicAccess: boolean | null;
+    optimizedPurpose: string | null;
     optimizedUrl: string | null;
+    publicAccess: boolean | null;
+    purpose: string | null;
     url: string | null;
   }>(
     `
@@ -166,7 +205,11 @@ async function resolvePublicModelFormatAsset(
         media.mime_type as "mimeType",
         preview_media.id as "optimizedFileId",
         preview_media.mime_type as "optimizedMimeType",
+        preview_media.public_access as "optimizedPublicAccess",
+        preview_media.purpose as "optimizedPurpose",
         preview_media.url as "optimizedUrl",
+        media.public_access as "publicAccess",
+        media.purpose,
         media.url
       from models
       inner join models_formats mf on mf._parent_id = models.id
@@ -345,14 +388,18 @@ export const modelViewerEndpoint = {
         : normalizeText(publicFormatAsset?.optimizedUrl);
       const originalSourceURL = normalizeText(publicFormatAsset?.url);
       const publicCandidates = [
-        optimizedSourceURL
+        optimizedSourceURL &&
+        publicFormatAsset &&
+        isPublicFormatAssetGuestReadable(publicFormatAsset, "optimized")
           ? {
               kind: "optimized",
               mimeType: publicFormatAsset?.optimizedMimeType,
               sourceURL: optimizedSourceURL,
             }
           : null,
-        originalSourceURL
+        originalSourceURL &&
+        publicFormatAsset &&
+        isPublicFormatAssetGuestReadable(publicFormatAsset, "original")
           ? {
               kind: "original",
               mimeType: publicFormatAsset?.mimeType,
@@ -364,6 +411,14 @@ export const modelViewerEndpoint = {
         mimeType?: null | string;
         sourceURL: string;
       }>;
+
+      if (publicCandidates.length === 0) {
+        return Response.json(
+          { message: "No public renderable GLB asset is available for this model." },
+          { status: 404 },
+        );
+      }
+
       let blockedPublicCandidate = false;
 
       for (const publicCandidate of publicCandidates) {

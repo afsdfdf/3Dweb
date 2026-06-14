@@ -1,7 +1,7 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type KeyboardEvent as ReactKeyboardEvent, type RefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 
@@ -468,9 +468,11 @@ function CartIconButton() {
 }
 
 function SubscriptionPromotionButton({
+  buttonRef,
   onClick,
   promotion,
 }: {
+  buttonRef?: RefObject<HTMLButtonElement | null>;
   onClick: () => void;
   promotion: ResolvedTopNavigationPromotion;
 }) {
@@ -484,6 +486,7 @@ function SubscriptionPromotionButton({
         aria-label={promotion.buttonAriaLabel}
         className={styles.subscriptionButton}
         onClick={onClick}
+        ref={buttonRef}
         type="button"
       >
         <img alt="" aria-hidden="true" decoding="async" src={`${assetBase}/icon-crown-subscribe.png`} />
@@ -493,6 +496,23 @@ function SubscriptionPromotionButton({
   );
 }
 
+const focusableDialogSelector = [
+  "a[href]",
+  "button:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  '[tabindex]:not([tabindex="-1"])',
+].join(",");
+
+function getFocusableDialogElements(root: HTMLElement | null) {
+  if (!root) return [];
+
+  return Array.from(root.querySelectorAll<HTMLElement>(focusableDialogSelector)).filter((element) => {
+    return !element.hasAttribute("disabled") && element.getAttribute("aria-hidden") !== "true";
+  });
+}
+
 function SubscriptionOfferDialog({
   authenticated,
   initialPaymentProviderNotice = "",
@@ -500,6 +520,7 @@ function SubscriptionOfferDialog({
   initialStripeSubscriptionsEnabled = true,
   onOpenChange,
   open,
+  restoreFocusRef,
 }: {
   authenticated: boolean;
   initialPaymentProviderNotice?: null | string;
@@ -507,8 +528,11 @@ function SubscriptionOfferDialog({
   initialStripeSubscriptionsEnabled?: boolean;
   onOpenChange: (open: boolean) => void;
   open: boolean;
+  restoreFocusRef?: RefObject<HTMLElement | null>;
 }) {
   const { openAuthModal } = useAuthModal();
+  const dialogPanelRef = useRef<HTMLDivElement>(null);
+  const dialogTitleId = "top-navigation-subscription-dialog-title";
   const [mounted, setMounted] = useState(false);
   const [loadedPlans, setLoadedPlans] = useState<null | TopNavigationSubscriptionPlan[]>(null);
   const [hasRequestedPlans, setHasRequestedPlans] = useState(false);
@@ -571,6 +595,48 @@ function SubscriptionOfferDialog({
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [loadingPlanKey, onOpenChange, open]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const previousActiveElement = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const explicitRestoreTarget = restoreFocusRef?.current || null;
+    const focusFrame = window.requestAnimationFrame(() => {
+      const focusableElements = getFocusableDialogElements(dialogPanelRef.current);
+      (focusableElements[0] || dialogPanelRef.current)?.focus();
+    });
+
+    return () => {
+      window.cancelAnimationFrame(focusFrame);
+      const restoreTarget = explicitRestoreTarget || previousActiveElement;
+      restoreTarget?.focus?.();
+    };
+  }, [open, restoreFocusRef]);
+
+  const handleDialogKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== "Tab") return;
+
+    const focusableElements = getFocusableDialogElements(dialogPanelRef.current);
+    if (focusableElements.length === 0) {
+      event.preventDefault();
+      dialogPanelRef.current?.focus();
+      return;
+    }
+
+    const firstElement = focusableElements[0];
+    const lastElement = focusableElements[focusableElements.length - 1];
+
+    if (event.shiftKey && document.activeElement === firstElement) {
+      event.preventDefault();
+      lastElement.focus();
+      return;
+    }
+
+    if (!event.shiftKey && document.activeElement === lastElement) {
+      event.preventDefault();
+      firstElement.focus();
+    }
+  };
 
   const panelPlans = useMemo<SubscriptionPanelPlan[]>(() => {
     return visiblePlans.map((plan) => {
@@ -667,9 +733,10 @@ function SubscriptionOfferDialog({
 
   return createPortal(
     <div
-      aria-label="Subscription offers"
+      aria-labelledby={dialogTitleId}
       aria-modal="true"
       className={styles.subscriptionDialogOverlay}
+      onKeyDown={handleDialogKeyDown}
       onMouseDown={(event) => {
         if (event.target === event.currentTarget && !loadingPlanKey) {
           onOpenChange(false);
@@ -677,7 +744,10 @@ function SubscriptionOfferDialog({
       }}
       role="dialog"
     >
-      <div className={styles.subscriptionDialogPanel}>
+      <div className={styles.subscriptionDialogPanel} ref={dialogPanelRef} tabIndex={-1}>
+        <h2 className={styles.srOnly} id={dialogTitleId}>
+          Subscription offers
+        </h2>
         <SubscriptionPanel
           className={styles.subscriptionDialogFrame}
           billingCycle={billingCycle}
@@ -745,6 +815,7 @@ export function TopNavigation({
   userName = null,
 }: TopNavigationProps) {
   const { closeAuthModal } = useAuthModal();
+  const subscriptionPromotionButtonRef = useRef<HTMLButtonElement>(null);
   const userMenuTriggerRef = useRef<HTMLDivElement>(null);
   const [loadedDialogProducts, setLoadedDialogProducts] = useState<null | CreditTopupProduct[]>(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -799,13 +870,14 @@ export function TopNavigation({
       </div>
       {showSubscriptionPromotion && resolvedSubscriptionPromotion ? (
         <SubscriptionPromotionButton
+          buttonRef={subscriptionPromotionButtonRef}
           onClick={() => setIsSubscriptionDialogOpen(true)}
           promotion={resolvedSubscriptionPromotion}
         />
       ) : null}
       {user ? (
         <>
-          <button aria-label="Wallet balance" className={styles.wallet} type="button">
+          <button aria-label="Open point redemption" className={styles.wallet} onClick={openCreditTopupDialog} type="button">
             <img alt="" decoding="async" src={`${assetBase}/icon-coin-badge.png`} />
             <span>{displayCredits}</span>
           </button>
@@ -869,6 +941,7 @@ export function TopNavigation({
           initialStripeSubscriptionsEnabled={stripeSubscriptionsEnabled}
           onOpenChange={setIsSubscriptionDialogOpen}
           open={isSubscriptionDialogOpen}
+          restoreFocusRef={subscriptionPromotionButtonRef}
         />
       ) : null}
     </div>

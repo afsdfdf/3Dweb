@@ -21,6 +21,8 @@ const subscriptionsEndpointPath = path.join(rootDir, 'src', 'endpoints', 'subscr
 const payloadConfigPath = path.join(rootDir, 'src', 'payload.config.ts')
 const crownAssetPath = path.join(rootDir, 'public', 'ui-lab', 'top-navigation', 'icon-crown-subscribe.png')
 const homePagePath = path.join(rootDir, 'src', 'app', '(frontend)', 'page.tsx')
+const packageJsonPath = path.join(rootDir, 'package.json')
+const uiMatrixScriptPath = path.join(rootDir, 'scripts', 'audit-ui-matrix.mjs')
 
 test('site settings owns editable top-navigation subscription promotion copy', () => {
   const settingsSource = readFileSync(siteSettingsPath, 'utf8')
@@ -55,6 +57,12 @@ test('top navigation summarizes subscription promotion state and opens the subsc
   assert.doesNotMatch(source, /fallbackSubscriptionPlans/)
   assert.match(source, /openAuthModal\(['"]login['"]\)/)
   assert.match(source, /user\?\.hasActiveSubscription !== true/)
+  assert.match(source, /subscriptionPromotionButtonRef/)
+  assert.match(source, /restoreFocusRef/)
+  assert.match(source, /aria-labelledby/)
+  assert.match(source, /getFocusableDialogElements/)
+  assert.match(source, /handleDialogKeyDown/)
+  assert.match(source, /onClick=\{openCreditTopupDialog\}/)
 
   assert.match(cssSource, /\.subscriptionPromotion/)
   assert.match(cssSource, /\.subscriptionButton/)
@@ -151,4 +159,19 @@ test('subscription status helpers separate checkout blocking from paid entitleme
   assert.equal(hasSubscriptionCreditGrantStatus('trialing'), true)
   assert.equal(hasSubscriptionCreditGrantStatus('past_due'), false)
   assert.equal(hasSubscriptionCreditGrantStatus('incomplete'), false)
+})
+
+test('project provides a formal multi-resolution UI matrix audit script', () => {
+  const packageSource = readFileSync(packageJsonPath, 'utf8')
+
+  assert.match(packageSource, /"audit:ui-matrix"/)
+  assert.equal(existsSync(uiMatrixScriptPath), true)
+
+  const scriptSource = readFileSync(uiMatrixScriptPath, 'utf8')
+  assert.match(scriptSource, /2560[\s\S]*1080/)
+  assert.match(scriptSource, /3440[\s\S]*1440/)
+  assert.match(scriptSource, /\/workbench/)
+  assert.match(scriptSource, /\/model-detail/)
+  assert.match(scriptSource, /scrollWidth/)
+  assert.match(scriptSource, /AUDIT_BASE_URL/)
 })

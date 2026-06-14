@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import { __setStripeBillingTestHooks, ensureStripePlanPrice } from '../src/lib/stripeBilling.ts'
+import { MemoryKVStore } from '../src/lib/kvStore.ts'
 import type { SubscriptionPlanDefinition } from '../src/lib/subscriptionPlans.ts'
 
 const basePlan = {
@@ -187,6 +188,79 @@ test('subscription checkout creates a Stripe product when no lookup-key price ex
     assert.equal(productParams?.name, 'Thorns Tavern Pro Monthly Subscription')
     assert.equal(createPriceParams?.product, 'prod_new')
     assert.equal(createPriceParams?.transfer_lookup_key, undefined)
+  } finally {
+    __setStripeBillingTestHooks(null)
+  }
+})
+
+test('subscription checkout serializes Stripe Price rotation per lookup key', async () => {
+  let createPriceCalls = 0
+  let updatePriceCalls = 0
+  let createdPrice: null | Record<string, unknown> = null
+  const lockStore = new MemoryKVStore()
+  const oldPrice = {
+    active: true,
+    currency: 'usd',
+    id: 'price_old',
+    lookup_key: basePlan.lookupKey,
+    product: 'prod_current',
+    recurring: { interval: 'month' },
+    unit_amount: 4900,
+  }
+  const updatedPlan = {
+    ...basePlan,
+    monthlyPrice: 59,
+  } satisfies SubscriptionPlanDefinition
+
+  const stripe = {
+    prices: {
+      create: async (params: Record<string, unknown>) => {
+        createPriceCalls += 1
+        await Promise.resolve()
+        createdPrice = {
+          active: true,
+          currency: params.currency,
+          id: 'price_new',
+          lookup_key: params.lookup_key,
+          product: params.product,
+          recurring: params.recurring,
+          unit_amount: params.unit_amount,
+        }
+        return createdPrice
+      },
+      list: async () => ({
+        data: [createdPrice || oldPrice],
+      }),
+      update: async (id: string, params: Record<string, unknown>) => {
+        updatePriceCalls += 1
+        return { id, ...params }
+      },
+    },
+    products: {
+      create: async () => {
+        throw new Error('matching old price should provide the product id')
+      },
+    },
+  }
+
+  __setStripeBillingTestHooks({
+    getKVStore: () => lockStore,
+    getStripeClient: () => stripe as never,
+    wait: async () => {
+      await Promise.resolve()
+    },
+  })
+
+  try {
+    const [first, second] = await Promise.all([
+      ensureStripePlanPrice(updatedPlan),
+      ensureStripePlanPrice(updatedPlan),
+    ])
+
+    assert.equal(first.id, 'price_new')
+    assert.equal(second.id, 'price_new')
+    assert.equal(createPriceCalls, 1)
+    assert.equal(updatePriceCalls, 1)
   } finally {
     __setStripeBillingTestHooks(null)
   }

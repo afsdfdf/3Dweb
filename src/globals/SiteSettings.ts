@@ -4,6 +4,12 @@ import { defaultSiteSettings } from '@/app/(frontend)/_lib/marketing-content'
 import { isAdmin, isStaff } from '@/access'
 import { adminTextKey } from '@/lib/adminText'
 import { buildGuestReadableMediaWhere } from '@/lib/mediaVisibility'
+import {
+  validateCurrencyCode,
+  validateNonNegativeCredits,
+  validatePositiveCredits,
+  validatePositivePrice,
+} from '@/lib/payloadValidation'
 
 export const SiteSettings: GlobalConfig = {
   slug: 'site-settings',
@@ -259,6 +265,7 @@ export const SiteSettings: GlobalConfig = {
                       type: 'number',
                       defaultValue: 19,
                       label: 'Monthly price (USD)',
+                      validate: validatePositivePrice('Monthly price'),
                       admin: {
                         description: 'Used for display and for automatic Stripe Price rotation on new subscription checkout sessions.',
                       },
@@ -268,11 +275,18 @@ export const SiteSettings: GlobalConfig = {
                       type: 'number',
                       defaultValue: 182.4,
                       label: 'Yearly price (USD)',
+                      validate: validatePositivePrice('Yearly price'),
                       admin: {
                         description: 'Used for yearly display and automatic Stripe yearly Price rotation on new subscription checkout sessions.',
                       },
                     },
-                    { name: 'creditsPerMonth', type: 'number', defaultValue: 240, label: 'Credits per month' },
+                    {
+                      name: 'creditsPerMonth',
+                      type: 'number',
+                      defaultValue: 240,
+                      label: 'Credits per month',
+                      validate: validatePositiveCredits('Credits per month'),
+                    },
                     {
                       name: 'description',
                       type: 'textarea',
@@ -304,6 +318,7 @@ export const SiteSettings: GlobalConfig = {
                       type: 'number',
                       defaultValue: 49,
                       label: 'Monthly price (USD)',
+                      validate: validatePositivePrice('Monthly price'),
                       admin: {
                         description: 'Used for display and for automatic Stripe Price rotation on new subscription checkout sessions.',
                       },
@@ -313,11 +328,18 @@ export const SiteSettings: GlobalConfig = {
                       type: 'number',
                       defaultValue: 470.4,
                       label: 'Yearly price (USD)',
+                      validate: validatePositivePrice('Yearly price'),
                       admin: {
                         description: 'Used for yearly display and automatic Stripe yearly Price rotation on new subscription checkout sessions.',
                       },
                     },
-                    { name: 'creditsPerMonth', type: 'number', defaultValue: 760, label: 'Credits per month' },
+                    {
+                      name: 'creditsPerMonth',
+                      type: 'number',
+                      defaultValue: 760,
+                      label: 'Credits per month',
+                      validate: validatePositiveCredits('Credits per month'),
+                    },
                     {
                       name: 'description',
                       type: 'textarea',
@@ -349,6 +371,7 @@ export const SiteSettings: GlobalConfig = {
                       type: 'number',
                       defaultValue: 99,
                       label: 'Monthly price (USD)',
+                      validate: validatePositivePrice('Monthly price'),
                       admin: {
                         description: 'Used for display and for automatic Stripe Price rotation on new subscription checkout sessions.',
                       },
@@ -358,11 +381,18 @@ export const SiteSettings: GlobalConfig = {
                       type: 'number',
                       defaultValue: 950.4,
                       label: 'Yearly price (USD)',
+                      validate: validatePositivePrice('Yearly price'),
                       admin: {
                         description: 'Used for yearly display and automatic Stripe yearly Price rotation on new subscription checkout sessions.',
                       },
                     },
-                    { name: 'creditsPerMonth', type: 'number', defaultValue: 1680, label: 'Credits per month' },
+                    {
+                      name: 'creditsPerMonth',
+                      type: 'number',
+                      defaultValue: 1680,
+                      label: 'Credits per month',
+                      validate: validatePositiveCredits('Credits per month'),
+                    },
                     {
                       name: 'description',
                       type: 'textarea',
@@ -389,10 +419,34 @@ export const SiteSettings: GlobalConfig = {
               type: 'group',
               label: 'Generation pricing',
               fields: [
-                { name: 'imageCredits', type: 'number', defaultValue: defaultSiteSettings.generationPricing.imageCredits, label: 'Image credits' },
-                { name: 'textCredits', type: 'number', defaultValue: defaultSiteSettings.generationPricing.textCredits, label: 'Text credits' },
-                { name: 'hybridCredits', type: 'number', defaultValue: defaultSiteSettings.generationPricing.hybridCredits, label: 'Hybrid credits' },
-                { name: 'downloadCredits', type: 'number', defaultValue: defaultSiteSettings.generationPricing.downloadCredits, label: 'Download credits' },
+                {
+                  name: 'imageCredits',
+                  type: 'number',
+                  defaultValue: defaultSiteSettings.generationPricing.imageCredits,
+                  label: 'Image credits',
+                  validate: validateNonNegativeCredits('Image credits'),
+                },
+                {
+                  name: 'textCredits',
+                  type: 'number',
+                  defaultValue: defaultSiteSettings.generationPricing.textCredits,
+                  label: 'Text credits',
+                  validate: validateNonNegativeCredits('Text credits'),
+                },
+                {
+                  name: 'hybridCredits',
+                  type: 'number',
+                  defaultValue: defaultSiteSettings.generationPricing.hybridCredits,
+                  label: 'Hybrid credits',
+                  validate: validateNonNegativeCredits('Hybrid credits'),
+                },
+                {
+                  name: 'downloadCredits',
+                  type: 'number',
+                  defaultValue: defaultSiteSettings.generationPricing.downloadCredits,
+                  label: 'Download credits',
+                  validate: validateNonNegativeCredits('Download credits'),
+                },
               ],
             },
             {
@@ -414,6 +468,7 @@ export const SiteSettings: GlobalConfig = {
                   type: 'number',
                   defaultValue: 0,
                   label: 'Preview credits',
+                  validate: validateNonNegativeCredits('Preview credits'),
                 },
                 {
                   name: 'chargeDownloadCredits',
@@ -429,6 +484,7 @@ export const SiteSettings: GlobalConfig = {
                   type: 'number',
                   defaultValue: defaultSiteSettings.generationPricing.downloadCredits,
                   label: 'Download credits',
+                  validate: validateNonNegativeCredits('Download credits'),
                 },
               ],
             },
@@ -439,9 +495,27 @@ export const SiteSettings: GlobalConfig = {
               fields: [
                 { name: 'title', type: 'text', required: true, label: 'Title' },
                 { name: 'shopifyVariantId', type: 'text', label: 'Shopify variant ID' },
-                { name: 'credits', type: 'number', required: true, label: 'Credits' },
-                { name: 'price', type: 'number', required: true, label: 'Price' },
-                { name: 'currency', type: 'text', defaultValue: 'USD', label: 'Currency' },
+                {
+                  name: 'credits',
+                  type: 'number',
+                  required: true,
+                  label: 'Credits',
+                  validate: validatePositiveCredits('Package credits'),
+                },
+                {
+                  name: 'price',
+                  type: 'number',
+                  required: true,
+                  label: 'Price',
+                  validate: validatePositivePrice('Package price'),
+                },
+                {
+                  name: 'currency',
+                  type: 'text',
+                  defaultValue: 'USD',
+                  label: 'Currency',
+                  validate: validateCurrencyCode,
+                },
               ],
               defaultValue: defaultSiteSettings.creditPackages,
             },

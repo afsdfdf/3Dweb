@@ -2,6 +2,12 @@ import type { Access, CollectionConfig, FieldAccess, Where } from 'payload'
 
 import { isStaff } from '@/access'
 import { adminLabelsKey, adminTextKey } from '@/lib/adminText'
+import {
+  validateCurrencyCode,
+  validateNonNegativeCredits,
+  validatePositiveCredits,
+  validatePositivePrice,
+} from '@/lib/payloadValidation'
 
 const hasStaffRole = (role?: null | string) => role === 'admin' || role === 'operator'
 
@@ -23,6 +29,14 @@ const readCreditProducts: Access = (args) => {
 
 // Commerce identifiers are operator-only and should never reach the public REST response.
 const staffOnlyField: FieldAccess = ({ req }) => hasStaffRole(req.user?.role)
+
+const validateCreditProductCredits = (value: unknown, options?: { siblingData?: Record<string, unknown> }) => {
+  if (options?.siblingData?.productType === 'print-package') {
+    return validateNonNegativeCredits('Credits')(value)
+  }
+
+  return validatePositiveCredits('Credits')(value)
+}
 
 export const CreditProducts: CollectionConfig = {
   slug: 'credit-products',
@@ -53,9 +67,9 @@ export const CreditProducts: CollectionConfig = {
       ],
     },
     { name: 'description', type: 'textarea', label: 'Description' },
-    { name: 'credits', type: 'number', defaultValue: 0, label: 'Credits' },
-    { name: 'price', type: 'number', required: true, label: 'Price' },
-    { name: 'currency', type: 'text', defaultValue: 'USD', label: 'Currency' },
+    { name: 'credits', type: 'number', defaultValue: 0, label: 'Credits', validate: validateCreditProductCredits },
+    { name: 'price', type: 'number', required: true, label: 'Price', validate: validatePositivePrice('Price') },
+    { name: 'currency', type: 'text', defaultValue: 'USD', label: 'Currency', validate: validateCurrencyCode },
     {
       name: 'shopifyProductId',
       type: 'text',

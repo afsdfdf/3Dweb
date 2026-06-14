@@ -21,6 +21,15 @@ Update this file in the same task when work changes durable architecture:
 
 Do not leave durable project decisions only in chat history.
 
+## 2026-06-14 Billing And Public Asset Guardrails
+
+- KV/Redis remains optional for single-instance/local deployments. Production can be made fail-closed by setting `REQUIRE_REDIS_IN_PRODUCTION=true`; in that mode `REDIS_URL` is required and initialization failure must not silently fall back to memory. Keep `tests/kvStoreProductionConfig.test.ts` when adjusting rate limits, webhook replay guards, or Stripe coordination locks.
+- Subscription plan display prices are editable in `site-settings.subscriptionPlans`. New checkout sessions synchronize Stripe Prices from the active Payload values, but Price rotation is serialized per Stripe lookup key through the shared KV store so concurrent checkout requests do not create duplicate replacement Prices. Existing subscriptions keep their old Stripe Price until a separate migration changes them.
+- `site-settings` and `credit-products` enforce server-side bounds for editable prices, credits, and currencies. Do not remove these validations when changing admin copy or plan layout; frontend normalization is not a substitute for Payload write validation.
+- Anonymous model viewer/download paths must serve only guest-readable media (`publicAccess = true` or `purpose = preview`) even when the model itself is public. If a public model points at private media, the anonymous fast path returns no public asset and must not fall through to deep `overrideAccess` model reads.
+- Top-navigation wallet balance opens the shared `CreditTopupRedemptionDialog`; subscription promotion opens a focus-trapped subscription dialog and restores focus to the SUB button on close. Keep the accessibility assertions in `tests/topNavigationSubscriptionPromotion.test.ts`.
+- Multi-resolution visual regression sweeps are standardized through `corepack pnpm audit:ui-matrix`. It expects a running app at `AUDIT_BASE_URL`, writes screenshots under `tmp/audit-ui-matrix` unless `AUDIT_OUTPUT_DIR` is provided, and can be narrowed with comma-separated `AUDIT_ROUTES` / `AUDIT_VIEWPORTS` for local sampling.
+
 ## 2026-06-11 Homepage Hero CSS Cascade
 
 - The production homepage uses `src/app/(frontend)/test-home/testHomePage.module.css` for `/` and `/test-home`. Its hero wraps the generated `Frame12877` component, whose own `frame12877.module.css` sets `.scroll-container { left: 0; top: 60px }` and translates non-background children upward. Homepage-level overrides for `.scroll-container` and `.Pixso-frame-1_2877 > :not(.Pixso-vector-1_2878)` must use higher specificity than the component CSS, because production CSS order can otherwise let the component `left: 0` win while the homepage `translateX(-50%)` still applies. That combination shifts the hero about half a viewport left and leaves the right side black.

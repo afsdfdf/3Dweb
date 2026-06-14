@@ -331,6 +331,68 @@ test("public model viewer endpoint falls back when optimized preview is blocked"
   }
 });
 
+test("public model viewer endpoint does not fall through to private media for anonymous public models", async () => {
+  _resetKVStore();
+  let findByIDCalls = 0;
+
+  __setModelViewerEndpointTestHooks({
+    getMediaAccessURL: async () => "https://assets.example.com/private.glb",
+    isAllowedRemoteAssetURL: async () => true,
+    resolvePublicModelFormatAsset: async () => ({
+      fileId: 10,
+      mimeType: "model/gltf-binary",
+      publicAccess: false,
+      purpose: "asset",
+      url: "https://assets.example.com/private.glb",
+    }),
+  });
+
+  const payload = {
+    findByID: async () => {
+      findByIDCalls += 1;
+      return {
+        formats: [
+          {
+            file: {
+              mimeType: "model/gltf-binary",
+              publicAccess: false,
+              url: "https://assets.example.com/private.glb",
+            },
+            format: "glb",
+          },
+        ],
+        id: 5,
+        visibility: "public",
+      };
+    },
+    logger: createLogger(),
+  };
+
+  try {
+    const response = await modelViewerEndpoint.handler({
+      headers: new Headers({
+        "user-agent": "viewer-test/1.0",
+      }),
+      payload,
+      query: {
+        format: "glb",
+      },
+      routeParams: {
+        modelId: "5",
+      },
+    } as never);
+
+    const body = await response.json();
+
+    assert.equal(response.status, 404);
+    assert.equal(findByIDCalls, 0);
+    assert.match(body.message, /public.*asset/i);
+  } finally {
+    __setModelViewerEndpointTestHooks(null);
+    _resetKVStore();
+  }
+});
+
 test("model viewer endpoint supports explicit proxy fallback delivery", async () => {
   _resetKVStore();
 
