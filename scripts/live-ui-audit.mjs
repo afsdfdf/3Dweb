@@ -73,7 +73,9 @@ async function main() {
   const report = { base: BASE, generatedAt: new Date().toISOString(), login: {}, pages: [] }
 
   try {
-    const ctx = await browser.newContext({ userAgent: UA, viewport: { height: 900, width: 1440 } })
+    // Sandboxed egress may terminate TLS with a proxy CA that the bundled
+    // Chromium does not trust; ignore cert errors so pages actually load.
+    const ctx = await browser.newContext({ ignoreHTTPSErrors: true, userAgent: UA, viewport: { height: 900, width: 1440 } })
 
     // Authenticate so authed routes (/account, /workbench) render real content.
     try {

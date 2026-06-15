@@ -86,3 +86,6 @@ model-detail-*.png
 model-load-debug-*.png
 top-nav-*.png
 tmp-*.png
+
+# Local audit / debug output
+tmp/
