@@ -1,5 +1,5 @@
 /**
- * Live UI/functional audit against the deployed site.
+ * Live UI + functional audit against the deployed site.
  *
  * Run from a session/environment that has network egress to the site
  * (Network access = Custom with *.thornstavern.com, or Full):
@@ -10,16 +10,21 @@
  *   AUDIT_PASSWORD=changcheng \
  *   node scripts/live-ui-audit.mjs
  *
- * It captures BOTH states so the guest and signed-in experiences can be compared:
- *   - guest pass: a fresh context with no login (anonymous visitor)
- *   - auth pass:  a context logged in via the account API
+ * What it does (deterministic — no AI), in BOTH guest and authenticated states:
+ *   1. UI pass: loads every route across 4 viewports, screenshots, and records
+ *      HTTP status, console/page errors, failed requests, horizontal overflow,
+ *      and any post-navigation redirect.
+ *   2. Functional API probes: calls the real endpoints and records status/body so
+ *      auth, RBAC, billing, social, model and notification features are verified.
+ *      Read-only by default. Side-effectful checks (checkout sessions, charged
+ *      downloads, favorite toggles) only run when AUDIT_MUTATIONS=1.
  *
- * Output (tmp/live-audit): <state>-<viewport>-<route>.png screenshots, report.json,
- * report.md. Each page records HTTP status, console/page errors, failed requests
- * and horizontal overflow. Falls back to the sandbox chromium under /opt/pw-browsers.
+ * Output (tmp/live-audit): <state>-<viewport>-<route>.png, report.json, report.md.
+ * Falls back to the sandbox chromium under /opt/pw-browsers.
  *
- * Env knobs: AUDIT_STATES=guest,auth (limit which passes run),
- * AUDIT_VIEWPORTS=mobile-390,... AUDIT_CHROMIUM_PATH=...
+ * Env knobs: AUDIT_STATES=guest,auth  AUDIT_VIEWPORTS=mobile-390,...
+ *            AUDIT_MUTATIONS=1 (opt into side-effectful probes)
+ *            AUDIT_CHROMIUM_PATH=/path/to/chrome
  */
 
 import { mkdir, writeFile } from 'node:fs/promises'
@@ -29,9 +34,11 @@ import path from 'node:path'
 import { chromium } from 'playwright'
 
 const BASE = (process.env.AUDIT_BASE_URL || 'https://www.thornstavern.com').replace(/\/$/, '')
+const API = `${BASE}/api`
 const EMAIL = process.env.AUDIT_EMAIL || 'a77694688@qq.com'
 const PASSWORD = process.env.AUDIT_PASSWORD || 'changcheng'
 const OUT = process.env.AUDIT_OUTPUT_DIR || path.join(process.cwd(), 'tmp', 'live-audit')
+const MUTATE = process.env.AUDIT_MUTATIONS === '1'
 
 const allRoutes = [
   ['home', '/'],
@@ -64,9 +71,8 @@ const viewports = process.env.AUDIT_VIEWPORTS
 
 const UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36'
+const MUTATION_HEADERS = { origin: BASE, referer: `${BASE}/` }
 
-// In the managed sandbox the browser ships under /opt/pw-browsers; fall back to it
-// when Playwright's own download is missing.
 function resolveExecutablePath() {
   if (process.env.AUDIT_CHROMIUM_PATH) return process.env.AUDIT_CHROMIUM_PATH
   const root = '/opt/pw-browsers'
@@ -76,6 +82,8 @@ function resolveExecutablePath() {
   const candidate = path.join(root, dir, 'chrome-linux', 'chrome')
   return existsSync(candidate) ? candidate : undefined
 }
+
+// ---------- UI pass ----------
 
 async function auditPage(page, { name, route, state, viewport }) {
   const errors = []
@@ -131,7 +139,97 @@ async function auditPage(page, { name, route, state, viewport }) {
   return { errors, failed, finalURL, name, overflow, route, scrollW: metrics.scrollW, state, status, viewport }
 }
 
-async function runPass(browser, state, report) {
+// ---------- Functional API probes ----------
+
+async function discoverIds(ctx) {
+  const ids = { creditProductSlug: null, modelId: null }
+  try {
+    const res = await ctx.request.get(
+      `${API}/models?where[visibility][equals]=public&limit=1&depth=0&sort=-createdAt`,
+      { failOnStatusCode: false },
+    )
+    if (res.ok()) ids.modelId = (await res.json())?.docs?.[0]?.id ?? null
+  } catch {
+    /* ignore */
+  }
+  try {
+    const res = await ctx.request.get(`${API}/credit-products?limit=1&depth=0&where[isActive][equals]=true`, {
+      failOnStatusCode: false,
+    })
+    if (res.ok()) ids.creditProductSlug = (await res.json())?.docs?.[0]?.slug ?? null
+  } catch {
+    /* ignore */
+  }
+  return ids
+}
+
+function readProbes(modelId) {
+  const probes = [
+    ['auth.me', 'GET', '/account/auth/me'],
+    ['account.dashboard', 'GET', '/account/dashboard'],
+    ['account.profile', 'GET', '/account/profile'],
+    ['account.favorites', 'GET', '/account/favorites'],
+    ['account.follows', 'GET', '/account/follows'],
+    ['account.notifications', 'GET', '/account/notifications'],
+    ['account.notifications.unread', 'GET', '/account/notifications/unread-count'],
+    ['billing.plans', 'GET', '/billing/subscriptions/plans'],
+    ['commerce.creditProducts', 'GET', '/credit-products?limit=30&depth=0'],
+    ['ops.dashboard(staff-only)', 'GET', '/platform/ops/dashboard'],
+  ]
+  if (modelId) {
+    probes.push(
+      ['model.detail', 'GET', `/social/models/${modelId}/detail`],
+      ['model.related', 'GET', `/platform/models/${modelId}/related`],
+      ['model.reactions', 'GET', `/social/models/${modelId}/reactions`],
+      ['model.viewer', 'GET', `/platform/models/${modelId}/viewer?format=glb`, { maxRedirects: 0 }],
+    )
+  }
+  return probes
+}
+
+function mutationProbes(modelId, creditProductSlug) {
+  const probes = [
+    ['billing.subCheckout', 'POST', '/billing/subscriptions/checkout', { data: { billingCycle: 'monthly', planKey: 'pro' } }],
+  ]
+  if (creditProductSlug) {
+    probes.push(['billing.creditCheckout', 'POST', '/billing/credits/checkout', { data: { productSlug: creditProductSlug } }])
+  }
+  if (modelId) {
+    probes.push(
+      ['model.download', 'GET', `/platform/models/${modelId}/download?format=glb`, { maxRedirects: 0 }],
+      ['model.favorite', 'POST', `/social/models/${modelId}/favorite`],
+      ['model.unfavorite', 'DELETE', `/social/models/${modelId}/favorite`],
+    )
+  }
+  return probes
+}
+
+async function runApiProbes(ctx, state, report, { creditProductSlug, modelId }) {
+  const probes = [...readProbes(modelId)]
+  if (state === 'auth' && MUTATE) probes.push(...mutationProbes(modelId, creditProductSlug))
+
+  for (const [name, method, p, opts = {}] of probes) {
+    const headers = { ...MUTATION_HEADERS }
+    const reqOpts = { failOnStatusCode: false, headers, method }
+    if (opts.maxRedirects !== undefined) reqOpts.maxRedirects = opts.maxRedirects
+    if (opts.data) {
+      reqOpts.data = opts.data
+      headers['content-type'] = 'application/json'
+    }
+    try {
+      const res = await ctx.request.fetch(`${API}${p}`, reqOpts)
+      const body = (await res.text().catch(() => '')).replace(/\s+/g, ' ').slice(0, 180)
+      report.api.push({ body, method, mutation: Boolean(opts.data) || method !== 'GET', name, ok: res.ok(), path: p, state, status: res.status() })
+      console.log(`[api ${state}] ${method} ${p} -> ${res.status()}`)
+    } catch (error) {
+      report.api.push({ error: String(error).slice(0, 150), method, name, path: p, state })
+    }
+  }
+}
+
+// ---------- pass orchestration ----------
+
+async function runPass(browser, state, report, ids) {
   // Sandboxed egress may terminate TLS with a proxy CA that the bundled Chromium
   // does not trust; ignore cert errors so pages actually load.
   const ctx = await browser.newContext({
@@ -142,19 +240,19 @@ async function runPass(browser, state, report) {
 
   if (state === 'auth') {
     try {
-      const resp = await ctx.request.post(`${BASE}/api/account/auth/login`, {
+      const resp = await ctx.request.post(`${API}/account/auth/login`, {
         data: { email: EMAIL, password: PASSWORD },
-        headers: { 'content-type': 'application/json', origin: BASE, referer: `${BASE}/` },
+        headers: { 'content-type': 'application/json', ...MUTATION_HEADERS },
       })
       report.login = { ok: resp.ok(), status: resp.status(), body: (await resp.text()).slice(0, 300) }
     } catch (error) {
       report.login = { error: error instanceof Error ? error.message : String(error), ok: false }
     }
     console.log(`[login] status=${report.login.status} ok=${report.login.ok}`)
-    if (!report.login.ok) {
-      console.warn('[login] failed — auth pass will reflect a logged-out session.')
-    }
+    if (!report.login.ok) console.warn('[login] failed — auth pass reflects a logged-out session.')
   }
+
+  await runApiProbes(ctx, state, report, ids)
 
   const page = await ctx.newPage()
   for (const [vpName, w, h] of viewports) {
@@ -173,11 +271,16 @@ async function runPass(browser, state, report) {
 async function main() {
   await mkdir(OUT, { recursive: true })
   const browser = await chromium.launch({ executablePath: resolveExecutablePath(), headless: true })
-  const report = { base: BASE, generatedAt: new Date().toISOString(), login: {}, pages: [], states }
+  const report = { api: [], base: BASE, generatedAt: new Date().toISOString(), login: {}, mutations: MUTATE, pages: [], states }
 
   try {
+    const probeCtx = await browser.newContext({ ignoreHTTPSErrors: true, userAgent: UA })
+    report.discovered = await discoverIds(probeCtx)
+    await probeCtx.close()
+    console.log(`[discover] modelId=${report.discovered.modelId} creditProductSlug=${report.discovered.creditProductSlug}`)
+
     for (const state of states) {
-      await runPass(browser, state, report)
+      await runPass(browser, state, report, report.discovered)
     }
   } finally {
     await browser.close()
@@ -189,13 +292,21 @@ async function main() {
     (p) => (p.status && p.status >= 400) || p.overflow.length || p.errors.length || p.failed.length,
   )
   const lines = [
-    `# Live UI audit — ${report.base}`,
+    `# Live UI + functional audit — ${report.base}`,
     ``,
     `Generated: ${report.generatedAt}`,
-    `States: ${states.join(', ')} | Login: status=${report.login.status} ok=${report.login.ok}`,
-    `Pages checked: ${report.pages.length} | with findings: ${problems.length}`,
+    `States: ${states.join(', ')} | Login: status=${report.login.status} ok=${report.login.ok} | Mutations: ${MUTATE}`,
+    `Discovered: modelId=${report.discovered?.modelId} creditProductSlug=${report.discovered?.creditProductSlug}`,
+    `UI pages checked: ${report.pages.length} (with findings: ${problems.length}) | API probes: ${report.api.length}`,
     ``,
-    `## Findings`,
+    `## Functional API probes`,
+    ``,
+    `| state | name | method | path | status |`,
+    `| --- | --- | --- | --- | --- |`,
+    ...report.api.map((a) => `| ${a.state} | ${a.name} | ${a.method} | ${a.path} | ${a.status ?? a.error} |`),
+    ``,
+    `## UI findings`,
+    ``,
   ]
   for (const p of problems) {
     lines.push(`### [${p.state}] ${p.viewport} ${p.route} (HTTP ${p.status})`)
@@ -205,11 +316,11 @@ async function main() {
     if (p.failed.length) lines.push(`- Failed requests: ${JSON.stringify(p.failed.slice(0, 5))}`)
     lines.push('')
   }
-  if (problems.length === 0) lines.push('No HTTP errors, overflow, console errors, or failed requests detected.')
+  if (problems.length === 0) lines.push('No HTTP errors, overflow, console errors, or failed requests detected in the UI pass.')
   await writeFile(path.join(OUT, 'report.md'), lines.join('\n'))
 
   console.log(`\n[done] screenshots + report.json + report.md in ${OUT}`)
-  console.log(`[done] pages with findings: ${problems.length}/${report.pages.length}`)
+  console.log(`[done] UI findings: ${problems.length}/${report.pages.length} | API probes: ${report.api.length}`)
 }
 
 await main()
