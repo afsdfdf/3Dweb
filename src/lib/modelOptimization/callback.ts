@@ -45,6 +45,32 @@ const getModelVisibility = (model: Record<string, unknown> | null) => {
   return typeof model?.visibility === 'string' ? model.visibility : null
 }
 
+// The callback body is supplied by the optimization worker. Even though the
+// endpoint is secret-gated, never persist an output URL/path we cannot vouch
+// for: reject non-http(s) URLs (data:/file:/javascript: etc.) and storage
+// paths that are absolute or contain traversal segments.
+const assertSafeOptimizationOutput = (output: { path: string; publicUrl: string }) => {
+  let parsed: URL
+  try {
+    parsed = new URL(String(output.publicUrl || ''))
+  } catch {
+    throw new Error('Optimization output has an invalid public URL.')
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new Error('Optimization output URL must use http(s).')
+  }
+
+  const path = String(output.path || '').trim()
+  if (
+    !path ||
+    path.startsWith('/') ||
+    path.includes('://') ||
+    path.split('/').some((segment) => segment === '..')
+  ) {
+    throw new Error('Optimization output path is invalid.')
+  }
+}
+
 export function verifyModelOptimizationCallback(req: Pick<PayloadRequest, 'headers'>) {
   const config = getModelOptimizationConfig()
   const received = req.headers.get('x-model-optimization-secret') || ''
@@ -69,6 +95,8 @@ export async function completeModelOptimizationJob(args: {
   timingsMs: Record<string, number>
   workerRunId: string
 }) {
+  assertSafeOptimizationOutput(args.output)
+
   const job = await args.req.payload.findByID({
     collection: 'model-optimization-jobs',
     depth: 2,

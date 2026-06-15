@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
-import { isStaff, ownerOrStaff } from '@/access'
+import { isAdmin, isStaff, ownerOrStaff } from '@/access'
 import { adminLabelsKey, adminTextKey } from '@/lib/adminText'
 
 export const GenerationTasks: CollectionConfig = {
@@ -14,6 +14,7 @@ export const GenerationTasks: CollectionConfig = {
   },
   access: {
     create: isStaff,
+    delete: isAdmin,
     read: ownerOrStaff('user'),
     update: isStaff,
   },

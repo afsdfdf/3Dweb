@@ -6,8 +6,8 @@
  *
  *   pnpm install   # if node_modules is missing
  *   AUDIT_BASE_URL=https://www.thornstavern.com \
- *   AUDIT_EMAIL=a77694688@qq.com \
- *   AUDIT_PASSWORD=changcheng \
+ *   AUDIT_EMAIL=<account-email> \
+ *   AUDIT_PASSWORD=<account-password> \
  *   node scripts/live-ui-audit.mjs
  *
  * What it does (deterministic — no AI), in BOTH guest and authenticated states:
@@ -19,10 +19,14 @@
  *      Read-only by default. Side-effectful checks (checkout sessions, charged
  *      downloads, favorite toggles) only run when AUDIT_MUTATIONS=1.
  *
+ * Credentials are read from AUDIT_EMAIL/AUDIT_PASSWORD only; none are embedded
+ * in source. If they are unset the auth pass is skipped (guest state only).
+ *
  * Output (tmp/live-audit): <state>-<viewport>-<route>.png, report.json, report.md.
  * Falls back to the sandbox chromium under /opt/pw-browsers.
  *
  * Env knobs: AUDIT_STATES=guest,auth  AUDIT_VIEWPORTS=mobile-390,...
+ *            AUDIT_EMAIL=<email>  AUDIT_PASSWORD=<password>
  *            AUDIT_MUTATIONS=1 (opt into side-effectful probes)
  *            AUDIT_CHROMIUM_PATH=/path/to/chrome
  */
@@ -35,8 +39,8 @@ import { chromium } from 'playwright'
 
 const BASE = (process.env.AUDIT_BASE_URL || 'https://www.thornstavern.com').replace(/\/$/, '')
 const API = `${BASE}/api`
-const EMAIL = process.env.AUDIT_EMAIL || 'a77694688@qq.com'
-const PASSWORD = process.env.AUDIT_PASSWORD || 'changcheng'
+const EMAIL = process.env.AUDIT_EMAIL || ''
+const PASSWORD = process.env.AUDIT_PASSWORD || ''
 const OUT = process.env.AUDIT_OUTPUT_DIR || path.join(process.cwd(), 'tmp', 'live-audit')
 const MUTATE = process.env.AUDIT_MUTATIONS === '1'
 
@@ -239,17 +243,22 @@ async function runPass(browser, state, report, ids) {
   })
 
   if (state === 'auth') {
-    try {
-      const resp = await ctx.request.post(`${API}/account/auth/login`, {
-        data: { email: EMAIL, password: PASSWORD },
-        headers: { 'content-type': 'application/json', ...MUTATION_HEADERS },
-      })
-      report.login = { ok: resp.ok(), status: resp.status(), body: (await resp.text()).slice(0, 300) }
-    } catch (error) {
-      report.login = { error: error instanceof Error ? error.message : String(error), ok: false }
+    if (!EMAIL || !PASSWORD) {
+      report.login = { ok: false, skipped: true }
+      console.log('[login] skipped (set AUDIT_EMAIL/AUDIT_PASSWORD to authenticate)')
+    } else {
+      try {
+        const resp = await ctx.request.post(`${API}/account/auth/login`, {
+          data: { email: EMAIL, password: PASSWORD },
+          headers: { 'content-type': 'application/json', ...MUTATION_HEADERS },
+        })
+        report.login = { ok: resp.ok(), status: resp.status(), body: (await resp.text()).slice(0, 300) }
+      } catch (error) {
+        report.login = { error: error instanceof Error ? error.message : String(error), ok: false }
+      }
+      console.log(`[login] status=${report.login.status} ok=${report.login.ok}`)
+      if (!report.login.ok) console.warn('[login] failed — auth pass reflects a logged-out session.')
     }
-    console.log(`[login] status=${report.login.status} ok=${report.login.ok}`)
-    if (!report.login.ok) console.warn('[login] failed — auth pass reflects a logged-out session.')
   }
 
   await runApiProbes(ctx, state, report, ids)
