@@ -11,20 +11,31 @@ type ModelDetailAdBannerProps = AnchorHTMLAttributes<HTMLAnchorElement> & {
 
 export function ModelDetailAdBanner({
   className,
-  href = "#",
+  href,
   imageAlt = "",
   imagePosition,
   imageSrc = "/ui-lab/model-detail-uicut/images/detail-side-banner.webp",
   ...anchorProps
 }: ModelDetailAdBannerProps) {
+  const bannerClassName = [styles.banner, className].filter(Boolean).join(" ");
+  const image = (
+    <img
+      className={styles.image}
+      src={imageSrc}
+      alt={imageAlt}
+      style={imagePosition ? { objectPosition: imagePosition } : undefined}
+    />
+  );
+
+  // Without a real destination, render a non-interactive container instead of a
+  // dead `href="#"` link that scrolls to the top of the page when clicked.
+  if (!href || href === "#") {
+    return <div className={bannerClassName}>{image}</div>;
+  }
+
   return (
-    <a {...anchorProps} className={[styles.banner, className].filter(Boolean).join(" ")} href={href}>
-      <img
-        className={styles.image}
-        src={imageSrc}
-        alt={imageAlt}
-        style={imagePosition ? { objectPosition: imagePosition } : undefined}
-      />
+    <a {...anchorProps} className={bannerClassName} href={href}>
+      {image}
     </a>
   );
 }

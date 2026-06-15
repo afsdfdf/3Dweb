@@ -42,9 +42,12 @@ const getMeshyWebhookSecret = () =>
   (process.env.MESHY_WEBHOOK_TOKEN || process.env.AI_WEBHOOK_SECRET || process.env.PAYLOAD_AI_WEBHOOK_SECRET || '').trim()
 
 const meshyTokenEquals = (provided: string, expected: string) => {
-  const a = Buffer.from(provided)
-  const b = Buffer.from(expected)
-  return a.length === b.length && crypto.timingSafeEqual(a, b)
+  if (!expected) return false
+  // Hash both sides to fixed-length digests before comparing so timingSafeEqual
+  // never short-circuits on a length mismatch (which would leak the token length).
+  const a = crypto.createHash('sha256').update(provided).digest()
+  const b = crypto.createHash('sha256').update(expected).digest()
+  return crypto.timingSafeEqual(a, b)
 }
 
 const getMeshyWebhookToken = (req: PayloadRequest) => {

@@ -89,7 +89,7 @@ export function FooterBar({ footerContent, siteDescription, supportEmail }: Foot
               </nav>
             ) : null}
             {groupIndex === 1 ? (
-              <p className="mt-3 text-[10px] leading-4 text-[#6f7178]">Copyright 2023-2026 Thorns Tavern. All rights reserved.</p>
+              <p className="mt-3 text-[10px] leading-4 text-[#6f7178]">{`Copyright 2023-${new Date().getFullYear()} Thorns Tavern. All rights reserved.`}</p>
             ) : group.helperText ? (
               <p className="sr-only">{group.helperText}</p>
             ) : null}

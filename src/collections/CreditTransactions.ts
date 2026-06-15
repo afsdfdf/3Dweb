@@ -14,6 +14,7 @@ export const CreditTransactions: CollectionConfig = {
   },
   access: {
     create: isAdmin,
+    delete: isAdmin,
     read: ownerOrStaff('user'),
     update: isAdmin,
   },

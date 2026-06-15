@@ -629,7 +629,20 @@ async function extractOpenAICompatibleImage(payload: Record<string, unknown>) {
     );
   }
 
-  const response = await fetch(url);
+  // The image URL comes from the provider response; only follow http(s) so a
+  // compromised/misconfigured provider cannot turn this into a file:/data:
+  // fetch on the server.
+  let parsedImageURL: URL;
+  try {
+    parsedImageURL = new URL(url);
+  } catch {
+    throw new Error("OpenAI-compatible image URL is not a valid URL.");
+  }
+  if (parsedImageURL.protocol !== "http:" && parsedImageURL.protocol !== "https:") {
+    throw new Error("OpenAI-compatible image URL must use http(s).");
+  }
+
+  const response = await fetch(parsedImageURL);
   if (!response.ok) {
     throw new Error(
       `OpenAI-compatible image URL fetch failed with ${response.status}.`,

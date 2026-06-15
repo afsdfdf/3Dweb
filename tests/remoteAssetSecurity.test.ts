@@ -133,6 +133,36 @@ test('remote asset security always allows canonical and Supabase storage hosts',
   }
 })
 
+test('remote asset security only trusts internal Payload media paths', async () => {
+  const payload = createPayloadMock() as never
+
+  assert.equal(await isAllowedRemoteAssetURL({ payload, url: '/api/media/file/model.glb' }), true)
+  // Non-media internal routes must not be fetchable.
+  assert.equal(await isAllowedRemoteAssetURL({ payload, url: '/admin' }), false)
+  assert.equal(await isAllowedRemoteAssetURL({ payload, url: '/api/account/auth/login' }), false)
+  // Path traversal cannot escape the media prefix.
+  assert.equal(await isAllowedRemoteAssetURL({ payload, url: '/api/media/../admin' }), false)
+  // Protocol-relative and backslash values normalize to arbitrary hosts.
+  assert.equal(await isAllowedRemoteAssetURL({ payload, url: '//evil.example.net/model.glb' }), false)
+  assert.equal(await isAllowedRemoteAssetURL({ payload, url: '/\\evil.example.net/model.glb' }), false)
+})
+
+test('remote asset security rejects non-http(s) schemes and bare-TLD allowlist entries', async () => {
+  const previousAllowlist = process.env.AI_REMOTE_ASSET_ALLOWLIST
+  process.env.AI_REMOTE_ASSET_ALLOWLIST = 'com'
+
+  try {
+    const payload = createPayloadMock() as never
+    // A bare TLD must not match arbitrary hosts.
+    assert.equal(await isAllowedRemoteAssetURL({ payload, url: 'https://evil.com/model.glb' }), false)
+    // Dangerous schemes are rejected outright.
+    assert.equal(await isAllowedRemoteAssetURL({ payload, url: 'file:///etc/passwd' }), false)
+    assert.equal(await isAllowedRemoteAssetURL({ payload, url: 'data:text/plain,hello' }), false)
+  } finally {
+    process.env.AI_REMOTE_ASSET_ALLOWLIST = previousAllowlist
+  }
+})
+
 test('remote asset security always allows official Meshy result asset host', async () => {
   const previousKey = process.env.MESHY_API_KEY
   delete process.env.MESHY_API_KEY

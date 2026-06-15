@@ -271,15 +271,32 @@ export async function changeAccountPassword(args: {
     throw new Error('Current account email is missing.')
   }
 
-  await req.payload.login({
-    collection: 'users',
-    data: {
-      email: user.email,
-      password: currentPassword,
-    },
-    overrideAccess: true,
-    req,
-  })
+  try {
+    await req.payload.login({
+      collection: 'users',
+      data: {
+        email: user.email,
+        password: currentPassword,
+      },
+      overrideAccess: true,
+      req,
+    })
+  } catch {
+    // Verifying the current password via login consumes the account's login-attempt
+    // budget; left unchecked, repeated wrong entries here would lock the owner out of
+    // normal sign-in. This path is already authenticated as the account owner and is
+    // independently rate limited (auth-password-change), so clear any lock this
+    // verification just caused and surface a clear error.
+    await req.payload
+      .unlock({
+        collection: 'users',
+        data: { email: user.email, password: currentPassword },
+        overrideAccess: true,
+        req,
+      })
+      .catch(() => undefined)
+    throw new Error('Current password is incorrect.')
+  }
 
   await req.payload.update({
     collection: 'users',

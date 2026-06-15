@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
+import { printMaterialOptions, printSizeOptions } from "../_lib/printPricing";
+
 import styles from "./PrintOrderDialog.module.css";
 
 type PrintOrderDialogProps = {
@@ -28,35 +30,8 @@ type PrintOrderDialogProps = {
   variant?: "default" | "secondary" | "outline" | "ghost";
 };
 
-const sizeOptions = [
-  {
-    description: "Desktop miniature scale",
-    key: "standard",
-    label: "Standard",
-    price: 39.9,
-  },
-  {
-    description: "Larger display print",
-    key: "premium",
-    label: "Premium",
-    price: 79.9,
-  },
-] as const;
-
-const materialOptions = [
-  {
-    description: "Baseline production material",
-    key: "plastic",
-    label: "Plastic",
-    price: 0,
-  },
-  {
-    description: "Sharper detail and smoother finish",
-    key: "resin",
-    label: "Resin",
-    price: 10,
-  },
-] as const;
+const sizeOptions = printSizeOptions;
+const materialOptions = printMaterialOptions;
 
 const formatCurrency = (value: number) =>
   new Intl.NumberFormat("en-US", {

@@ -104,7 +104,7 @@ export const changeAccountPasswordEndpoint = {
 
     const rateLimited = await rejectRateLimitedEndpoint({
       req,
-      scope: 'social-follow-write',
+      scope: 'auth-password-change',
     })
     if (rateLimited) return rateLimited
 

@@ -14,6 +14,7 @@ export const ShopifyPayments: CollectionConfig = {
   },
   access: {
     create: isAdmin,
+    delete: isAdmin,
     read: ownerOrStaff('user'),
     update: isAdmin,
   },

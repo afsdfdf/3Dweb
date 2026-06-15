@@ -20,6 +20,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { PrintOrderDialog } from "../_components/PrintOrderDialog";
 import { addModelToCart } from "../_lib/cartStorage";
+import { printBasePrice, printBaseServiceLabel } from "../_lib/printPricing";
 
 const ModelViewer = dynamic(
   () => import("../_components/ModelViewer").then((m) => m.ModelViewer),
@@ -363,8 +364,8 @@ export default function ModelDetailNative({
   }, [detail.id, detail.viewCount]);
 
   useEffect(() => {
-    if (!detail.commentsEnabled) return;
-
+    // View tracking is independent of whether comments are enabled; gating it on
+    // commentsEnabled previously dropped view counts for models with comments off.
     const controller = new AbortController();
 
     void apiFetch("/api/engagement/view", {
@@ -393,7 +394,7 @@ export default function ModelDetailNative({
       });
 
     return () => controller.abort();
-  }, [detail.commentsEnabled, detail.id]);
+  }, [detail.id]);
 
   const primeSideModelImage = (item: ModelDetailSideModel) => {
     if (typeof window === "undefined" || !item.imageSrc) return;
@@ -537,13 +538,15 @@ export default function ModelDetailNative({
   };
 
   const handleAddToCart = () => {
+    // Use the real base print price (Standard + Plastic) from the shared pricing
+    // source instead of a placeholder, so the cart matches the print dialog.
     addModelToCart({
-      discountedPrice: 22.5,
+      discountedPrice: printBasePrice,
       imageSrc: activeModel.imageSrc,
       modelId: activeModel.id,
-      originalPrice: 25,
+      originalPrice: printBasePrice,
       quantity: 1,
-      serviceType: "3D Printing Service",
+      serviceType: printBaseServiceLabel,
       tags: activeModel.tags,
       title: activeModel.title,
     });
@@ -552,6 +555,35 @@ export default function ModelDetailNative({
     window.setTimeout(() => {
       setCartStatus(null);
     }, 1800);
+  };
+
+  const handleFavoriteModel = async () => {
+    if (!navUser) {
+      openAuthModal("login", { redirectTo: getCurrentRedirect() });
+      return;
+    }
+
+    try {
+      const response = await apiFetch(`/api/social/models/${activeModel.id}/favorite`, {
+        credentials: "same-origin",
+        method: "POST",
+      });
+
+      if (response.status === 401) {
+        openAuthModal("login", { redirectTo: getCurrentRedirect() });
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error(await getResponseMessage(response, "Failed to update favorites."));
+      }
+
+      setCartStatus("Added to favorites.");
+    } catch (error) {
+      setCartStatus(error instanceof Error ? error.message : "Failed to update favorites.");
+    } finally {
+      window.setTimeout(() => setCartStatus(null), 1800);
+    }
   };
 
   return (
@@ -640,7 +672,19 @@ export default function ModelDetailNative({
         </section>
 
         <section className={styles.mobileActions} aria-label="Model actions">
-          <button className={styles.mobilePrimaryAction} onClick={handleDownloadConfirm} type="button">
+          <button
+            className={styles.mobilePrimaryAction}
+            onClick={() => {
+              // Charged downloads must confirm before spending credits, mirroring
+              // the desktop flow. Free downloads proceed immediately.
+              if (downloadIsCharged) {
+                setShowDownloadConfirm(true);
+              } else {
+                void handleDownloadConfirm();
+              }
+            }}
+            type="button"
+          >
             Download GLB
           </button>
           {canPrintActiveModel ? (
@@ -657,6 +701,59 @@ export default function ModelDetailNative({
           <button onClick={handleAddToCart} type="button">
             Add To Cart
           </button>
+          {showDownloadConfirm ? (
+            <div
+              aria-label="Confirm download"
+              aria-modal="true"
+              role="dialog"
+              style={{
+                background: "#1b1b20",
+                border: "1px solid #d7a45b",
+                borderRadius: 8,
+                color: "#ededee",
+                display: "grid",
+                gap: 12,
+                marginTop: 12,
+                padding: 16,
+              }}
+            >
+              <p style={{ fontSize: 14, lineHeight: 1.5, margin: 0 }}>{downloadMessage}</p>
+              <div style={{ display: "flex", gap: 12 }}>
+                <button
+                  onClick={() => setShowDownloadConfirm(false)}
+                  style={{
+                    background: "transparent",
+                    border: "1px solid #4a4a52",
+                    borderRadius: 6,
+                    color: "#ededee",
+                    flex: 1,
+                    padding: "10px 12px",
+                  }}
+                  type="button"
+                >
+                  Cancel
+                </button>
+                <button
+                  disabled={isDownloading}
+                  onClick={() => {
+                    if (!isDownloading) void handleDownloadConfirm();
+                  }}
+                  style={{
+                    background: "#c85b23",
+                    border: "none",
+                    borderRadius: 6,
+                    color: "#fff",
+                    flex: 1,
+                    fontWeight: 600,
+                    padding: "10px 12px",
+                  }}
+                  type="button"
+                >
+                  {isDownloading ? "Working…" : "Confirm download"}
+                </button>
+              </div>
+            </div>
+          ) : null}
         </section>
         {visibleStatus ? <div className={styles.mobileStatus}>{visibleStatus}</div> : null}
 
@@ -963,14 +1060,14 @@ export default function ModelDetailNative({
                         <div className="time">{activeModel.updatedLabel}</div>
                         <div className="tags">
                           {activeModel.tags.map((tag) => (
-                            <a
-                              href="#"
+                            <Link
+                              href={`/showcase?q=${encodeURIComponent(tag)}`}
                               className="uc-tag"
                               key={tag}
                               title={`# ${tag}`}
                             >
                               # {tag}
-                            </a>
+                            </Link>
                           ))}
                         </div>
                       </div>
@@ -1128,30 +1225,30 @@ export default function ModelDetailNative({
                   </div>
                   <div className="txt">{detail.chargeDownloadCredits ? "POINTS" : "NO CHARGE"}</div>
                 </div>
-                <a href="#" className="btn">
+                <span className="btn" aria-label={`${viewCountLabel} views`}>
                   <img
                     src={asset("detail-bottom-icon-2.png")}
                     alt=""
                     decoding="async"
                   />
                   {viewCountLabel}
-                </a>
-                <a href="#" className="btn">
+                </span>
+                <span className="btn" aria-label={`${detail.likesLabel} likes`}>
                   <img
                     src={asset("detail-bottom-icon-3.png")}
                     alt=""
                     decoding="async"
                   />
                   {detail.likesLabel}
-                </a>
-                <a href="#" className="btn">
+                </span>
+                <span className="btn" aria-label={`${detail.favoritesLabel} favorites`}>
                   <img
                     src={asset("detail-bottom-icon-4.png")}
                     alt=""
                     decoding="async"
                   />
                   {detail.favoritesLabel}
-                </a>
+                </span>
               </div>
               <div className="center">
                 <div className="btn2-slot">
@@ -1236,9 +1333,9 @@ export default function ModelDetailNative({
                   >
                     Use As Reference
                   </Link>
-                  <a href="#" className="item">
+                  <button className="item" onClick={handleFavoriteModel} type="button">
                     Favorite Model
-                  </a>
+                  </button>
                   <Link
                     href={activeModel.id ? `/model-detail?id=${activeModel.id}` : "#"}
                     className="item"

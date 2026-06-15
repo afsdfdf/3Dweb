@@ -38,11 +38,17 @@ const usersUpdateAccess: Access = ({ data, req }) => {
   return isSelfOrStaff({ data, req })
 }
 
-const assignFirstUserAdminRole: CollectionBeforeValidateHook = ({ data, operation, req }) => {
+const assignFirstUserAdminRole: CollectionBeforeValidateHook = async ({ data, operation, req }) => {
   if (operation === 'create' && isFirstRegisterRequest(req)) {
+    // Only the genuine bootstrap case (empty users table) may self-assign admin.
+    // Because this beforeValidate hook bypasses the role field's access control,
+    // without the zero-user guard any create routed through /api/users/first-register
+    // could escalate to admin. Subsequent first-register creates are forced to customer.
+    const { totalDocs } = await req.payload.count({ collection: 'users', req })
+
     return {
       ...(data || {}),
-      role: 'admin',
+      role: totalDocs === 0 ? 'admin' : 'customer',
     }
   }
 
