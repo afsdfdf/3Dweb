@@ -18,6 +18,9 @@ export const metadata = {
     ],
     shortcut: '/favicon.ico',
   },
+  other: {
+    google: 'notranslate',
+  },
   title: 'Thorns Tavern',
 }
 
@@ -26,8 +29,8 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
   const locale = await getCurrentLocale()
 
   return (
-    <html lang={locale === 'zh' ? 'zh-CN' : 'en'}>
-      <body>
+    <html className="notranslate" lang={locale === 'zh' ? 'zh-CN' : 'en'} translate="no">
+      <body className="notranslate" translate="no">
         <FrontendAssetCache />
         <LocaleProvider locale={locale}>
           <AuthModalProvider>{children}</AuthModalProvider>

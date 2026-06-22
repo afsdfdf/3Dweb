@@ -156,3 +156,11 @@ test("home inspiration toolbar leaves room for the page size label on laptop", (
   );
   assert.doesNotMatch(homeCss, /width:\s*min\(35\.729vw,\s*100%\)/);
 });
+
+test("frontend shell opts out of browser auto-translation for fixed art-directed UI", () => {
+  const layoutSource = readSource("src", "app", "(frontend)", "layout.tsx");
+
+  assert.match(layoutSource, /other:\s*\{[\s\S]*google:\s*["']notranslate["']/);
+  assert.match(layoutSource, /<html[^>]*className=["']notranslate["'][^>]*translate=["']no["']/);
+  assert.match(layoutSource, /<body[^>]*className=["']notranslate["'][^>]*translate=["']no["']/);
+});
