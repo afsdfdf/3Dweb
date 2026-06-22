@@ -344,7 +344,8 @@
   padding: 0;
   position: absolute;
   right: 8px;
-  top: 5px;
+  top: 50%;
+  transform: translateY(-50%);
   width: 32px;
 }
 
@@ -542,6 +543,18 @@
 .linkText {
   color: rgba(255, 255, 255, 0.82);
   font-weight: 500;
+  text-decoration: none;
+}
+
+a.linkText:hover,
+a.linkText:focus-visible {
+  color: #f6d49e;
+  text-decoration: underline;
+}
+
+a.linkText:focus-visible {
+  outline: 1px solid #f6d49e;
+  outline-offset: 2px;
 }
 
 .buttonSlot {

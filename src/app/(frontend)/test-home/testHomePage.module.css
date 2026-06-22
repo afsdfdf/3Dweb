@@ -55,10 +55,15 @@
 }
 
 .heroStage :global(.Pixso-group-1_3253),
+.heroStage :global(.Pixso-group-1_3287),
+.heroStage :global(.Pixso-group-1_3292),
 .heroStage :global(.Pixso-home-upload-input) {
   pointer-events: none;
 }
 
+.heroStage :global(.Pixso-group-1_3253),
+.heroStage :global(.Pixso-group-1_3287),
+.heroStage :global(.Pixso-group-1_3292),
 .heroStage :global(.Pixso-home-upload-input) {
   display: none;
 }

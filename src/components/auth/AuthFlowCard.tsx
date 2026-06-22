@@ -1,6 +1,7 @@
 'use client'
 
 import type { CSSProperties, FormEvent, ReactNode } from 'react'
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
 import { OrangeMediumActionButton, PurpleMediumActionButton } from '@/components/ui-lab/action-buttons'
@@ -41,6 +42,17 @@ function EyeButton({ onClick, visible }: { onClick: () => void; visible: boolean
   )
 }
 
+function AuthPolicyLinks({ className }: { className?: string }) {
+  return (
+    <span className={className}>
+      I have read and agreed to the <span className={styles.linkText}>Terms of Use</span> and{' '}
+      <Link className={styles.linkText} href="/privacy-policy">
+        Privacy Policy
+      </Link>
+      .
+    </span>
+  )
+}
 function AuthField({
   children,
   className,
@@ -518,10 +530,7 @@ export function AuthFlowCard({ initialMode = 'login', initialResetToken = '', on
                     onChange={(event) => handleAgreementChange(event.target.checked)}
                     type="checkbox"
                   />
-                  <span className={styles.registerTermsText}>
-                    I have read and agreed to the <span className={styles.linkText}>Terms of Use</span> and{' '}
-                    <span className={styles.linkText}>Privacy Policy</span>.
-                  </span>
+                  <AuthPolicyLinks className={styles.registerTermsText} />
                 </label>
 
                 <button
@@ -678,10 +687,7 @@ export function AuthFlowCard({ initialMode = 'login', initialResetToken = '', on
                     onChange={(event) => handleAgreementChange(event.target.checked)}
                     type="checkbox"
                   />
-                  <span>
-                    I have read and agreed to the <span className={styles.linkText}>Terms of Use</span> and{' '}
-                    <span className={styles.linkText}>Privacy Policy</span>.
-                  </span>
+                  <AuthPolicyLinks />
                 </label>
 
                 <div className={styles.loginSignInSlot}>
