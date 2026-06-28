@@ -49,6 +49,7 @@ type ModelViewerProps = {
   className?: string;
   displayBase?: "none" | "workbench";
   label?: string;
+  loadingOverlayVariant?: "default" | "workbench";
   onError?: () => void;
   onReady?: () => void;
   showGround?: boolean;
@@ -304,7 +305,7 @@ type ModelLoadState = {
   phase: ModelLoadPhase;
   progress: number;
   source: null | string;
-  status: "error" | "idle" | "loading" | "ready";
+  status: "complete" | "error" | "idle" | "loading" | "ready";
 };
 
 type WebGLStatus = "available" | "checking" | "unavailable";
@@ -561,41 +562,61 @@ function ModelLoadingOverlay({
   phase,
   progress,
   status,
+  variant = "default",
 }: {
   phase: ModelLoadPhase;
   progress: number;
   status: ModelLoadState["status"];
+  variant?: "default" | "workbench";
 }) {
-  if (status !== "loading") {
+  if (status !== "loading" && status !== "complete") {
     return null;
   }
 
   const display = getModelLoadPhaseDisplay({
-    phase: status === "loading" ? phase : "idle",
+    phase,
     progress,
   });
+  const overlayTitle = variant === "workbench" ? "Load Model" : "Load Model";
+  const overlayClassName =
+    "model-viewer-loading-overlay pointer-events-none absolute left-1/2 z-50";
+  const overlayStyle = {
+    bottom: "32px",
+    left: "50%",
+    transform: "translateX(-50%)",
+    width: "min(460px, calc(100% - 48px))",
+  };
+  const frameClassName =
+    "modelLoadingOverlayTargetFrame border border-transparent bg-black/90 px-[31px] pb-[20px] pt-[23px] shadow-[0_18px_36px_rgba(0,0,0,0.52)]";
+  const frameStyle = {
+    borderImageOutset: "0",
+    borderImageRepeat: "stretch",
+    borderImageSlice: "50",
+    borderImageSource: 'url("/ui-lab/workbench/model-loading-frame-2x.png")',
+    borderImageWidth: "25px",
+  };
+  const stageLabels = ["Network", "Verify", "Decode", "Build", "Ready"];
 
   return (
-    <div className="model-viewer-loading-overlay pointer-events-none absolute inset-x-6 bottom-6 z-20">
-      <div className="border border-white/15 bg-black/72 px-4 py-3 shadow-[0_16px_34px_rgba(0,0,0,0.46)] backdrop-blur-md">
-        <div className="flex items-center justify-between gap-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-white/78">
+    <div className={overlayClassName} style={overlayStyle}>
+      <div className={frameClassName} style={frameStyle}>
+        <div className="flex items-center justify-between gap-3 text-[16px] font-semibold leading-none text-white/86">
           <span className="inline-flex items-center gap-2">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#f3c46d] shadow-[0_0_12px_rgba(243,196,109,0.9)]" />
-            {display.label}
+            {overlayTitle}
           </span>
           <span>{display.progress}%</span>
         </div>
-        <div className="mt-2 h-[5px] overflow-hidden rounded-full bg-white/12">
+        <div className="mt-3 h-[5px] overflow-hidden bg-white/10">
           <div
-            className="h-full rounded-full bg-[linear-gradient(90deg,#f3c46d,#ffffff,#9ed2ff)] shadow-[0_0_18px_rgba(243,196,109,0.48)] transition-[width] duration-300 ease-out"
+            className="h-full bg-[#f5d38a] shadow-[0_0_16px_rgba(245,211,138,0.35)] transition-[width] duration-300 ease-out"
             style={{ width: `${display.progress}%` }}
           />
         </div>
-        <div className="mt-2 grid grid-cols-5 gap-1 text-[9px] font-semibold uppercase tracking-[0.08em] text-white/45">
-          {["NETWORK", "VERIFY", "DECODE", "BUILD", "READY"].map((stage) => (
+        <div className="mt-3 grid grid-cols-5 gap-1 text-[12px] font-medium leading-none text-white/38">
+          {stageLabels.map((stage) => (
             <span
               className={
-                stage === display.stage
+                stage.toUpperCase() === display.stage
                   ? "text-[#f3c46d]"
                   : display.stage === "READY"
                     ? "text-white/65"
@@ -691,6 +712,7 @@ export function ModelViewer({
   className,
   displayBase = "none",
   label,
+  loadingOverlayVariant = "default",
   onError,
   onReady,
   showGround = true,
@@ -711,6 +733,13 @@ export function ModelViewer({
   }
   const onReadyRef = useRef(onReady);
   onReadyRef.current = onReady;
+  const completionHideTimeoutRef = useRef<number | null>(null);
+  const clearCompletionHideTimeout = useCallback(() => {
+    if (completionHideTimeoutRef.current === null) return;
+
+    window.clearTimeout(completionHideTimeoutRef.current);
+    completionHideTimeoutRef.current = null;
+  }, []);
   const frameloop = activeSrc || showPlaceholderModel ? "always" : "demand";
   const fallbackModel = showPlaceholderModel ? (
     <CharacterFigure accent={accent} />
@@ -753,6 +782,7 @@ export function ModelViewer({
     if (loadedSrc !== activeSrcRef.current) return;
     if (readyNotifiedSrcRef.current === loadedSrc) return;
 
+    clearCompletionHideTimeout();
     readyNotifiedSrcRef.current = loadedSrc;
     setLoadState((previous) =>
       previous.objectURL === loadedSrc
@@ -762,12 +792,23 @@ export function ModelViewer({
               ...previous,
               phase: "ready",
               progress: 100,
-              status: "ready",
+              status: "complete",
             }
         : previous,
     );
+    completionHideTimeoutRef.current = window.setTimeout(() => {
+      completionHideTimeoutRef.current = null;
+      setLoadState((previous) =>
+        previous.objectURL === loadedSrc && previous.status === "complete"
+          ? {
+              ...previous,
+              status: "ready",
+            }
+          : previous,
+      );
+    }, 420);
     onReadyRef.current?.();
-  }, []);
+  }, [clearCompletionHideTimeout]);
 
   useEffect(() => {
     const available = canCreateWebGLContext();
@@ -787,6 +828,8 @@ export function ModelViewer({
 
   useEffect(() => {
     if (webGLStatus === "checking") return;
+
+    clearCompletionHideTimeout();
 
     if (webGLStatus === "unavailable") {
       if (src) {
@@ -813,26 +856,16 @@ export function ModelViewer({
     if (cached) {
       setLoadState({
         objectURL: cached.objectURL,
-        phase: "decode",
-        progress: 85,
+        phase: "ready",
+        progress: 100,
         source: modelSrc,
-        status: "loading",
+        status: "ready",
       });
       return;
     }
 
     let canceled = false;
     const controller = new AbortController();
-
-    setLoadState(() => {
-      return {
-        objectURL: null,
-        phase: "cache",
-        progress: 3,
-        source: modelSrc,
-        status: "loading",
-      };
-    });
 
     async function fetchModelBlob(
       fetchSrc: string,
@@ -958,13 +991,21 @@ export function ModelViewer({
 
           setLoadState({
             objectURL,
-            phase: "decode",
-            progress: 85,
+            phase: "ready",
+            progress: 100,
             source: modelSrc,
-            status: "loading",
+            status: "ready",
           });
           return;
         }
+
+        setLoadState({
+          objectURL: null,
+          phase: "cache",
+          progress: 3,
+          source: modelSrc,
+          status: "loading",
+        });
 
         try {
           blob = await fetchModelBlob(modelSrc);
@@ -1025,7 +1066,7 @@ export function ModelViewer({
       canceled = true;
       controller.abort();
     };
-  }, [onError, src, webGLStatus]);
+  }, [clearCompletionHideTimeout, onError, src, webGLStatus]);
 
   useEffect(() => {
     // Enable three.js's loader-side cache so subsequent model swaps can hit it.
@@ -1042,6 +1083,12 @@ export function ModelViewer({
       // Preload is best-effort; the loader will still fetch the decoder on demand.
     }
   }, []);
+
+  useEffect(() => {
+    return () => {
+      clearCompletionHideTimeout();
+    };
+  }, [clearCompletionHideTimeout]);
 
   return (
     <div
@@ -1154,6 +1201,7 @@ export function ModelViewer({
         phase={loadState.phase}
         progress={loadState.progress}
         status={loadState.status}
+        variant={loadingOverlayVariant}
       />
       <ModelErrorOverlay
         visible={loadState.status === "error" || webGLStatus === "unavailable"}

@@ -474,17 +474,6 @@
   max-height: 100%;
   max-width: 100%;
   width: 100% !important;
-}.pageRoot :global(.uc-detail .detail-model-viewer .model-viewer-loading-overlay),
-.pageRoot :global(.uc-detail .detail-model-viewer .model-viewer-error-overlay) {
-  bottom: 112px;
-  left: 72px;
-  right: 220px;
-  z-index: 60;
-}.pageRoot :global(.uc-detail .detail-model-viewer .model-viewer-loading-overlay > div),
-.pageRoot :global(.uc-detail .detail-model-viewer .model-viewer-error-overlay > div) {
-  border-color: rgba(246, 212, 158, 0.36);
-  background: rgba(0, 0, 0, 0.78);
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.48);
 }.pageRoot :global(.uc-detail .tips-box) {
   position: absolute;
   display: flex;

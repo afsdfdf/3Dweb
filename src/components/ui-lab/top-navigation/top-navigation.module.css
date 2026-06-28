@@ -2,13 +2,15 @@
   --avatar-right: 139px;
   --cart-right: 203px;
   --nav-center-width: 920px;
+  --nav-font-family: var(--font-ui);
   --notification-right: 251px;
-  --subscription-button-right: 302px;
-  --subscription-promotion-right: 404px;
+  --subscription-button-right: 299px;
+  --subscription-promotion-right: 368px;
   --wallet-right: 310px;
   position: relative;
   width: 100%;
   height: 60px;
+  font-family: var(--nav-font-family);
 }
 
 .topNav[data-authenticated="true"][data-subscription-promotion-visible="true"] {
@@ -58,11 +60,28 @@
   width: 1920px;
 }
 
+@media (min-width: 1921px) {
+  .scaledTopNav {
+    --top-navigation-scale: 1;
+    height: 60px;
+  }
+
+  .scaledTopNavStage {
+    height: 60px;
+    position: relative;
+    transform: none;
+    width: 100%;
+  }
+
+  .scaledTopNavStage > .topNav {
+    width: 100%;
+  }
+}
+
 .navBg,
 .navCenter,
 .logo,
 .wallet img,
-.navActionIcon img,
 .avatar img,
 .authAvatar img {
   position: absolute;
@@ -100,8 +119,11 @@
   display: flex;
   gap: clamp(30px, 2.65vw, 50px);
   align-items: start;
-  color: rgba(244, 188, 96, 0.54);
+  color: rgba(233, 175, 85, 0.5);
+  font-family: var(--nav-font-family);
   font-size: 16px;
+  font-style: normal;
+  font-weight: 400;
   line-height: 22px;
   transform: translateX(-50%);
 }
@@ -110,12 +132,26 @@
   position: relative;
   color: inherit;
   cursor: pointer;
-  min-width: 52px;
+  display: grid;
+  grid-template-areas: "text";
+  height: 22px;
+  min-width: 0;
   text-align: center;
   text-decoration: none;
   transition:
     color 160ms ease,
     text-shadow 160ms ease;
+}
+
+.navLinkText,
+.navLinkSizer {
+  grid-area: text;
+}
+
+.navLinkSizer {
+  font-weight: 500;
+  pointer-events: none;
+  visibility: hidden;
 }
 
 .navLink::before {
@@ -136,40 +172,44 @@
   position: absolute;
   left: 50%;
   top: 24px;
-  width: 12px;
-  height: 12px;
+  width: 16px;
+  height: 10px;
   content: "";
-  border-right: 2px solid #f4bd60;
-  border-bottom: 2px solid #f4bd60;
+  background-image: url("/ui-lab/top-navigation/nav-active-arrow@2x.png");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 16px 10px;
   opacity: 0;
   pointer-events: none;
-  transform: translateX(-50%) rotate(45deg);
+  transform: translateX(-50%);
   transition: opacity 160ms ease;
 }
 
 .navLink:hover,
-.navLink:focus-visible,
+.navLink:focus-visible {
+  color: #ffffff;
+  outline: none;
+}
+
 .activeNav {
   color: #ffffff;
-  font-weight: 700;
+  font-weight: 500;
   outline: none;
   text-shadow: 0 0 10px rgba(244, 189, 96, 0.62);
 }
 
 .activeNav::before,
-.activeNav::after,
-.navLink:hover::before,
-.navLink:focus-visible::before,
-.navLink:hover::after,
-.navLink:focus-visible::after {
+.activeNav::after {
   opacity: 1;
 }
 
-.navLinks:hover .activeNav:not(:hover)::before,
-.navLinks:focus-within .activeNav:not(:focus-visible)::before,
-.navLinks:hover .activeNav:not(:hover)::after,
-.navLinks:focus-within .activeNav:not(:focus-visible)::after {
-  opacity: 0;
+.mobileMenuButton,
+.mobileMenuPanel {
+  display: none;
+}
+
+.mobileMenuPanel[data-open="false"] {
+  display: none;
 }
 
 .wallet {
@@ -186,6 +226,7 @@
   cursor: pointer;
   font-size: 18px;
   line-height: 31px;
+  overflow: visible;
   text-align: right;
   padding: 0 11px 0 0;
 }
@@ -205,10 +246,10 @@
 }
 
 .wallet img {
-  left: -10px;
-  top: -6px;
-  width: 44px;
-  height: 44px;
+  left: -26px;
+  top: -13px;
+  width: 56px;
+  height: 56px;
 }
 
 .notificationBellWrap {
@@ -252,45 +293,47 @@
   right: var(--cart-right);
 }
 
-.navActionIcon,
-.navActionIcon img {
+.navActionIcon {
+  position: absolute;
   inset: 0;
+  display: block;
   width: 24px;
   height: 24px;
 }
 
-.navActionIcon {
-  position: absolute;
-  display: block;
-}
-
 .navActionIcon img {
-  opacity: 0;
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
   transition: opacity 120ms ease;
 }
 
-.navActionIconNormal {
-  opacity: 1 !important;
+.navActionIcon .navActionHoverImage {
+  left: -1px !important;
+  top: -1px !important;
+  max-width: none;
+  width: 26px !important;
+  height: 26px !important;
+  opacity: 0;
 }
 
-.notificationBellButton:hover .navActionIconNormal,
-.notificationBellButton:focus-visible .navActionIconNormal,
-.notificationBellButton:active .navActionIconNormal,
-.cartIconButton:hover .navActionIconNormal,
-.cartIconButton:focus-visible .navActionIconNormal,
-.cartIconButton:active .navActionIconNormal,
-.cartIconButton:hover .navActionIconActive,
-.cartIconButton:focus-visible .navActionIconActive {
-  opacity: 0 !important;
+.navActionIcon[data-authenticated="true"][data-hover-image="true"]:hover .navActionBaseImage,
+.cartIconButton:hover .navActionIcon[data-authenticated="true"][data-hover-image="true"] .navActionBaseImage,
+.cartIconButton:focus-visible .navActionIcon[data-authenticated="true"][data-hover-image="true"] .navActionBaseImage,
+.cartIconButton:active .navActionIcon[data-authenticated="true"][data-hover-image="true"] .navActionBaseImage {
+  opacity: 0;
 }
 
-.notificationBellButton:hover .navActionIconActive,
-.notificationBellButton:focus-visible .navActionIconActive,
-.notificationBellButton:active .navActionIconActive,
-.cartIconButton:active .navActionIconActive,
-.cartIconButton:hover .navActionIconHover,
-.cartIconButton:focus-visible .navActionIconHover {
-  opacity: 1 !important;
+.navActionIcon[data-authenticated="true"][data-hover-image="true"]:hover .navActionHoverImage,
+.cartIconButton:hover .navActionIcon[data-authenticated="true"][data-hover-image="true"] .navActionHoverImage,
+.cartIconButton:focus-visible .navActionIcon[data-authenticated="true"][data-hover-image="true"] .navActionHoverImage,
+.cartIconButton:active .navActionIcon[data-authenticated="true"][data-hover-image="true"] .navActionHoverImage {
+  opacity: 1;
 }
 
 .notificationBadge {
@@ -379,7 +422,7 @@
   color: rgba(255, 255, 255, 0.42);
   cursor: pointer;
   display: flex;
-  font-family: Arial, sans-serif;
+  font-family: var(--font-ui);
   font-size: 13px;
   font-weight: 700;
   height: 38px;
@@ -489,7 +532,7 @@
   color: rgba(255, 255, 255, 0.92);
   display: block;
   flex: 1 1 auto;
-  font-family: Arial, sans-serif;
+  font-family: var(--font-ui);
   font-size: 15px;
   font-weight: 500;
   line-height: 21px;
@@ -501,7 +544,7 @@
 .notificationText p {
   display: -webkit-box;
   color: rgba(255, 255, 255, 0.5);
-  font-family: Arial, sans-serif;
+  font-family: var(--font-ui);
   font-size: 13px;
   line-height: 20px;
   margin: 0;
@@ -513,7 +556,7 @@
 .notificationText em {
   color: rgba(255, 255, 255, 0.32);
   flex: 0 0 auto;
-  font-family: Arial, sans-serif;
+  font-family: var(--font-ui);
   font-size: 12px;
   font-style: normal;
   font-weight: 400;
@@ -525,7 +568,7 @@
 .notificationEmpty {
   color: rgba(255, 255, 255, 0.46);
   display: grid;
-  font-family: Arial, sans-serif;
+  font-family: var(--font-ui);
   font-size: 13px;
   line-height: 20px;
   min-height: 120px;
@@ -548,7 +591,7 @@
   color: rgba(255, 255, 255, 0.92);
   cursor: pointer;
   display: inline-flex;
-  font-family: Arial, sans-serif;
+  font-family: var(--font-ui);
   font-size: 12px;
   font-weight: 700;
   gap: 12px;
@@ -653,16 +696,16 @@
   align-content: center;
   color: #ffffff;
   display: grid;
-  font-family: Arial, sans-serif;
+  font-family: var(--nav-font-family);
   height: 36px;
   justify-items: start;
-  line-height: 15px;
+  line-height: 18px;
   position: absolute;
   right: var(--subscription-promotion-right);
   text-align: left;
   text-transform: uppercase;
   top: 12px;
-  width: 112px;
+  width: 65px;
 }
 
 .subscriptionPromotion strong,
@@ -675,43 +718,44 @@
 }
 
 .subscriptionPromotion strong {
-  color: rgba(255, 255, 255, 0.92);
+  color: #ffffff;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 500;
   letter-spacing: 0;
 }
 
 .subscriptionPromotion span {
-  color: rgba(255, 255, 255, 0.88);
+  color: #ffffff;
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .subscriptionButton {
   align-items: center;
   appearance: none;
-  background: linear-gradient(180deg, #ffe09d 0%, #e7a84f 50%, #bd7832 100%);
-  border: 1px solid rgba(255, 229, 173, 0.88);
-  border-radius: 4px;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.42),
-    0 0 10px rgba(238, 172, 79, 0.22);
+  background:
+    linear-gradient(180deg, #f6d88e 0%, #f0cd76 100%) padding-box,
+    linear-gradient(180deg, #e4ac64 0%, #c67f34 100%) border-box;
+  background-clip: padding-box, border-box;
+  border: 1px solid transparent;
+  border-radius: 8px 2px 8px 2px;
+  box-shadow: inset 0 0 8px 0 #ffe5ad;
   color: #171008;
   cursor: pointer;
   display: flex;
-  font-family: Arial, sans-serif;
+  font-family: var(--font-ui);
   font-size: 12px;
   font-weight: 900;
-  gap: 5px;
-  height: 28px;
+  gap: 3px;
+  height: 26px;
   justify-content: center;
-  line-height: 28px;
-  padding: 0 8px;
+  line-height: 26px;
+  padding: 0 5px;
   position: absolute;
   right: var(--subscription-button-right);
   text-transform: uppercase;
-  top: 16px;
-  width: 66px;
+  top: 17px;
+  width: 57px;
 }
 
 .subscriptionButton img {
@@ -723,10 +767,19 @@
 }
 
 .subscriptionButton span {
+  color: #1b1b1b;
   display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-family: var(--nav-font-family);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 500;
+  height: 18px;
+  line-height: 18px;
+  overflow: visible;
+  text-align: left;
+  text-overflow: clip;
   white-space: nowrap;
+  width: 25px;
 }
 
 .subscriptionButton:hover,
@@ -768,7 +821,7 @@
 
 .subscriptionDialogMessage {
   color: rgba(255, 255, 255, 0.72);
-  font-family: Arial, sans-serif;
+  font-family: var(--font-ui);
   font-size: 13px;
   line-height: 20px;
   margin: 0;
@@ -789,12 +842,18 @@
   justify-content: center;
   width: 103px;
   height: 18px;
-  color: #efe7da;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: #ffffff;
   cursor: pointer;
+  font-family: var(--nav-font-family);
   font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.08em;
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: 0;
   line-height: 18px;
+  padding: 0;
   text-decoration: none;
   text-transform: uppercase;
 }
@@ -813,4 +872,212 @@
   position: relative;
   z-index: 1;
   white-space: nowrap;
+}
+
+@media (max-width: 820px) {
+  .scaledTopNav {
+    height: 60px;
+    overflow: visible;
+  }
+
+  .scaledTopNavStage {
+    height: 60px;
+    position: relative;
+    transform: none;
+    width: 100%;
+  }
+
+  .scaledTopNavStage > .topNav {
+    width: 100%;
+  }
+
+  .topNav {
+    height: 60px;
+    min-width: 0;
+    overflow: visible;
+    z-index: 100;
+  }
+
+  .navBg {
+    height: 60px;
+  }
+
+  .logo {
+    left: 12px;
+    top: 15px;
+    width: 148px;
+    height: 30px;
+  }
+
+  .navLinks,
+  .navCenter {
+    display: none;
+  }
+
+  .wallet,
+  .notificationBellWrap,
+  .cartIconButton,
+  .avatar,
+  .userName,
+  .authAvatar,
+  .authEntry,
+  .subscriptionPromotion,
+  .subscriptionButton {
+    display: none;
+  }
+
+  .mobileMenuButton {
+    align-items: center;
+    appearance: none;
+    background: rgba(7, 7, 9, 0.86);
+    border: 1px solid rgba(244, 189, 96, 0.48);
+    border-radius: 4px;
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+      0 0 14px rgba(244, 189, 96, 0.16);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    height: 36px;
+    justify-content: center;
+    padding: 0;
+    position: absolute;
+    right: 12px;
+    top: 12px;
+    width: 44px;
+    z-index: 110;
+  }
+
+  .mobileMenuButton span {
+    background: #f4bd60;
+    border-radius: 999px;
+    box-shadow: 0 0 6px rgba(244, 189, 96, 0.32);
+    display: block;
+    height: 2px;
+    width: 20px;
+  }
+
+  .mobileMenuButton:hover,
+  .mobileMenuButton:focus-visible {
+    border-color: rgba(255, 222, 161, 0.86);
+    filter: drop-shadow(0 0 8px rgba(244, 189, 96, 0.42));
+    outline: none;
+  }
+
+  .mobileMenuPanel {
+    background:
+      linear-gradient(180deg, rgba(31, 32, 39, 0.98), rgba(10, 10, 13, 0.98)),
+      #111113;
+    border: 1px solid rgba(121, 124, 144, 0.72);
+    box-shadow:
+      inset 0 0 0 2px rgba(45, 47, 61, 0.9),
+      0 18px 32px rgba(0, 0, 0, 0.48);
+    box-sizing: border-box;
+    color: #ffffff;
+    display: grid;
+    gap: 12px;
+    left: 12px;
+    padding: 14px;
+    position: absolute;
+    right: 12px;
+    top: 60px;
+    z-index: 105;
+  }
+
+  .mobileMenuLinks {
+    display: grid;
+    gap: 6px;
+  }
+
+  .mobileMenuLink,
+  .mobileMenuLinkActive {
+    align-items: center;
+    background: rgba(0, 0, 0, 0.28);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.78);
+    display: flex;
+    font-family: var(--font-ui);
+    font-size: 15px;
+    font-weight: 700;
+    height: 38px;
+    justify-content: center;
+    letter-spacing: 0.02em;
+    line-height: 38px;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  .mobileMenuLinkActive {
+    border-color: rgba(244, 189, 96, 0.68);
+    color: #ffffff;
+    text-shadow: 0 0 10px rgba(244, 189, 96, 0.55);
+  }
+
+  .mobileMenuLink:hover,
+  .mobileMenuLink:focus-visible,
+  .mobileMenuLinkActive:hover,
+  .mobileMenuLinkActive:focus-visible {
+    border-color: rgba(244, 189, 96, 0.72);
+    color: #ffffff;
+    outline: none;
+  }
+
+  .mobileMenuActions {
+    display: grid;
+    gap: 8px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .mobileMenuAuthButton,
+  .mobileMenuCartLink,
+  .mobileMenuSubscriptionButton {
+    align-items: center;
+    appearance: none;
+    background: #0b0b0e;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-sizing: border-box;
+    color: rgba(255, 255, 255, 0.9);
+    cursor: pointer;
+    display: flex;
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 700;
+    height: 38px;
+    justify-content: center;
+    line-height: 1;
+    min-width: 0;
+    padding: 0 10px;
+    text-align: center;
+    text-decoration: none;
+  }
+
+  .mobileMenuSubscriptionButton {
+    border-color: rgba(244, 189, 96, 0.42);
+    color: #f4dfb0;
+    gap: 7px;
+  }
+
+  .mobileMenuActions > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  .mobileMenuSubscriptionButton strong,
+  .mobileMenuSubscriptionButton span {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobileMenuAuthButton:hover,
+  .mobileMenuAuthButton:focus-visible,
+  .mobileMenuCartLink:hover,
+  .mobileMenuCartLink:focus-visible,
+  .mobileMenuSubscriptionButton:hover,
+  .mobileMenuSubscriptionButton:focus-visible {
+    border-color: rgba(244, 189, 96, 0.72);
+    color: #ffffff;
+    outline: none;
+  }
 }

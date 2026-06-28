@@ -4,7 +4,7 @@
   box-sizing: border-box;
   color: #ededee;
   display: flex;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-ui);
   justify-content: center;
   min-height: 100svh;
   overflow: hidden;

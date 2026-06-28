@@ -1,5 +1,8 @@
 .frame {
   --frame-border-width: 32px;
+  --frame-border-render-width: 25px;
+  --frame-border-slice: 50;
+  --frame-border-source: url("/ui-lab/component-assets/button-box-frame/button-box-frame@2x.png");
   box-sizing: border-box;
   min-height: calc(var(--frame-border-width) * 2);
   min-width: calc(var(--frame-border-width) * 2);
@@ -8,82 +11,23 @@
   z-index: 40;
 }
 
-.frame > span {
+.frame[data-selected="true"] {
+  --frame-border-source: url("/ui-lab/component-assets/button-box-frame/button-box-frame-selected@2x.png");
+}
+
+.frame::before {
+  border: var(--frame-border-render-width) solid transparent;
+  border-image-outset: 0;
+  border-image-repeat: stretch;
+  border-image-slice: var(--frame-border-slice);
+  border-image-source: var(--frame-border-source);
+  border-image-width: var(--frame-border-render-width);
+  box-sizing: border-box;
+  content: "";
+  inset: 0;
   pointer-events: none;
   position: absolute;
   z-index: 3;
-}
-
-.cornerTopLeft,
-.cornerTopRight,
-.cornerBottomLeft,
-.cornerBottomRight {
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
-  height: var(--frame-border-width);
-  width: var(--frame-border-width);
-}
-
-.cornerTopLeft {
-  background-image: url("/ui-lab/component-assets/button-box-frame/corner_top_left.png");
-  left: 0;
-  top: 0;
-}
-
-.cornerTopRight {
-  background-image: url("/ui-lab/component-assets/button-box-frame/corner_top_right.png");
-  right: 0;
-  top: 0;
-}
-
-.cornerBottomLeft {
-  background-image: url("/ui-lab/component-assets/button-box-frame/corner_bottom_left.png");
-  bottom: 0;
-  left: 0;
-}
-
-.cornerBottomRight {
-  background-image: url("/ui-lab/component-assets/button-box-frame/corner_bottom_right.png");
-  bottom: 0;
-  right: 0;
-}
-
-.edgeTop,
-.edgeBottom {
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
-  height: var(--frame-border-width);
-  left: var(--frame-border-width);
-  right: var(--frame-border-width);
-}
-
-.edgeTop {
-  background-image: url("/ui-lab/component-assets/button-box-frame/edge_top.png");
-  top: 0;
-}
-
-.edgeBottom {
-  background-image: url("/ui-lab/component-assets/button-box-frame/edge_bottom.png");
-  bottom: 0;
-}
-
-.edgeLeft,
-.edgeRight {
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
-  bottom: var(--frame-border-width);
-  top: var(--frame-border-width);
-  width: var(--frame-border-width);
-}
-
-.edgeLeft {
-  background-image: url("/ui-lab/component-assets/button-box-frame/edge_left.png");
-  left: 0;
-}
-
-.edgeRight {
-  background-image: url("/ui-lab/component-assets/button-box-frame/edge_right.png");
-  right: 0;
 }
 
 .content {

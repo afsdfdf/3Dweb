@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
 
@@ -11,6 +11,13 @@ const topNavigationCssPath = path.join(rootDir, 'src', 'components', 'ui-lab', '
 const payloadConfigPath = path.join(rootDir, 'src', 'payload.config.ts')
 const servicePath = path.join(rootDir, 'src', 'lib', 'notificationService.ts')
 const endpointsPath = path.join(rootDir, 'src', 'endpoints', 'notifications.ts')
+const cartAuthenticatedHoverIconPath = path.join(
+  rootDir,
+  'public',
+  'ui-lab',
+  'top-navigation',
+  'icon-cart-gold-hover@2x.png',
+)
 
 const accessArgs = (role?: 'admin' | 'customer' | 'operator', id: number | string = 1) =>
   ({
@@ -81,4 +88,35 @@ test('top navigation bell uses real notification APIs instead of static badge da
   assert.match(cssSource, /\.notificationItemUnread/)
   assert.match(cssSource, /\.notificationGoButton/)
   assert.doesNotMatch(cssSource, /linear-gradient\(180deg, rgba\(31, 25, 19/)
+})
+
+test('top navigation notification and cart icons use authenticated png assets', () => {
+  const source = readFileSync(topNavigationPath, 'utf8')
+  const cssSource = readFileSync(topNavigationCssPath, 'utf8')
+
+  assert.match(source, /function NavPngIcon\(/)
+  assert.match(source, /src=\{authenticated \? authenticatedSrc : guestSrc\}/)
+  assert.match(source, /authenticatedHoverSrc/)
+  assert.match(source, /icon-notification-bell-line\.png/)
+  assert.match(source, /icon-bell-gold\.png/)
+  assert.match(source, /icon-cart-line\.png/)
+  assert.match(source, /icon-cart-gold\.png/)
+  assert.match(source, /icon-cart-gold-hover@2x\.png/)
+  assert.match(source, /data-authenticated=\{authenticated \? "true" : "false"\}/)
+  assert.match(source, /const hasHoverImage = Boolean\(authenticated && authenticatedHoverSrc\)/)
+  assert.match(source, /data-hover-image=\{hasHoverImage \? "true" : "false"\}/)
+  assert.match(source, /function CartIconButton\(\{ authenticated \}: \{ authenticated: boolean \}\)/)
+  assert.match(source, /<CartIconButton authenticated \/>/)
+  assert.match(source, /<CartIconButton authenticated=\{false\} \/>/)
+  assert.doesNotMatch(source, /function NotificationBellIcon\(\)/)
+  assert.doesNotMatch(source, /function CartIcon\(\)/)
+  assert.doesNotMatch(source, /stroke="currentColor"/)
+  assert.doesNotMatch(source, /navActionIcon(?:Normal|Hover|Active)/)
+  assert.equal(existsSync(cartAuthenticatedHoverIconPath), true)
+  assert.match(cssSource, /\.navActionIcon img\s*\{[\s\S]*width:\s*24px[\s\S]*height:\s*24px/)
+  assert.match(cssSource, /\.navActionIcon\s+\.navActionHoverImage\s*\{[\s\S]*max-width:\s*none[\s\S]*opacity:\s*0/)
+  assert.match(cssSource, /\.navActionIcon\[data-authenticated=["']true["']\]\[data-hover-image=["']true["']\]:hover\s+\.navActionHoverImage/)
+  assert.match(cssSource, /\.navActionIcon img\s*\{[\s\S]*object-fit:\s*contain/)
+  assert.doesNotMatch(cssSource, /navActionIcon(?:Normal|Hover|Active)/)
+  assert.doesNotMatch(cssSource, /\.navActionIcon svg/)
 })

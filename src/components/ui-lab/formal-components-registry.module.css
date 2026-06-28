@@ -1027,6 +1027,153 @@
   min-width: 520px;
 }
 
+.modelCardFrameTest {
+  align-items: end;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(3, max-content);
+  justify-content: center;
+  min-width: max-content;
+}
+
+.modelCardFrameFigure {
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  margin: 0;
+}
+
+.modelCardFrameFigure figcaption {
+  color: #a1a1aa;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.modelCardFrameMock {
+  --model-card-frame-border: 32px;
+  background:
+    radial-gradient(circle at 50% 70%, rgba(149, 182, 188, 0.42), transparent 42%),
+    linear-gradient(180deg, #030303 0%, #050505 40%, #5f6264 100%);
+  box-sizing: border-box;
+  color: #ffffff;
+  height: 309px;
+  overflow: hidden;
+  position: relative;
+  width: 200px;
+}
+
+.modelCardFrameMockLarge {
+  height: 444px;
+  width: 278px;
+}
+
+.modelCardFrameOverlay {
+  --frame-border-width: var(--model-card-frame-border);
+  height: 100%;
+  inset: 0;
+  position: absolute;
+  width: 100%;
+  z-index: 4;
+}
+
+.modelCardFrameOverlayContent {
+  height: 100%;
+  padding: 0 !important;
+}
+
+.modelCardFrameMockHeader {
+  border-bottom: 2px solid rgba(255, 255, 255, 0.18);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 9px;
+  height: 22px;
+  left: 23px;
+  padding: 0 0 14px;
+  position: absolute;
+  right: 23px;
+  top: 27px;
+  z-index: 2;
+}
+
+.modelCardFrameMockHeader strong {
+  color: #ffffff;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.modelCardFrameMockHeader em {
+  background: #969696;
+  border-radius: 2px;
+  color: #000000;
+  font-family: Arial, sans-serif;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 500;
+  height: 14px;
+  line-height: 14px;
+  margin-top: 2px;
+  min-width: 30px;
+  padding: 0 3px;
+}
+
+.modelCardFrameMockHeader span {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 2px;
+  color: #ffffff;
+  display: flex;
+  font-size: 10px;
+  height: 16px;
+  justify-content: center;
+  line-height: 10px;
+  width: 16px;
+}
+
+.modelCardFrameMockDate {
+  color: rgba(255, 255, 255, 0.5);
+  font-family: Arial, sans-serif;
+  font-size: 10px;
+  line-height: 14px;
+  margin: 0;
+  position: absolute;
+  left: 23px;
+  top: 55px;
+  z-index: 2;
+}
+
+.modelCardFrameMockDate span {
+  display: block;
+}
+
+.modelCardFrameMockPreview {
+  background:
+    radial-gradient(circle at 50% 82%, rgba(190, 218, 225, 0.3), transparent 50%),
+    #050505;
+  bottom: 18px;
+  left: 12px;
+  overflow: hidden;
+  position: absolute;
+  right: 12px;
+  top: 84px;
+  z-index: 1;
+}
+
+.modelCardFrameMockPreview img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  width: 100%;
+}
+
 .infoGrid {
   display: grid;
   gap: 16px;

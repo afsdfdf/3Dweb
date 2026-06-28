@@ -233,6 +233,34 @@ const isMessageNotification = (item: NotificationItem) => {
   return searchable.includes("message") || searchable.includes("comment") || searchable.includes("reply");
 };
 
+function NavPngIcon({
+  authenticated,
+  authenticatedHoverSrc,
+  authenticatedSrc,
+  guestSrc,
+}: {
+  authenticated: boolean;
+  authenticatedHoverSrc?: string;
+  authenticatedSrc: string;
+  guestSrc: string;
+}) {
+  const hasHoverImage = Boolean(authenticated && authenticatedHoverSrc);
+
+  return (
+    <span
+      className={styles.navActionIcon}
+      data-authenticated={authenticated ? "true" : "false"}
+      data-hover-image={hasHoverImage ? "true" : "false"}
+      aria-hidden="true"
+    >
+      <img alt="" className={styles.navActionBaseImage} decoding="async" src={authenticated ? authenticatedSrc : guestSrc} />
+      {hasHoverImage ? (
+        <img alt="" className={styles.navActionHoverImage} decoding="async" src={authenticatedHoverSrc} />
+      ) : null}
+    </span>
+  );
+}
+
 function NotificationBellButton({ authenticated }: { authenticated: boolean }) {
   const { openAuthModal } = useAuthModal();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -349,15 +377,11 @@ function NotificationBellButton({ authenticated }: { authenticated: boolean }) {
         onClick={handleToggle}
         type="button"
       >
-        <span className={styles.navActionIcon} aria-hidden="true">
-          <img
-            alt=""
-            className={styles.navActionIconNormal}
-            decoding="async"
-            src={`${assetBase}/icon-notification-bell-line.png`}
-          />
-          <img alt="" className={styles.navActionIconActive} decoding="async" src={`${assetBase}/icon-bell-gold.png`} />
-        </span>
+        <NavPngIcon
+          authenticated={authenticated}
+          authenticatedSrc={`${assetBase}/icon-bell-gold.png`}
+          guestSrc={`${assetBase}/icon-notification-bell-line.png`}
+        />
         {hasUnread ? <span className={styles.notificationBadge}>{visibleCount}</span> : null}
       </button>
 
@@ -455,14 +479,15 @@ function NotificationBellButton({ authenticated }: { authenticated: boolean }) {
   );
 }
 
-function CartIconButton() {
+function CartIconButton({ authenticated }: { authenticated: boolean }) {
   return (
     <Link aria-label="Shopping cart" className={styles.cartIconButton} href="/cart">
-      <span className={styles.navActionIcon} aria-hidden="true">
-        <img alt="" className={styles.navActionIconNormal} decoding="async" src={`${assetBase}/icon-cart-line.png`} />
-        <img alt="" className={styles.navActionIconHover} decoding="async" src={`${assetBase}/icon-cart-line-emphasis.png`} />
-        <img alt="" className={styles.navActionIconActive} decoding="async" src={`${assetBase}/icon-cart-gold.png`} />
-      </span>
+      <NavPngIcon
+        authenticated={authenticated}
+        authenticatedHoverSrc={`${assetBase}/icon-cart-gold-hover@2x.png`}
+        authenticatedSrc={`${assetBase}/icon-cart-gold.png`}
+        guestSrc={`${assetBase}/icon-cart-line.png`}
+      />
     </Link>
   );
 }
@@ -793,6 +818,23 @@ function AuthEntryButtons({
   );
 }
 
+function MobileAuthButton({ onDone }: { onDone: () => void }) {
+  const { openAuthModal } = useAuthModal();
+
+  return (
+    <button
+      className={styles.mobileMenuAuthButton}
+      onClick={() => {
+        onDone();
+        openAuthModal("login");
+      }}
+      type="button"
+    >
+      Log in / Sign up
+    </button>
+  );
+}
+
 const getUserCredits = (user: TopNavigationUser, fallback: number) => {
   const value = user.creditsBalance ?? user.credits;
   return typeof value === "number" && Number.isFinite(value) ? Math.max(0, value) : fallback;
@@ -820,6 +862,7 @@ export function TopNavigation({
   const [loadedDialogProducts, setLoadedDialogProducts] = useState<null | CreditTopupProduct[]>(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isCreditTopupOpen, setIsCreditTopupOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
   const [hasRequestedDialogProducts, setHasRequestedDialogProducts] = useState(false);
   const displayName = user ? getTopNavigationUserLabel(user, userName) : null;
@@ -836,6 +879,29 @@ export function TopNavigation({
     ? creditTopupProducts
     : loadedDialogProducts ?? emptyCreditTopupProducts;
 
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsMobileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isMobileMenuOpen]);
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+  };
+
+  const closeNavigationMenus = () => {
+    setIsMobileMenuOpen(false);
+    setIsUserMenuOpen(false);
+    closeAuthModal();
+  };
+
   const openCreditTopupDialog = () => {
     setIsCreditTopupOpen(true);
 
@@ -851,6 +917,7 @@ export function TopNavigation({
     <div
       className={[styles.topNav, fitViewport ? null : className].filter(Boolean).join(" ")}
       data-authenticated={user ? "true" : "false"}
+      data-mobile-menu-open={isMobileMenuOpen ? "true" : "false"}
       data-subscription-promotion-visible={showSubscriptionPromotion ? "true" : "false"}
     >
       <img alt="" className={styles.navBg} decoding="async" fetchPriority="high" src={`${assetBase}/nav-background.png`} />
@@ -864,9 +931,83 @@ export function TopNavigation({
             key={item.id}
             onClick={closeAuthModal}
           >
-            {item.label}
+            <span className={styles.navLinkText}>{item.label}</span>
+            <span aria-hidden="true" className={styles.navLinkSizer}>
+              {item.label}
+            </span>
           </Link>
         ))}
+      </div>
+      <button
+        aria-controls="top-navigation-mobile-menu"
+        aria-expanded={isMobileMenuOpen}
+        aria-label="Toggle navigation menu"
+        className={styles.mobileMenuButton}
+        onClick={() => setIsMobileMenuOpen((current) => !current)}
+        type="button"
+      >
+        <span aria-hidden="true" />
+        <span aria-hidden="true" />
+        <span aria-hidden="true" />
+      </button>
+      <div
+        aria-hidden={!isMobileMenuOpen}
+        className={styles.mobileMenuPanel}
+        data-open={isMobileMenuOpen ? "true" : "false"}
+        id="top-navigation-mobile-menu"
+      >
+        <nav aria-label="Mobile navigation" className={styles.mobileMenuLinks}>
+          {items.map((item) => (
+            <Link
+              className={item.id === active ? styles.mobileMenuLinkActive : styles.mobileMenuLink}
+              href={item.href}
+              key={item.id}
+              onClick={() => {
+                closeAuthModal();
+                setIsMobileMenuOpen(false);
+              }}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+        <div className={styles.mobileMenuActions}>
+          {showSubscriptionPromotion && resolvedSubscriptionPromotion ? (
+            <button
+              className={styles.mobileMenuSubscriptionButton}
+              onClick={() => {
+                closeMobileMenu();
+                setIsSubscriptionDialogOpen(true);
+              }}
+              type="button"
+            >
+              <span>{resolvedSubscriptionPromotion.buttonLabel}</span>
+              <strong>{resolvedSubscriptionPromotion.offerText}</strong>
+            </button>
+          ) : null}
+          <Link className={styles.mobileMenuCartLink} href="/cart" onClick={closeNavigationMenus}>
+            Cart
+          </Link>
+          {user ? (
+            <>
+              <button
+                className={styles.mobileMenuAuthButton}
+                onClick={() => {
+                  closeMobileMenu();
+                  openCreditTopupDialog();
+                }}
+                type="button"
+              >
+                Credits {displayCredits}
+              </button>
+              <Link className={styles.mobileMenuAuthButton} href="/account" onClick={closeNavigationMenus}>
+                Account
+              </Link>
+            </>
+          ) : showAuthEntry ? (
+            <MobileAuthButton onDone={closeMobileMenu} />
+          ) : null}
+        </div>
       </div>
       {showSubscriptionPromotion && resolvedSubscriptionPromotion ? (
         <SubscriptionPromotionButton
@@ -882,7 +1023,7 @@ export function TopNavigation({
             <span>{displayCredits}</span>
           </button>
           <NotificationBellButton authenticated />
-          <CartIconButton />
+          <CartIconButton authenticated />
           <div className={styles.userMenuTrigger} ref={userMenuTriggerRef}>
             <button
               aria-expanded={isUserMenuOpen}
@@ -917,7 +1058,7 @@ export function TopNavigation({
       ) : (
         <>
           <NotificationBellButton authenticated={false} />
-          <CartIconButton />
+          <CartIconButton authenticated={false} />
           <span className={styles.authAvatar} aria-hidden="true">
             <img alt="" decoding="async" src={`${assetBase}/icon-user-avatar-placeholder.png`} />
           </span>

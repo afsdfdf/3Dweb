@@ -5,10 +5,10 @@
     linear-gradient(180deg, #181818 0%, #0b0b0b 56%, #050505 100%);
   color: #ededee;
   min-height: 100vh;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
-.topNavigation {
+.topNavigation.topNavigation {
   left: 0;
   position: sticky;
   right: 0;

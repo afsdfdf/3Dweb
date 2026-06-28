@@ -25,13 +25,18 @@
 }
 
 .item[aria-pressed="true"] {
-  filter: brightness(1.1);
+  filter: none;
 }
 
 .cardFrame {
   height: var(--inspiration-card-height, 460px);
   pointer-events: none;
   width: var(--inspiration-card-width, 288px);
+}
+
+.item:hover .cardFrame,
+.item:focus-visible .cardFrame {
+  --frame-border-source: url("/ui-lab/component-assets/button-box-frame/button-box-frame-selected@2x.png");
 }
 
 .cardFrameContent {
@@ -89,6 +94,11 @@
 .item:focus-visible .avatarWrap::before {
   border-color: #12d990;
   box-shadow: 0 0 10px rgba(18, 217, 144, 0.36);
+}
+
+.item[aria-pressed="true"] .avatarWrap::before {
+  border-color: #ffe2b5;
+  box-shadow: 0 0 12px rgba(255, 226, 181, 0.38);
 }
 
 .avatar {
@@ -217,6 +227,12 @@
   color: rgba(255, 255, 255, 0.92);
 }
 
+.item[aria-pressed="true"] .stat {
+  background: rgba(255, 226, 181, 0.03);
+  border-color: rgba(255, 226, 181, 0.46);
+  color: #ffffff;
+}
+
 .stat img {
   display: block;
   height: 10px;
@@ -230,6 +246,11 @@
 .item:focus-visible .stat img {
   filter: brightness(1.35);
   opacity: 0.92;
+}
+
+.item[aria-pressed="true"] .stat img {
+  filter: brightness(1.45);
+  opacity: 0.95;
 }
 
 .previewArea {
@@ -272,7 +293,7 @@
   inset: 0;
   object-fit: cover;
   position: absolute;
-  transform: translate3d(0, 0, 0) scale(1);
+  transform: translate3d(0, 6px, 0) scale(1.025);
   transform-origin: 50% 72%;
   transition: transform 220ms ease, filter 220ms ease;
   width: 100%;
@@ -329,7 +350,7 @@
 .item:hover .previewImage,
 .item:focus-visible .previewImage {
   filter: saturate(1.08) contrast(1.04) brightness(1.05);
-  transform: translate3d(0, -5px, 0) scale(1.025);
+  transform: translate3d(0, 1px, 0) scale(1.045);
 }
 
 .emptyState {
@@ -357,6 +378,6 @@
 
   .item:hover .previewImage,
   .item:focus-visible .previewImage {
-    transform: none;
+    transform: translate3d(0, 6px, 0) scale(1.025);
   }
 }

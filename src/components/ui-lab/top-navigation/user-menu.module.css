@@ -103,7 +103,7 @@
 
 .profileMenuNamePlate strong {
   color: #ffffff;
-  font-family: Arial, sans-serif;
+  font-family: var(--font-ui);
   font-size: 18px;
   font-weight: 500;
   line-height: 22px;
@@ -111,7 +111,7 @@
 
 .profileMenuNamePlate span {
   color: rgba(255, 255, 255, 0.46);
-  font-family: Arial, sans-serif;
+  font-family: var(--font-ui);
   font-size: 12px;
   line-height: 18px;
 }
@@ -145,7 +145,7 @@
 
 .profileMenuCreditPill strong {
   color: #ffffff;
-  font-family: Arial, sans-serif;
+  font-family: var(--font-ui);
   font-size: 18px;
   font-weight: 500;
   line-height: 26px;
@@ -170,7 +170,7 @@
 
 .profileMenuStat span {
   color: #ffffff;
-  font-family: Arial, sans-serif;
+  font-family: var(--font-ui);
   font-size: 12px;
   line-height: 24px;
 }
@@ -209,7 +209,7 @@
   box-sizing: border-box;
   color: rgba(123, 124, 133, 0.9);
   display: flex;
-  font-family: Arial, sans-serif;
+  font-family: var(--font-ui);
   font-size: 12px;
   gap: 12px;
   height: 38px;
@@ -261,7 +261,7 @@
 .profileMenuLinkText {
   color: rgba(255, 255, 255, 0.5);
   display: block;
-  font-family: PingFangSC, "PingFang SC", Arial, sans-serif;
+  font-family: var(--font-ui);
   font-size: 12px;
   font-style: normal;
   font-weight: 500;
@@ -300,7 +300,7 @@
   color: #ffffff;
   cursor: pointer;
   display: flex;
-  font-family: Arial, sans-serif;
+  font-family: var(--font-ui);
   font-size: 15px;
   height: 30px;
   justify-content: space-between;
@@ -317,7 +317,7 @@
   box-sizing: border-box;
   color: rgba(134, 135, 143, 0.92);
   display: grid;
-  font-family: Arial, sans-serif;
+  font-family: var(--font-ui);
   font-size: 15px;
   gap: 18px;
   min-height: 88px;

@@ -59,8 +59,8 @@ export function InspirationPager({ basePath = "/", page = 1, query = "", totalPa
 
   return (
     <nav aria-label="Inspiration pages" className={styles.pager}>
-      <a aria-disabled={normalizedPage <= 1} href={buildPageHref(previousPage, query, basePath)}>
-        {"<"}
+      <a aria-disabled={normalizedPage <= 1} aria-label="Previous page" href={buildPageHref(previousPage, query, basePath)}>
+        <span className={[styles.pagerIcon, styles.pagerIconPrevious].join(" ")} aria-hidden="true" />
       </a>
       {pageItems.map((item, index) => (
         <span className={styles.pageGroup} key={item}>
@@ -70,12 +70,12 @@ export function InspirationPager({ basePath = "/", page = 1, query = "", totalPa
             className={item === normalizedPage ? styles.currentPage : undefined}
             href={buildPageHref(item, query, basePath)}
           >
-            {item}
+            <span className={styles.pageNumber}>{item}</span>
           </a>
         </span>
       ))}
-      <a aria-disabled={normalizedPage >= normalizedTotal} href={buildPageHref(nextPage, query, basePath)}>
-        {">"}
+      <a aria-disabled={normalizedPage >= normalizedTotal} aria-label="Next page" href={buildPageHref(nextPage, query, basePath)}>
+        <span className={[styles.pagerIcon, styles.pagerIconNext].join(" ")} aria-hidden="true" />
       </a>
     </nav>
   );
@@ -101,13 +101,13 @@ export function InspirationSearchBox({ basePath = "/", page = 1, pageSize = 24, 
             className={styles.input}
             name="q"
             onChange={(event) => setSearchText(event.target.value)}
-            placeholder="Please enter keywords"
+            placeholder="Please enter keyword"
             type="search"
             value={searchText}
           />
         </label>
         <button className={styles.button} type="submit">
-          Search
+          <span className={styles.buttonLabel}>Search</span>
         </button>
       </form>
       <InspirationPager basePath={basePath} page={page} query={query} totalPages={totalPages} />

@@ -23,7 +23,7 @@ export default async function AboutPage() {
 
   return (
     <main className={styles.page}>
-      <AuthModalStage>
+      <AuthModalStage clipContent={false}>
         <TopNavigation
           active={getPublicNavigationActiveID('/about', navigationItems)}
           className={styles.topNavigation}

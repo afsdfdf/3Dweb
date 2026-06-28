@@ -7,7 +7,7 @@ import type { FollowCreatorCardData } from '@/components/ui-lab/follow-creator-c
 
 import { getMarketingSiteData } from '../_lib/marketing'
 import { defaultSiteSettings, type FooterContent, type NavigationPromotionContent } from '../_lib/marketing-content'
-import { getCurrentNavUser } from '../_lib/session'
+import { getCurrentNavUser, getCurrentUser } from '../_lib/session'
 
 type ImageLike = {
   thumbnailURL?: null | string
@@ -70,6 +70,7 @@ type HomepageItemLike = {
 
 export type HomeFeatureItem = {
   alt: string
+  captionLabel?: string
   href?: null | string
   id: string
   imageSrc: string
@@ -87,10 +88,12 @@ export type HomeShelfItem = {
 }
 
 export type HomeInspirationFilter = 'image-tools' | 'image3d' | 'text3d'
+export type HomeInspirationDisplayFilter = 'all' | 'follow' | 'followed'
 
 export type HomeInspirationItem = {
   ageLabel: string
   alt: string
+  authorId?: null | string
   authorName: string
   avatarSrc?: null | string
   creatorCard?: FollowCreatorCardData | null
@@ -99,6 +102,7 @@ export type HomeInspirationItem = {
   href?: null | string
   id: string
   imageSrc?: null | string
+  isAuthorFollowed?: boolean
   likesLabel: string
   title: string
   viewsLabel: string
@@ -112,7 +116,7 @@ export type HomeData = {
     supportEmail: string
   }
   heroHeaderBackgroundSrc?: null | string
-  inspirationFilter: HomeInspirationFilter | 'all'
+  inspirationFilter: HomeInspirationDisplayFilter
   inspirationItems: HomeInspirationItem[]
   inspirationPagination: {
     hasNextPage: boolean
@@ -268,6 +272,11 @@ const getRelationId = (value: unknown) => {
   return null
 }
 
+const getRelationKey = (value: unknown) => {
+  const id = getRelationId(value)
+  return id === null ? null : String(id)
+}
+
 const getPublicAvatarURL = (owner: UserLike) => {
   const avatar = owner.avatar
   return isRecord(avatar) ? getImageURL(avatar) : null
@@ -405,30 +414,48 @@ export const getFirstBundleShelfItems = (items: HomeShelfItem[]) => {
   return moreItem ? [...contentItems, moreItem] : contentItems
 }
 
+const featureCaptionLabels = [
+  'Highly detailed model',
+  'Multicolor printing, one-piece molding',
+  'With abundant details',
+  'Terrain-ready scene',
+]
+
+const getFeatureCaptionLabel = (index: number) => featureCaptionLabels[index] ?? featureCaptionLabels[0]
+
 const getBundleFeatureItems = (bundles: PublicBundleCard[]) => {
   return bundles
     .filter((bundle) => Boolean(bundle.coverSrc))
     .slice(0, 4)
-    .map((bundle, index) => ({
-      alt: bundle.title,
-      href: bundle.href,
-      id: `bundle-feature-${bundle.id}`,
-      imageSrc: bundle.coverSrc as string,
-      ribbonLabel: bundle.badgeLabel || (index === 0 ? 'Featured Bundle' : bundle.bundleTypeLabel),
-      variant: index === 0 ? 'wide' : 'standard',
-    }) satisfies HomeFeatureItem)
+    .map((bundle, index) => {
+      const title = stripGeneratedTestTitlePrefix(bundle.title)
+
+      return {
+        alt: title,
+        captionLabel: getFeatureCaptionLabel(index),
+        href: bundle.href,
+        id: `bundle-feature-${bundle.id}`,
+        imageSrc: bundle.coverSrc as string,
+        ribbonLabel: bundle.badgeLabel || (index === 0 ? 'Featured Bundle' : bundle.bundleTypeLabel),
+        variant: index === 0 ? 'wide' : 'standard',
+      } satisfies HomeFeatureItem
+    })
 }
 
 const getBundleShelfItems = (bundles: PublicBundleCard[]) => {
   return bundles
     .filter((bundle) => Boolean(bundle.coverSrc))
-    .map((bundle) => ({
-      count: bundle.modelCountLabel,
-      href: bundle.href,
-      id: `bundle-shelf-${bundle.id}`,
-      imageSrc: bundle.coverSrc as string,
-      title: bundle.title,
-    }) satisfies HomeShelfItem)
+    .map((bundle) => {
+      const title = stripGeneratedTestTitlePrefix(bundle.title)
+
+      return {
+        count: bundle.modelCountLabel,
+        href: bundle.href,
+        id: `bundle-shelf-${bundle.id}`,
+        imageSrc: bundle.coverSrc as string,
+        title,
+      } satisfies HomeShelfItem
+    })
 }
 
 async function getManagedHomeItems(payload: Awaited<ReturnType<typeof getCachedPayload>>) {
@@ -458,8 +485,10 @@ async function getManagedHomeItems(payload: Awaited<ReturnType<typeof getCachedP
     const id = String(item.id ?? title)
 
     if (item.placement === 'featured-rail') {
+      const featureIndex = featuredItems.length
       featuredItems.push({
         alt,
+        captionLabel: normalizeItemText(item.ctaLabel) || getFeatureCaptionLabel(featureIndex),
         href: getHomepageItemHref(item),
         id,
         imageSrc,
@@ -495,6 +524,11 @@ const normalizeItemText = (value: null | string | undefined) => {
   return value.trim()
 }
 
+const stripGeneratedTestTitlePrefix = (value: string) => {
+  const stripped = value.replace(/^Codex\s+Test\s+/i, '').trim()
+  return stripped || value
+}
+
 const normalizePageNumber = (value: number | string | null | undefined) => {
   const parsed = Number(value)
   if (!Number.isFinite(parsed) || parsed < 1) return 1
@@ -518,6 +552,7 @@ const emptyPublicBundleList = (limit: number): PublicBundleListResult => ({
 async function getPublicModelItems(
   payload: Awaited<ReturnType<typeof getCachedPayload>>,
   args: {
+    followedCreatorIds?: ReadonlySet<string>
     limit: number
     page?: number
     query?: string
@@ -596,6 +631,8 @@ async function getPublicModelItems(
   const items = await Promise.all(
     (result.docs as ModelLike[]).map(async (model) => {
       const title = typeof model.title === 'string' && model.title.trim() ? model.title.trim() : `Model ${model.id}`
+      const displayTitle = stripGeneratedTestTitlePrefix(title)
+      const authorId = getRelationKey(model.owner)
       const [ownerProfile, creatorCard] = await Promise.all([
         getCachedOwnerProfile(model.owner),
         getCachedCreatorCard(model.owner),
@@ -603,17 +640,19 @@ async function getPublicModelItems(
 
       return {
         ageLabel: getAgeLabel(model.updatedAt || model.createdAt),
-        alt: title,
+        alt: displayTitle,
+        authorId,
         authorName: ownerProfile?.name ?? getOwnerName(model.owner),
         avatarSrc: ownerProfile?.avatarSrc ?? null,
         creatorCard,
         favoritesLabel: compactCount(model.favoritesCount),
         filter: getModelInspirationFilter(model),
         href: model.id ? `/model-detail?id=${encodeURIComponent(String(model.id))}` : null,
-        id: String(model.id ?? title),
+        id: String(model.id ?? displayTitle),
         imageSrc: await resolveMediaAccessURL(payload, getModelPreviewURL(model)),
+        isAuthorFollowed: authorId ? Boolean(args.followedCreatorIds?.has(authorId)) : false,
         likesLabel: compactCount(model.likesCount),
-        title,
+        title: displayTitle,
         viewsLabel: compactCount(model.viewCount),
       } satisfies HomeInspirationItem
     }),
@@ -632,6 +671,40 @@ async function getPublicModelItems(
   }
 }
 
+type CurrentUser = Awaited<ReturnType<typeof getCurrentUser>>
+
+type FollowLike = {
+  followee?: unknown
+}
+
+async function getFollowedCreatorIds(
+  payload: Awaited<ReturnType<typeof getCachedPayload>>,
+  currentUser: CurrentUser,
+) {
+  if (!currentUser) return new Set<string>()
+
+  const result = await payload.find({
+    collection: 'user-follows',
+    depth: 0,
+    limit: 200,
+    overrideAccess: false,
+    pagination: false,
+    sort: '-createdAt',
+    user: currentUser,
+    where: {
+      follower: {
+        equals: currentUser.id,
+      },
+    },
+  })
+
+  return new Set(
+    (result.docs as FollowLike[])
+      .map((follow) => getRelationKey(follow.followee))
+      .filter((id): id is string => Boolean(id)),
+  )
+}
+
 export async function getHomeData(args: HomeDataArgs = {}): Promise<HomeData> {
   const inspirationLimit = 24
   const inspirationQuery = normalizeSearchQuery(args.inspirationQuery)
@@ -641,15 +714,20 @@ export async function getHomeData(args: HomeDataArgs = {}): Promise<HomeData> {
   try {
     const payload = await getCachedPayload()
     const bundleLimit = 8
-    const [marketing, navUser, managedItems, publicBundles, fallbackModels, separatePaginatedModels] = await Promise.all([
+    const [marketing, currentUser, navUser, managedItems, publicBundles] = await Promise.all([
       getMarketingSiteData(),
+      getCurrentUser(),
       getCurrentNavUser(),
       getManagedHomeItems(payload),
       getPublicBundleList(payload, { limit: bundleLimit, withPagination: false }).catch(() => emptyPublicBundleList(bundleLimit)),
-      getPublicModelItems(payload, { limit: inspirationLimit, withPagination: canReuseFallbackModels }),
+    ])
+    const followedCreatorIds = await getFollowedCreatorIds(payload, currentUser)
+    const [fallbackModels, separatePaginatedModels] = await Promise.all([
+      getPublicModelItems(payload, { followedCreatorIds, limit: inspirationLimit, withPagination: canReuseFallbackModels }),
       canReuseFallbackModels
         ? Promise.resolve(null)
         : getPublicModelItems(payload, {
+            followedCreatorIds,
             limit: inspirationLimit,
             page: inspirationPage,
             query: inspirationQuery,
@@ -695,6 +773,7 @@ export async function getHomeData(args: HomeDataArgs = {}): Promise<HomeData> {
             ? bundleFeatureItems
             : featuredFallbackItems.map((item, index) => ({
                 alt: item.title,
+                captionLabel: getFeatureCaptionLabel(index),
                 href: item.href,
                 id: `featured-${item.id}`,
                 imageSrc: item.imageSrc as string,

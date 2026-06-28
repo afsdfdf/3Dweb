@@ -19,6 +19,7 @@ const publicNavigationPath = path.join(rootDir, 'src', 'lib', 'publicNavigation.
 const siteShellPath = path.join(rootDir, 'src', 'app', '(frontend)', '_components', 'SiteShell.tsx')
 const topNavigationPath = path.join(rootDir, 'src', 'components', 'ui-lab', 'top-navigation', 'top-navigation.tsx')
 const topNavigationCssPath = path.join(rootDir, 'src', 'components', 'ui-lab', 'top-navigation', 'top-navigation.module.css')
+const topNavigationCoinBadgePath = path.join(rootDir, 'public', 'ui-lab', 'top-navigation', 'icon-coin-badge.png')
 const topNavBarPath = path.join(rootDir, 'src', 'app', '(frontend)', '_components', 'shell', 'TopNavBar.tsx')
 const globalsCssPath = path.join(rootDir, 'src', 'app', '(frontend)', 'globals.css')
 const marketingPagePath = path.join(rootDir, 'src', 'app', '(frontend)', '_components', 'MarketingPage.tsx')
@@ -55,6 +56,16 @@ const accountCenterCssPath = path.join(
   'account-center',
   'account-center.module.css',
 )
+
+function readPngDimensions(sourcePath: string) {
+  const buffer = readFileSync(sourcePath)
+
+  assert.equal(buffer.toString('ascii', 1, 4), 'PNG')
+  return {
+    height: buffer.readUInt32BE(20),
+    width: buffer.readUInt32BE(16),
+  }
+}
 
 test('public pages share one canonical navigation contract', () => {
   assert.equal(existsSync(publicNavigationPath), true)
@@ -123,6 +134,105 @@ test('shared navigation components use the canonical navigation source', () => {
   assert.doesNotMatch(topNavBarSource, /href:\s*['"]\/generate['"]/)
   assert.doesNotMatch(topNavBarSource, /label:\s*['"]Center['"]/)
   assert.doesNotMatch(topNavBarSource, /label:\s*['"]Admin['"]/)
+})
+
+test('top navigation owns a mobile dropdown menu instead of relying on page-level hidden links', () => {
+  const topNavigationSource = readFileSync(topNavigationPath, 'utf8')
+  const topNavigationCssSource = readFileSync(topNavigationCssPath, 'utf8')
+
+  assert.match(topNavigationSource, /isMobileMenuOpen/)
+  assert.match(topNavigationSource, /setIsMobileMenuOpen/)
+  assert.match(topNavigationSource, /aria-label="Toggle navigation menu"/)
+  assert.match(topNavigationSource, /aria-controls="top-navigation-mobile-menu"/)
+  assert.match(topNavigationSource, /className=\{styles\.mobileMenuButton\}/)
+  assert.match(topNavigationSource, /id="top-navigation-mobile-menu"/)
+  assert.match(topNavigationSource, /className=\{styles\.mobileMenuPanel\}/)
+  assert.match(topNavigationSource, /className=\{styles\.mobileMenuLinks\}/)
+  assert.match(topNavigationSource, /className=\{styles\.mobileMenuActions\}/)
+  assert.match(topNavigationSource, /setIsMobileMenuOpen\(false\)[\s\S]*closeAuthModal\(\)/)
+  assert.match(topNavigationSource, /closeMobileMenu\(\);\s*openCreditTopupDialog\(\);/)
+  assert.match(topNavigationSource, /event\.key === "Escape"[\s\S]*setIsMobileMenuOpen\(false\)/)
+
+  assert.match(topNavigationCssSource, /@media \(max-width:\s*820px\)\s*\{[\s\S]*\.scaledTopNav\s*\{[\s\S]*height:\s*60px/)
+  assert.match(topNavigationCssSource, /@media \(max-width:\s*820px\)\s*\{[\s\S]*\.scaledTopNavStage\s*\{[\s\S]*transform:\s*none/)
+  assert.match(topNavigationCssSource, /@media \(max-width:\s*820px\)\s*\{[\s\S]*\.navLinks,\s*\.navCenter\s*\{[\s\S]*display:\s*none/)
+  assert.match(topNavigationCssSource, /@media \(max-width:\s*820px\)\s*\{[\s\S]*\.mobileMenuButton\s*\{[\s\S]*display:\s*flex/)
+  assert.match(topNavigationCssSource, /@media \(max-width:\s*820px\)\s*\{[\s\S]*\.mobileMenuPanel\s*\{[\s\S]*position:\s*absolute[\s\S]*top:\s*60px/)
+  assert.match(topNavigationCssSource, /\.mobileMenuPanel\[data-open=["']false["']\]\s*\{[\s\S]*display:\s*none/)
+  assert.match(topNavigationCssSource, /\.mobileMenuLinkActive/)
+  assert.match(topNavigationCssSource, /\.mobileMenuAuthButton/)
+  assert.match(topNavigationCssSource, /\.mobileMenuCartLink/)
+  assert.match(topNavigationCssSource, /\.mobileMenuActions\s*>\s*:last-child:nth-child\(odd\)\s*\{[\s\S]*grid-column:\s*1\s*\/\s*-1/)
+})
+
+test('top navigation desktop styling follows the design spec metrics', () => {
+  const topNavigationSource = readFileSync(topNavigationPath, 'utf8')
+  const topNavigationCssSource = readFileSync(topNavigationCssPath, 'utf8')
+  const activeArrowPath = path.join(rootDir, 'public', 'ui-lab', 'top-navigation', 'nav-active-arrow@2x.png')
+  const topNavRule = topNavigationCssSource.match(/\.topNav\s*\{[\s\S]*?\}/)?.[0] ?? ''
+  const navLinksRule = topNavigationCssSource.match(/\.navLinks\s*\{[\s\S]*?\}/)?.[0] ?? ''
+  const navLinkRule = topNavigationCssSource.match(/\.navLink\s*\{[\s\S]*?\}/)?.[0] ?? ''
+  const navLinkTextSharedRule = topNavigationCssSource.match(/\.navLinkText,\s*\.navLinkSizer\s*\{[\s\S]*?\}/)?.[0] ?? ''
+  const navLinkSizerRule =
+    [...topNavigationCssSource.matchAll(/(?:^|\n)\.navLinkSizer\s*\{[\s\S]*?\}/gm)]
+      .map((match) => match[0])
+      .find((rule) => /font-weight/.test(rule)) ?? ''
+  const hoverRule = topNavigationCssSource.match(/\.navLink:hover,\s*\.navLink:focus-visible\s*\{[\s\S]*?\}/)?.[0] ?? ''
+  const activeOnlyRule = topNavigationCssSource.match(/\.activeNav\s*\{[\s\S]*?\}/)?.[0] ?? ''
+  const activePseudoRule = topNavigationCssSource.match(/\.activeNav::before,\s*\.activeNav::after\s*\{[\s\S]*?\}/)?.[0] ?? ''
+  const activeArrowRule = topNavigationCssSource.match(/\.navLink::after\s*\{[\s\S]*?\}/)?.[0] ?? ''
+  const authEntryRule = topNavigationCssSource.match(/\.authEntry\s*\{[\s\S]*?\}/)?.[0] ?? ''
+  const walletRule = topNavigationCssSource.match(/\.wallet\s*\{[\s\S]*?\}/)?.[0] ?? ''
+  const walletImageRule = topNavigationCssSource.match(/\.wallet img\s*\{[\s\S]*?\}/)?.[0] ?? ''
+
+  assert.equal(existsSync(activeArrowPath), true)
+  assert.match(topNavRule, /--nav-font-family:\s*var\(--font-ui\)/)
+  assert.match(topNavRule, /--nav-center-width:\s*920px/)
+  assert.match(topNavRule, /--notification-right:\s*251px/)
+  assert.match(topNavRule, /--cart-right:\s*203px/)
+  assert.match(topNavRule, /--avatar-right:\s*139px/)
+  assert.match(navLinksRule, /font-family:\s*var\(--nav-font-family\)/)
+  assert.match(navLinksRule, /font-size:\s*16px/)
+  assert.match(navLinksRule, /font-weight:\s*400/)
+  assert.match(navLinksRule, /line-height:\s*22px/)
+  assert.match(navLinkRule, /min-width:\s*0/)
+  assert.match(navLinkRule, /height:\s*22px/)
+  assert.match(navLinkRule, /display:\s*grid/)
+  assert.match(navLinkRule, /grid-template-areas:\s*"text"/)
+  assert.match(topNavigationSource, /className=\{styles\.navLinkText\}/)
+  assert.match(topNavigationSource, /className=\{styles\.navLinkSizer\}/)
+  assert.match(navLinkTextSharedRule, /grid-area:\s*text/)
+  assert.match(navLinkSizerRule, /font-weight:\s*500/)
+  assert.match(navLinkSizerRule, /visibility:\s*hidden/)
+  assert.doesNotMatch(topNavigationCssSource, /\.navLink:hover,\s*\.navLink:focus-visible,\s*\.activeNav\s*\{/)
+  assert.match(hoverRule, /color:\s*#ffffff/)
+  assert.doesNotMatch(hoverRule, /font-weight/)
+  assert.doesNotMatch(hoverRule, /text-shadow/)
+  assert.match(activeOnlyRule, /font-weight:\s*500/)
+  assert.match(activeOnlyRule, /text-shadow:\s*0\s+0\s+10px/)
+  assert.match(activePseudoRule, /opacity:\s*1/)
+  assert.doesNotMatch(topNavigationCssSource, /\.navLink:hover::before/)
+  assert.doesNotMatch(topNavigationCssSource, /\.navLink:hover::after/)
+  assert.doesNotMatch(topNavigationCssSource, /\.navLinks:hover\s+\.activeNav/)
+  assert.match(activeArrowRule, /background-image:\s*url\("\/ui-lab\/top-navigation\/nav-active-arrow@2x\.png"\)/)
+  assert.match(activeArrowRule, /width:\s*16px/)
+  assert.match(activeArrowRule, /height:\s*10px/)
+  assert.match(authEntryRule, /font-family:\s*var\(--nav-font-family\)/)
+  assert.match(authEntryRule, /font-weight:\s*400/)
+  assert.match(authEntryRule, /font-size:\s*12px/)
+  assert.match(walletRule, /overflow:\s*visible/)
+  assert.match(walletImageRule, /left:\s*-26px/)
+  assert.match(walletImageRule, /top:\s*-13px/)
+  assert.match(walletImageRule, /width:\s*56px/)
+  assert.match(walletImageRule, /height:\s*56px/)
+})
+
+test('top navigation coin badge uses a high-density source asset', () => {
+  assert.equal(existsSync(topNavigationCoinBadgePath), true)
+
+  const dimensions = readPngDimensions(topNavigationCoinBadgePath)
+
+  assert.deepEqual(dimensions, { height: 88, width: 88 })
 })
 
 test('shell-rendered pages use the same top navigation template as UI-lab pages', () => {

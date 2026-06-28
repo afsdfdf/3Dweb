@@ -30,6 +30,16 @@ const arrowImages = {
   },
 };
 
+function getProductCountLabel(count?: string) {
+  if (!count) return null;
+  if (/^products\s*x\d+/i.test(count.trim())) return count.trim();
+
+  const numericValue = count.match(/\d+/)?.[0];
+  if (!numericValue) return count.trim();
+
+  return `Products x${numericValue}`;
+}
+
 type SelectableFrameRowProps = {
   fillEmptyFrames?: boolean;
   items?: SelectableFrameRowItem[];
@@ -63,33 +73,39 @@ export function SelectableFrameRow({ fillEmptyFrames = true, items = [] }: Selec
         } as CSSProperties}
         type="button"
       />
-      {resolvedFrames.map((frame, index) => (
-        <button
-          aria-label={frame.label}
-          aria-pressed={selectedIndex === index}
-          className={styles.frame}
-          key={frame.id}
-          onClick={() => handleFrameClick(frame, index)}
-          type="button"
-        >
-          {frame.imageSrc ? (
-            <img
-              alt=""
-              className={styles.frameImage}
-              decoding="async"
-              loading="lazy"
-              src={getSupabasePreviewImageURL(frame.imageSrc, "home-feature")}
-            />
-          ) : null}
-          {frame.title || frame.count ? (
-            <span className={styles.frameMeta}>
-              {frame.title ? <span className={styles.frameTitle}>{frame.title}</span> : null}
-              {frame.count ? <span className={styles.frameCount}>{frame.count}</span> : null}
-            </span>
-          ) : null}
-          <span className={styles.centerGuide} aria-hidden="true" />
-        </button>
-      ))}
+      <div className={styles.cardsTrack} data-selectable-frame-track="">
+        {resolvedFrames.map((frame, index) => {
+          const productCountLabel = getProductCountLabel(frame.count);
+
+          return (
+            <button
+              aria-label={frame.label}
+              aria-pressed={selectedIndex === index}
+              className={styles.frame}
+              key={frame.id}
+              onClick={() => handleFrameClick(frame, index)}
+              type="button"
+            >
+              {frame.imageSrc ? (
+                <img
+                  alt=""
+                  className={styles.frameImage}
+                  decoding="async"
+                  loading="lazy"
+                  src={getSupabasePreviewImageURL(frame.imageSrc, "home-feature")}
+                />
+              ) : null}
+              {frame.title || productCountLabel ? (
+                <span className={styles.frameMeta}>
+                  {frame.title ? <span className={styles.frameTitle}>{frame.title}</span> : null}
+                  {productCountLabel ? <span className={styles.frameCount}>{productCountLabel}</span> : null}
+                </span>
+              ) : null}
+              <span className={styles.centerGuide} aria-hidden="true" />
+            </button>
+          );
+        })}
+      </div>
       <button
         aria-label="Next image"
         className={[styles.arrowButton, styles.rightArrow].join(" ")}

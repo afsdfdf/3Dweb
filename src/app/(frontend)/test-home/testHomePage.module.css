@@ -8,64 +8,10 @@
 
 .boundTopNavigation.boundTopNavigation {
   left: 0;
-  position: absolute;
+  position: fixed;
   right: 0;
   top: 0;
   z-index: 90;
-}
-
-.heroStage {
-  --hero-scale: min(1, calc(100vw / 1920px));
-  position: relative;
-  height: calc(989px * var(--hero-scale));
-  margin-bottom: calc(-9px * var(--hero-scale));
-  overflow: hidden;
-  background: #181818;
-}
-
-.heroStage::after {
-  background: linear-gradient(180deg, rgba(24, 24, 24, 0), #181818);
-  bottom: 0;
-  content: "";
-  height: calc(42px * var(--hero-scale));
-  left: 0;
-  pointer-events: none;
-  position: absolute;
-  right: 0;
-  z-index: 3;
-}
-
-.heroStage.heroStage :global(.scroll-container) {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 1920px;
-  height: 980px;
-  overflow: hidden;
-  transform: translateX(-50%) scale(var(--hero-scale));
-  transform-origin: top center;
-}
-
-.heroStage.heroStage :global(.Pixso-frame-1_2877) > :global(:not(.Pixso-vector-1_2878)) {
-  transform: none;
-}
-
-.heroStage :global(.Pixso-group-1_3098) {
-  display: none;
-}
-
-.heroStage :global(.Pixso-group-1_3253),
-.heroStage :global(.Pixso-group-1_3287),
-.heroStage :global(.Pixso-group-1_3292),
-.heroStage :global(.Pixso-home-upload-input) {
-  pointer-events: none;
-}
-
-.heroStage :global(.Pixso-group-1_3253),
-.heroStage :global(.Pixso-group-1_3287),
-.heroStage :global(.Pixso-group-1_3292),
-.heroStage :global(.Pixso-home-upload-input) {
-  display: none;
 }
 
 .framedSection {
@@ -86,18 +32,24 @@
   margin-top: 6px;
 }
 
-.heroSecondBanner,
-.heroThirdBanner {
+.heroSecondBanner.heroSecondBanner {
+  --upper-height: calc(72px - var(--top-height) - (var(--middle-height) / 2));
+  --lower-height: calc(100% - var(--top-height) - var(--upper-height) - var(--middle-height) - var(--bottom-height));
+}
+
+.heroThirdBanner.heroThirdBanner {
   --upper-height: calc(112px - var(--top-height) - (var(--middle-height) / 2));
   --lower-height: calc(100% - var(--top-height) - var(--upper-height) - var(--middle-height) - var(--bottom-height));
 }
 
 .heroSecondBanner {
-  height: 453px;
+  --frame-control-right-bleed: -19px;
+  height: 434px;
   margin-top: 33px;
 }
 
 .heroThirdBanner {
+  --frame-control-right-bleed: -19px;
   height: auto;
   margin-top: 33px;
   /* Tall enough for the frame ornaments and the empty state; grows with content. */
@@ -127,15 +79,15 @@
   align-items: center;
   display: grid;
   gap: 16px;
-  /* 700/360/360/340 design ratios, fluid so cards are not cropped below 1920px. */
-  grid-template-columns: minmax(0, 1.94fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.94fr);
-  height: 280px;
+  /* 700/360/360/360 design ratios, fluid so cards are not cropped below 1920px. */
+  grid-template-columns: minmax(0, 700fr) minmax(0, 360fr) minmax(0, 360fr) minmax(0, 360fr);
+  height: 268px;
   left: 24px;
   overflow: hidden;
   position: absolute;
-  top: 26px;
+  top: 32px;
   transform: none;
-  width: min(1828px, calc(100% - 28px));
+  width: min(1800px, calc(100% - 54px));
   z-index: 5;
 }
 
@@ -175,12 +127,49 @@
 }
 
 .featureRibbon {
+  --hero-product-ribbon-height: 60px;
+  --hero-product-ribbon-left-width: 38px;
+  --hero-product-ribbon-middle-top: 10px;
   left: 36px;
   max-width: calc(100% - 72px);
   position: absolute;
-  top: 0;
+  top: -5px;
   width: max-content;
   z-index: 2;
+}
+
+.featureCaption {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.52);
+  border-radius: 999px;
+  bottom: 16px;
+  box-sizing: border-box;
+  display: flex;
+  height: 28px;
+  justify-content: center;
+  left: 50%;
+  max-width: calc(100% - 48px);
+  min-width: 154px;
+  padding: 7px 18px;
+  position: absolute;
+  transform: translateX(-50%);
+  z-index: 2;
+}
+
+.featureCaptionText {
+  color: #ffffff;
+  display: block;
+  font-family: Roboto, Arial, sans-serif;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 400;
+  height: 14px;
+  line-height: 14px;
+  max-width: 100%;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .frameShell {
@@ -200,7 +189,7 @@
 }
 
 .heroSecondBanner .frameHeader {
-  height: 112px;
+  height: 72px;
 }
 
 .frameLogo {
@@ -213,18 +202,28 @@
 }
 
 .frameTitlePlate {
-  display: flex;
   align-items: center;
-  width: 240px;
-  height: 58px;
+  border: solid transparent;
+  border-width: 8px 62px 8px 17px;
+  border-image-outset: 0;
+  border-image-repeat: stretch;
+  border-image-slice: 16 124 16 34 fill;
+  border-image-source: url("/ui-lab/home-test/frame-title-plate@2x.png");
+  border-image-width: 8px 62px 8px 17px;
   box-sizing: border-box;
-  padding: 0 34px 3px 21px;
-  background: url("/ui-lab/home-test/banner-label-bg.png") center / 100% 100% no-repeat;
-  color: #f9dfb1;
-  font-size: 28px;
-  font-weight: 500;
-  line-height: 1;
+  color: #ffe8b5;
+  display: flex;
+  font-family: var(--font-brand-serif);
+  font-size: 30px;
+  font-style: normal;
+  font-weight: 700;
+  height: 58px;
+  letter-spacing: 0;
+  line-height: 36px;
   margin-left: 8px;
+  padding: 0 0 3px 13px;
+  text-shadow: 0 1px 0 rgba(85, 38, 20, 0.55);
+  width: 240px;
 }
 
 .frameDivider {
@@ -245,7 +244,7 @@
 }
 
 .heroThirdBanner .frameActions {
-  justify-content: flex-start;
+  justify-content: flex-end;
   transform: translateX(19px);
   width: 412px;
 }
@@ -283,7 +282,7 @@
 .bundleFrameBody {
   align-items: center;
   display: flex;
-  height: 332px;
+  height: 300px;
   margin-top: -1px;
   min-height: 0;
   padding: 0;
@@ -292,48 +291,64 @@
 
 .inspirationFrameBody {
   min-height: 0;
-  inset: 0 0 42px 0;
-  padding: 0;
-  position: absolute;
+  padding: 21px 0 0;
+  position: relative;
 }
 
 .bundleFrameBody :global([aria-label="Selectable frame row"]) {
+  --arrow-offset: 16px;
+  --arrow-width: 48px;
+  --frame-height: 300px;
+  --frame-gap: 12px;
+  --track-offset: calc(var(--arrow-offset) + var(--arrow-width) + var(--frame-gap));
+  --frame-width: 408px;
+  align-items: center;
+  display: block;
+  flex: 0 0 calc(100% + 66px);
+  height: var(--frame-height);
   position: relative;
-  left: auto;
+  left: -32px;
   top: auto;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, 408px);
-  justify-content: center;
-  gap: 16px;
-  width: 100%;
-  margin: 0 auto;
-  max-width: 1680px;
-  height: 300px;
-  overflow: visible;
-  transform: translateX(1px);
+  overflow: hidden;
+  transform: none;
+  margin: 0;
+  max-width: none;
+  width: calc(100% + 66px);
 }
 
-.bundleFrameBody :global([aria-label="Selectable frame row"][data-fill-empty="false"]) {
-  justify-content: start;
+.bundleFrameBody :global([data-selectable-frame-track]) {
+  bottom: 0;
+  display: flex;
+  gap: var(--frame-gap);
+  height: auto;
+  left: var(--track-offset);
+  min-width: 0;
+  overflow: hidden;
+  position: absolute;
+  right: var(--track-offset);
+  top: 0;
 }
 
 .bundleFrameBody :global([aria-label="Previous image"]),
 .bundleFrameBody :global([aria-label="Next image"]) {
   display: block;
+  position: absolute;
+  top: 0;
   transform: none;
 }
 
 .bundleFrameBody :global([aria-label="Previous image"]) {
-  left: -67px;
+  left: var(--arrow-offset);
 }
 
 .bundleFrameBody :global([aria-label="Next image"]) {
-  right: -67px;
+  right: var(--arrow-offset);
 }
 
-.bundleFrameBody :global([aria-label="Selectable frame row"] > button[aria-pressed]) {
-  width: 408px;
-  height: 300px;
+.bundleFrameBody :global([data-selectable-frame-track] > button[aria-pressed]) {
+  flex: 0 0 var(--frame-width);
+  width: var(--frame-width);
+  height: var(--frame-height);
   min-height: 0;
 }
 
@@ -343,14 +358,15 @@
   --inspiration-card-width: var(--card-width);
   --inspiration-card-height: var(--card-height);
   display: grid;
-  left: 50%;
-  position: absolute;
-  grid-template-columns: repeat(auto-fit, var(--card-width));
+  gap: 13.333px 16px;
+  grid-template-columns: repeat(6, var(--card-width));
   justify-content: center;
-  gap: 13.333px 9.2px;
-  top: 230.5px;
-  transform: translateX(-50%);
-  width: 100%;
+  justify-items: center;
+  left: 50%;
+  position: relative;
+  top: auto;
+  transform: translateX(calc(-50% + 1px));
+  width: calc(100% + 34px);
 }
 
 .inspirationEmptyState {
@@ -465,34 +481,40 @@
   background: rgba(255, 255, 255, 0.15);
   display: block;
   height: 2px;
-  left: -16px;
-  position: absolute;
-  top: 187.5px;
-  width: calc(100% + 34px);
+  left: 50%;
+  margin: 0 auto min(2.135vw, 41px);
+  position: relative;
+  top: auto;
+  transform: translateX(-50%);
+  width: min(94.167vw, calc(100% + 34px));
   z-index: 5;
 }
 
 .inspirationSearchMount {
-  height: 56px;
-  position: absolute;
-  right: 10px;
-  top: 129.5px;
-  width: min(686px, calc(100% - 10px));
+  height: 32px;
+  left: auto;
+  margin: 0 var(--frame-control-right-bleed) min(1.354vw, 26px) auto;
+  position: relative;
+  right: auto;
+  top: auto;
+  transform: none;
+  width: min(48vw, calc(100% - 46px));
   z-index: 7;
 }
 
 .inspirationSearchMount :global([class*="toolbar"]) {
-  margin-left: 0;
+  margin-left: auto;
   width: 100%;
-  justify-content: flex-start;
+  justify-content: flex-end;
 }
 
 .bottomPagerMount {
+  display: flex;
   height: 32px;
-  left: 172px;
-  position: absolute;
-  top: 2161px;
-  width: 276px;
+  justify-content: center;
+  margin: 0;
+  position: static;
+  width: 100%;
   z-index: 7;
 }
 
@@ -516,11 +538,18 @@
   --inspiration-card-width: var(--card-width);
   --inspiration-card-height: var(--card-height);
   display: grid;
-  gap: 13.333px 9.2px;
-  grid-template-columns: repeat(auto-fit, var(--card-width));
+  gap: 13.333px 16px;
+  grid-template-columns: repeat(6, var(--card-width));
+  justify-items: center;
   justify-content: center;
-  width: 100%;
+  width: calc(100% + 34px);
   z-index: 5;
+}
+
+.heroThirdBanner :global([aria-label="Inspiration grid"] > button[aria-pressed]) {
+  aspect-ratio: 288 / 460;
+  background: rgba(255, 255, 255, 0);
+  height: auto;
 }
 
 .footerMount {
@@ -572,6 +601,7 @@
     padding-top: 154px;
   }
 
+
   .heroThirdBanner .bannerContent {
     padding-top: 154px;
   }
@@ -597,18 +627,18 @@
 
   .inspirationSearchMount {
     height: 32px;
-    left: 50%;
-    margin: 0 auto min(1.354vw, 26px);
+    left: auto;
+    margin: 0 var(--frame-control-right-bleed) min(1.354vw, 26px) auto;
     position: relative;
     right: auto;
     top: auto;
-    transform: translateX(-50%);
-    width: min(92.396vw, calc(100% + 34px));
+    transform: none;
+    width: min(48vw, calc(100% - 46px));
   }
 
   .inspirationSearchMount :global([class*="toolbar"]) {
     margin-left: auto;
-    width: min(48vw, 100%);
+    width: 100%;
     justify-content: flex-end;
   }
 
@@ -630,65 +660,53 @@
     width: 100%;
   }
 
-  .heroSecondBanner :global([aria-label="Selectable frame row"]) {
-    position: static;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, 408px);
-    gap: 16px;
-    justify-content: center;
-    width: 100%;
-    height: 300px;
-    overflow: hidden;
-    padding: 0 0 42px;
-  }
-
-  .heroSecondBanner :global([aria-label="Previous image"]),
-  .heroSecondBanner :global([aria-label="Next image"]) {
-    display: none;
-  }
-
-  .heroSecondBanner :global([aria-label="Selectable frame row"] > button[aria-pressed]) {
-    width: 408px;
-    height: 300px;
-    min-height: 0;
-  }
-
   .heroThirdBanner :global([aria-label="Inspiration grid"]) {
     --card-width: 274px;
     --card-height: 437px;
+    --inspiration-card-width: min(100%, var(--card-width));
+    --inspiration-card-height: 100%;
     left: 50%;
     position: relative;
     top: auto;
     gap: min(0.694vw, 13.333px) 6px;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     padding: 0 0 min(2.188vw, 42px);
     transform: translateX(-50%);
     width: min(92.396vw, calc(100% + 34px));
   }
+
+  .heroThirdBanner :global([aria-label="Inspiration grid"] > button[aria-pressed]) {
+    aspect-ratio: 274 / 437;
+  }
 }
 
-@media (min-width: 1200px) and (max-width: 1919px) {
-  .heroSecondBanner :global([aria-label="Selectable frame row"]) {
-    box-sizing: border-box;
-    position: relative;
-    left: auto;
-    top: auto;
-    max-width: 100%;
-    overflow: hidden;
-    padding: 0 67px;
+@media (max-width: 1899px) {
+  .heroSecondBanner :global([data-selectable-frame-track] > button[aria-pressed]:nth-last-child(2):not(:last-child)) {
+    display: none;
   }
+}
 
-  .heroSecondBanner :global([aria-label="Previous image"]),
-  .heroSecondBanner :global([aria-label="Next image"]) {
-    display: block;
-    transform: none;
+@media (max-width: 1479px) {
+  .heroSecondBanner :global([data-selectable-frame-track] > button[aria-pressed]:nth-last-child(3):not(:last-child)) {
+    display: none;
   }
+}
 
-  .heroSecondBanner :global([aria-label="Previous image"]) {
-    left: 0;
+@media (max-width: 1059px) {
+  .heroSecondBanner :global([data-selectable-frame-track] > button[aria-pressed]:not(:last-child)) {
+    display: none;
   }
+}
 
-  .heroSecondBanner :global([aria-label="Next image"]) {
-    right: 0;
+@media (max-width: 1679px) {
+  .heroThirdBanner :global([aria-label="Inspiration grid"]) {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1399px) {
+  .heroThirdBanner :global([aria-label="Inspiration grid"]) {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
@@ -745,6 +763,32 @@
     justify-content: flex-end;
     transform: translateX(19px);
     width: 412px;
+  }
+
+  .heroThirdBanner .frameHeader {
+    grid-template-columns: 58px minmax(0, 240px);
+    grid-template-rows: 58px 60px;
+    height: 132px;
+    justify-content: center;
+    row-gap: 8px;
+    padding-top: 10px;
+  }
+
+  .heroThirdBanner .frameDivider {
+    display: none;
+  }
+
+  .heroThirdBanner .frameActions {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: center;
+    margin-top: 0;
+    transform: none;
+    width: 333px;
+  }
+
+  .heroThirdBanner .bannerContent {
+    padding-top: 174px;
   }
 
   .featureLargeCard,
@@ -810,9 +854,16 @@
   .heroThirdBanner :global([aria-label="Inspiration grid"]) {
     --card-width: 288px;
     --card-height: 460px;
+    --inspiration-card-width: min(100%, var(--card-width));
+    --inspiration-card-height: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     left: auto;
     transform: none;
     width: 100%;
+  }
+
+  .heroThirdBanner :global([aria-label="Inspiration grid"] > button[aria-pressed]) {
+    aspect-ratio: 288 / 460;
   }
 }
 
@@ -839,13 +890,24 @@
   .frameActions {
     gap: 8px;
     grid-column: 1 / -1;
-    justify-self: end;
+    justify-self: center;
     transform: none;
   }
 
   .heroThirdBanner .frameActions {
     width: max-content;
     transform: none;
+  }
+
+  .inspirationSearchMount {
+    height: auto;
+    min-height: 74px;
+    margin-bottom: 18px;
+  }
+
+  .inspirationSearchMount :global([class*="pager"]),
+  .inspirationSearchMount :global([class*="pageSize"]) {
+    margin-left: 0;
   }
 
   .frameDivider {
@@ -881,17 +943,35 @@
   }
 
   .heroSecondBanner :global([aria-label="Selectable frame row"]) {
-    grid-template-columns: 288px;
+    column-gap: 0;
     height: 212px;
   }
 
-  .heroSecondBanner :global([aria-label="Selectable frame row"] > button[aria-pressed]:nth-of-type(n + 3)) {
+  .heroSecondBanner :global([aria-label="Previous image"]),
+  .heroSecondBanner :global([aria-label="Next image"]) {
     display: none;
   }
 
-  .heroSecondBanner :global([aria-label="Selectable frame row"] > button[aria-pressed]) {
+  .heroSecondBanner :global([data-selectable-frame-track]) {
+    left: 0;
+    right: 0;
+    height: 212px;
+    justify-content: center;
+  }
+
+  .heroSecondBanner :global([data-selectable-frame-track] > button[aria-pressed]:not(:last-child)) {
+    display: none;
+  }
+
+  .heroSecondBanner :global([data-selectable-frame-track] > button[aria-pressed]) {
+    flex-basis: 288px;
     width: 288px;
     height: 212px;
+  }
+
+  .heroThirdBanner :global([aria-label="Inspiration grid"]) {
+    --inspiration-card-width: min(288px, 100%);
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .bundleFrameBody {

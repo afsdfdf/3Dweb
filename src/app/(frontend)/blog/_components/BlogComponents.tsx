@@ -137,7 +137,7 @@ export function BlogShell({
 
   return (
     <main className={styles.page}>
-      <AuthModalStage>
+      <AuthModalStage clipContent={false}>
         <TopNavigation
           active={getPublicNavigationActiveID('/blog', navigationItems)}
           className={styles.topNavigation}

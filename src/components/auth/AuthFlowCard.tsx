@@ -28,6 +28,9 @@ const safeRedirect = (value?: null | string) => {
   return getSafeInternalRedirect(value, '/generate')
 }
 
+const passwordEyeHiddenSrc = '/ui-lab/auth/password-eye-hidden@2x.png'
+const passwordEyeVisibleSrc = '/ui-lab/auth/password-eye-visible@2x.png'
+
 function EyeButton({ onClick, visible }: { onClick: () => void; visible: boolean }) {
   return (
     <button
@@ -37,7 +40,13 @@ function EyeButton({ onClick, visible }: { onClick: () => void; visible: boolean
       onClick={onClick}
       type="button"
     >
-      <span className={[styles.eyeIcon, visible ? styles.eyeIconVisible : ''].join(' ')} />
+      <img
+        alt=""
+        aria-hidden="true"
+        className={styles.eyeIcon}
+        decoding="async"
+        src={visible ? passwordEyeVisibleSrc : passwordEyeHiddenSrc}
+      />
     </button>
   )
 }

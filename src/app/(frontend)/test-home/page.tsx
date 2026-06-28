@@ -1,16 +1,16 @@
 export const metadata = { robots: { index: false, follow: false } }
 
 import { AuthModalStage } from "@/components/auth/AuthModalStage";
-import { BorderComboFrame2, BorderComboFrame2Variant } from "@/components/ui-lab/border-combo-frame-2";
+import { BorderComboFrame2Variant } from "@/components/ui-lab/border-combo-frame-2";
 import { HeroProductRibbon } from "@/components/ui-lab/hero-product-ribbon";
-import Frame12877 from "@/components/ui-lab/home-test/frame12877";
+import { HomeHero } from "@/components/ui-lab/home-hero";
 import { TopNavigation, migrationTestNavItems } from "@/components/ui-lab/top-navigation";
 import { getSupabasePreviewImageURL } from "@/lib/supabase/imageTransform";
 
 import { FooterBar } from "../_components/shell/FooterBar";
 import { getHomeData } from "../_home/homeData";
 
-import { TestHomeBundlePanel, TestHomeInspirationPanel } from "./TestHomeInteractivePanels";
+import { TestHomeBundleFrame, TestHomeInspirationFrame } from "./TestHomeInteractivePanels";
 import styles from "./testHomePage.module.css";
 
 type TestHomeResponsivePageProps = {
@@ -32,9 +32,7 @@ export default async function TestHomeResponsivePage({ searchParams }: TestHomeR
     <main className={styles.page}>
       <AuthModalStage clipContent={false} fitViewport>
         <TopNavigation active="HOME" className={styles.boundTopNavigation} items={migrationTestNavItems} user={data.navUser} />
-        <section className={styles.heroStage} aria-label="Responsive home hero">
-          <Frame12877 heroHeaderBackgroundSrc={data.heroHeaderBackgroundSrc} />
-        </section>
+        <HomeHero heroHeaderBackgroundSrc={data.heroHeaderBackgroundSrc} />
 
         <section className={styles.framedSection} aria-label="Featured models">
           <BorderComboFrame2Variant className={styles.heroBottomBanner}>
@@ -56,6 +54,11 @@ export default async function TestHomeResponsivePage({ searchParams }: TestHomeR
                       <img alt="" className={styles.featureImage} src={getSupabasePreviewImageURL(item.imageSrc, "home-feature")} />
                     ) : null}
                     <HeroProductRibbon className={styles.featureRibbon} label={item.ribbonLabel || "New Product"} />
+                    {item.captionLabel ? (
+                      <span className={styles.featureCaption}>
+                        <span className={styles.featureCaptionText}>{item.captionLabel}</span>
+                      </span>
+                    ) : null}
                   </a>
                 ))}
               </div>
@@ -64,25 +67,19 @@ export default async function TestHomeResponsivePage({ searchParams }: TestHomeR
         </section>
 
         <section className={styles.framedSection} aria-label="Model bundles">
-          <BorderComboFrame2 className={styles.heroSecondBanner}>
-            <div className={styles.frameShell}>
-              <TestHomeBundlePanel items={data.shelfItems} />
-            </div>
-          </BorderComboFrame2>
+          <TestHomeBundleFrame className={styles.heroSecondBanner} items={data.shelfItems} />
         </section>
 
         <section className={styles.framedSection} aria-label="Inspiration models">
-          <BorderComboFrame2 className={styles.heroThirdBanner} id="inspiration">
-            <div className={styles.frameShell}>
-              <TestHomeInspirationPanel
-                items={data.inspirationItems}
-                page={data.inspirationPagination.page}
-                pageSize={data.inspirationPagination.limit}
-                query={data.inspirationSearchQuery}
-                totalPages={data.inspirationPagination.totalPages}
-              />
-            </div>
-          </BorderComboFrame2>
+          <TestHomeInspirationFrame
+            className={styles.heroThirdBanner}
+            id="inspiration"
+            items={data.inspirationItems}
+            page={data.inspirationPagination.page}
+            pageSize={data.inspirationPagination.limit}
+            query={data.inspirationSearchQuery}
+            totalPages={data.inspirationPagination.totalPages}
+          />
         </section>
 
         <div className={styles.footerMount}>

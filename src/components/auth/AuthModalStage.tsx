@@ -82,7 +82,11 @@ export function AuthModalStage({
       {isAuthModalOpen ? (
         <div
           aria-modal="true"
-          className={[styles.overlay, resolvedOverlayHeight ? styles.overlayConstrained : ''].join(' ')}
+          className={[
+            styles.overlay,
+            clipContent ? '' : styles.overlayViewportFixed,
+            resolvedOverlayHeight ? styles.overlayConstrained : '',
+          ].join(' ')}
           role="dialog"
         >
           <div className={styles.modalShell}>

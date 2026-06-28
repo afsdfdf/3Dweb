@@ -265,7 +265,7 @@ export default async function ShowcasePage({ searchParams }: ShowcasePageProps) 
 
   return (
     <main className={styles.page}>
-      <AuthModalStage>
+      <AuthModalStage clipContent={false}>
         <TopNavigation
           active={getPublicNavigationActiveID('/showcase', navigationItems)}
           className={styles.topNavigation}

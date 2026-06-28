@@ -9,26 +9,34 @@ import { ButtonBoxFrame } from "@/components/ui-lab/button-box-frame";
 import { FollowCreatorCard } from "@/components/ui-lab/follow-creator-card";
 import type { FollowCreatorCardData } from "@/components/ui-lab/follow-creator-card";
 import { SmallButtonTriple } from "@/components/ui-lab/small-button-pair/small-button-pair";
-import type { HomeInspirationFilter } from "@/app/(frontend)/_home/homeData";
+import type { HomeInspirationDisplayFilter, HomeInspirationFilter } from "@/app/(frontend)/_home/homeData";
 import { getSupabasePreviewImageURL } from "@/lib/supabase/imageTransform";
 
 import styles from "./inspiration-grid.module.css";
 
-export type InspirationGridFilter = HomeInspirationFilter | "all";
+export type InspirationGridFilter = HomeInspirationDisplayFilter;
 
 type TripleFilterId = "button" | "dark" | "purple";
 
 const filterByButtonId: Record<TripleFilterId, InspirationGridFilter> = {
-  purple: "text3d",
-  dark: "image3d",
-  button: "image-tools",
+  purple: "all",
+  dark: "follow",
+  button: "followed",
 };
 
-const buttonIdByFilter: Record<Exclude<InspirationGridFilter, "all">, TripleFilterId> = {
-  text3d: "purple",
-  image3d: "dark",
-  "image-tools": "button",
+const buttonIdByFilter: Record<InspirationGridFilter, TripleFilterId> = {
+  all: "purple",
+  follow: "dark",
+  followed: "button",
 };
+
+const defaultInspirationGridFilter: InspirationGridFilter = "all";
+
+function getVisibleGridItems(items: InspirationGridItem[], filter: InspirationGridFilter) {
+  if (filter === "followed") return items.filter((item) => item.isAuthorFollowed);
+  if (filter === "follow") return items.filter((item) => !item.isAuthorFollowed);
+  return items;
+}
 
 function getInitials(name?: null | string) {
   if (!name) return "TT";
@@ -52,6 +60,7 @@ export type InspirationGridItem = {
   href?: null | string;
   id: string;
   imageSrc?: null | string;
+  isAuthorFollowed?: boolean;
   likesLabel?: string;
   title?: string;
   viewsLabel?: string;
@@ -65,9 +74,11 @@ type InspirationGridProps = {
 type InspirationGridCardProps = {
   item: InspirationGridItem;
   onActivate?: (item: InspirationGridItem) => void;
+  onSelect?: (item: InspirationGridItem) => void;
+  selected?: boolean;
 };
 
-export function InspirationGridCard({ item, onActivate }: InspirationGridCardProps) {
+export function InspirationGridCard({ item, onActivate, onSelect, selected = false }: InspirationGridCardProps) {
   const avatarRef = useRef<HTMLDivElement>(null);
   const closeTimerRef = useRef<number | null>(null);
   const [popoverPosition, setPopoverPosition] = useState<{ left: number; top: number } | null>(null);
@@ -109,6 +120,8 @@ export function InspirationGridCard({ item, onActivate }: InspirationGridCardPro
   }, []);
 
   const handleClick = () => {
+    onSelect?.(item);
+
     if (onActivate) {
       onActivate(item);
       return;
@@ -155,7 +168,7 @@ export function InspirationGridCard({ item, onActivate }: InspirationGridCardPro
   return (
     <button
       aria-label={item.title}
-      aria-pressed={false}
+      aria-pressed={selected}
       className={styles.item}
       onClick={handleClick}
       onMouseLeave={schedulePopoverClose}
@@ -165,6 +178,7 @@ export function InspirationGridCard({ item, onActivate }: InspirationGridCardPro
       <ButtonBoxFrame
         className={styles.cardFrame}
         contentClassName={styles.cardFrameContent}
+        selected={selected}
         style={{
           height: "var(--inspiration-card-height, 460px)",
           width: "var(--inspiration-card-width, 288px)",
@@ -232,14 +246,18 @@ export function InspirationGridCard({ item, onActivate }: InspirationGridCardPro
 }
 
 export function InspirationGrid({ filterMountClassName, items: backendItems = [] }: InspirationGridProps) {
-  const [filter, setFilter] = useState<InspirationGridFilter>("all");
-  const selectedButton = filter === "all" ? null : buttonIdByFilter[filter];
-  const filteredItems = filter === "all" ? backendItems : backendItems.filter((item) => item.filter === filter);
+  const [filter, setFilter] = useState<InspirationGridFilter>(defaultInspirationGridFilter);
+  const [selectedItemId, setSelectedItemId] = useState<null | string>(null);
+  const selectedButton = buttonIdByFilter[filter];
+  const filteredItems = getVisibleGridItems(backendItems, filter);
+  const activeSelectedItemId = filteredItems.some((item) => item.id === selectedItemId)
+    ? selectedItemId
+    : null;
   const handleFilterChange = (button: TripleFilterId) => {
-    const nextFilter = filterByButtonId[button];
-    setFilter((current) => (current === nextFilter ? "all" : nextFilter));
+    setFilter(filterByButtonId[button]);
   };
   const handleItemClick = (item: (typeof backendItems)[number]) => {
+    setSelectedItemId(item.id);
     if (item.href) window.location.assign(item.href);
   };
 
@@ -248,9 +266,9 @@ export function InspirationGrid({ filterMountClassName, items: backendItems = []
       <div className={filterMountClassName}>
         <SmallButtonTriple
           labels={{
-            purple: "Text To 3D",
-            dark: "Image To 3D",
-            button: "Image Tools",
+            purple: "All",
+            dark: "Follow",
+            button: "Followed",
           }}
           onChange={handleFilterChange}
           selected={selectedButton}
@@ -258,7 +276,12 @@ export function InspirationGrid({ filterMountClassName, items: backendItems = []
       </div>
       <div className={styles.grid} aria-label="Inspiration grid">
         {filteredItems.length > 0 ? filteredItems.map((item) => (
-        <InspirationGridCard item={item} key={item.id} onActivate={handleItemClick} />
+        <InspirationGridCard
+          item={item}
+          key={item.id}
+          onActivate={handleItemClick}
+          selected={item.id === activeSelectedItemId}
+        />
       )) : (
         <div className={styles.emptyState}>No Models Found</div>
       )}

@@ -225,7 +225,7 @@ export default async function BundlesPage({ searchParams }: BundlesPageProps) {
 
   return (
     <main className={styles.page}>
-      <AuthModalStage>
+      <AuthModalStage clipContent={false}>
         <TopNavigation active="SHOWCASE" className={styles.topNavigation} fitViewport items={migrationTestNavItems} user={navUser} />
         <header className={styles.mobileHeader}>
           <Link href="/" aria-label="Thorns Tavern home">

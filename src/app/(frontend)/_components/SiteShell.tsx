@@ -64,10 +64,10 @@ export async function SiteShell({
 
   if (layoutMode === 'document') {
     return (
-      <div className="min-h-screen overflow-x-hidden bg-[#181818] text-[#ededee]" style={fixedStageStyle}>
+      <div className="min-h-screen overflow-x-clip bg-[#181818] text-[#ededee]" style={fixedStageStyle}>
         <TopNavigation
           active={getPublicNavigationActiveID(currentPath, navigationItems)}
-          className="z-[60]"
+          className="!sticky !top-0 z-[60]"
           fitViewport
           items={navigationItems}
           subscriptionPromotion={navigationPromotion ?? defaultSiteSettings.navigationPromotion}
@@ -91,7 +91,7 @@ export async function SiteShell({
 
   return (
     <>
-      {mobileChildren ? <div className="h-screen w-screen overflow-y-auto bg-[#181818] text-[#ededee] lg:hidden">{mobileChildren}</div> : null}
+      {mobileChildren ? <div className="fixed inset-0 overflow-y-auto bg-[#181818] text-[#ededee] lg:hidden">{mobileChildren}</div> : null}
       <div className={`${mobileChildren ? 'hidden lg:block' : ''} relative h-screen w-screen overflow-hidden bg-[#181818] text-[#ededee]`} style={fixedStageStyle}>
         <TopNavigation
           active={getPublicNavigationActiveID(currentPath, navigationItems)}

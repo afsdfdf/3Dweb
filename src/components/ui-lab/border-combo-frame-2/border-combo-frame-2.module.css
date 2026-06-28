@@ -174,3 +174,26 @@
   position: relative;
   z-index: 2;
 }
+
+.containerContent {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  padding: 0 var(--right-width) var(--bottom-height) var(--left-width);
+}
+
+.headerSlot {
+  box-sizing: border-box;
+  flex: 0 0 var(--frame-header-height);
+  min-height: 0;
+  position: relative;
+  z-index: 2;
+}
+
+.bodySlot {
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  min-height: 0;
+  position: relative;
+  z-index: 2;
+}

@@ -78,6 +78,59 @@ test('homepage uses viewport-fitted top navigation so the promo state does not c
   assert.match(homePageSource, /<TopNavigation[\s\S]*fitViewport[\s\S]*subscriptionPromotion=\{data\.navigationPromotion\}/)
 })
 
+test('viewport-fitted top navigation keeps desktop controls at design size on ultrawide screens', () => {
+  const cssSource = readFileSync(topNavigationCssPath, 'utf8')
+
+  assert.match(cssSource, /@media \(min-width:\s*1921px\)\s*\{[\s\S]*\.scaledTopNav\s*\{[\s\S]*--top-navigation-scale:\s*1/)
+  assert.match(cssSource, /@media \(min-width:\s*1921px\)\s*\{[\s\S]*\.scaledTopNav\s*\{[\s\S]*height:\s*60px/)
+  assert.match(cssSource, /@media \(min-width:\s*1921px\)\s*\{[\s\S]*\.scaledTopNavStage\s*\{[\s\S]*transform:\s*none/)
+  assert.match(cssSource, /@media \(min-width:\s*1921px\)\s*\{[\s\S]*\.scaledTopNavStage\s*>\s*\.topNav\s*\{[\s\S]*width:\s*100%/)
+})
+
+test('top navigation subscription promotion follows the design spacing metrics', () => {
+  const cssSource = readFileSync(topNavigationCssPath, 'utf8')
+  const topNavRule = cssSource.match(/\.topNav\s*\{[\s\S]*?\}/)?.[0] ?? ''
+  const promotionRule = cssSource.match(/\.subscriptionPromotion\s*\{[\s\S]*?\}/)?.[0] ?? ''
+  const promotionTextRule = cssSource.match(/\.subscriptionPromotion strong,\s*[\s\S]*?\.subscriptionPromotion span\s*\{[\s\S]*?\}/)?.[0] ?? ''
+  const promotionStrongRule = cssSource.match(/\.subscriptionPromotion strong\s*\{[\s\S]*?\}/)?.[0] ?? ''
+  const promotionSpanRules = [...cssSource.matchAll(/\.subscriptionPromotion span\s*\{[\s\S]*?\}/g)]
+  const promotionSpanRule = promotionSpanRules[promotionSpanRules.length - 1]?.[0] ?? ''
+  const buttonRule = cssSource.match(/\.subscriptionButton\s*\{[\s\S]*?\}/)?.[0] ?? ''
+  const buttonSpanRule = cssSource.match(/\.subscriptionButton span\s*\{[\s\S]*?\}/)?.[0] ?? ''
+
+  assert.match(topNavRule, /--subscription-promotion-right:\s*368px/)
+  assert.match(topNavRule, /--subscription-button-right:\s*299px/)
+  assert.match(promotionRule, /width:\s*65px/)
+  assert.match(promotionRule, /height:\s*36px/)
+  assert.match(promotionRule, /top:\s*12px/)
+  assert.match(promotionRule, /line-height:\s*18px/)
+  assert.match(promotionTextRule, /white-space:\s*nowrap/)
+  assert.match(promotionStrongRule, /font-size:\s*12px/)
+  assert.match(promotionStrongRule, /font-weight:\s*500/)
+  assert.match(promotionSpanRule, /font-size:\s*12px/)
+  assert.match(promotionSpanRule, /font-weight:\s*500/)
+  assert.match(buttonRule, /width:\s*57px/)
+  assert.match(buttonRule, /height:\s*26px/)
+  assert.match(buttonRule, /gap:\s*3px/)
+  assert.match(buttonRule, /top:\s*17px/)
+  assert.match(buttonRule, /border-radius:\s*8px\s+2px\s+8px\s+2px/)
+  assert.doesNotMatch(buttonRule, /border-image/)
+  assert.match(buttonRule, /background-clip:\s*padding-box,\s*border-box/)
+  assert.match(buttonRule, /background:\s*linear-gradient\(180deg,\s*#f6d88e\s*0%,\s*#f0cd76\s*100%\)/i)
+  assert.match(buttonRule, /box-shadow:[\s\S]*inset 0 0 8px 0 #ffe5ad/i)
+  assert.match(buttonSpanRule, /width:\s*25px/)
+  assert.match(buttonSpanRule, /height:\s*18px/)
+  assert.match(buttonSpanRule, /font-family:\s*var\(--nav-font-family\)/)
+  assert.match(buttonSpanRule, /font-weight:\s*500/)
+  assert.match(buttonSpanRule, /font-size:\s*12px/)
+  assert.match(buttonSpanRule, /color:\s*#1b1b1b/i)
+  assert.match(buttonSpanRule, /line-height:\s*18px/)
+  assert.match(buttonSpanRule, /text-align:\s*left/)
+  assert.match(buttonSpanRule, /font-style:\s*normal/)
+  assert.match(buttonSpanRule, /overflow:\s*visible/)
+  assert.match(buttonSpanRule, /text-overflow:\s*clip/)
+})
+
 test('navigation session and subscription endpoints expose only safe summary data', () => {
   const sessionSource = readFileSync(sessionPath, 'utf8')
   const endpointsSource = readFileSync(subscriptionsEndpointPath, 'utf8')

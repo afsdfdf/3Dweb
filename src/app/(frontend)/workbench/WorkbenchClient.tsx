@@ -1152,6 +1152,7 @@ export function WorkbenchClient({
             ) : (
               <ModelViewer
                 className={styles.mobileViewer}
+                loadingOverlayVariant="workbench"
                 showGround={false}
                 showPlaceholderModel={false}
                 src={activeModelSrc}
@@ -1313,6 +1314,7 @@ export function WorkbenchClient({
                   ) : (
                     <ModelViewer
                       className={styles.viewerCanvas}
+                      loadingOverlayVariant="workbench"
                       showPlaceholderModel={false}
                       showGround={false}
                       src={activeModelSrc}

@@ -350,21 +350,13 @@
 }
 
 .eyeIcon {
-  background-image: url("/ui-lab/pixso-auth-assets/images/Boolean_operation_1_3743.png");
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
   display: block;
-  height: 16px;
-  left: 5px;
+  height: 24px;
+  left: 4px;
+  object-fit: contain;
   position: absolute;
-  top: 8px;
-  width: 22px;
-}
-
-.eyeIconVisible {
-  background-image: url("/ui-lab/pixso-auth-assets/images/Boolean_operation_1_3757.png");
-  height: 15px;
-  top: 8px;
+  top: 4px;
+  width: 24px;
 }
 
 .eyeButton:focus-visible,

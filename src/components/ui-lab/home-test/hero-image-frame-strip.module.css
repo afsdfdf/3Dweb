@@ -60,7 +60,7 @@
   left: 36px;
   max-width: calc(100% - 72px);
   position: absolute;
-  top: 0;
+  top: -5px;
   width: max-content;
   z-index: 2;
 }

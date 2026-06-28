@@ -123,7 +123,7 @@
   align-items: center;
   color: rgba(255, 255, 255, 0.48);
   display: flex;
-  font-family: Arial, sans-serif;
+  font-family: var(--font-ui);
   font-size: 13px;
   gap: 12px;
   height: 32px;
@@ -144,7 +144,7 @@
   box-sizing: border-box;
   color: #ffffff;
   cursor: pointer;
-  font-family: Arial, sans-serif;
+  font-family: var(--font-ui);
   font-size: 13px;
   height: 30px;
   padding: 0 32px 0 12px;
@@ -181,7 +181,7 @@
   color: rgba(255, 255, 255, 0.46);
   cursor: pointer;
   display: flex;
-  font-family: Arial, sans-serif;
+  font-family: var(--font-ui);
   font-size: 18px;
   font-weight: 500;
   height: 38px;
@@ -241,7 +241,7 @@
   box-sizing: border-box;
   color: rgba(255, 255, 255, 0.72);
   display: flex;
-  font-family: Arial, sans-serif;
+  font-family: var(--font-ui);
   font-size: 16px;
   grid-column: 1 / -1;
   justify-content: center;
@@ -260,7 +260,7 @@
 
 .planHeader h3 {
   color: #f6d49e;
-  font-family: Arial, sans-serif;
+  font-family: var(--font-ui);
   font-size: 34px;
   font-weight: 800;
   letter-spacing: 0;
@@ -270,7 +270,7 @@
 
 .planHeader p {
   color: rgba(255, 255, 255, 0.42);
-  font-family: Arial, sans-serif;
+  font-family: var(--font-ui);
   font-size: 13px;
   line-height: 19px;
   margin: 2px 0 0;
@@ -306,7 +306,7 @@
 
 .priceText strong {
   color: #f6d49e;
-  font-family: Arial, sans-serif;
+  font-family: var(--font-ui);
   font-size: 35px;
   font-weight: 800;
   line-height: 42px;
@@ -314,7 +314,7 @@
 
 .priceText span {
   color: rgba(246, 212, 158, 0.6);
-  font-family: Arial, sans-serif;
+  font-family: var(--font-ui);
   font-size: 13px;
   font-weight: 700;
   line-height: 18px;
@@ -324,7 +324,7 @@
 .priceText em {
   color: rgba(246, 212, 158, 0.38);
   flex: 0 0 100%;
-  font-family: Arial, sans-serif;
+  font-family: var(--font-ui);
   font-size: 13px;
   font-style: normal;
   line-height: 14px;
@@ -340,7 +340,7 @@
 
 .description {
   color: rgba(255, 255, 255, 0.78);
-  font-family: Arial, sans-serif;
+  font-family: var(--font-ui);
   font-size: 15px;
   line-height: 22px;
   margin: 0 0 15px;
@@ -359,7 +359,7 @@
   align-items: center;
   color: rgba(255, 255, 255, 0.44);
   display: flex;
-  font-family: Arial, sans-serif;
+  font-family: var(--font-ui);
   font-size: 15px;
   gap: 9px;
   line-height: 21px;
@@ -395,7 +395,7 @@
   color: #ffffff;
   cursor: pointer;
   display: flex;
-  font-family: Arial, sans-serif;
+  font-family: var(--font-ui);
   font-size: 16px;
   font-weight: 500;
   height: 58px;

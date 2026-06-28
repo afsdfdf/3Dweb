@@ -119,7 +119,7 @@
 
 .title {
   color: #f6dca1;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-ui);
   font-size: 22px;
   font-weight: 700;
   line-height: 28px;
@@ -154,7 +154,7 @@
   border: 1px solid rgba(163, 165, 176, 0.68);
   color: #ffffff;
   display: flex;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-ui);
   font-size: 26px;
   height: 40px;
   justify-content: center;
@@ -190,7 +190,7 @@
 
 .helperText {
   color: rgba(255, 255, 255, 0.72);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-ui);
   font-size: 16px;
   line-height: 22px;
   margin: 17px 0 0;
@@ -201,7 +201,7 @@
 .priceText {
   color: rgba(246, 220, 161, 0.72);
   display: none;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-ui);
   font-size: 13px;
   font-weight: 700;
   height: 18px;
@@ -228,7 +228,7 @@
 
 .error {
   color: #ffb8aa;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-ui);
   font-size: 12px;
   line-height: 16px;
   margin: 10px auto 0;

@@ -1,7 +1,7 @@
 .pageShell {
   background: #1b1b1b;
   color: #ededee;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-ui);
   height: 100svh;
   min-height: 100svh;
   overflow: hidden;
@@ -195,7 +195,7 @@
   color: rgba(215, 216, 222, 0.58);
   cursor: pointer;
   display: inline-flex;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-ui);
   font-size: 13px;
   font-weight: 700;
   gap: 7px;
@@ -339,7 +339,7 @@
   box-sizing: border-box;
   color: #d6d6dc;
   flex: 1 1 auto;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-ui);
   font-size: 13.5px;
   height: 35px;
   min-width: 0;
@@ -376,7 +376,7 @@
   cursor: pointer;
   display: inline-flex;
   flex: 0 0 auto;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-ui);
   font-size: 13px;
   font-weight: 700;
   gap: 7px;
@@ -561,7 +561,7 @@
   box-sizing: border-box;
   color: #3e240d;
   cursor: pointer;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-ui);
   font-size: 15px;
   font-weight: 800;
   height: 38px;
@@ -738,7 +738,7 @@
   color: #dfe0e6;
   cursor: pointer;
   display: inline-flex;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-ui);
   font-size: 12px;
   font-weight: 700;
   gap: 6px;
@@ -782,7 +782,7 @@
   color: #e2e3e8;
   cursor: pointer;
   display: inline-flex;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-ui);
   font-size: 12px;
   font-weight: 700;
   gap: 6px;
@@ -825,7 +825,7 @@
   color: #dfdfe4;
   cursor: pointer;
   display: inline-flex;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-ui);
   font-size: 14px;
   height: 30px;
   justify-content: center;

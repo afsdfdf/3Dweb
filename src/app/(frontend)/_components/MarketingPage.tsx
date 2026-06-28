@@ -39,7 +39,7 @@ export async function MarketingPage({ page }: MarketingPageProps) {
 
   return (
     <main className={styles.page}>
-      <AuthModalStage>
+      <AuthModalStage clipContent={false}>
         <TopNavigation
           active={getPublicNavigationActiveID(page.currentPath, navigationItems)}
           className={styles.topNavigation}

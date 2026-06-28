@@ -6,20 +6,25 @@ type ButtonBoxFrameProps = Omit<HTMLAttributes<HTMLDivElement>, "children" | "cl
   children?: ReactNode;
   className?: string;
   contentClassName?: string;
+  selected?: boolean;
   style?: CSSProperties;
 };
 
-export function ButtonBoxFrame({ children, className, contentClassName, style, ...frameProps }: ButtonBoxFrameProps) {
+export function ButtonBoxFrame({
+  children,
+  className,
+  contentClassName,
+  selected = false,
+  style,
+  ...frameProps
+}: ButtonBoxFrameProps) {
   return (
-    <div {...frameProps} className={[styles.frame, className].filter(Boolean).join(" ")} style={style}>
-      <span aria-hidden="true" className={styles.cornerTopLeft} />
-      <span aria-hidden="true" className={styles.edgeTop} />
-      <span aria-hidden="true" className={styles.cornerTopRight} />
-      <span aria-hidden="true" className={styles.edgeLeft} />
-      <span aria-hidden="true" className={styles.edgeRight} />
-      <span aria-hidden="true" className={styles.cornerBottomLeft} />
-      <span aria-hidden="true" className={styles.edgeBottom} />
-      <span aria-hidden="true" className={styles.cornerBottomRight} />
+    <div
+      {...frameProps}
+      className={[styles.frame, className].filter(Boolean).join(" ")}
+      data-selected={selected ? "true" : undefined}
+      style={style}
+    >
       <div className={[styles.content, contentClassName].filter(Boolean).join(" ")}>{children}</div>
     </div>
   );

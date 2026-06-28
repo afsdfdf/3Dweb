@@ -1,14 +1,14 @@
 .page {
   background: #181818;
   min-height: 100vh;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow-x: clip;
+  overflow-y: visible;
   position: relative;
 }
 
-.boundTopNavigation {
+.boundTopNavigation.boundTopNavigation {
   left: 0;
-  position: relative;
+  position: sticky;
   right: 0;
   top: 0;
   z-index: 90;

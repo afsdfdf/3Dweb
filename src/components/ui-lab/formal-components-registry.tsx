@@ -92,6 +92,7 @@ export type ComponentId =
   | "model-author-card"
   | "follow-creator-card"
   | "model-library-card"
+  | "model-card-frame-border-test"
   | "model-library-panel"
   | "model-download-confirmation"
   | "inspiration-card-reference"
@@ -206,7 +207,7 @@ const components: FormalComponent[] = [
     name: "ButtonBoxFrame",
     kind: "frame",
     title: "ButtonBoxFrame",
-    description: "Reusable 3x3 sliced frame with fixed corners and repeatable edges.",
+    description: "Reusable single-image border frame with fixed-width corners and stretched edges.",
     usage: '<ButtonBoxFrame style={{ width: 380, height: 588 }} />',
     assets: ["/ui-lab/component-assets/button-box-frame"],
   },
@@ -315,6 +316,15 @@ const components: FormalComponent[] = [
     description: "Workbench model library card with frame overlay, metadata, and preview image.",
     usage: '<ModelLibraryCard selected license="Public" />',
     assets: ["/ui-lab/workbench-assets/monk-large.png"],
+  },
+  {
+    id: "model-card-frame-border-test",
+    name: "Model Card Frame Test",
+    kind: "card",
+    title: "Model Card Frame Border Image Test",
+    description: "Isolated model-card frame preview using the shared single-image border frame.",
+    usage: '<ButtonBoxFrame className={styles.modelCardFrameOverlay} />',
+    assets: ["/ui-lab/component-assets/button-box-frame"],
   },
   {
     id: "model-library-panel",
@@ -618,6 +628,53 @@ function ComponentPreview({
       <div style={{ display: "grid", gap: 18, gridTemplateColumns: "200px 200px" }}>
         <ModelLibraryCard selected style={{ width: 200, height: 309 }} />
         <ModelLibraryCard license="Private" menuOpen style={{ width: 200, height: 309 }} />
+      </div>
+    );
+  }
+
+  if (id === "model-card-frame-border-test") {
+    return (
+      <div className={styles.modelCardFrameTest}>
+        <figure className={styles.modelCardFrameFigure}>
+          <figcaption>Current</figcaption>
+          <ModelLibraryCard selected style={{ width: 200, height: 309 }} />
+        </figure>
+        <figure className={styles.modelCardFrameFigure}>
+          <figcaption>Same Frame 200 x 309</figcaption>
+          <article className={styles.modelCardFrameMock}>
+            <ButtonBoxFrame className={styles.modelCardFrameOverlay} contentClassName={styles.modelCardFrameOverlayContent} />
+            <header className={styles.modelCardFrameMockHeader}>
+              <strong>Monk</strong>
+              <em>Public</em>
+              <span>...</span>
+            </header>
+            <p className={styles.modelCardFrameMockDate}>
+              <span>2025.06.27</span>
+              <span>20:35:20</span>
+            </p>
+            <div className={styles.modelCardFrameMockPreview}>
+              <img alt="Monk library preview" src="/ui-lab/workbench-assets/monk-large.webp" />
+            </div>
+          </article>
+        </figure>
+        <figure className={styles.modelCardFrameFigure}>
+          <figcaption>Same Frame 278 x 444</figcaption>
+          <article className={[styles.modelCardFrameMock, styles.modelCardFrameMockLarge].join(" ")}>
+            <ButtonBoxFrame className={styles.modelCardFrameOverlay} contentClassName={styles.modelCardFrameOverlayContent} />
+            <header className={styles.modelCardFrameMockHeader}>
+              <strong>Greenwood</strong>
+              <em>Public</em>
+              <span>...</span>
+            </header>
+            <p className={styles.modelCardFrameMockDate}>
+              <span>2025.06.27</span>
+              <span>20:35:20</span>
+            </p>
+            <div className={styles.modelCardFrameMockPreview}>
+              <img alt="Monk library preview" src="/ui-lab/workbench-assets/monk-large.webp" />
+            </div>
+          </article>
+        </figure>
       </div>
     );
   }
