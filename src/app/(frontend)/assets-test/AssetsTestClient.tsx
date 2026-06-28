@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Package, Star, UserRound, Users } from "lucide-react";
 
 import { FrameButton } from "@/components/ui/frame-button";
-import { BorderComboFrame2 } from "@/components/ui-lab/border-combo-frame-2";
+import { BorderComboFrame1 } from "@/components/ui-lab/border-combo-frame-1";
 import { ButtonBoxFrame } from "@/components/ui-lab/button-box-frame";
 import cardStyles from "@/components/ui-lab/home-test/inspiration-grid.module.css";
 
@@ -30,6 +30,8 @@ type MockAsset = {
   ageLabel: string;
   collected: boolean;
   creator: MockCreatorId;
+  /** Gold corner frame, matching the highlighted card in the reference design. */
+  highlighted?: boolean;
   id: string;
   imageSrc: string;
   /** Higher = newer; drives "My Follows" time sorting. */
@@ -67,7 +69,7 @@ const initialAssets: MockAsset[] = [
   { ageLabel: "6 Days ago", collected: true, creator: "xingmu", id: "asset-04", imageSrc: `${SKETCH}/gallery-4.webp`, recency: 9, title: "Frost Giant", visibility: "private" },
   { ageLabel: "6 Days ago", collected: true, creator: "greenwood", id: "asset-05", imageSrc: `${SKETCH}/gallery-5.webp`, recency: 8, title: "Wild Huntress", visibility: "public" },
   { ageLabel: "6 Days ago", collected: true, creator: "xingmu", id: "asset-06", imageSrc: `${SKETCH}/input-thumb.webp`, recency: 7, title: "Spoon Gnome", visibility: "public" },
-  { ageLabel: "6 Days ago", collected: true, creator: "greenwood", id: "asset-07", imageSrc: `${SKETCH}/gallery-5.webp`, recency: 6, title: "Ember Barbarian", visibility: "public" },
+  { ageLabel: "6 Days ago", collected: true, creator: "greenwood", highlighted: true, id: "asset-07", imageSrc: `${SKETCH}/gallery-5.webp`, recency: 6, title: "Ember Barbarian", visibility: "public" },
   { ageLabel: "6 Days ago", collected: true, creator: "xingmu", id: "asset-08", imageSrc: `${SKETCH}/input-thumb.webp`, recency: 5, title: "Hearth Cook", visibility: "private" },
   { ageLabel: "6 Days ago", collected: true, creator: "xingmu", id: "asset-09", imageSrc: `${SKETCH}/gallery-4.webp`, recency: 4, title: "Tide Shaman", visibility: "public" },
   { ageLabel: "6 Days ago", collected: true, creator: "xingmu", id: "asset-10", imageSrc: `${SKETCH}/gallery-2.webp`, recency: 3, title: "Cheerful Innkeep", visibility: "public" },
@@ -111,13 +113,9 @@ function AssetTestCard({
 
   return (
     <div className={[cardStyles.item, styles.cardShell].join(" ")}>
-      <ButtonBoxFrame
-        className={cardStyles.cardFrame}
-        contentClassName={cardStyles.cardFrameContent}
-        style={{
-          height: "var(--inspiration-card-height, 460px)",
-          width: "var(--inspiration-card-width, 288px)",
-        }}
+      <BorderComboFrame1
+        className={[styles.cardFrame1, asset.highlighted ? styles.cardFrameGold : ""].filter(Boolean).join(" ")}
+        contentClassName={styles.cardFrame1Content}
       >
         <article className={cardStyles.cardContent}>
           <header className={cardStyles.cardHeader}>
@@ -157,7 +155,7 @@ function AssetTestCard({
             <img alt="" className={cardStyles.previewImage} decoding="async" loading="lazy" src={asset.imageSrc} />
           </div>
         </article>
-      </ButtonBoxFrame>
+      </BorderComboFrame1>
 
       {showOwnerControls ? (
         <>
@@ -306,7 +304,7 @@ export function AssetsTestClient() {
   return (
     <div className={styles.stage}>
       <section className={styles.framedSection} aria-label="Creator profile">
-        <ButtonBoxFrame className={styles.profileFrame} contentClassName={styles.profileFrameContent}>
+        <ButtonBoxFrame className={styles.profileFrame} contentClassName={styles.panelFrameContent}>
           <div className={styles.profileBanner}>
             <div className={styles.profileMain}>
               <span className={[styles.profileAvatarRing, profile.kick ? styles.profileAvatarRingKick : ""].filter(Boolean).join(" ")}>
@@ -357,7 +355,7 @@ export function AssetsTestClient() {
       </section>
 
       <section className={styles.framedSection} aria-label="Assets">
-        <BorderComboFrame2 className={styles.assetsFrame}>
+        <ButtonBoxFrame className={styles.assetsFrame} contentClassName={styles.panelFrameContent}>
           <div className={styles.frameShell}>
             <div className={styles.toolbarRow}>
               <div className={styles.tabs} role="tablist" aria-label="Asset views">
@@ -491,7 +489,7 @@ export function AssetsTestClient() {
               </nav>
             </div>
           </div>
-        </BorderComboFrame2>
+        </ButtonBoxFrame>
       </section>
     </div>
   );

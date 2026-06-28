@@ -1,5 +1,5 @@
 .page {
-  background: #181818;
+  background: #0d0d0f;
   min-height: 100vh;
   overflow-x: clip;
   overflow-y: visible;
@@ -20,7 +20,7 @@
 
 /* Same gutter as the homepage framed sections. */
 .framedSection {
-  --frame-gutter: 32px;
+  --frame-gutter: 24px;
   box-sizing: border-box;
   padding-inline: var(--frame-gutter);
   width: 100%;
@@ -29,19 +29,18 @@
 /* ---------------------------------------------------------------- profile */
 
 .profileFrame {
-  --frame-border-width: 22px;
-  height: 208px;
+  height: 236px;
   width: 100%;
 }
 
-.profileFrameContent {
+/* ButtonBoxFrame disables pointer events on the frame wrapper and only
+   provides min-height on its content layer, so restore both here. */
+.panelFrameContent {
   height: 100%;
-  min-height: 0;
-  padding: 0 !important;
+  pointer-events: auto;
 }
 
 .profileBanner {
-  background: #0c0c0e;
   height: 100%;
   overflow: hidden;
   position: relative;
@@ -164,7 +163,7 @@
 
 .profileArt {
   background:
-    linear-gradient(90deg, #0c0c0e 0%, rgba(12, 12, 14, 0.65) 22%, rgba(12, 12, 14, 0) 52%),
+    linear-gradient(90deg, #101013 0%, rgba(16, 16, 19, 0.65) 22%, rgba(16, 16, 19, 0) 52%),
     url("/ui/workbench/model-detail/sketch-assets/rail-banner-bg.webp") right center / cover no-repeat;
   bottom: 0;
   position: absolute;
@@ -183,14 +182,9 @@
   width: 100%;
 }
 
-.assetsFrame > :global([class*="content"]) {
-  min-height: 0;
-  padding: 0 var(--right-width) var(--bottom-height) var(--left-width);
-}
-
 .frameShell {
   min-height: 0;
-  padding-top: 30px;
+  padding-bottom: 16px;
   pointer-events: auto;
   position: relative;
 }
@@ -414,9 +408,8 @@
   background: rgba(255, 255, 255, 0.15);
   display: block;
   height: 2px;
-  margin-left: -16px;
   margin-top: 26px;
-  width: calc(100% + 34px);
+  width: 100%;
 }
 
 .assetsGrid {
@@ -456,6 +449,32 @@
 
 .cardShell {
   cursor: default;
+}
+
+.cardFrame1 {
+  --frame-border-width: 16px;
+  height: var(--inspiration-card-height, 460px);
+  width: var(--inspiration-card-width, 288px);
+}
+
+/* The BCF1 slices are near-black; the reference cards wear a lighter
+   silver frame, so brighten the slice art. */
+.cardFrame1 > span {
+  filter: brightness(1.75);
+}
+
+.cardFrame1Content {
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 0 !important;
+  padding: 7px !important;
+}
+
+/* Highlighted card: tint the gray frame slices gold, matching the
+   cream-cornered card in the reference design. */
+.cardFrameGold > span,
+.cardFrameGold.cardFrame1 > span {
+  filter: sepia(1) saturate(2.4) hue-rotate(-12deg) brightness(2);
 }
 
 .visibilityChip {
