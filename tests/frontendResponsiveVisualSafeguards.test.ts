@@ -152,7 +152,11 @@ test("home inspiration toolbar leaves room for the page size label on laptop", (
   assert.match(searchCss, /\.pageSize span:first-child\s*\{[\s\S]*max-width:\s*122px/);
   assert.match(
     homeCss,
-    /\.inspirationSearchMount :global\(\[class\*="toolbar"\]\)\s*\{[\s\S]*width:\s*min\(48vw,\s*100%\)/,
+    /\.inspirationSearchMount\s*\{[\s\S]*width:\s*min\(48vw,\s*calc\(100%\s*-\s*46px\)\)/,
+  );
+  assert.match(
+    homeCss,
+    /\.inspirationSearchMount :global\(\[class\*="toolbar"\]\)\s*\{[\s\S]*width:\s*100%/,
   );
   assert.doesNotMatch(homeCss, /width:\s*min\(35\.729vw,\s*100%\)/);
 });
