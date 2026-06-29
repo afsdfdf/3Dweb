@@ -41,6 +41,7 @@ type WorkbenchClientProps = {
   generationCreditCosts?: GenerationCreditCosts;
   imageAssetCards?: ModelLibraryPanelCard[];
   initialPendingTasks?: PendingGenerationTask[];
+  initialSelectedModelId?: null | number;
   libraryCards: ModelLibraryPanelCard[];
   navUser: null | TopNavigationUser;
   navigationPromotion?: NavigationPromotionContent | null;
@@ -273,13 +274,15 @@ export function WorkbenchClient({
   generationCreditCosts = defaultGenerationCreditCosts,
   imageAssetCards: initialImageAssetCards = [],
   initialPendingTasks = [],
+  initialSelectedModelId = null,
   libraryCards,
   navUser,
   navigationPromotion,
 }: WorkbenchClientProps) {
   const router = useRouter();
   const { openAuthModal } = useAuthModal();
-  const firstModelSrc = libraryCards[0]?.modelSrc ?? null;
+  const selectedInitialModelCard = libraryCards.find((card) => card.id === initialSelectedModelId);
+  const firstModelSrc = selectedInitialModelCard?.modelSrc ?? libraryCards[0]?.modelSrc ?? null;
   const imagesRef = useRef<WorkbenchImageInput[]>([]);
   const pendingTasksRef = useRef<PendingGenerationTask[]>([]);
   const syncCursorRef = useRef(0);
@@ -1152,6 +1155,7 @@ export function WorkbenchClient({
             ) : (
               <ModelViewer
                 className={styles.mobileViewer}
+                displayBase="platform"
                 loadingOverlayVariant="workbench"
                 showGround={false}
                 showPlaceholderModel={false}
@@ -1314,6 +1318,7 @@ export function WorkbenchClient({
                   ) : (
                     <ModelViewer
                       className={styles.viewerCanvas}
+                      displayBase="platform"
                       loadingOverlayVariant="workbench"
                       showPlaceholderModel={false}
                       showGround={false}

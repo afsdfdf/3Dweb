@@ -109,6 +109,10 @@ Formal public/customer routes:
 - `/workbench/models/[id]` redirects to `/model-detail?id=<id>`
 - `/account`
 
+Workbench model-selection note:
+
+- `/workbench?reference=<modelId>` and `/workbench?model=<modelId>` open the requested readable model as the active Workbench preview. The server page must resolve the model through access-controlled Payload Local API reads with `overrideAccess: false`; missing, private, or inaccessible ids fall back to the normal user library state.
+
 Frontend cart note:
 
 - `/cart` is currently a browser-local shopping cart modal backed by `localStorage`; it does not create Payload records or multi-item payment sessions.

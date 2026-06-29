@@ -21,6 +21,11 @@ Update this file in the same task when work changes durable architecture:
 
 Do not leave durable project decisions only in chat history.
 
+## 2026-06-30 Workbench Model Reference Routing
+
+- `/workbench?reference=<modelId>` and `/workbench?model=<modelId>` are active model-selection entry points. The Workbench server page must resolve the requested model with access-controlled Payload Local API reads (`overrideAccess: false`) and seed `WorkbenchClient.initialSelectedModelId` so the viewer loads that model immediately.
+- The detail page's "Use in Workbench" / "Use As Reference" links rely on `reference=<modelId>`. Anonymous users may preview guest-readable public references in Workbench; personal library data remains scoped to the current user unless a requested readable model is explicitly selected for the current preview. Keep `tests/workbenchModelSelection.test.ts` guarding this route contract.
+
 ## 2026-06-14 Billing And Public Asset Guardrails
 
 - KV/Redis remains optional for single-instance/local deployments. Production can be made fail-closed by setting `REQUIRE_REDIS_IN_PRODUCTION=true`; in that mode `REDIS_URL` is required and initialization failure must not silently fall back to memory. Keep `tests/kvStoreProductionConfig.test.ts` when adjusting rate limits, webhook replay guards, or Stripe coordination locks.

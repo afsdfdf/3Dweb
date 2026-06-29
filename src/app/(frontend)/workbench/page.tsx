@@ -8,11 +8,61 @@ import {
   formatVisibilityBadge,
   formatWorkbenchDate,
   getWorkbenchGenerationTaskState,
+  getWorkbenchModelById,
   getWorkbenchModels,
+  type WorkbenchModel,
 } from "./_lib/workbenchData";
 import { WorkbenchClient } from "./WorkbenchClient";
 
-export default async function WorkbenchPage() {
+type WorkbenchPageProps = {
+  searchParams: Promise<{
+    model?: string | string[];
+    reference?: string | string[];
+  }>;
+};
+
+function toSearchParams(
+  source: Awaited<WorkbenchPageProps["searchParams"]>,
+) {
+  const searchParams = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(source)) {
+    const firstValue = Array.isArray(value) ? value[0] : value;
+    if (typeof firstValue === "string") {
+      searchParams.set(key, firstValue);
+    }
+  }
+
+  return searchParams;
+}
+
+function parseRequestedModelId(value: null | string) {
+  if (!value) return null;
+
+  const modelId = Number(value);
+  return Number.isFinite(modelId) && modelId > 0 ? modelId : null;
+}
+
+function toModelLibraryCard(model: WorkbenchModel): ModelLibraryPanelCard {
+  return {
+    date: formatWorkbenchDate(model.updatedAt).replace(" ", "\n"),
+    id: model.id,
+    license: formatVisibilityBadge(model.visibility),
+    modelSrc: model.viewerURL,
+    name: model.title,
+    previewAlt: `${model.title} preview`,
+    previewSrc: model.previewURL,
+  };
+}
+
+export default async function WorkbenchPage({
+  searchParams: searchParamsPromise,
+}: WorkbenchPageProps) {
+  const rawSearchParams = await searchParamsPromise;
+  const searchParams = toSearchParams(rawSearchParams);
+  const requestedModelId = parseRequestedModelId(
+    searchParams.get("reference") ?? searchParams.get("model"),
+  );
   const user = await getCurrentUser();
   const payload = await getCachedPayload();
   const [navUser, allVisibleModels, generationTaskState, siteSettings] = await Promise.all([
@@ -40,16 +90,20 @@ export default async function WorkbenchPage() {
       meshyPricing.textTo3DCredits,
     ),
   };
-  const models = allVisibleModels.filter((model) => model.isOwnedByCurrentUser);
-  const libraryCards: ModelLibraryPanelCard[] = models.map((model) => ({
-    date: formatWorkbenchDate(model.updatedAt).replace(" ", "\n"),
-    id: model.id,
-    license: formatVisibilityBadge(model.visibility),
-    modelSrc: model.viewerURL,
-    name: model.title,
-    previewAlt: `${model.title} preview`,
-    previewSrc: model.previewURL,
-  }));
+  const ownedModels = allVisibleModels.filter((model) => model.isOwnedByCurrentUser);
+  const requestedModel =
+    requestedModelId === null
+      ? null
+      : allVisibleModels.find((model) => model.id === requestedModelId) ??
+        await getWorkbenchModelById(user, requestedModelId);
+  const models = requestedModel
+    ? [
+        requestedModel,
+        ...ownedModels.filter((model) => model.id !== requestedModel.id),
+      ]
+    : ownedModels;
+  const requestedModelCard = requestedModel ? toModelLibraryCard(requestedModel) : null;
+  const libraryCards: ModelLibraryPanelCard[] = models.map(toModelLibraryCard);
   const imageAssetCards: ModelLibraryPanelCard[] = imageAssets.map((asset) => ({
     date: formatWorkbenchDate(asset.createdAt).replace(" ", "\n"),
     id: asset.id,
@@ -70,6 +124,7 @@ export default async function WorkbenchPage() {
     <WorkbenchClient
       generationCreditCosts={generationCreditCosts}
       imageAssetCards={imageAssetCards}
+      initialSelectedModelId={requestedModelCard?.id ?? null}
       initialPendingTasks={pendingGenerationTasks}
       libraryCards={libraryCards}
       navUser={navUser}

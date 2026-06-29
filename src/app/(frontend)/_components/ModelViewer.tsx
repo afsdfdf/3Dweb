@@ -14,6 +14,7 @@ import {
 import * as THREE from "three";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 
 import {
   getModelLoadPhaseDisplay,
@@ -47,7 +48,7 @@ function maybeDisableCreateImageBitmap() {
 type ModelViewerProps = {
   accent?: "blue" | "violet";
   className?: string;
-  displayBase?: "none" | "workbench";
+  displayBase?: "none" | "platform" | "workbench";
   label?: string;
   loadingOverlayVariant?: "default" | "workbench";
   onError?: () => void;
@@ -214,6 +215,9 @@ function CharacterFigure({
 const sharedDracoLoader = new DRACOLoader();
 sharedDracoLoader.setDecoderPath("/three-draco/gltf/");
 let hasPreloadedDracoDecoder = false;
+const PLATFORM_BASE_SRC = "/model-base-test/base-platform.stl";
+const PLATFORM_BASE_DIAMETER = 3.4;
+const PLATFORM_BASE_TOP_Y = -0.88;
 const WORKBENCH_BASE_SCALE = 0.5;
 const WORKBENCH_BASE_TOP_Y = -0.88;
 const WORKBENCH_BASE_GROUP_Y = WORKBENCH_BASE_TOP_Y - 0.118 * WORKBENCH_BASE_SCALE;
@@ -236,12 +240,14 @@ function configureGLTFLoader(loader: GLTFLoader) {
 }
 
 function LoadedModel({
-  alignToWorkbenchBase = false,
+  displayBaseTopY = 0,
+  alignToDisplayBase = false,
   onPhase,
   onReady,
   src,
 }: {
-  alignToWorkbenchBase?: boolean;
+  alignToDisplayBase?: boolean;
+  displayBaseTopY?: number;
   onPhase?: (phase: ModelLoadPhase, src: string) => void;
   onReady?: (src: string) => void;
   src: string;
@@ -253,8 +259,8 @@ function LoadedModel({
   // Workbench can keep mobile and desktop viewers mounted for the same src; clone there so two
   // Canvas roots don't compete for the same Object3D parent.
   const scene = useMemo(
-    () => (alignToWorkbenchBase ? gltf.scene.clone(true) : gltf.scene),
-    [alignToWorkbenchBase, gltf.scene],
+    () => (alignToDisplayBase ? gltf.scene.clone(true) : gltf.scene),
+    [alignToDisplayBase, gltf.scene],
   );
 
   useEffect(() => {
@@ -283,20 +289,20 @@ function LoadedModel({
     };
   }, [onPhase, onReady, scene, src]);
 
-  return (
-    <Bounds clip fit margin={alignToWorkbenchBase ? 1.16 : 1.1}>
-      {alignToWorkbenchBase ? (
-        <group position={[0, WORKBENCH_BASE_TOP_Y, 0]}>
-          <Center top>
-            <primitive object={scene} />
-          </Center>
-        </group>
-      ) : (
-        <Center>
+  if (alignToDisplayBase) {
+    return (
+      <group position={[0, displayBaseTopY, 0]}>
+        <Center top>
           <primitive object={scene} />
         </Center>
-      )}
-    </Bounds>
+      </group>
+    );
+  }
+
+  return (
+    <Center>
+      <primitive object={scene} />
+    </Center>
   );
 }
 
@@ -745,7 +751,12 @@ export function ModelViewer({
     <CharacterFigure accent={accent} />
   ) : null;
   const hasSceneModel = Boolean(activeSrc || showPlaceholderModel);
+  const displayBaseTopY =
+    displayBase === "platform" ? PLATFORM_BASE_TOP_Y : WORKBENCH_BASE_TOP_Y;
+  const showPlatformBase = displayBase === "platform";
   const showWorkbenchBase = displayBase === "workbench";
+  const showDisplayBase = showPlatformBase || showWorkbenchBase;
+  const displayBaseMargin = showDisplayBase ? 1.16 : 1.1;
   // Both callbacks are intentionally identity-stable: <LoadedModel>'s effect uses them as deps,
   // and we don't want viewer re-renders (which churn activeSrc via setLoadState) to retrigger
   // the scene.traverse + double-rAF readiness handshake. The current src is read from a ref.
@@ -1134,6 +1145,16 @@ export function ModelViewer({
           )}
           <ambientLight intensity={1.35} />
           <directionalLight intensity={2.1} position={[4, 6, 5]} />
+          <hemisphereLight
+            color="#f4f6ff"
+            groundColor="#3a414c"
+            intensity={1.15}
+          />
+          <directionalLight
+            color="#d8e3ff"
+            intensity={1.55}
+            position={[-4, 3.2, -3.6]}
+          />
           <pointLight
             color={pointLightColor}
             intensity={6.5}
@@ -1158,21 +1179,24 @@ export function ModelViewer({
               onError?.();
             }}
           >
-          <Suspense fallback={fallbackModel}>
-              {activeSrc ? (
-                <LoadedModel
-                  alignToWorkbenchBase={showWorkbenchBase}
-                  onPhase={handleModelPhase}
-                  onReady={handleModelReady}
-                  src={activeSrc}
-                />
-              ) : (
-                fallbackModel
-              )}
-            </Suspense>
+            <Bounds clip fit margin={displayBaseMargin}>
+              <Suspense fallback={fallbackModel}>
+                {activeSrc ? (
+                  <LoadedModel
+                    alignToDisplayBase={showDisplayBase}
+                    displayBaseTopY={displayBaseTopY}
+                    onPhase={handleModelPhase}
+                    onReady={handleModelReady}
+                    src={activeSrc}
+                  />
+                ) : (
+                  fallbackModel
+                )}
+                {hasSceneModel && showPlatformBase ? <PlatformDisplayBase /> : null}
+              </Suspense>
+              {showWorkbenchBase ? <WorkbenchDisplayBase /> : null}
+            </Bounds>
           </ViewerErrorBoundary>
-
-          {showWorkbenchBase ? <WorkbenchDisplayBase /> : null}
 
           {hasSceneModel && showGround ? (
             <mesh position={[0, -1.2, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -1207,6 +1231,56 @@ export function ModelViewer({
         visible={loadState.status === "error" || webGLStatus === "unavailable"}
       />
     </div>
+  );
+}
+
+function getGeometryBox(geometry: THREE.BufferGeometry) {
+  geometry.computeBoundingBox();
+
+  if (!geometry.boundingBox) {
+    return new THREE.Box3(
+      new THREE.Vector3(-1, -0.08, -1),
+      new THREE.Vector3(1, 0.08, 1),
+    );
+  }
+
+  return geometry.boundingBox.clone();
+}
+
+function PlatformDisplayBase() {
+  const loadedGeometry = useLoader(STLLoader, PLATFORM_BASE_SRC);
+  const { geometry, positionY, scale } = useMemo(() => {
+    const geometry = loadedGeometry.clone();
+    geometry.computeVertexNormals();
+    const box = getGeometryBox(geometry);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    const diameter = Math.max(size.x, size.y, 0.001);
+    const scale = PLATFORM_BASE_DIAMETER / diameter;
+
+    return {
+      geometry,
+      positionY: PLATFORM_BASE_TOP_Y - box.max.z * scale,
+      scale,
+    };
+  }, [loadedGeometry]);
+
+  return (
+    <mesh
+      geometry={geometry}
+      position={[0, positionY, 0]}
+      receiveShadow
+      rotation={[-Math.PI / 2, 0, 0]}
+      scale={scale}
+    >
+      <meshStandardMaterial
+        color="#26282d"
+        emissive="#111317"
+        emissiveIntensity={0.18}
+        metalness={0.16}
+        roughness={0.46}
+      />
+    </mesh>
   );
 }
 

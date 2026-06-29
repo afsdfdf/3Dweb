@@ -13,6 +13,8 @@ type WorkbenchModelDocument = Model;
 type WorkbenchModelFormatDocument = NonNullable<WorkbenchModelDocument["formats"]>[number];
 type WorkbenchModelTagDocument = NonNullable<WorkbenchModelDocument["tags"]>[number];
 type WorkbenchGenerationTaskDocument = GenerationTask;
+type CachedPayload = Awaited<ReturnType<typeof getCachedPayload>>;
+type CurrentUser = Awaited<ReturnType<typeof getCurrentUser>>;
 
 type WorkbenchModelFormat = {
   downloadCredits: null | number;
@@ -209,24 +211,15 @@ export function formatWorkbenchDate(value: null | string) {
   return `${year}.${month}.${day} ${hours}:${minutes}`;
 }
 
-export async function getWorkbenchModels(
-  user: Awaited<ReturnType<typeof getCurrentUser>>,
-): Promise<WorkbenchModel[]> {
-  if (!user) return [];
-
-  const payload = await getCachedPayload();
-  const result = await payload.find({
-    collection: "models",
-    depth: 2,
-    limit: 24,
-    overrideAccess: false,
-    pagination: false,
-    sort: "-updatedAt",
-    user,
-  });
-
-  return Promise.all(
-    result.docs.map(async (model: WorkbenchModelDocument) => {
+async function normalizeWorkbenchModel({
+  model,
+  payload,
+  user,
+}: {
+  model: WorkbenchModelDocument;
+  payload: CachedPayload;
+  user: CurrentUser;
+}): Promise<WorkbenchModel> {
       const owner = isRecord(model.owner) ? model.owner : null;
       const [previewURL, ownerAvatarUrl, ownerBackgroundUrl] =
         await Promise.all([
@@ -333,7 +326,59 @@ export async function getWorkbenchModels(
         visibility:
           typeof model.visibility === "string" ? model.visibility : "private",
       };
-    }),
+}
+
+export async function getWorkbenchModelById(
+  user: CurrentUser,
+  modelId: number,
+): Promise<WorkbenchModel | null> {
+  if (!Number.isFinite(modelId) || modelId <= 0) return null;
+
+  const payload = await getCachedPayload();
+
+  try {
+    const model = await payload.findByID({
+      collection: "models",
+      depth: 2,
+      id: modelId,
+      overrideAccess: false,
+      ...(user ? { user } : {}),
+    });
+
+    return normalizeWorkbenchModel({
+      model: model as WorkbenchModelDocument,
+      payload,
+      user,
+    });
+  } catch {
+    return null;
+  }
+}
+
+export async function getWorkbenchModels(
+  user: CurrentUser,
+): Promise<WorkbenchModel[]> {
+  if (!user) return [];
+
+  const payload = await getCachedPayload();
+  const result = await payload.find({
+    collection: "models",
+    depth: 2,
+    limit: 24,
+    overrideAccess: false,
+    pagination: false,
+    sort: "-updatedAt",
+    user,
+  });
+
+  return Promise.all(
+    result.docs.map((model: WorkbenchModelDocument) =>
+      normalizeWorkbenchModel({
+        model,
+        payload,
+        user,
+      }),
+    ),
   );
 }
 

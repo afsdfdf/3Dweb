@@ -11,5 +11,11 @@ const DynamicModelViewer = dynamic(
 type WorkbenchModelViewerProps = ComponentProps<typeof DynamicModelViewer>;
 
 export function WorkbenchModelViewer(props: WorkbenchModelViewerProps) {
-  return <DynamicModelViewer loadingOverlayVariant="workbench" {...props} />;
+  return (
+    <DynamicModelViewer
+      displayBase="platform"
+      loadingOverlayVariant="workbench"
+      {...props}
+    />
+  );
 }

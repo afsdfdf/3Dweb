@@ -86,11 +86,43 @@ test('ModelViewer shows completion for uncached loads but skips progress for cac
   )
 })
 
-test('Workbench model viewers do not render the display base', () => {
+test('production model viewers render the STL display base', () => {
+  const modelViewerSource = readFileSync(modelViewerPath, 'utf8')
+  const modelDetailSource = readFileSync(modelDetailNativePath, 'utf8')
   const workbenchSource = readFileSync(workbenchClientPath, 'utf8')
 
-  assert.doesNotMatch(workbenchSource, /displayBase="workbench"/)
+  assert.match(modelViewerSource, /displayBase\?: "none" \| "platform" \| "workbench"/)
+  assert.match(modelViewerSource, /STLLoader/)
+  assert.match(modelViewerSource, /PLATFORM_BASE_SRC = "\/model-base-test\/base-platform\.stl"/)
+  assert.match(modelViewerSource, /PlatformDisplayBase/)
+  assert.match(
+    modelViewerSource,
+    /<Bounds clip fit margin=\{displayBaseMargin\}>[\s\S]*?<PlatformDisplayBase \/>[\s\S]*?<\/Bounds>/,
+  )
+  assert.match(modelDetailSource, /displayBase="platform"/)
+  assert.match(workbenchSource, /displayBase="platform"/)
   assert.match(workbenchSource, /showGround=\{false\}/)
+})
+
+test('platform display base keeps visible graphite material and fill lights', () => {
+  const modelViewerSource = readFileSync(modelViewerPath, 'utf8')
+
+  assert.match(
+    modelViewerSource,
+    /<hemisphereLight[\s\S]*?groundColor="#3a414c"[\s\S]*?intensity=\{1\.15\}[\s\S]*?\/>/,
+  )
+  assert.match(
+    modelViewerSource,
+    /<directionalLight[\s\S]*?color="#d8e3ff"[\s\S]*?intensity=\{1\.55\}[\s\S]*?position=\{\[-4, 3\.2, -3\.6\]\}[\s\S]*?\/>/,
+  )
+  assert.match(
+    modelViewerSource,
+    /<meshStandardMaterial[\s\S]*?color="#26282d"[\s\S]*?emissive="#111317"[\s\S]*?emissiveIntensity=\{0\.18\}[\s\S]*?metalness=\{0\.16\}[\s\S]*?roughness=\{0\.46\}[\s\S]*?\/>/,
+  )
+  assert.doesNotMatch(
+    modelViewerSource,
+    /<meshStandardMaterial color="#111111" metalness=\{0\.28\} roughness=\{0\.56\} \/>/,
+  )
 })
 
 test('ModelViewer loading overlay uses the target framed model-preview style', () => {
@@ -123,7 +155,8 @@ test('ModelViewer loading overlay uses the target framed model-preview style', (
   assert.match(workbenchSource, /className={styles\.viewerCanvas}[\s\S]*?loadingOverlayVariant="workbench"/)
   assert.match(workbenchSource, /loadingOverlayVariant="workbench"/)
   assert.match(workbenchModelViewerSource, /loadingOverlayVariant="workbench"/)
-  assert.match(workbenchModelViewerSource, /<DynamicModelViewer loadingOverlayVariant="workbench" \{\.\.\.props\} \/>/)
+  assert.match(workbenchModelViewerSource, /displayBase="platform"/)
+  assert.match(workbenchModelViewerSource, /<DynamicModelViewer[\s\S]*?loadingOverlayVariant="workbench"[\s\S]*?\{\.\.\.props\}/)
 })
 
 test('model detail mounts the viewer only for the active responsive branch', () => {

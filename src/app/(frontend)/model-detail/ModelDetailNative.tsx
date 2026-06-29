@@ -636,6 +636,7 @@ export default function ModelDetailNative({
           {activeModel.viewerURL && shouldRenderMobileViewer ? (
             <ModelViewer
               className={styles.mobileViewer}
+              displayBase="platform"
               showGround={false}
               showPlaceholderModel={false}
               src={activeModel.viewerURL}
@@ -938,6 +939,7 @@ export default function ModelDetailNative({
                           <div className="detail-model-stage">
                             <ModelViewer
                               className="detail-model-viewer"
+                              displayBase="platform"
                               showGround={false}
                               showPlaceholderModel={false}
                               src={activeModel.viewerURL}
@@ -1144,6 +1146,7 @@ export default function ModelDetailNative({
                               <ButtonBoxFrame
                                 className="side-model-card-frame"
                                 contentClassName="side-model-card-content"
+                                selected={item.id === activeModelId}
                               >
                                 <a
                                   aria-current={
